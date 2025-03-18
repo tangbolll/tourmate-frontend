@@ -12,6 +12,21 @@
     "**/*.ts",
     "**/*.tsx",
     ".expo/types/**/*.ts",
-    "expo-env.d.ts"
+    "expo-env.d.ts",
+    "components/ExternalLink.jsx",
+    "components/Collapsible.jsx",
+    "components/__tests__/ThemedText-test.jsx",
+    "components/ThemedView.jsx",
+    "components/ThemedText.jsx",
+    "components/ParallaxScrollView.jsx",
+    "components/HelloWave.jsx",
+    "components/HapticTab.jsx",
+    "components/ui/IconSymbol.ios.jsx",
+    "app/+not-found.jsx",
+    "app/_layout.jsx",
+    "components/ui/TabBarBackground.jsx",
+    "components/ui/IconSymbol.jsx",
+    "components/ui/TabBarBackground.ios.jsx",
+    "nativewind-env.d.ts"
   ]
 }
