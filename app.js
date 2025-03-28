@@ -1,11 +1,17 @@
 import React from 'react';
-import { View, Text } from 'react-native';
-import "./global.css"
+import { SafeAreaView, StatusBar } from 'react-native';
+import EventHeader from './components/EventHeader';
 
 export default function App() {
     return (
-        <View>
-            <Text>Hello, World!</Text>
-        </View>
+        <SafeAreaView className="flex-1">
+        <StatusBar style="auto" />
+        <EventHeader 
+            location="강원도 화천" 
+            participantsCurrent={3} 
+            participantsTotal={5} 
+        />
+        {}
+        </SafeAreaView>
     );
 }
