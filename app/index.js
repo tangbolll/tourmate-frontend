@@ -1,6 +1,6 @@
 import React from 'react';
 import { SafeAreaView, StatusBar } from 'react-native';
-import EventHeader from './components/EventHeader';
+import EventHeader from '../components/EventHeader';
 
 export default function App() {
     return (
