@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
+import Wrapper from './Wrapper';
 
 const EventHeader = ({ 
     location = '강원도 화천', 
@@ -7,6 +8,7 @@ const EventHeader = ({
     participantsTotal = 5 
 }) => {
     return (
+        <Wrapper>
         <View className="bg-white p-4 flex-row items-center justify-between">
             <View className="flex-row items-center space-x-2">
                 <Text className="text-lg font-bold">화천 산천어 축제에서 놀아요</Text>
@@ -17,6 +19,7 @@ const EventHeader = ({
             </Text>
         </View>
         </View>
+        </Wrapper>
     );
 };
 
