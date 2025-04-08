@@ -3,7 +3,7 @@ import { SafeAreaView, ScrollView } from 'react-native';
 import EventHeader from '../components/EventHeader';
 import EventSchedule from '../components/EventSchedule';
 import Comment from '../components/Comment';
-import Intro from '../components/intro';
+import Intro from '../components/Intro';
 import GatheringPlace from '../components/GatheringPlace';
 import Conditions from '../components/Conditions';
 import Categories from '../components/Categories';
@@ -51,15 +51,15 @@ export default function App() {
             nickname="주리를틀어라" 
             time="1시간 전" 
             content="안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?"
-         />
-         <WriteComment onSend={(comment) => console.log("댓글:", comment)} />
+        />
+        <WriteComment onSend={(comment) => console.log("댓글:", comment)} />
 
         <ApplicationButton
             onPress={() => console.log("신청하기 버튼 클릭")}
             likes={122}
         />
 
-         </ScrollView>
+        </ScrollView>
         </SafeAreaView>
 
     );
