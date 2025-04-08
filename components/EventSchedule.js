@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import Wrapper from './Wrapper';
-import { CheckSquare, Hourglass } from 'lucide-react-native';
+import Icon from 'react-native-vector-icons/Feather'; // Feather 아이콘셋
 
 const EventSchedule = ({
     eventDate = '3월4일(월)',
@@ -11,11 +11,11 @@ const EventSchedule = ({
     recruitEnd = '3월3일(일)'
 }) => {
     return (
-        <View className="space-y-2">
+        <View style={{ gap: 8 }}>
             {/* 여행기간 */}
             <Wrapper>
                 <View className="flex-row items-center p-4 bg-white rounded-lg shadow">
-                    <CheckSquare size={20} className="mr-2 text-black" />
+                    <Icon name="check-square" size={20} color="black" style={{ marginRight: 8 }} />
                     <Text className="text-base">
                         <Text className="font-bold">여행기간</Text> {eventDate} {eventTimeStart} - {eventTimeEnd}
                     </Text>
@@ -25,7 +25,7 @@ const EventSchedule = ({
             {/* 모집기간 */}
             <Wrapper>
                 <View className="flex-row items-center p-4 bg-white rounded-lg shadow">
-                    <Hourglass size={20} className="mr-2 text-black" />
+                    <Icon name="hourglass" size={20} color="black" style={{ marginRight: 8 }} />
                     <Text className="text-base">
                         <Text className="font-bold">모집기간</Text> {recruitStart} - {recruitEnd}
                     </Text>
@@ -36,3 +36,4 @@ const EventSchedule = ({
 };
 
 export default EventSchedule;
+
