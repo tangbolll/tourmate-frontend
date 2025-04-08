@@ -1,33 +1,33 @@
 import React from 'react';
-import { View, Text } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import Wrapper from './Wrapper';
 import Icon from 'react-native-vector-icons/Feather'; // Feather 아이콘셋
 
 const EventSchedule = ({
-    eventDate = '3월4일(월)',
-    eventTimeStart = '15:00',
-    eventTimeEnd = '19:00',
-    recruitStart = '3월1일(금)',
-    recruitEnd = '3월3일(일)'
+    eventDate,
+    eventTimeStart,
+    eventTimeEnd,
+    recruitStart,
+    recruitEnd
 }) => {
     return (
         <View style={{ gap: 8 }}>
             {/* 여행기간 */}
             <Wrapper>
-                <View className="flex-row items-center p-4 bg-white rounded-lg shadow">
-                    <Icon name="check-square" size={20} color="black" style={{ marginRight: 8 }} />
-                    <Text className="text-base">
-                        <Text className="font-bold">여행기간</Text> {eventDate} {eventTimeStart} - {eventTimeEnd}
+                <View style={styles.row}>
+                    <Icon name="calendar" size={20} color="black" style={styles.icon} />
+                    <Text style={styles.text}>
+                        <Text style={styles.bold}>여행기간</Text> {eventDate} {eventTimeStart} - {eventTimeEnd}
                     </Text>
                 </View>
             </Wrapper>
 
-            {/* 모집기간 */}
+            {/* 모집기간 - 한 줄에 모든 정보 표시 */}
             <Wrapper>
-                <View className="flex-row items-center p-4 bg-white rounded-lg shadow">
-                    <Icon name="hourglass" size={20} color="black" style={{ marginRight: 8 }} />
-                    <Text className="text-base">
-                        <Text className="font-bold">모집기간</Text> {recruitStart} - {recruitEnd}
+                <View style={styles.row}>
+                    <Icon name="edit" size={20} color="black" style={styles.icon} />
+                    <Text style={styles.text}>
+                        <Text style={styles.bold}>모집기간</Text> {recruitStart} - {recruitEnd}
                     </Text>
                 </View>
             </Wrapper>
@@ -35,5 +35,20 @@ const EventSchedule = ({
     );
 };
 
-export default EventSchedule;
+const styles = StyleSheet.create({
+    row: {
+        flexDirection: 'row',
+        alignItems: 'center'
+    },
+    icon: {
+        marginRight: 8,
+    },
+    text: {
+        fontSize: 16,
+    },
+    bold: {
+        fontWeight: 'bold',
+    }
+});
 
+export default EventSchedule;
