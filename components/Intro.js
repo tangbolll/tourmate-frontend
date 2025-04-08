@@ -4,11 +4,13 @@ import Wrapper from './Wrapper';
 
 const Intro = ({ message }) => {
   return (
-    <Wrapper>
+    <View>
+      {/* 제목 */}
+          <Text style={styles.title}>동행 소개</Text>
       {/* 모집 텍스트 박스 */}
-      <View style={styles.textBox}>
+      <Wrapper style={styles.textBox}>
         <Text style={styles.text}>{message}</Text>
-      </View>
+      </Wrapper>
 
       {/* 사진 박스 */}
       <View style={styles.imageContainer}>
@@ -16,11 +18,16 @@ const Intro = ({ message }) => {
         <View style={styles.imageBox}><Text>사진2</Text></View>
         <View style={styles.imageBox}><Text>사진3</Text></View>
       </View>
-    </Wrapper>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
+    title: {
+      fontSize: 18,
+      fontWeight: 'bold',
+      marginBottom: 8,
+    },
   textBox: {
     backgroundColor: '#F8F8F8',
     padding: 12,

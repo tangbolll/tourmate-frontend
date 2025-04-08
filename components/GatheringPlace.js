@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Wrapper from '../components/Wrapper';
+
 
 const GatheringPlace = ({ location }) => {
   return (
-    <Wrapper>
+    <View>
       {/* 제목 */}
       <Text style={styles.title}>모이는 장소</Text>
 
@@ -19,7 +19,7 @@ const GatheringPlace = ({ location }) => {
       <View style={styles.mapBox}>
         <Text>지도</Text>
       </View>
-    </Wrapper>
+    </View>
   );
 };
 
@@ -51,6 +51,7 @@ const styles = StyleSheet.create({
     height: 150,
     borderWidth: 1,
     borderColor: '#ccc',
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
