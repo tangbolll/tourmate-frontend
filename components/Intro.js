@@ -26,6 +26,7 @@ const styles = StyleSheet.create({
     title: {
       fontSize: 18,
       fontWeight: 'bold',
+      marginTop: 16,
       marginBottom: 8,
     },
   textBox: {
@@ -43,6 +44,8 @@ const styles = StyleSheet.create({
   imageContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    marginTop: 16,
+    marginBottom: 16,
   },
   imageBox: {
     width: 100,
