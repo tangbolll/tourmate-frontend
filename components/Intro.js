@@ -44,12 +44,12 @@ const styles = StyleSheet.create({
   imageContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginTop: 16,
+    marginTop: 8,
     marginBottom: 16,
   },
   imageBox: {
-    width: 100,
-    height: 100,
+    width: 115,
+    height: 115,
     borderWidth: 1,
     borderColor: 'black',
     alignItems: 'center',
