@@ -17,7 +17,7 @@ const EventSchedule = ({
                 <View style={styles.row}>
                     <Icon name="calendar" size={20} color="black" style={styles.icon} />
                     <Text style={styles.text}>
-                        <Text style={styles.bold}>여행기간 </Text> {eventDate} {eventTimeStart} - {eventTimeEnd}
+                        <Text style={styles.bold}>여행기간  </Text> {eventDate} {eventTimeStart} - {eventTimeEnd}
                     </Text>
                 </View>
             </Wrapper>
@@ -27,7 +27,7 @@ const EventSchedule = ({
                 <View style={styles.row}>
                     <Icon name="edit" size={20} color="black" style={styles.icon} />
                     <Text style={styles.text}>
-                        <Text style={styles.bold}>모집기간 </Text> {recruitStart} - {recruitEnd}
+                        <Text style={styles.bold}>모집기간  </Text> {recruitStart} - {recruitEnd}
                     </Text>
                 </View>
             </Wrapper>
