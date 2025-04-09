@@ -39,7 +39,7 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
   },
@@ -64,7 +64,6 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     marginRight: 8,
-    marginBottom: 8,
   },
   chipText: {
     fontSize: 14,

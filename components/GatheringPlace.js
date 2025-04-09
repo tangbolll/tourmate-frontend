@@ -27,7 +27,7 @@ const GatheringPlace = ({ location, onReplyPress }) => {
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 18,
+    fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
   },
@@ -37,15 +37,14 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   icon: {
-    fontSize: 18,
-    marginRight: 6,
+    fontSize: 12
   },
   location: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
   },
   copy: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#999',
     marginLeft: 8,
     textDecorationLine: 'underline',

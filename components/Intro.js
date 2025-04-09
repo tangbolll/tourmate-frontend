@@ -24,7 +24,7 @@ const Intro = ({ message }) => {
 
 const styles = StyleSheet.create({
     title: {
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: 'bold',
       marginTop: 16,
       marginBottom: 8,
@@ -38,7 +38,7 @@ const styles = StyleSheet.create({
     borderColor: '#DDD',
   },
   text: {
-    fontSize: 16,
+    fontSize: 14,
     color: '#333',
   },
   imageContainer: {
