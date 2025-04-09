@@ -1,6 +1,5 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import Wrapper from './Wrapper';
 import Icon from 'react-native-vector-icons/Feather';
 
 const EventHeader = ({
@@ -11,7 +10,7 @@ const EventHeader = ({
     newApplication = false, // ← 새로운 동행 신청 여부
     }) => {
     return (
-        <Wrapper>
+        <HeaderWrapper>
         <View style={styles.container}>
             {/* 제목 */}
             <Text style={styles.title}>{title}</Text>
@@ -32,9 +31,33 @@ const EventHeader = ({
             )}
             </View>
         </View>
-        </Wrapper>
+        </HeaderWrapper>
     );
 };
+
+function HeaderWrapper({ children }) {
+    return (
+        <View style={HeaderWrapperStyles.container}>
+            {children}
+        </View>
+    );
+    }
+
+    const HeaderWrapperStyles = StyleSheet.create({
+    container: {
+        width: '80%',
+        alignSelf: 'center',
+        marginTop: 0,       // 위쪽 여백
+        marginBottom: 16,   // 아래쪽 여백
+        borderWidth: 0,     // 테두리 없이 그림자로 표현
+        padding: 16,        // 내부 여백 (텍스트와 테두리 사이 간격)
+        borderRadius: 20,
+        backgroundColor: 'white',
+        shadowOffset: { width: 0, height: 4 },
+        shadowRadius: 4,
+        shadowOpacity: 0.2,
+    },
+});
 
 const styles = StyleSheet.create({
     container: {
