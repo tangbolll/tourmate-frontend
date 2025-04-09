@@ -46,12 +46,35 @@ export default function App() {
             types={["아웃도어", "축제", "힐링여행"]} 
             tags={["자유로운", "낚시대결", "활기찬사람", "회떠먹기"]} 
         />
+        {/* <Comment 
+            comments={[
+                {
+                    profileImage: "https://example.com/profile1.jpg",
+                    nickname: "주리를틀어라",
+                    time: "1시간 전",
+                    content: "안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?",
+                    onReplyPress: () => console.log("답글 클릭"),
+                    depth: 0 
+                }
+                {
+                    profileImage: "https://example.com/profile2.jpg",
+                    nickname: "여라미",
+                    time: "30분 전",
+                    content: "넹! 서휘경이랑 같이 가요~",
+                    onReplyPress: () => console.log("답글 클릭"),
+                    depth: 1
+                }
+            ]}
+        /> */}
+
         <Comment 
-            profileImage="https://example.com/profile.jpg" 
+            profileImage="https://example.com/profile1.jpg" 
             nickname="주리를틀어라" 
             time="1시간 전" 
             content="안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?"
+            onReplyPress={() => console.log("답글 클릭")}
         />
+
         <WriteComment onSend={(comment) => console.log("댓글:", comment)} />
 
         <ApplicationButton

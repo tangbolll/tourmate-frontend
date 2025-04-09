@@ -1,14 +1,17 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-const Comment = ({ profileImage, nickname, time, content, onReplyPress }) => {
+const Comment = ({ profileImage, nickname, time, content, onReplyPress, depth }) => {
     return (
-        <View style={styles.wrapper}>
+        <View>
             {/* 타이틀 */}
-            <Text style={styles.title}>코멘트</Text>
+            {<Text style={styles.title}>코멘트</Text>}
 
-            {/* 댓글 한 줄 */}
-            <View style={styles.container}>
+            {/* 댓글 */}
+            <View style={[styles.container, {
+                marginLeft: 40 * depth,
+                marginTop: 8 * depth,
+            }]}>
                 {/* 프로필 이미지 */}
                 <Image 
                     source={{ uri: profileImage }} 
@@ -32,17 +35,10 @@ const Comment = ({ profileImage, nickname, time, content, onReplyPress }) => {
 };
 
 const styles = StyleSheet.create({
-    wrapper: {
-        padding: 12,
-        backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB',
-    },
     title: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
-        marginBottom: 12,
-        color: '#000',
+        marginBottom: 8,
     },
     container: {
         flexDirection: 'row',
@@ -73,7 +69,7 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     replyText: {
-        fontSize: 13,
+        fontSize: 12,
         color: '#6B7280',
         textDecorationLine: 'underline',
     },
@@ -81,6 +77,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#000',
         marginTop: 2,
+        marginBottom: 16,
     },
 });
 
