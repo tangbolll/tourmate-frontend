@@ -1,8 +1,8 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 
 
-const GatheringPlace = ({ location }) => {
+const GatheringPlace = ({ location, onReplyPress }) => {
   return (
     <View>
       {/* 제목 */}
@@ -12,7 +12,9 @@ const GatheringPlace = ({ location }) => {
       <View style={styles.locationContainer}>
         <Text style={styles.icon}>📍</Text>
         <Text style={styles.location}>{location}</Text>
-        <Text style={styles.copy}>복사</Text>
+        <TouchableOpacity onPress={onReplyPress}>
+          <Text style={styles.copy}>복사</Text>
+        </TouchableOpacity>
       </View>
 
       {/* 지도 */}
@@ -32,7 +34,7 @@ const styles = StyleSheet.create({
   locationContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   icon: {
     fontSize: 18,
@@ -46,6 +48,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#999',
     marginLeft: 8,
+    textDecorationLine: 'underline',
   },
   mapBox: {
     height: 150,
@@ -54,6 +57,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+    marginBottom: 16,
   },
 });
 
