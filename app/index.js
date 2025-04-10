@@ -50,16 +50,15 @@ export default function App() {
         />
 
         <Comment 
-            profileImage="https://example.com/profile1.jpg" 
-            Id={1}
-            nickname="주리를틀어라" 
+            // profileImage="https://example.com/profile1.jpg" 
+            nickname="나는야서휘경" 
             time="1시간 전" 
             content="안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?"
             onReplyPress={() => console.log("답글 클릭")}
         />
         <Reply
             profileImage="https://example.com/profile2.jpg" 
-            Id={2}
+
             nickname="여라미" 
             time="30분 전" 
             content="넹! 서휘경이랑 같이 가요~"

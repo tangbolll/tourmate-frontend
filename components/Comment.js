@@ -1,18 +1,26 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-const Comment = ({ profileImage, parentId, nickname, time, content, onReplyPress }) => {
+// default profile image
+const defaultProfile = require('../assets/defaultProfile.png');
+
+const Comment = ({ profileImage, nickname, time, content, onReplyPress }) => {
+    // 이미지 source 설정
+    const profileSrc = profileImage
+        ? { uri: profileImage }
+        : defaultProfile;
+
     return (
         <View>
             {/* 타이틀 */}
             <View style={styles.divider} />
-            {<Text style={styles.title}>코멘트</Text>}
+            <Text style={styles.title}>코멘트</Text>
 
             {/* 댓글 */}
-            <View style={[styles.container]}>
+            <View style={styles.container}>
                 {/* 프로필 이미지 */}
                 <Image 
-                    source={{ uri: profileImage }} 
+                    source={profileSrc} 
                     style={styles.profileImage}
                 />
 

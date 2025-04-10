@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-const Reply = ({ profileImage, parentId, nickname, time, content, onReplyPress }) => {
+// default profile image
+const defaultProfile = require('../assets/defaultProfile.png');
+
+const Reply = ({ profileImage, nickname, time, content, onReplyPress }) => {
     return (
         <View>
-
 
             {/* 댓글 */}
             <View style={[styles.container]}>
@@ -35,7 +37,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         marginBottom: 16,
-        marginLeft: 52,
+        marginLeft: 52
     },
     profileImage: {
         width: 40,
