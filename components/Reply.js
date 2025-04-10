@@ -1,12 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-const Comment = ({ profileImage, parentId, nickname, time, content, onReplyPress }) => {
+const Reply = ({ profileImage, parentId, nickname, time, content, onReplyPress }) => {
     return (
         <View>
-            {/* 타이틀 */}
-            <View style={styles.divider} />
-            {<Text style={styles.title}> 코멘트</Text>}
+
 
             {/* 댓글 */}
             <View style={[styles.container]}>
@@ -33,21 +31,11 @@ const Comment = ({ profileImage, parentId, nickname, time, content, onReplyPress
 };
 
 const styles = StyleSheet.create({
-    divider: {
-        borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB', // 얇은 회색 라인
-        marginBottom: 10,
-    },
-    title: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 8,
-        marginTop: 16,
-    },
     container: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: 8,
+        marginBottom: 16,
+        marginLeft: 52,
     },
     profileImage: {
         width: 40,
@@ -86,4 +74,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default Comment;
+export default Reply;
