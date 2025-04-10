@@ -91,7 +91,7 @@ export default function App() {
             onPress={() => console.log("신청하기 버튼 클릭")}
             likes={122}
             />
-        </View>
+        </ScrollView>
         </SafeAreaView>
     );
     }
