@@ -2,9 +2,13 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
 // default profile image
-const defaultProfile = require('../assets/defaultProfile.png');
+const defaultProfile = require('../assets/defaultProfile1.png');
 
 const Reply = ({ profileImage, nickname, time, content, onReplyPress }) => {
+    // 이미지 source 설정
+        const profileSrc = profileImage
+            ? { uri: profileImage }
+            : defaultProfile;
     return (
         <View>
 
@@ -12,7 +16,7 @@ const Reply = ({ profileImage, nickname, time, content, onReplyPress }) => {
             <View style={[styles.container]}>
                 {/* 프로필 이미지 */}
                 <Image 
-                    source={{ uri: profileImage }} 
+                    source={profileSrc} 
                     style={styles.profileImage}
                 />
 
