@@ -86,12 +86,11 @@ export default function App() {
 
         <WriteComment onSend={(comment) => console.log("댓글:", comment)} />
 
-            {/* ✅ 하단 고정된 버튼 */}
-            <ApplicationButton
+        </ScrollView>
+        <ApplicationButton
             onPress={() => console.log("신청하기 버튼 클릭")}
             likes={122}
-            />
-        </ScrollView>
+        />
         </SafeAreaView>
     );
     }

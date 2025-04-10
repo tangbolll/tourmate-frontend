@@ -44,12 +44,13 @@ const styles = StyleSheet.create({
     divider: {
         borderBottomWidth: 1,
         borderBottomColor: '#E5E7EB', // 얇은 회색 라인
-        marginBottom: 10,
+        marginTop: 12,
+        marginBottom: 4,
     },
     title: {
         fontSize: 18,
         fontWeight: 'bold',
-        marginBottom: 8,
+        marginBottom: 12,
         marginTop: 16,
     },
     container: {
