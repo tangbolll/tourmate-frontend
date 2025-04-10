@@ -14,7 +14,7 @@ const Comment = ({ profileImage, nickname, time, content, onReplyPress }) => {
         <View>
             {/* 타이틀 */}
             <View style={styles.divider} />
-            <Text style={styles.title}>코멘트</Text>
+            {<Text style={styles.title}> 코멘트</Text>}
 
             {/* 댓글 */}
             <View style={styles.container}>
@@ -42,11 +42,12 @@ const Comment = ({ profileImage, nickname, time, content, onReplyPress }) => {
 
 const styles = StyleSheet.create({
     divider: {
-        borderBottomWidth: 2,
-        borderBottomColor: '#E5E7EB',
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB', // 얇은 회색 라인
+        marginBottom: 10,
     },
     title: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 8,
         marginTop: 16,

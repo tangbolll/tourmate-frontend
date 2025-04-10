@@ -27,9 +27,10 @@ const GatheringPlace = ({ location, onReplyPress }) => {
 
 const styles = StyleSheet.create({
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
+    marginTop: 22,
   },
   locationContainer: {
     flexDirection: 'row',
@@ -37,7 +38,7 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   icon: {
-    fontSize: 12
+    fontSize: 12,
   },
   location: {
     fontSize: 14,
@@ -56,7 +57,6 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
   },
 });
 

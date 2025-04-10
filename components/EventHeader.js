@@ -48,7 +48,7 @@ function HeaderWrapper({ children }) {
         width: '80%',
         alignSelf: 'center',
         marginTop: 0,       // 위쪽 여백
-        marginBottom: 16,   // 아래쪽 여백
+        marginBottom: 22,   // 아래쪽 여백
         borderWidth: 0,     // 테두리 없이 그림자로 표현
         padding: 16,        // 내부 여백 (텍스트와 테두리 사이 간격)
         borderRadius: 20,

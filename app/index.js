@@ -1,5 +1,5 @@
 import React from 'react';
-import { SafeAreaView, ScrollView } from 'react-native';
+import { SafeAreaView, ScrollView, View, StyleSheet } from 'react-native';
 import EventHeader from '../components/EventHeader';
 import EventSchedule from '../components/EventSchedule';
 import Comment from '../components/Comment';
@@ -10,7 +10,6 @@ import Conditions from '../components/Conditions';
 import Categories from '../components/Categories';
 import WriteComment from '../components/WriteComment';
 import ApplicationButton from '../components/ApplicationButton';
-
 
 
 export default function App() {
@@ -48,6 +47,26 @@ export default function App() {
             types={["아웃도어", "축제", "힐링여행"]} 
             tags={["자유로운", "낚시대결", "활기찬사람", "회떠먹기"]} 
         />
+        {/* <Comment 
+            comments={[
+                {
+                    profileImage: "https://example.com/profile1.jpg",
+                    nickname: "주리를틀어라",
+                    time: "1시간 전",
+                    content: "안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?",
+                    onReplyPress: () => console.log("답글 클릭"),
+                    depth: 0 
+                }
+                {
+                    profileImage: "https://example.com/profile2.jpg",
+                    nickname: "여라미",
+                    time: "30분 전",
+                    content: "넹! 서휘경이랑 같이 가요~",
+                    onReplyPress: () => console.log("답글 클릭"),
+                    depth: 1
+                }
+            ]}
+        /> */}
 
         <Comment 
             // profileImage="https://example.com/profile1.jpg" 
@@ -67,13 +86,26 @@ export default function App() {
 
         <WriteComment onSend={(comment) => console.log("댓글:", comment)} />
 
-        <ApplicationButton
+            {/* ✅ 하단 고정된 버튼 */}
+            <ApplicationButton
             onPress={() => console.log("신청하기 버튼 클릭")}
             likes={122}
-        />
-
-        </ScrollView>
+            />
+        </View>
         </SafeAreaView>
-
     );
-}
+    }
+
+    const styles = StyleSheet.create({
+    safeArea: {
+        flex: 1,
+        backgroundColor: '#fff',
+    },
+    container: {
+        flex: 1,
+    },
+    scrollContent: {
+        padding: 16,
+        paddingBottom: 80, // 버튼 영역만큼 여유!
+    },
+});
