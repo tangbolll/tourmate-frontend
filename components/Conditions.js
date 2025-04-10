@@ -32,11 +32,12 @@ const Conditions = ({ gender, ageGroups }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginTop: 8,
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+    marginTop: 20,
     marginBottom: 8,
   },
   row: {

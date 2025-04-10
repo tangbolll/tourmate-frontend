@@ -24,9 +24,9 @@ const Intro = ({ message }) => {
 
 const styles = StyleSheet.create({
     title: {
-      fontSize: 16,
+      fontSize: 18,
       fontWeight: 'bold',
-      marginTop: 16,
+      marginTop: 20,
       marginBottom: 8,
     },
   textBox: {
@@ -45,7 +45,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginTop: 8,
-    marginBottom: 16,
   },
   imageBox: {
     width: 115,

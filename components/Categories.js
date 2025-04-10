@@ -36,10 +36,10 @@ const Categories = ({ types, tags }) => {
 
 const styles = StyleSheet.create({
   container: {
-    marginBottom: 16,
+    marginTop: 16,
   },
   title: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
   },
