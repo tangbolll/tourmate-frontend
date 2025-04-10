@@ -3,12 +3,14 @@ import { SafeAreaView, ScrollView } from 'react-native';
 import EventHeader from '../components/EventHeader';
 import EventSchedule from '../components/EventSchedule';
 import Comment from '../components/Comment';
+import Reply from '../components/Reply';
 import Intro from '../components/Intro';
 import GatheringPlace from '../components/GatheringPlace';
 import Conditions from '../components/Conditions';
 import Categories from '../components/Categories';
 import WriteComment from '../components/WriteComment';
 import ApplicationButton from '../components/ApplicationButton';
+
 
 
 export default function App() {
@@ -46,32 +48,21 @@ export default function App() {
             types={["아웃도어", "축제", "힐링여행"]} 
             tags={["자유로운", "낚시대결", "활기찬사람", "회떠먹기"]} 
         />
-        {/* <Comment 
-            comments={[
-                {
-                    profileImage: "https://example.com/profile1.jpg",
-                    nickname: "주리를틀어라",
-                    time: "1시간 전",
-                    content: "안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?",
-                    onReplyPress: () => console.log("답글 클릭"),
-                    depth: 0 
-                }
-                {
-                    profileImage: "https://example.com/profile2.jpg",
-                    nickname: "여라미",
-                    time: "30분 전",
-                    content: "넹! 서휘경이랑 같이 가요~",
-                    onReplyPress: () => console.log("답글 클릭"),
-                    depth: 1
-                }
-            ]}
-        /> */}
 
         <Comment 
             profileImage="https://example.com/profile1.jpg" 
+            Id={1}
             nickname="주리를틀어라" 
             time="1시간 전" 
             content="안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?"
+            onReplyPress={() => console.log("답글 클릭")}
+        />
+        <Reply
+            profileImage="https://example.com/profile2.jpg" 
+            Id={2}
+            nickname="여라미" 
+            time="30분 전" 
+            content="넹! 서휘경이랑 같이 가요~"
             onReplyPress={() => console.log("답글 클릭")}
         />
 
