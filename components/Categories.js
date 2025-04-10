@@ -20,14 +20,16 @@ const Categories = ({ types, tags }) => {
       </View>
 
       {/* 태그 */}
-      <View style={styles.row}>
-        <Text style={styles.label}>태그</Text>
-        <View style={styles.chipContainer}>
-          {tags.map((tag, index) => (
-            <View key={index} style={styles.chip}>
-              <Text style={styles.chipText}>{tag}</Text>
-            </View>
-          ))}
+      <View style={styles.tagSection}>
+        <View style={styles.row}>
+          <Text style={styles.label}>태그</Text>
+          <View style={styles.chipContainer}>
+            {tags.map((tag, index) => (
+              <View key={index} style={styles.chip}>
+                <Text style={styles.chipText}>{tag}</Text>
+              </View>
+            ))}
+          </View>
         </View>
       </View>
     </View>
@@ -41,21 +43,29 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   row: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  tagSection: {
     marginBottom: 8,
   },
   label: {
     fontSize: 16,
     fontWeight: '500',
-    marginRight: 12,
+    marginTop: 6,
+    marginLeft: 16,
+    marginRight: 0,
+    width: 40, // 라벨의 고정 너비를 설정하여 정렬을 맞춤
   },
   chipContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    flex: 1,
+    paddingLeft: 0, // 첫 줄은 패딩 없음
   },
   chip: {
     borderWidth: 1,
@@ -64,6 +74,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
     paddingHorizontal: 12,
     marginRight: 8,
+    marginBottom: 8, // 칩 사이에 아래 여백 추가
   },
   chipText: {
     fontSize: 14,

@@ -8,7 +8,6 @@ const ApplicationButton = ({ title = "동행 신청", likes = 0, onPress }) => {
       <TouchableOpacity style={styles.button} onPress={onPress}>
         <Text style={styles.buttonText}>{title}</Text>
       </TouchableOpacity>
-
       {/* 하트 + 숫자 (작고 위에 위치) */}
       <View style={styles.likesContainer}>
         <View style={styles.iconWrapper}>
@@ -22,10 +21,11 @@ const ApplicationButton = ({ title = "동행 신청", likes = 0, onPress }) => {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
 
+    // ✅ 상단 그림자만
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
@@ -33,22 +33,19 @@ const styles = StyleSheet.create({
     elevation: 5,
 
     backgroundColor: '#fff',
-    paddingHorizontal: 16, 
+    paddingHorizontal: 16,
     paddingVertical: 12,
   },
   button: {
     flex: 1,
     backgroundColor: 'black',
-    paddingVertical: 14,
+    paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 1,
-    shadowRadius: 2,
   },
   buttonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   likesContainer: {
@@ -73,5 +70,3 @@ const styles = StyleSheet.create({
 });
 
 export default ApplicationButton;
-
-

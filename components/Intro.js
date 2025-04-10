@@ -27,7 +27,7 @@ const styles = StyleSheet.create({
       fontSize: 18,
       fontWeight: 'bold',
       marginTop: 20,
-      marginBottom: 8,
+      marginBottom: 12,
     },
   textBox: {
     backgroundColor: '#F8F8F8',
