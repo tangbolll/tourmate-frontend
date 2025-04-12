@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/Feather';
 
 const EventHeader = ({
@@ -7,7 +7,8 @@ const EventHeader = ({
     location = '강원도 화천',
     participantsCurrent = 3,
     participantsTotal = 5,
-    newApplication = false, // ← 새로운 동행 신청 여부
+    newApplication = false,
+    onParticipantsClick
     }) => {
     return (
         <HeaderWrapper>
@@ -17,18 +18,24 @@ const EventHeader = ({
 
             {/* 위치 및 인원 정보 */}
             <View style={styles.infoRow}>
-            <Icon name="map-pin" size={16} color="black" style={styles.icon} />
-            <Text style={styles.infoText}>{location}</Text>
+                <Icon name="map-pin" size={14} color="black" style={styles.icon} />
+                <Text style={styles.infoText}>{location}</Text>
 
-            <Icon name="user" size={16} color="black" style={[styles.icon, { marginLeft: 12 }]} />
-            <Text style={styles.infoText}>
-                {participantsCurrent}명 / {participantsTotal}명
-            </Text>
+                <TouchableOpacity 
+                    style={styles.participantsContainer} 
+                    onPress={onParticipantsClick}
+                    activeOpacity={0.7}
+                >
+                    <Icon name="user" size={14} color="black" style={[styles.icon, { marginLeft: 12 }]} />
+                    <Text style={styles.infoText}>
+                        {participantsCurrent}명 / {participantsTotal}명
+                    </Text>
 
-            {/* 새로운 신청이 있을 때만 빨간 점 표시 */}
-            {newApplication && (
-                <View style={styles.redDot} />
-            )}
+                    {/* 새로운 신청이 있을 때만 빨간 점 표시 */}
+                    {newApplication && (
+                        <View style={styles.redDot} />
+                    )}
+                </TouchableOpacity>
             </View>
         </View>
         </HeaderWrapper>
@@ -41,16 +48,16 @@ function HeaderWrapper({ children }) {
             {children}
         </View>
     );
-    }
+}
 
-    const HeaderWrapperStyles = StyleSheet.create({
+const HeaderWrapperStyles = StyleSheet.create({
     container: {
         width: '80%',
         alignSelf: 'center',
         marginTop: 0,       // 위쪽 여백
         marginBottom: 22,   // 아래쪽 여백
         borderWidth: 0,     // 테두리 없이 그림자로 표현
-        padding: 16,        // 내부 여백 (텍스트와 테두리 사이 간격)
+        padding: 12,        // 내부 여백 (텍스트와 테두리 사이 간격)
         borderRadius: 20,
         backgroundColor: 'white',
         shadowOffset: { width: 0, height: 4 },
@@ -62,6 +69,7 @@ function HeaderWrapper({ children }) {
 const styles = StyleSheet.create({
     container: {
         alignItems: 'center',
+        padding: 0,
     },
     title: {
         fontSize: 18,
@@ -81,6 +89,12 @@ const styles = StyleSheet.create({
     },
     icon: {
         marginRight: 4,
+    },
+    participantsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 4,
+        paddingHorizontal: 2,
     },
     redDot: {
         width: 8,
