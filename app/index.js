@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { SafeAreaView, ScrollView, View, StyleSheet } from 'react-native';
+import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
 import EventHeader from '../components/EventHeader';
 import EventSchedule from '../components/EventSchedule';
 import Comment from '../components/Comment';
@@ -11,18 +11,53 @@ import Categories from '../components/Categories';
 import WriteComment from '../components/WriteComment';
 import ApplicationButton from '../components/ApplicationButton';
 import AlarmPopup from '../components/AlarmPopup';
+import MemberPopup from '../components/MemberPopup';
 
 export default function App() {
-    const [showPopup, setShowPopup] = useState(false);
+    const [showAlarmPopup, setShowAlarmPopup] = useState(false);
+    const [showMemberPopup, setShowMemberPopup] = useState(false);
 
     const handleApplicationPress = () => {
         console.log("신청하기 버튼 클릭");
-        setShowPopup(true);
+        setShowAlarmPopup(true);
     };
 
-    const handleClosePopup = () => {
-        setShowPopup(false);
+    const handleCloseAlarmPopup = () => {
+        setShowAlarmPopup(false);
     };
+
+    const handleParticipantsClick = () => {
+        setShowMemberPopup(true);
+    };
+
+    const handleCloseMemberPopup = () => {
+        setShowMemberPopup(false);
+    };
+
+    // 멤버 데이터
+    const members = [
+        {
+            name: '여라미',
+            gender: '여',
+            age: '22',
+            isHost: true,
+            tags: ['즉흥적인 계획가', '유적지 탐방']
+        },
+        {
+            name: '지백',
+            gender: '여',
+            age: '24',
+            isHost: false,
+            tags: ['무계획여행', '맛집탐방', '호캉스']
+        },
+        {
+            name: '주리를틀어라',
+            gender: '여',
+            age: '21',
+            isHost: false,
+            tags: ['활기찬 탐험가', '맛집탐방', '국토순례']
+        }
+    ];
 
     return (
         <SafeAreaView style={{ flex: 1 }}>
@@ -33,7 +68,8 @@ export default function App() {
                 <EventHeader 
                     location="강원도 화천" 
                     participantsCurrent={3} 
-                    participantsTotal={5} 
+                    participantsTotal={5}
+                    onParticipantsClick={handleParticipantsClick}
                 />
                 <EventSchedule 
                     eventDate="3월4일(월)"
@@ -56,29 +92,8 @@ export default function App() {
                     types={["아웃도어", "축제", "힐링여행"]} 
                     tags={["자유로운", "낚시대결", "활기찬사람", "회떠먹기"]} 
                 />
-                {/* <Comment 
-                    comments={[
-                        {
-                            profileImage: "https://example.com/profile1.jpg",
-                            nickname: "주리를틀어라",
-                            time: "1시간 전",
-                            content: "안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?",
-                            onReplyPress: () => console.log("답글 클릭"),
-                            depth: 0 
-                        }
-                        {
-                            profileImage: "https://example.com/profile2.jpg",
-                            nickname: "여라미",
-                            time: "30분 전",
-                            content: "넹! 서휘경이랑 같이 가요~",
-                            onReplyPress: () => console.log("답글 클릭"),
-                            depth: 1
-                        }
-                    ]}
-                /> */}
 
                 <Comment 
-                    // profileImage="https://example.com/profile1.jpg" 
                     nickname="나는야서휘경" 
                     time="1시간 전" 
                     content="안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?"
@@ -100,13 +115,19 @@ export default function App() {
                 likes={122}
             />
             
-            {showPopup && (
+            {showAlarmPopup && (
                 <AlarmPopup 
-                    alarmText="동행 신청이 완료되었습니다.
-호스트에 의해 동행이 수락 또는 거절되면
-알림이 발송됩니다.
-신청한 동행은 수락 전까지 취소할 수 있습니다."
-                    onClose={handleClosePopup} 
+                    alarmText="동행을 신청하였습니다.
+호스트에 의해 동행이 수락 또는 거절되면 알림이 발송됩니다.
+신청한 동행은 취소할 수 있습니다."
+                    onClose={handleCloseAlarmPopup} 
+                />
+            )}
+            
+            {showMemberPopup && (
+                <MemberPopup 
+                    members={members}
+                    onClose={handleCloseMemberPopup}
                 />
             )}
         </SafeAreaView>
@@ -123,6 +144,6 @@ const styles = StyleSheet.create({
     },
     scrollContent: {
         padding: 16,
-        paddingBottom: 80, // 버튼 영역만큼 여유!
+        paddingBottom: 80,
     },
 });
