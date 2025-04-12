@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         borderRadius: 20,
         overflow: 'hidden',
-        paddinng: 12,
+        padding: 12,
     },
     header: {
         flexDirection: 'row',
