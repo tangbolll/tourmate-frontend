@@ -16,9 +16,11 @@ import MemberPopup from '../components/MemberPopup';
 export default function App() {
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showMemberPopup, setShowMemberPopup] = useState(false);
+    const [applied, setApplied] = useState(false);
 
     const handleApplicationPress = () => {
         console.log("신청하기 버튼 클릭");
+        setApplied((prev) => !prev);
         setShowAlarmPopup(true);
     };
 
@@ -94,6 +96,7 @@ export default function App() {
                 />
 
                 <Comment 
+                    profileImage="https://example.com/profile1.jpg"
                     nickname="나는야서휘경" 
                     time="1시간 전" 
                     content="안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?"
@@ -111,6 +114,7 @@ export default function App() {
             </ScrollView>
             
             <ApplicationButton
+                title={applied ? "동행 취소" : "동행 신청"}
                 onPress={handleApplicationPress}
                 likes={122}
             />
@@ -118,8 +122,8 @@ export default function App() {
             {showAlarmPopup && (
                 <AlarmPopup 
                     alarmText="동행을 신청하였습니다.
-호스트에 의해 동행이 수락 또는 거절되면 알림이 발송됩니다.
-신청한 동행은 취소할 수 있습니다."
+                    호스트에 의해 동행이 수락 또는 거절되면 알림이 발송됩니다.
+                    신청한 동행은 취소할 수 있습니다."
                     onClose={handleCloseAlarmPopup} 
                 />
             )}

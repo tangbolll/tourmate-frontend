@@ -1,338 +1,212 @@
 import React, { useState } from 'react';
-import { 
-    View, 
-    Text, 
-    StyleSheet, 
-    TouchableOpacity, 
-    ScrollView, 
-    Image,
-    SafeAreaView 
-} from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
+import EventHeader from '../components/EventHeader';
+import EventSchedule from '../components/EventSchedule';
+import Comment from '../components/Comment';
+import Reply from '../components/Reply';
+import Intro from '../components/Intro';
+import GatheringPlace from '../components/GatheringPlace';
+import Conditions from '../components/Conditions';
+import Categories from '../components/Categories';
+import WriteComment from '../components/WriteComment';
+import ApplicationButton from '../components/ApplicationButton';
+import AccompanyCloseButton from '../components/AccompanyCloseButton';
+import AlarmPopup from '../components/AlarmPopup';
+import Member from '../components/Member';
+import MemberPopup from '../components/MemberPopup';
 
-const AccompanyManagement = ({ navigation }) => {
-    const [likeCount, setLikeCount] = useState(122);
-    const [isLiked, setIsLiked] = useState(false);
+export default function App() {
+    const [isHost, setIsHost] = useState(false); //  호스트인지 구분
+    const [showAlarmPopup, setShowAlarmPopup] = useState(false);
+    const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
+    const [closed, setClosed] = useState(false); // 모집 마감 상태
+    const [showMemberPopupGuest, setShowMemberPopupGuest] = useState(false); // 게스트용 팝업
+    const [showMemberPopupHost, setShowMemberPopupHost] = useState(false); // 호스트용 팝업
+    const [applied, setApplied] = useState(false);  // 동행 신청 상태
 
-    // 동행 신청자 데이터
-    const applicants = [
-        { 
-        id: 1,
-        nickname: '서휘경',
-        gender: '여', 
-        age: 20, 
-        hashtags: '#안녕하세요 #졸려 #이것만하구자야디'
-        },
-        { 
-        id: 2,
-        nickname: '김태뿌지직',
-        gender: '여', 
-        age: 58, 
-        hashtags: '#가스주의 #냄새주의 #나의방구냄새견딜수있는사람만수락해'
-        },
-        { 
-        id: 3,
-        nickname: '김윤서',
-        gender: '여', 
-        age: 20, 
-        hashtags: '#기획팀멋져요 #파이팅'
-        },
-        { 
-        id: 4,
-        nickname: '김서연',
-        gender: '여', 
-        age: 20, 
-        hashtags: '#관광 #21 #가지가지'
-        },
-        { 
-        id: 5,
-        nickname: '김민수',
-        gender: '여', 
-        age: 21, 
-        hashtags: '#백엔드는 #잘 #되어가시나요'
-        }
-    ];
-
-    // 동행 목록 데이터
-    const companions = [
-        { 
-        id: 1,
-        nickname: '여라미',
-        gender: '여', 
-        age: 22, 
-        hashtags: '#즉흥적인 계획가 #맛집탐방',
-        isHost: true
-        },
-        { 
-        id: 2,
-        nickname: '지백',
-        gender: '여', 
-        age: 24, 
-        hashtags: '#무계획여행 #맛집탐방 #호캉스'
-        },
-        { 
-        id: 3,
-        nickname: '주리를틀어라',
-        gender: '여', 
-        age: 21, 
-        hashtags: '#활기찬 탐방가 #맛집탐방 #국토순례'
-        }
-    ];
-
-    // 좋아요 토글
-    const toggleLike = () => {
-        if (isLiked) {
-        setLikeCount(likeCount - 1);
-        } else {
-        setLikeCount(likeCount + 1);
-        }
-        setIsLiked(!isLiked);
+    const handleApplicationPress = () => {
+        console.log("신청하기 버튼 클릭");
+        setApplied((prev) => !prev);
+        setShowAlarmPopup(true);
     };
 
-    // 신청자 렌더링
-    const renderApplicant = (applicant) => (
-        <View key={applicant.id} style={styles.memberRow}>
-        <View style={styles.profileSection}>
-            <Image 
-            source={require('../assets/defaultProfile.png')} 
-            style={styles.profileImage} 
-            defaultSource={require('../assets/defaultProfile.png')}
-            />
-            <View style={styles.userInfo}>
-            <View style={styles.nameRow}>
-                <Text style={styles.nickname}>{applicant.nickname}</Text>
-                <Text style={styles.genderAge}> · {applicant.gender} · {applicant.age}세</Text>
-            </View>
-            <Text style={styles.hashtags}>{applicant.hashtags}</Text>
-            </View>
-        </View>
-        
-        <View style={styles.actionButtons}>
-            <TouchableOpacity style={applicant.id === 1 ? styles.acceptButtonGray : styles.acceptButton}>
-            <Text style={applicant.id === 1 ? styles.acceptTextGray : styles.acceptText}>수락</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.rejectButton}>
-            <Text style={styles.rejectText}>거절</Text>
-            </TouchableOpacity>
-        </View>
-        </View>
-    );
+    const handleCloseAlarmPopup = () => {
+        setShowAlarmPopup(false);
+    };
 
-    // 동행 목록 렌더링
-    const renderCompanion = (companion) => (
-        <View key={companion.id} style={styles.memberRow}>
-        <View style={styles.profileSection}>
-            <Image 
-            source={require('../assets/defaultProfile.png')} 
-            style={styles.profileImage} 
-            defaultSource={require('../assets/defaultProfile.png')}
-            />
-            <View style={styles.userInfo}>
-            <View style={styles.nameRow}>
-                <Text style={styles.nickname}>{companion.nickname}</Text>
-                <Text style={styles.genderAge}> · {companion.gender} · {companion.age}세</Text>
-                {companion.id === 1 && <Text style={styles.hostTag}>호스트</Text>}
-            </View>
-            <Text style={styles.hashtags}>{companion.hashtags}</Text>
-            </View>
-        </View>
-        </View>
-    );
+    const handleParticipantsClick = () => {
+        if (isHost) {
+            setShowMemberPopupHost(true);
+        } else {
+            setShowMemberPopupGuest(true);
+        }
+    };
+
+    const handleCloseMemberPopup = () => {
+        setShowMemberPopupGuest(false);
+        setShowMemberPopupHost(false);
+    };
+
+    const handleClosedPress = () => {
+        setShowAlarmPopupHost(true); // ✅ 호스트가 마감 버튼 누름 → 예/아니오 팝업
+    };
+
+    const handleCloseAlarmPopupHost = () => {
+        setShowAlarmPopupHost(false);
+    };
+
+    const handleConfirmClose = () => {
+        setClosed(true); // ✅ 마감 상태 처리
+        setShowAlarmPopupHost(false);
+    };
+
+    // 멤버 데이터
+    const members = [
+        {
+            name: '여라미',
+            gender: '여',
+            age: '22',
+            isHost: true,
+            tags: ['즉흥적인 계획가', '유적지 탐방']
+        },
+        {
+            name: '지백',
+            gender: '여',
+            age: '24',
+            isHost: false,
+            tags: ['무계획여행', '맛집탐방', '호캉스']
+        },
+        {
+            name: '주리를틀어라',
+            gender: '여',
+            age: '21',
+            isHost: false,
+            tags: ['활기찬 탐험가', '맛집탐방', '국토순례']
+        }
+    ];
 
     return (
-        <SafeAreaView style={styles.container}>
-        {/* 헤더 */}
-        <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="black" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>동행 관리</Text>
-            <View style={{width: 24}} />
-        </View>
+        <SafeAreaView style={{ flex: 1 }}>
+            <ScrollView 
+                style={{ flex: 1 }} 
+                contentContainerStyle={{ padding: 16 }}
+            >
+                <EventHeader 
+                    location="강원도 화천" 
+                    participantsCurrent={3} 
+                    participantsTotal={5}
+                    onParticipantsClick={handleParticipantsClick}
+                />
+                <EventSchedule 
+                    eventDate="3월4일(월)"
+                    eventTimeStart="15:00"
+                    eventTimeEnd="19:00"
+                    recruitStart="3월1일(금)"
+                    recruitEnd="3월3일(일)"
+                />
+                <Intro
+                    message="화천 산천어 축제 함께 갈 메이트 구해요. 얼음낚시부터 눈썰매, 다양한 먹거리까지 같이 즐겁게 겨울을 보내요! ⛄️❄️"
+                />
+                <GatheringPlace
+                    location={"강원도 화천 산천어 축제"}
+                />    
+                <Conditions 
+                    gender="여자만" 
+                    ageGroups={["20대", "30대"]} 
+                />
+                <Categories
+                    types={["아웃도어", "축제", "힐링여행"]} 
+                    tags={["자유로운", "낚시대결", "활기찬사람", "회떠먹기"]} 
+                />
 
-        <ScrollView>
-            {/* 동행 신청 섹션 */}
-            <View style={styles.section}>
-            <Text style={styles.sectionTitle}>동행 신청 <Text style={styles.countText}>5건</Text></Text>
-            
-            {applicants.map(applicant => renderApplicant(applicant))}
-            </View>
+                <Comment 
+                    nickname="나는야서휘경" 
+                    time="1시간 전" 
+                    content="안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?"
+                    onReplyPress={() => console.log("답글 클릭")}
+                />
+                <Reply
+                    profileImage="https://example.com/profile2.jpg" 
+                    nickname="여라미" 
+                    time="30분 전" 
+                    content="넹! 서휘경이랑 같이 가요~"
+                    onReplyPress={() => console.log("답글 클릭")}
+                />
 
-            {/* 동행 목록 섹션 */}
-            <View style={styles.section}>
-            <Text style={styles.sectionTitle}>동행 목록 <Text style={styles.countText}>3명 / 5명</Text></Text>
+                <WriteComment onSend={(comment) => console.log("댓글:", comment)} />
+            </ScrollView>
             
-            {companions.map(companion => renderCompanion(companion))}
-            </View>
-        </ScrollView>
+            {/*  게스트 전용 동행 신청/취소 버튼 */}
+            {!isHost && (
+                <ApplicationButton
+                    title={applied ? "동행 취소" : "동행 신청"}
+                    onPress={handleApplicationPress}
+                    likes={122}
+                />
+            )}
+            
+            {/*  호스트 전용 마감 버튼 */}
+            {isHost && (
+                <AccompanyCloseButton
+                    title={closed ? "모집이 마감된 동행입니다." : "모집 마감"}
+                    onPress={handleClosedPress}
+                    likes={122}
+                />
+            )}
 
-        {/* 하단 버튼 영역 */}
-        <View style={styles.footer}>
-            <TouchableOpacity style={styles.recruitButton}>
-            <Text style={styles.recruitButtonText}>모집 마감</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.likeButton} onPress={toggleLike}>
-            <Ionicons 
-                name={isLiked ? "heart" : "heart-outline"} 
-                size={24} 
-                color={isLiked ? "red" : "black"} 
-            />
-            <Text style={styles.likeCount}>{likeCount}</Text>
-            </TouchableOpacity>
-        </View>
+            {/* 게스트용 동행신청 팝업 */}
+            {showAlarmPopup && (
+                <AlarmPopup
+                    alarmText={
+                        applied
+                            ? `동행을 신청하였습니다.\n호스트에 의해 동행이 수락 또는 거절되면 알림이 발송됩니다.\n신청한 동행은 취소할 수 있습니다.`
+                            : `동행 신청이 취소되었습니다.\n다시 신청하시려면 아래 버튼을 눌러주세요.`
+                    }
+                    onClose={handleCloseAlarmPopup}
+                />
+            )}
+
+            {/*  호스트용 동행마감 팝업 */}
+            {showAlarmPopupHost && (
+                <AlarmPopup
+                    alarmText={`동행을 마감하시겠습니까?\n마감된 동행은 다시 되돌릴 수 없습니다.`}
+                    onClose={handleCloseAlarmPopupHost}
+                    onConfirm={handleConfirmClose}
+                    confirmText="네"
+                    cancelText="아니오"
+                    confirmButtonStyle={styles.confirmButton}
+                />
+            )}
+
+            {/*  게스트용 멤버 팝업 */}
+            {showMemberPopupGuest && (
+                <MemberPopup
+                    members={members}
+                    onClose={handleCloseMemberPopup}
+                />
+            )}
+
+            {/*  호스트용 멤버 목록 페이지 */}
+            {showMemberPopupHost && (
+                <MemberPopup 
+                    // 네비게이션 to Member.js
+                />
+            )}
+
         </SafeAreaView>
     );
-};
+}
 
 const styles = StyleSheet.create({
-    container: {
+    safeArea: {
         flex: 1,
         backgroundColor: '#fff',
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 15,
-        paddingHorizontal: 10,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEEEEE',
-    },
-    backButton: {
-        padding: 5,
-    },
-    headerTitle: {
-        fontSize: 20,
-        fontWeight: '600',
-    },
-    section: {
-        paddingTop: 15,
-        paddingBottom: 5,
-    },
-    sectionTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        paddingHorizontal: 15,
-        marginBottom: 10,
-    },
-    countText: {
-        fontSize: 14,
-        fontWeight: 'normal',
-        color: '#666',
-    },
-    memberRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        paddingVertical: 10,
-        paddingHorizontal: 15,
-    },
-    profileSection: {
-        flexDirection: 'row',
-        alignItems: 'center',
+    container: {
         flex: 1,
     },
-    profileImage: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: '#CCCCCC',
+    scrollContent: {
+        padding: 16,
+        paddingBottom: 80,
     },
-    userInfo: {
-        marginLeft: 10,
-        flex: 1,
-    },
-    nameRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    nickname: {
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    genderAge: {
-        fontSize: 14,
-        color: '#666',
-    },
-    hostTag: {
-        fontSize: 12,
-        color: '#666',
-        marginLeft: 5,
-    },
-    hashtags: {
-        fontSize: 12,
-        color: '#666',
-        marginTop: 2,
-    },
-    actionButtons: {
-        flexDirection: 'row',
-    },
-    acceptButton: {
-        backgroundColor: 'black',
-        paddingVertical: 6,
-        paddingHorizontal: 16,
-        borderRadius: 4,
-        marginRight: 5,
-    },
-    acceptButtonGray: {
-        backgroundColor: '#CCCCCC',
-        paddingVertical: 6,
-        paddingHorizontal: 16,
-        borderRadius: 4,
-        marginRight: 5,
-    },
-    acceptText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    acceptTextGray: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    rejectButton: {
-        backgroundColor: 'black',
-        paddingVertical: 6,
-        paddingHorizontal: 16,
-        borderRadius: 4,
-    },
-    rejectText: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    footer: {
-        flexDirection: 'row',
-        borderTopWidth: 1,
-        borderTopColor: '#EEEEEE',
-        padding: 15,
-    },
-    recruitButton: {
-        flex: 1,
-        backgroundColor: 'black',
-        borderRadius: 4,
-        paddingVertical: 15,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    recruitButtonText: {
-        color: 'white',
-        fontSize: 16,
-        fontWeight: '600',
-    },
-    likeButton: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingHorizontal: 15,
-    },
-    likeCount: {
-        fontSize: 14,
-        color: '#666',
-        marginLeft: 5,
-    }
 });
-
-export default AccompanyManagement;
