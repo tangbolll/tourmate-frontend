@@ -12,6 +12,7 @@ export default function AccompanyFeed({
   imageUrl,
   liked,
   onPressLike,
+  onPress,
 }) {
   return (
     <View style={styles.card}>
