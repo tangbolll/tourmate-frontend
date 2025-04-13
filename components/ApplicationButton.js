@@ -1,21 +1,51 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const ApplicationButton = ({ title = "동행 신청", likes = 0, onPress }) => {
+
+const ApplicationButton = ({ 
+  title = "동행 신청", 
+  initialLikes = 0,
+  onPress,
+  onLikePress,
+  closed = false
+}) => {
+  const [likes, setLikes] = useState(initialLikes);
+  const [isLiked, setIsLiked] = useState(false);
+
+  const handleLikePress = () => {
+    const newLikeStatus = !isLiked;
+    setIsLiked(newLikeStatus);
+    setLikes(prevLikes => newLikeStatus ? prevLikes + 1 : prevLikes - 1);
+    
+    if (onLikePress) {
+      onLikePress(newLikeStatus);
+    }
+  };
+
   return (
     <View style={styles.container}>
-      <TouchableOpacity style={styles.button} onPress={onPress}>
+      <TouchableOpacity 
+        style={[styles.button, closed && styles.disabledButton]} 
+        onPress={onPress}
+        disabled={closed}
+      >
         <Text style={styles.buttonText}>{title}</Text>
       </TouchableOpacity>
       
-      {/* 하트 + 숫자 (작고 위에 위치) */}
-      <View style={styles.likesContainer}>
+      <TouchableOpacity 
+        style={styles.likesContainer} 
+        onPress={handleLikePress}
+      >
         <View style={styles.iconWrapper}>
-          <Ionicons name="heart" size={30} color="black" />
           <Text style={styles.likeText}>{likes}</Text>
+          <Ionicons 
+            name={isLiked ? "heart" : "heart-outline"} 
+            size={30} 
+            color={isLiked ? "black" : "black"} 
+          />
         </View>
-      </View>
+      </TouchableOpacity>
     </View>
   );
 };
@@ -25,14 +55,14 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-
+    
     // ✅ 상단 그림자만
     shadowColor: '#000',
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 5,
-
+    
     backgroundColor: '#fff',
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -43,6 +73,9 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  disabledButton: {
+    backgroundColor: '#CCCCCC', // 회색으로 변경
   },
   buttonText: {
     color: 'white',
