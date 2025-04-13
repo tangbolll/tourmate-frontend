@@ -10,13 +10,19 @@ import Conditions from '../components/Conditions';
 import Categories from '../components/Categories';
 import WriteComment from '../components/WriteComment';
 import ApplicationButton from '../components/ApplicationButton';
+import AccompanyCloseButton from '../components/AccompanyCloseButton';
 import AlarmPopup from '../components/AlarmPopup';
+import Member from '../components/Member';
 import MemberPopup from '../components/MemberPopup';
 
 export default function App() {
+    const [isHost, setIsHost] = useState(false); //  호스트인지 구분
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
-    const [showMemberPopup, setShowMemberPopup] = useState(false);
-    const [applied, setApplied] = useState(false);
+    const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
+    const [closed, setClosed] = useState(false); // 모집 마감 상태
+    const [showMemberPopupGuest, setShowMemberPopupGuest] = useState(false); // 게스트용 팝업
+    const [showMemberPopupHost, setShowMemberPopupHost] = useState(false); // 호스트용 팝업
+    const [applied, setApplied] = useState(false);  // 동행 신청 상태
 
     const handleApplicationPress = () => {
         console.log("신청하기 버튼 클릭");
@@ -29,11 +35,29 @@ export default function App() {
     };
 
     const handleParticipantsClick = () => {
-        setShowMemberPopup(true);
+        if (isHost) {
+            setShowMemberPopupHost(true);
+        } else {
+            setShowMemberPopupGuest(true);
+        }
     };
 
     const handleCloseMemberPopup = () => {
-        setShowMemberPopup(false);
+        setShowMemberPopupGuest(false);
+        setShowMemberPopupHost(false);
+    };
+
+    const handleClosedPress = () => {
+        setShowAlarmPopupHost(true); // ✅ 호스트가 마감 버튼 누름 → 예/아니오 팝업
+    };
+
+    const handleCloseAlarmPopupHost = () => {
+        setShowAlarmPopupHost(false);
+    };
+
+    const handleConfirmClose = () => {
+        setClosed(true); // ✅ 마감 상태 처리
+        setShowAlarmPopupHost(false);
     };
 
     // 멤버 데이터
@@ -96,7 +120,6 @@ export default function App() {
                 />
 
                 <Comment 
-                    profileImage="https://example.com/profile1.jpg"
                     nickname="나는야서휘경" 
                     time="1시간 전" 
                     content="안녕하세요~ 궁금한 게 있는데요 서휘경이랑 같이 가는 건가요?"
@@ -113,27 +136,63 @@ export default function App() {
                 <WriteComment onSend={(comment) => console.log("댓글:", comment)} />
             </ScrollView>
             
-            <ApplicationButton
-                title={applied ? "동행 취소" : "동행 신청"}
-                onPress={handleApplicationPress}
-                likes={122}
-            />
-            
-            {showAlarmPopup && (
-                <AlarmPopup 
-                    alarmText="동행을 신청하였습니다.
-                    호스트에 의해 동행이 수락 또는 거절되면 알림이 발송됩니다.
-                    신청한 동행은 취소할 수 있습니다."
-                    onClose={handleCloseAlarmPopup} 
+            {/*  게스트 전용 동행 신청/취소 버튼 */}
+            {!isHost && (
+                <ApplicationButton
+                    title={applied ? "동행 취소" : "동행 신청"}
+                    onPress={handleApplicationPress}
+                    likes={122}
                 />
             )}
             
-            {showMemberPopup && (
-                <MemberPopup 
+            {/*  호스트 전용 마감 버튼 */}
+            {isHost && (
+                <AccompanyCloseButton
+                    title={closed ? "모집이 마감된 동행입니다." : "모집 마감"}
+                    onPress={handleClosedPress}
+                    likes={122}
+                />
+            )}
+
+            {/* 게스트용 동행신청 팝업 */}
+            {showAlarmPopup && (
+                <AlarmPopup
+                    alarmText={
+                        applied
+                            ? `동행을 신청하였습니다.\n호스트에 의해 동행이 수락 또는 거절되면 알림이 발송됩니다.\n신청한 동행은 취소할 수 있습니다.`
+                            : `동행 신청이 취소되었습니다.\n다시 신청하시려면 아래 버튼을 눌러주세요.`
+                    }
+                    onClose={handleCloseAlarmPopup}
+                />
+            )}
+
+            {/*  호스트용 동행마감 팝업 */}
+            {showAlarmPopupHost && (
+                <AlarmPopup
+                    alarmText={`동행을 마감하시겠습니까?\n마감된 동행은 다시 되돌릴 수 없습니다.`}
+                    onClose={handleCloseAlarmPopupHost}
+                    onConfirm={handleConfirmClose}
+                    confirmText="네"
+                    cancelText="아니오"
+                    confirmButtonStyle={styles.confirmButton}
+                />
+            )}
+
+            {/*  게스트용 멤버 팝업 */}
+            {showMemberPopupGuest && (
+                <MemberPopup
                     members={members}
                     onClose={handleCloseMemberPopup}
                 />
             )}
+
+            {/*  호스트용 멤버 목록 페이지 */}
+            {showMemberPopupHost && (
+                <MemberPopup 
+                    // 네비게이션 to Member.js
+                />
+            )}
+
         </SafeAreaView>
     );
 }
