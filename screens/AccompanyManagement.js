@@ -25,10 +25,10 @@ const AccompanyManagement = ({ navigation }) => {
         },
         { 
         id: 2,
-        nickname: '김태뿌지직',
+        nickname: '김태연',
         gender: '여', 
-        age: 58, 
-        hashtags: '#가스주의 #냄새주의 #나의방구냄새견딜수있는사람만수락해'
+        age: 20, 
+        hashtags: '#김태뿌지직 #아닙니다 #방구쟁이아닙니다'
         },
         { 
         id: 3,

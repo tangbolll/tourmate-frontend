@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
-const ApplicationButton = ({ title = "동행 신청", likes = 0, onPress }) => {
+const ApplicationButton = ({ title = "모집 마감", likes = 0, onPress }) => {
   return (
     <View style={styles.container}>
       <TouchableOpacity style={styles.button} onPress={onPress}>
