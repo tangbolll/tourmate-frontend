@@ -16,7 +16,7 @@ import Member from '../components/Member';
 import MemberPopup from '../components/MemberPopup';
 
 export default function App() {
-    const [isHost, setIsHost] = useState(false); //  호스트인지 구분
+    const [isHost] = useState(false); //  호스트인지 구분
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
     const [closed, setClosed] = useState(false); // 모집 마감 상태
