@@ -38,6 +38,7 @@ export default function BottomBar({ currentTab, onTabPress }) {
 
 const styles = StyleSheet.create({
     container: {
+        paddingHorizontal: 8,
         flexDirection: 'row',
         height: 70,
         backgroundColor: '#fff',
