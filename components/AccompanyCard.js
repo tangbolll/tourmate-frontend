@@ -6,13 +6,12 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 const defaultImage = require('../assets/defaultBackground.png');
 
 export default function AccompanyCard({
-  type = '버디',
-  date = '03.01 ~ 03.05',
-  title = '홍천 산천어 축제에서 놀아요',
-  location = '홍천',
+  date,
+  title,
+  location,
   imageUrl,
   onPress,
-  buttonLabel = '승인',
+  buttonLabel,
 }) 
 
 {
@@ -27,7 +26,6 @@ export default function AccompanyCard({
         <View style={styles.overlay}>
           {/* 상단 정보 */}
           <View style={styles.topRow}>
-            <Text style={styles.tag}>{type}</Text>
             <Text style={styles.date}>{date}</Text>
           </View>
 
