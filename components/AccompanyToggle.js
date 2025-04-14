@@ -7,7 +7,7 @@ const AccompanyToggle = ({ isExpanded, onToggle }) => {
     <TouchableOpacity style={styles.container} onPress={onToggle}>
       <Text style={styles.label}>동행 상태</Text>
       <Icon
-        name={isExpanded ? 'keyboard-arrow-up' : 'keyboard-arrow-down'}
+        name={isExpanded ? 'keyboard-arrow-down' : 'keyboard-arrow-up'}
         size={24}
       />
     </TouchableOpacity>
