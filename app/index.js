@@ -8,8 +8,10 @@ import AccompanyFeed from '../components/AccompanyFeed';
 import BottomBar from '../components/BottomBar'; 
 import CreateAccompanyButton from '../components/CreateAccompanyButton';
 
-const [searchText, setSearchText] = useState('');
-const [selectedTab, setSelectedTab] = useState('feed');
+const AccompanyList = ({ navigation }) => {
+    const [searchText, setSearchText] = useState('');
+    const [selectedTab, setSelectedTab] = useState('feed');
+    const [showCards, setShowCards] = useState(true);
 
 const cardData = [
     {
@@ -40,10 +42,6 @@ const cardData = [
         buttonLabel: "승인",
     },
 ];
-
-    // navigation prop을 받도록 수정
-const AccompanyList = ({ navigation }) => {
-    const [showCards, setShowCards] = useState(true);
     return (
             <SafeAreaView style={styles.container}>
             <ScrollView>
@@ -100,7 +98,6 @@ const AccompanyList = ({ navigation }) => {
                 onPressLike={() => console.log('찜 눌림')}
                 onPress={() => navigation.navigate('AccompanyPost', {
                 postId: '1',
-                title: '공주 공산성에서 야경 같이 즐겨요',
                 })}
             />
             ) : (
@@ -119,28 +116,16 @@ const AccompanyList = ({ navigation }) => {
             )}
 
 
-            <AccompanyFeed
-            date="03.04 월"
-            title="공주 공산성에서 야경 같이 즐겨요"
-            tags={['야경', '여자만', '저녁식사', '걷기']}
-            location="공주"
-            participants={2}
-            maxParticipants={3}
-            imageUrl="https://your-image-url.com/image.jpg"
-            liked={true}
-            onPressLike={() => console.log('찜 눌림')}
-            // 피드 클릭 시 AccompanyPost 화면으로 이동하는 onPress 함수 추가
-            onPress={() => navigation.navigate('AccompanyPost', { 
-                // 필요한 데이터를 파라미터로 전달
-                postId: '1', 
-                title: '공주 공산성에서 야경 같이 즐겨요',
-            })}
-            />
-
-            <CreateAccompanyButton onPress={() => console.log('동행 생성')} />
-
         </ScrollView>
-        <BottomBar currentTab="accompany" onTabPress={(tab) => console.log(tab)} />
+        <TouchableOpacity
+      style={styles.floatingButton}
+      onPress={() => console.log('동행 생성')}
+    >
+      <CreateAccompanyButton />
+    </TouchableOpacity>
+    <View style={styles.bottomBarContainer}>
+      <BottomBar currentTab="accompany" onTabPress={(tab) => console.log(tab)} />
+    </View>
         </SafeAreaView>
     );
 };
@@ -150,9 +135,22 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
-    cardRow: {
-        paddingHorizontal: 16,
-        marginTop: 12,
+      floatingButton: {
+        position: 'absolute',
+        bottom: 90, // BottomBar와 간격
+        right: 20,
+        zIndex: 10,
+      },
+      bottomBarContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff', // 또는 앱 테마 색상
+        borderTopWidth: 1,
+        borderTopColor: '#eee',
+        paddingBottom: 10,
+        paddingTop: 6,
       },
 });
 
