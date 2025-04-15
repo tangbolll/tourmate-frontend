@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 // default profile image
 const defaultProfile = require('../assets/defaultProfile.png');
 
-const Comment = ({ profileImage, nickname, time, content, onReplyPress }) => {
+const Comment = ({ profileImage, nickname, time, content, onReplyPress, isHost }) => {
     // 이미지 source 설정
     const profileSrc = profileImage
         ? { uri: profileImage }
@@ -14,7 +14,7 @@ const Comment = ({ profileImage, nickname, time, content, onReplyPress }) => {
         <View>
             {/* 타이틀 */}
             <View style={styles.divider} />
-            {<Text style={styles.title}> 코멘트</Text>}
+            <Text style={styles.title}> 코멘트</Text>
 
             {/* 댓글 */}
             <View style={styles.container}>
@@ -32,6 +32,7 @@ const Comment = ({ profileImage, nickname, time, content, onReplyPress }) => {
                         <TouchableOpacity onPress={onReplyPress}>
                             <Text style={styles.replyText}>답글</Text>
                         </TouchableOpacity>
+                        {isHost && <Text style={styles.hostLabel}>호스트</Text>}
                     </View>
                     <Text style={styles.contentText}>{content}</Text>
                 </View>
@@ -43,7 +44,7 @@ const Comment = ({ profileImage, nickname, time, content, onReplyPress }) => {
 const styles = StyleSheet.create({
     divider: {
         borderBottomWidth: 1,
-        borderBottomColor: '#E5E7EB', // 얇은 회색 라인
+        borderBottomColor: '#E5E7EB',
         marginTop: 12,
         marginBottom: 4,
     },
@@ -70,6 +71,7 @@ const styles = StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
+        flexWrap: 'wrap',
         marginBottom: 4,
     },
     nickname: {
@@ -86,6 +88,16 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6B7280',
         textDecorationLine: 'underline',
+        marginRight: 6,
+    },
+    hostLabel: {
+        fontSize: 10,
+        backgroundColor: '#E5E7EB',
+        color: '#000',
+        marginLeft: 6,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 10,
     },
     contentText: {
         fontSize: 14,

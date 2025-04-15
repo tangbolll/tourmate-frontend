@@ -4,47 +4,53 @@ import { Feather } from '@expo/vector-icons';
 
 const MemberPopup = ({ members, onClose }) => {
     const currentMembers = members.length;
-    const totalMembers = 5; // 최대 인원 수
+    const totalMembers = 5;
 
     return (
         <View style={styles.overlay}>
-        <View style={styles.container}>
-            <View style={styles.header}>
-            <Text style={styles.title}>동행 목록</Text>
-            <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                <Feather name="x" size={24} color="black" />
-            </TouchableOpacity>
-            </View>
+            <View style={styles.container}>
+                {/* 헤더 */}
+                <View style={styles.header}>
+                    <Text style={styles.title}>동행 목록</Text>
+                    <TouchableOpacity onPress={onClose} style={styles.closeButton}>
+                        <Feather name="x" size={24} color="black" />
+                    </TouchableOpacity>
+                </View>
 
-            <View style={styles.participantsCount}>
-            <Feather name="users" size={12} color="black" />
-            <Text style={styles.countText}>{currentMembers}명 / {totalMembers}명</Text>
-            </View>
+                {/* 인원 수 */}
+                <View style={styles.participantsCount}>
+                    <Feather name="users" size={12} color="black" />
+                    <Text style={styles.countText}>{currentMembers}명 / {totalMembers}명</Text>
+                </View>
 
-            <ScrollView style={styles.membersList}>
-            {members.map((member, index) => (
-                <View key={index} style={styles.memberItem}>
-                <Image 
-                    source={require('../assets/defaultProfile.png')} 
-                    style={styles.profileImage}
-                    defaultSource={require('../assets/defaultProfile.png')}
-                />
-                <View style={styles.memberInfoContainer}>
-                    <View style={styles.memberInfo}>
-                    <Text style={styles.memberName}>{member.name}</Text>
-                    <Text style={styles.memberDetail}> · {member.gender} · {member.age}세</Text>
-                    {member.isHost && <Text style={styles.hostLabel}>호스트</Text>}
-                    </View>
-                    <View style={styles.tagContainer}>
-                    {member.tags.map((tag, tagIndex) => (
-                        <Text key={tagIndex} style={styles.tag}>#{tag}</Text>
+                {/* 멤버 리스트 */}
+                <ScrollView 
+                    style={styles.membersList} 
+                    contentContainerStyle={styles.membersListContent}
+                >
+                    {members.map((member, index) => (
+                        <View key={index} style={styles.memberItem}>
+                            <Image 
+                                source={require('../assets/defaultProfile.png')} 
+                                style={styles.profileImage}
+                                defaultSource={require('../assets/defaultProfile.png')}
+                            />
+                            <View style={styles.memberInfoContainer}>
+                                <View style={styles.memberInfo}>
+                                    <Text style={styles.memberName}>{member.name}</Text>
+                                    <Text style={styles.memberDetail}> · {member.gender} · {member.age}세</Text>
+                                    {member.isHost && <Text style={styles.hostLabel}>호스트</Text>}
+                                </View>
+                                <View style={styles.tagContainer}>
+                                    {member.tags.map((tag, tagIndex) => (
+                                        <Text key={tagIndex} style={styles.tag}>#{tag}</Text>
+                                    ))}
+                                </View>
+                            </View>
+                        </View>
                     ))}
-                    </View>
-                </View>
-                </View>
-            ))}
-            </ScrollView>
-        </View>
+                </ScrollView>
+            </View>
         </View>
     );
 };
@@ -75,8 +81,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 16,
         paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEEEEE',
         position: 'relative',
     },
     title: {
@@ -94,8 +98,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEEEEE',
     },
     countText: {
         fontSize: 12,
@@ -104,12 +106,14 @@ const styles = StyleSheet.create({
     },
     membersList: {
         paddingHorizontal: 16,
+        maxHeight: 320,
+    },
+    membersListContent: {
+        paddingBottom: 12,
     },
     memberItem: {
         flexDirection: 'row',
-        paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#EEEEEE',
+        paddingVertical: 12,
     },
     profileImage: {
         width: 40,
@@ -126,6 +130,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 4,
+        flexWrap: 'wrap',
     },
     memberName: {
         fontSize: 16,
