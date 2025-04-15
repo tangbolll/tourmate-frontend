@@ -2,6 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
+// default image for the feed
+const defaultImage = require('../assets/defaultFeed.png');
+
 export default function AccompanyFeed({
   date,
   title,
@@ -13,7 +16,8 @@ export default function AccompanyFeed({
   liked,
   onPressLike,
   onPress,
-}) {
+}) 
+{
   return (
     <View style={styles.card}>
       <View style={styles.header}>
@@ -37,9 +41,12 @@ export default function AccompanyFeed({
       </View>
 
       <View style={styles.imageContainer}>
-        <Image source={{ uri: imageUrl }} style={styles.image} />
+        <Image
+                source={imageUrl ? { uri: imageUrl } : defaultImage}
+                style={styles.image}
+                ></Image>
         <TouchableOpacity onPress={onPressLike} style={styles.heartIcon}>
-          <Icon name={liked ? 'heart' : 'heart-outline'} size={24} color="red" />
+        <Icon name="heart" size={30} color={liked ? 'red' : 'lightgray'} />
         </TouchableOpacity>
       </View>
     </View>
@@ -50,6 +57,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     padding: 14,
+    marginLeft: 12,
+    marginRight: 12,
     marginBottom: 10,
     borderBottomWidth: 1,
     borderBottomColor: '#eee',
@@ -95,17 +104,17 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     position: 'absolute',
-    top: 14,
-    right: 14,
+    top: 22,
+    right: 30,
   },
   image: {
-    width: 64,
-    height: 64,
+    width: 80,
+    height: 80,
     borderRadius: 10,
   },
   heartIcon: {
     position: 'absolute',
-    bottom: -8,
-    right: -8,
+    bottom: -10,
+    right: -7,
   },
 });
