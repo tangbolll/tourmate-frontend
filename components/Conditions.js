@@ -18,13 +18,11 @@ const Conditions = ({ gender, ageGroups }) => {
       {/* 연령 조건 */}
       <View style={styles.row}>
         <Text style={styles.label}>연령</Text>
-        <View style={styles.ageContainer}>
-          {ageGroups.map((age, index) => (
-            <View key={index} style={styles.option}>
-              <Text style={styles.optionText}>{age}</Text>
-            </View>
-          ))}
-        </View>
+        {ageGroups.map((age, index) => (
+          <View key={index} style={styles.option}>
+            <Text style={styles.optionText}>{age}</Text>
+          </View>
+        ))}
       </View>
     </View>
   );
@@ -58,12 +56,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 20,
-    paddingVertical: 6,
     paddingHorizontal: 12,
     marginRight: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   optionText: {
     fontSize: 14,
+    lineHeight: 26,
     color: '#333',
   },
 });
