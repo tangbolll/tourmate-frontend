@@ -29,6 +29,7 @@ export default function AccompanyTabToggle({ selectedTab, onSelectTab }) {
 
 const styles = StyleSheet.create({
   container: {
+    paddingTop: 8,
     flexDirection: 'row',
     borderBottomWidth: 1,
     borderColor: '#ccc',
@@ -39,7 +40,7 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   text: {
-    fontSize: 16,
+    fontSize: 18,
     color: '#aaa',
     fontWeight: 'bold',
   },

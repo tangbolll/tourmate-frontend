@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
 import AccompanyListHeader from '../components/AccompanyListHeader';
+import FilterTag from '../components/FilterTag';
 import AccompanyToggle from '../components/AccompanyToggle';
 import AccompanyCard from '../components/AccompanyCard';
 import AccompanyTabToggle from '../components/AccompanyTabToggle';
@@ -13,13 +14,18 @@ const AccompanyList = ({ navigation }) => {
     const [selectedTab, setSelectedTab] = useState('feed');
     const [showCards, setShowCards] = useState(true);
     const [liked, setLiked] = useState(false);
+    const [tags, setTags] = useState(["여자만", "야경", "테마파크", "부산"]);
 
     const handlePressLike = () => {
     console.log("찜 눌림");
     setLiked((prev) => !prev);
     };
 
-const cardData = [
+    const handleRemoveTag = (tagToRemove) => {
+        setTags((prevTags) => prevTags.filter((tag) => tag !== tagToRemove));
+      };
+
+    const cardData = [
     {
         id: 1,
 
@@ -46,8 +52,8 @@ const cardData = [
         location: "수원",
         imageUrl: "",
         buttonLabel: "승인",
-    },
-];
+    },];
+    
     return (
             <SafeAreaView style={styles.container}>
             <ScrollView>
@@ -58,6 +64,18 @@ const cardData = [
             searchText={searchText}
             setSearchText={setSearchText}
             />
+
+            <View style={{ marginVertical: 8 }}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 16 }}
+            >
+                {tags.map((tag) => (
+                <FilterTag key={tag} tag={tag} onPress={() => handleRemoveTag(tag)} />
+                ))}
+            </ScrollView>
+            </View>
 
             <AccompanyToggle
             isExpanded={showCards}

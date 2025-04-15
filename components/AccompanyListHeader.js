@@ -37,8 +37,8 @@ export default function AccompanyListHeader({ onPressAlarm, onPressDM, onPressFi
 
 const styles = StyleSheet.create({
   container: {
-    paddingTop: 16,
-    paddingHorizontal: 8,
+    paddingTop: 2,
+    paddingHorizontal: 16,
     backgroundColor: '#fff',
   },
   topRow: {
@@ -56,6 +56,7 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     marginLeft: 12,
+    marginBottom: 5,
   },
   searchContainer: {
     flexDirection: 'row',
