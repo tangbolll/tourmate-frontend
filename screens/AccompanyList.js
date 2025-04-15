@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
 import AccompanyListHeader from '../components/AccompanyListHeader';
+import FilterPopup from '../components/FilterPopup';
+import FilterTag from '../components/FilterTag';
 import AccompanyToggle from '../components/AccompanyToggle';
 import AccompanyCard from '../components/AccompanyCard';
 import AccompanyTabToggle from '../components/AccompanyTabToggle';
@@ -9,14 +11,40 @@ import BottomBar from '../components/BottomBar';
 import CreateAccompanyButton from '../components/CreateAccompanyButton';
 
 const AccompanyList = ({ navigation }) => {
+    const [showFilterPopup, setShowFilterPopup] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [selectedTab, setSelectedTab] = useState('feed');
     const [showCards, setShowCards] = useState(true);
+    const [liked, setLiked] = useState(false);
+    const [tags, setTags] = useState(["여자만", "야경", "테마파크", "부산"]);
 
-const cardData = [
+    const handleFilterPopup = () => {
+        setShowFilterPopup(true);
+    };
+
+    const handleCloseFilterPopup = () => {
+        setShowFilterPopup(false);
+    };
+
+    const handleApplyFilters = (newFilters) => {
+        setFilters(newFilters);
+        // 여기에서 필터를 적용한 데이터를 가져오는 로직을 추가
+        console.log('Applied filters:', newFilters);
+    };
+
+    const handlePressLike = () => {
+    console.log("찜 눌림");
+    setLiked((prev) => !prev);
+    };
+
+    const handleRemoveTag = (tagToRemove) => {
+        setTags((prevTags) => prevTags.filter((tag) => tag !== tagToRemove));
+      };
+
+    const cardData = [
     {
         id: 1,
-        type: "버디",
+
         date: "03.01 ~ 03.05",
         title: "홍천 산천어 축제에서 놀아요",
         location: "홍천",
@@ -25,7 +53,7 @@ const cardData = [
     },
     {
         id: 2,
-        type: "버디",
+
         date: "04.01 ~ 04.03",
         title: "부산 벚꽃축제 가실 분~",
         location: "부산",
@@ -34,24 +62,41 @@ const cardData = [
     },
     {
         id: 3,
-        type: "버디",
+
         date: "01.05 ~ 03.01",
         title: "행궁뎅이 가서 브뤼셀 프라이 드실 분~",
         location: "수원",
         imageUrl: "",
         buttonLabel: "승인",
-    },
-];
+    },];
+    
     return (
             <SafeAreaView style={styles.container}>
             <ScrollView>
             <AccompanyListHeader
             onPressAlarm={() => console.log('알림')}
             onPressDM={() => console.log('DM')}
-            onPressFilter={() => console.log('필터')}
+            onPressFilter={handleFilterPopup}
             searchText={searchText}
             setSearchText={setSearchText}
             />
+            <FilterPopup 
+                visible={showFilterPopup}
+                onClose={handleCloseFilterPopup}
+                onApply={handleApplyFilters}
+            />
+
+            <View style={{ marginVertical: 8 }}>
+            <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={{ paddingHorizontal: 16 }}
+            >
+                {tags.map((tag) => (
+                <FilterTag key={tag} tag={tag} onPress={() => handleRemoveTag(tag)} />
+                ))}
+            </ScrollView>
+            </View>
 
             <AccompanyToggle
             isExpanded={showCards}
@@ -60,6 +105,7 @@ const cardData = [
 
             {/* AccompanyCard들 가로 스크롤로 감싸기 */}
             <View style={{ marginTop: 16 }}>
+            {showCards && (
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -78,6 +124,7 @@ const cardData = [
                             />
                         ))}
                     </ScrollView>
+            )}
             </View>
 
             <AccompanyTabToggle
@@ -94,8 +141,8 @@ const cardData = [
                 participants={2}
                 maxParticipants={3}
                 imageUrl=""
-                liked={true}
-                onPressLike={() => console.log('찜 눌림')}
+                liked={liked}
+                onPressLike={handlePressLike}
                 onPress={() => navigation.navigate('AccompanyPost', {
                 postId: '1',
                 })}
@@ -109,8 +156,8 @@ const cardData = [
                 participants={1}
                 maxParticipants={4}
                 imageUrl=""
-                liked={false}
-                onPressLike={() => console.log('찜 눌림')}
+                liked={!liked}
+                onPressLike={handlePressLike}
                 onPress={() => console.log('내가 만든 동행 클릭')}
             />
             )}
@@ -137,20 +184,20 @@ const styles = StyleSheet.create({
     },
       floatingButton: {
         position: 'absolute',
-        bottom: 90, // BottomBar와 간격
+        bottom: 70, // BottomBar와 간격
         right: 20,
         zIndex: 10,
       },
       bottomBarContainer: {
         position: 'absolute',
-        bottom: 0,
+        bottom: -30, // 바닥이랑 바텀바 사이 간격
         left: 0,
         right: 0,
         backgroundColor: '#fff', // 또는 앱 테마 색상
-        borderTopWidth: 1,
+        borderTopWidth: 2,
         borderTopColor: '#eee',
-        paddingBottom: 10,
-        paddingTop: 6,
+        paddingBottom: 0,
+        paddingTop: 0,
       },
 });
 
