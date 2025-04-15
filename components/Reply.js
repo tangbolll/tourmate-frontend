@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 // default profile image
 const defaultProfile = require('../assets/defaultProfile1.png');
 
-const Reply = ({ profileImage, nickname, time, content, onReplyPress }) => {
+const Reply = ({ profileImage, nickname, time, content, onReplyPress, isHost }) => {
     // 이미지 source 설정
         const profileSrc = profileImage
             ? { uri: profileImage }
@@ -28,6 +28,7 @@ const Reply = ({ profileImage, nickname, time, content, onReplyPress }) => {
                         <TouchableOpacity onPress={onReplyPress}>
                             <Text style={styles.replyText}>답글</Text>
                         </TouchableOpacity>
+                        {isHost && <Text style={styles.hostLabel}>호스트</Text>}
                     </View>
                     <Text style={styles.contentText}>{content}</Text>
                 </View>
@@ -71,6 +72,15 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#6B7280',
         textDecorationLine: 'underline',
+    },
+    hostLabel: {
+        fontSize: 10,
+        backgroundColor: '#E5E7EB',
+        color: '#000',
+        marginLeft: 6,
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 10,
     },
     contentText: {
         fontSize: 14,

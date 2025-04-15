@@ -166,7 +166,7 @@ const styles = StyleSheet.create({
     headerLocationRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 4,  // 마진 줄임
+        marginBottom: 4,
     },
     headerTitleRow: {
         flexDirection: 'row',
@@ -181,19 +181,19 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
     headerTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
-        marginRight: 4,  // 제목과 버튼 사이 간격 조정
+        marginRight: 4, 
     },
     headerButtons: {
         flexDirection: 'row',
         alignItems: 'center',
-        flex: 1,  // 남은 공간 차지하도록 변경
+        flex: 1,  // 남은 공간 차지하도록
     },
     detailButton: {
         backgroundColor: '#DEE2E6',
         paddingHorizontal: 8,
-        paddingVertical: 6,
+        paddingVertical: 3,
         borderRadius: 8,
         marginLeft: 4,
         marginRight: 8,
@@ -203,7 +203,7 @@ const styles = StyleSheet.create({
     },
     menuButton: {
         padding: 4,
-        marginLeft: 'auto',  // 오른쪽 끝으로 밀어냄
+        marginLeft: 'auto',
     },
     announcementWrapper: {
         paddingHorizontal: 8,
@@ -212,7 +212,8 @@ const styles = StyleSheet.create({
     },
     announcementContainer: {
         backgroundColor: 'white',
-        padding: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 8,
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#9CA3AF',
@@ -264,8 +265,8 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
     },
     addButton: {
-        padding: 6,  // 간격 줄임
-        marginRight: 4,  // 간격 줄임
+        padding: 6,
+        marginRight: 4,
     },
     inputWrapper: {
         flex: 1,
