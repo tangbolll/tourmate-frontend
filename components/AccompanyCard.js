@@ -50,8 +50,8 @@ export default function AccompanyCard({
 
 const styles = StyleSheet.create({
   card: {
-    width: 150,
-    height: 150,
+    width: 120,
+    height: 120,
     marginRight: 8,
     borderRadius: 8,
     overflow: 'hidden',
@@ -59,7 +59,7 @@ const styles = StyleSheet.create({
   image: {
     flex: 1,
     justifyContent: 'space-between',
-    padding: 12,
+    padding: 10,
   },
   overlay: {
     flex: 1,
@@ -80,11 +80,11 @@ const styles = StyleSheet.create({
   },
   date: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: 10,
   },
   title: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 13,
     fontWeight: 'bold',
     marginVertical: 4,
   },
@@ -95,7 +95,8 @@ const styles = StyleSheet.create({
   location: {
     color: '#fff',
     marginLeft: 4,
-    fontSize: 12,
+    fontWeight: 'bold',
+    fontSize: 10,
   },
   button: {
     alignSelf: 'center',
@@ -108,6 +109,6 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#000',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 13,
   },
 });
