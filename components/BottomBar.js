@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; // 아이콘 패키지 사용 예
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons'; 
 
 export default function BottomBar({ currentTab, onTabPress }) {
     const tabs = [
@@ -21,7 +21,7 @@ export default function BottomBar({ currentTab, onTabPress }) {
                 >
                     <Icon
                         name={tab.icon}
-                        size={tab.key === 'home' ? 48 : 24}
+                        size={tab.key === 'home' ? 60 : 24}
                         color={currentTab === tab.key ? '#000' : '#ccc'}
                         style={tab.key === 'home' ? styles.homeIcon : null}
                     />
@@ -38,17 +38,18 @@ export default function BottomBar({ currentTab, onTabPress }) {
 
 const styles = StyleSheet.create({
     container: {
+        paddingHorizontal: 0,
         flexDirection: 'row',
-        height: 70,
+        height: 80,
         backgroundColor: '#fff',
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
-        justifyContent: 'space-around',
+        // justifyContent: 'space-around',
         alignItems: 'center',
         shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        elevation: 5,
+        shadowOpacity: 0.2,
+        shadowRadius: 5,
+        // elevation: 0,
     },
     tabItem: {
         alignItems: 'center',
