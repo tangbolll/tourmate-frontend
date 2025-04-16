@@ -1,25 +1,41 @@
 import React from 'react';
 import {
-  View, Text, Modal, TouchableOpacity, TextInput,
-  StyleSheet, TouchableWithoutFeedback, Keyboard
+  View,
+  Text,
+  Modal,
+  TouchableOpacity,
+  TextInput,
+  StyleSheet,
+  TouchableWithoutFeedback,
+  Keyboard
 } from 'react-native';
-import Icon from "react-native-vector-icons/MaterialCommunityIcons";
-import Icon2 from "react-native-vector-icons/MaterialIcons";
+import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import Icon2 from 'react-native-vector-icons/MaterialIcons';
 
-export default function FilterPopup({ visible, onClose, onApply, filters, setFilters }) {
+const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
   const { gender, age, categories, travelPeriod, travelLocation } = filters;
 
-  const setField = (field, value) => setFilters(prev => ({ ...prev, [field]: value }));
-
   const toggleCategory = (category) => {
-    const updated = categories.includes(category)
-      ? categories.filter(c => c !== category)
+    const newCategories = categories.includes(category)
+      ? categories.filter((c) => c !== category)
       : [...categories, category];
-    setField('categories', updated);
+    setFilters({ ...filters, categories: newCategories });
   };
 
+  const toggleGender = (value) => {
+    setFilters({ ...filters, gender: gender === value ? '' : value });
+  };
+
+  const toggleAge = (value) => {
+    setFilters({ ...filters, age: age === value ? '' : value });
+  };
+
+  const setTravelPeriod = (value) => setFilters({ ...filters, travelPeriod: value });
+  const setTravelLocation = (value) => setFilters({ ...filters, travelLocation: value });
+
   const applyFilters = () => {
-    onApply(filters);
+    onApply && onApply(filters);
+    onClose();
   };
 
   const categoryList = [
@@ -29,11 +45,11 @@ export default function FilterPopup({ visible, onClose, onApply, filters, setFil
   ];
 
   return (
-    <Modal animationType="slide" transparent={true} visible={visible} onRequestClose={onClose}>
+    <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
       <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
         <View style={styles.centeredView}>
           <View style={styles.modalView}>
-            {/* 헤더 */}
+            {/* Header */}
             <View style={styles.header}>
               <Text style={styles.headerTitle}>필터</Text>
               <TouchableOpacity onPress={onClose}>
@@ -41,7 +57,7 @@ export default function FilterPopup({ visible, onClose, onApply, filters, setFil
               </TouchableOpacity>
             </View>
 
-            {/* 여행 기간 */}
+            {/* Travel Period */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>동행기간</Text>
               <View style={styles.inputContainer}>
@@ -49,13 +65,14 @@ export default function FilterPopup({ visible, onClose, onApply, filters, setFil
                 <TextInput
                   style={styles.input}
                   placeholder="여행기간을 선택해주세요."
+                  placeholderTextColor="#343a40" 
                   value={travelPeriod}
-                  onChangeText={text => setField('travelPeriod', text)}
+                  onChangeText={setTravelPeriod}
                 />
               </View>
             </View>
 
-            {/* 여행 장소 */}
+            {/* Location */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>동행장소</Text>
               <View style={styles.inputContainer}>
@@ -63,50 +80,50 @@ export default function FilterPopup({ visible, onClose, onApply, filters, setFil
                 <TextInput
                   style={styles.input}
                   placeholder="동행장소를 입력해주세요."
+                  placeholderTextColor="#343a40" 
                   value={travelLocation}
-                  onChangeText={text => setField('travelLocation', text)}
+                  onChangeText={setTravelLocation}
                 />
               </View>
             </View>
 
-            {/* 성별 */}
+            {/* Gender */}
             <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>동행 조건</Text>
-              <Text style={styles.subTitle}>성별</Text>
+              <Text style={styles.sectionTitle}>성별</Text>
               <View style={styles.optionsRow}>
-                {['여자만', '남자만', '남녀무관'].map(option => (
+                {['여자만', '남자만', '남녀무관'].map((item) => (
                   <TouchableOpacity
-                    key={option}
-                    style={[styles.option, gender === option && styles.selectedOption]}
-                    onPress={() => setField('gender', option)}
+                    key={item}
+                    style={[styles.option, gender === item && styles.selectedOption]}
+                    onPress={() => toggleGender(item)}
                   >
-                    <Text style={[styles.optionText, gender === option && styles.selectedOptionText]}>{option}</Text>
+                    <Text style={[styles.optionText, gender === item && styles.selectedOptionText]}>{item}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
-            {/* 연령 */}
+            {/* Age */}
             <View style={styles.sectionContainer}>
-              <Text style={styles.subTitle}>연령</Text>
+              <Text style={styles.sectionTitle}>연령</Text>
               <View style={styles.optionsRow}>
-                {['20대', '30대', '40대', '50대 이상', '누구나'].map(option => (
+                {['20대', '30대', '40대', '50대 이상', '누구나'].map((item) => (
                   <TouchableOpacity
-                    key={option}
-                    style={[styles.option, age === option && styles.selectedOption]}
-                    onPress={() => setField('age', option)}
+                    key={item}
+                    style={[styles.option, age === item && styles.selectedOption]}
+                    onPress={() => toggleAge(item)}
                   >
-                    <Text style={[styles.optionText, age === option && styles.selectedOptionText]}>{option}</Text>
+                    <Text style={[styles.optionText, age === item && styles.selectedOptionText]}>{item}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
             </View>
 
-            {/* 카테고리 */}
+            {/* Categories */}
             <View style={styles.sectionContainer}>
               <Text style={styles.sectionTitle}>카테고리</Text>
               <View style={styles.categoriesContainer}>
-                {categoryList.map(category => (
+                {categoryList.map((category) => (
                   <TouchableOpacity
                     key={category}
                     style={[styles.categoryOption, categories.includes(category) && styles.selectedOption]}
@@ -118,7 +135,6 @@ export default function FilterPopup({ visible, onClose, onApply, filters, setFil
               </View>
             </View>
 
-            {/* 적용 버튼 */}
             <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
               <Text style={styles.applyButtonText}>적용하기</Text>
             </TouchableOpacity>
@@ -127,26 +143,105 @@ export default function FilterPopup({ visible, onClose, onApply, filters, setFil
       </TouchableWithoutFeedback>
     </Modal>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  centeredView: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
-  modalView: { backgroundColor: 'white', borderTopLeftRadius: 20, borderTopRightRadius: 20, padding: 20, maxHeight: '90%' },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', flex: 1, textAlign: 'center' },
-  sectionContainer: { marginBottom: 15 },
-  sectionTitle: { fontSize: 16, fontWeight: 'bold', marginBottom: 10 },
-  subTitle: { fontSize: 14, marginBottom: 10 },
-  inputContainer: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#adb5bd', borderRadius: 8, paddingHorizontal: 12 },
-  inputIcon: { marginRight: 8 },
-  input: { flex: 1, height: 40 },
-  optionsRow: { flexDirection: 'row', flexWrap: 'wrap', marginLeft: 4 },
-  option: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: '#adb5bd', marginRight: 8, marginBottom: 8 },
-  selectedOption: { backgroundColor: 'black', borderColor: 'black' },
-  optionText: { color: '#333' },
-  selectedOptionText: { color: 'white' },
-  categoriesContainer: { flexDirection: 'row', flexWrap: 'wrap' },
-  categoryOption: { paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#adb5bd', borderRadius: 20, backgroundColor: '#e9ecef', marginRight: 8, marginBottom: 8 },
-  applyButton: { backgroundColor: 'black', borderRadius: 8, padding: 15, alignItems: 'center', marginTop: 10 },
-  applyButtonText: { color: 'white', fontWeight: 'bold', fontSize: 16 },
+  centeredView: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end'
+  },
+  modalView: {
+    backgroundColor: '#fff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '90%',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    flex: 1,
+    textAlign: 'center'
+  },
+  sectionContainer: { 
+    marginBottom: 15
+  },
+  sectionTitle: { 
+    fontSize: 16, 
+    fontWeight: 'bold', 
+    marginBottom: 10
+  },
+  inputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#adb5bd',
+    borderRadius: 8,
+    paddingHorizontal: 12
+  },
+  inputIcon: { 
+    marginRight: 8 },
+  input: { 
+    flex: 1, 
+    height: 40, 
+    padding: 8 
+  },
+  optionsRow: { 
+    flexDirection: 'row', 
+    flexWrap: 'wrap' 
+  },
+  option: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#adb5bd',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  selectedOption: { 
+    backgroundColor: 'black', 
+    borderColor: 'black' 
+  },
+  optionText: { 
+    color: '#333' 
+  },
+  selectedOptionText: { 
+    color: 'white' 
+  },
+  categoriesContainer: { 
+    flexDirection: 'row',
+    flexWrap: 'wrap' 
+  },
+  categoryOption: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#adb5bd',
+    borderRadius: 20,
+    backgroundColor: '#e9ecef',
+    marginRight: 8,
+    marginBottom: 8,
+  },
+  applyButton: {
+    backgroundColor: 'black',
+    borderRadius: 8,
+    padding: 15,
+    alignItems: 'center',
+    marginTop: 10,
+  },
+  applyButtonText: { 
+    color: 'white', 
+    fontWeight: 'bold', 
+    fontSize: 16 
+  },
 });
+
+export default FilterPopup;

@@ -7,30 +7,54 @@ import AccompanyToggle from '../components/AccompanyToggle';
 import AccompanyCard from '../components/AccompanyCard';
 import AccompanyTabToggle from '../components/AccompanyTabToggle';
 import AccompanyFeed from '../components/AccompanyFeed';
-import BottomBar from '../components/BottomBar';
+import BottomBar from '../components/BottomBar'; 
 import CreateAccompanyButton from '../components/CreateAccompanyButton';
 
-export default function AccompanyList({ navigation }) {
+const AccompanyList = ({ navigation }) => {
   const [showFilterPopup, setShowFilterPopup] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedTab, setSelectedTab] = useState('feed');
   const [showCards, setShowCards] = useState(true);
   const [liked, setLiked] = useState(false);
+
   const [filters, setFilters] = useState({
     gender: '여자만',
-    age: '',
+    age: '20대',
     categories: ['야경', '테마파크'],
     travelPeriod: '',
     travelLocation: '',
   });
 
-  const handlePressLike = () => setLiked(prev => !prev);
+  const handleFilterPopup = () => setShowFilterPopup(true);
+  const handleCloseFilterPopup = () => setShowFilterPopup(false);
+
+  const handleApplyFilters = (newFilters) => {
+    setFilters(newFilters);
+    console.log('Applied filters:', newFilters);};
+
+  const handlePressLike = () => {
+    console.log("찜 눌림");
+    setLiked(prev => !prev);
+};
 
   const handleRemoveTag = (tagToRemove) => {
-    setFilters(prev => ({
-      ...prev,
-      categories: prev.categories.filter(tag => tag !== tagToRemove),
-    }));
+    setFilters(prev => {
+      const updated = { ...prev };
+
+      if (updated.gender === tagToRemove) updated.gender = '';
+      if (updated.age === tagToRemove) updated.age = '';
+      updated.categories = updated.categories.filter(tag => tag !== tagToRemove);
+
+      return updated;
+    });
+  };
+
+  const getAllTags = () => {
+    const tags = [];
+    if (filters.gender) tags.push(filters.gender);
+    if (filters.age) tags.push(filters.age);
+    tags.push(...filters.categories);
+    return tags;
   };
 
   const cardData = [
@@ -45,71 +69,53 @@ export default function AccompanyList({ navigation }) {
         <AccompanyListHeader
           onPressAlarm={() => console.log('알림')}
           onPressDM={() => console.log('DM')}
-          onPressFilter={() => setShowFilterPopup(true)}
+          onPressFilter={handleFilterPopup}
           searchText={searchText}
           setSearchText={setSearchText}
         />
 
         <FilterPopup
           visible={showFilterPopup}
-          onClose={() => setShowFilterPopup(false)}
-          onApply={(newFilters) => {
-            setFilters(newFilters);
-            setShowFilterPopup(false);
-          }}
+          onClose={handleCloseFilterPopup}
+          onApply={handleApplyFilters}
           filters={filters}
           setFilters={setFilters}
         />
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, marginVertical: 8 }}>
-          {filters.categories.map(tag => (
-            <FilterTag key={tag} tag={tag} onPress={() => handleRemoveTag(tag)} />
-          ))}
-        </ScrollView>
+        <View style={{ marginVertical: 8 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+            {getAllTags().map((tag) => (
+              <FilterTag key={tag} tag={tag} onPress={() => handleRemoveTag(tag)} />
+            ))}
+          </ScrollView>
+        </View>
 
         <AccompanyToggle isExpanded={showCards} onToggle={() => setShowCards(!showCards)} />
 
         {showCards && (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, marginTop: 16 }}>
-            {cardData.map(item => (
-              <AccompanyCard
-                key={item.id}
-                {...item}
-                onPress={() => console.log(`${item.title} 카드 클릭됨`)}
-              />
-            ))}
-          </ScrollView>
+          <View style={{ marginTop: 16 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16 }}>
+              {cardData.map((item) => (
+                <AccompanyCard key={item.id} {...item} onPress={() => console.log(`${item.title} 카드 클릭`)} />
+              ))}
+            </ScrollView>
+          </View>
         )}
 
         <AccompanyTabToggle selectedTab={selectedTab} onSelectTab={setSelectedTab} />
 
-        {selectedTab === 'feed' ? (
-          <AccompanyFeed
-            date="03.04 월"
-            title="공주 공산성에서 야경 같이 즐겨요"
-            tags={['야경', '여자만', '저녁식사', '걷기']}
-            location="공주"
-            participants={2}
-            maxParticipants={3}
-            imageUrl=""
-            liked={liked}
-            onPressLike={handlePressLike}
-            onPress={() => navigation.navigate('AccompanyPost', { postId: '1' })}
-          />
-        ) : (
-          <AccompanyFeed
-            date="04.10 수"
-            title="내가 만든 동행 예시입니다"
-            tags={['친목', '남자만']}
-            location="서울"
-            participants={1}
-            maxParticipants={4}
-            imageUrl=""
-            liked={!liked}
-            onPressLike={handlePressLike}
-            onPress={() => console.log('내 동행 클릭')}
-          />
-        )}
+        <AccompanyFeed
+          date="03.04 월"
+          title="공주 공산성에서 야경 같이 즐겨요"
+          tags={['야경', '여자만', '저녁식사', '걷기']}
+          location="공주"
+          participants={2}
+          maxParticipants={3}
+          imageUrl=""
+          liked={liked}
+          onPressLike={handlePressLike}
+          onPress={() => navigation.navigate('AccompanyPost', { postId: '1' })}
+        />
       </ScrollView>
 
       <TouchableOpacity style={styles.floatingButton} onPress={() => console.log('동행 생성')}>
@@ -121,19 +127,11 @@ export default function AccompanyList({ navigation }) {
       </View>
     </SafeAreaView>
   );
-}
+};
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  floatingButton: {
-    position: 'absolute',
-    bottom: 70,
-    right: 20,
-    zIndex: 10,
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  floatingButton: { position: 'absolute', bottom: 70, right: 20, zIndex: 10 },
   bottomBarContainer: {
     position: 'absolute',
     bottom: -30,
@@ -146,3 +144,5 @@ const styles = StyleSheet.create({
     paddingTop: 0,
   },
 });
+
+export default AccompanyList;
