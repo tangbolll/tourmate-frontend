@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import Wrapper from './Wrapper';
-import Icon from 'react-native-vector-icons/Feather'; // Feather 아이콘셋
+import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
 const EventSchedule = ({
     eventDate,
@@ -15,7 +15,7 @@ const EventSchedule = ({
             {/* 여행기간 */}
             <Wrapper>
                 <View style={styles.row}>
-                    <Icon name="calendar" size={20} color="black" style={styles.icon} />
+                    <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
                     <Text style={styles.text}>
                         <Text style={styles.bold}>여행기간  </Text> {eventDate} {eventTimeStart} - {eventTimeEnd}
                     </Text>
@@ -25,7 +25,7 @@ const EventSchedule = ({
             {/* 모집기간 - 한 줄에 모든 정보 표시 */}
             <Wrapper>
                 <View style={styles.row}>
-                    <Icon name="edit" size={20} color="black" style={styles.icon} />
+                <FontAwesome6 name="hourglass-2" size={16} color="black" style={styles.icon} />
                     <Text style={styles.text}>
                         <Text style={styles.bold}>모집기간  </Text> {recruitStart} - {recruitEnd}
                     </Text>

@@ -9,12 +9,12 @@ const Intro = ({ message }) => {
       {/* 제목 */}
       <Text style={styles.title}>동행 소개</Text>
 
-      {/* 모집 텍스트 박스 */}
+      {/* 동행 소개 텍스트 */}
       <View style={styles.textContainer}>
         <Text style={styles.text}>{message}</Text>
       </View>
 
-      {/* 사진 박스 */}
+      {/* 이미지 */}
       <View style={styles.imageContainer}>
         <View style={styles.imageBox}>
           <Image source={defaultPhoto} style={styles.image} resizeMode="cover" />
@@ -22,9 +22,7 @@ const Intro = ({ message }) => {
         <View style={styles.imageBox}>
           <Image source={defaultPhoto} style={styles.image} resizeMode="cover" />
         </View>
-        <View style={styles.imageBox}>
-          <Image source={defaultPhoto} style={styles.image} resizeMode="cover" />
-        </View>
+        
       </View>
     </View>
   );
@@ -41,7 +39,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(0, 0, 0, 0.32)',
   },
@@ -51,14 +48,15 @@ const styles = StyleSheet.create({
   },
   imageContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 8,
+    alignItems: 'flex-start',
+    marginTop: 10,
   },
   imageBox: {
     width: 115,
     height: 115,
-    borderRadius: 12,
-    alignItems: 'center',
+    borderRadius: 8,
+    marginRight: 8,
+    alignItems: 'flex-start',
     justifyContent: 'center',
   },
   image: {
