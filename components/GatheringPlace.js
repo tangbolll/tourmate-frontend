@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 
 const GatheringPlace = ({ location, onReplyPress }) => {
@@ -10,7 +11,7 @@ const GatheringPlace = ({ location, onReplyPress }) => {
 
       {/* 주소 */}
       <View style={styles.locationContainer}>
-        <Text style={styles.icon}>📍</Text>
+      <MaterialCommunityIcons name="map-marker-radius" size={18} color="black" marginRight={4}/>
         <Text style={styles.location}>{location}</Text>
         <TouchableOpacity onPress={onReplyPress}>
           <Text style={styles.copy}>복사</Text>
@@ -36,9 +37,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 8,
-  },
-  icon: {
-    fontSize: 12,
   },
   location: {
     fontSize: 14,
