@@ -34,9 +34,9 @@ export default function AccompanyFeed({
       </View>
 
       <View style={styles.infoContainer}>
-        <Icon name="map-marker" size={16} color="#666" />
+        <Icon name="map-marker" size={16} color="#666" style={{ marginBottom:-4}} />
         <Text style={styles.infoText}>{location}</Text>
-        <Icon name="account-multiple" size={16} color="#666" style={{ marginLeft: 12 }} />
+        <Icon name="account-multiple" size={16} color="#666" style={{ marginLeft:12, marginBottom:-4}} />
         <Text style={styles.infoText}>{participants}/{maxParticipants}</Text>
       </View>
 
@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     padding: 14,
-    marginLeft: 12,
+    marginLeft: 14,
     marginRight: 12,
     marginBottom: 10,
     borderBottomWidth: 1,
@@ -95,9 +95,10 @@ const styles = StyleSheet.create({
   infoContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   infoText: {
+    marginBottom: -4,
     fontSize: 12,
     color: '#666',
     marginLeft: 4,
@@ -105,7 +106,7 @@ const styles = StyleSheet.create({
   imageContainer: {
     position: 'absolute',
     top: 22,
-    right: 30,
+    right: 16,
   },
   image: {
     width: 80,

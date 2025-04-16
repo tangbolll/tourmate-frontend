@@ -17,38 +17,48 @@ export default function AccompanyCard({
 {
   return (
     <TouchableOpacity onPress={onPress} style={styles.card}>
-        <ImageBackground
-        source={imageUrl ? { uri: imageUrl } : defaultImage}
-        style={styles.image}
-        imageStyle={{ borderRadius: 8}}
-        >
 
-        <View style={styles.overlay}>
-          {/* 상단 정보 */}
-          <View style={styles.topRow}>
-            <Text style={styles.date}>{date}</Text>
-          </View>
+          <ImageBackground
+          source={imageUrl ? { uri: imageUrl } : defaultImage}
+          style={styles.image}
+          imageStyle={{ borderRadius: 8}}
+          >
 
-          {/* 타이틀 */}
-          <Text style={styles.title}>{title}</Text>
+          <View style={styles.darkOverlay} /> 
+          
+            <View style={styles.overlay}>
+              {/* 상단 정보 */}
+              <View style={styles.topRow}>
+                <Text style={styles.date}>{date}</Text>
+              </View>
 
-          {/* 위치 */}
-          <View style={styles.locationRow}>
-            <Icon name="map-marker" size={16} color="#fff" />
-            <Text style={styles.location}>{location}</Text>
-          </View>
+              {/* 타이틀 */}
+              <Text style={styles.title}>{title}</Text>
 
-          {/* 버튼 */}
-          <View style={styles.button}>
-            <Text style={styles.buttonText}>{buttonLabel}</Text>
-          </View>
-        </View>
-      </ImageBackground>
-    </TouchableOpacity>
-  );
-}
+              {/* 위치 */}
+              <View style={styles.locationRow}>
+                <Icon name="map-marker" size={16} color="#fff" />
+                <Text style={styles.location}>{location}</Text>
+              </View>
+
+              {/* 버튼 */}
+              <View style={styles.button}>
+                <Text style={styles.buttonText}>{buttonLabel}</Text>
+              </View>
+            </View>
+          </ImageBackground>
+
+      </TouchableOpacity>
+    );
+  }
 
 const styles = StyleSheet.create({
+  darkOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'black', // 어두운 반투명 배경
+    opacity: 0.4,
+    borderRadius: 8,
+  },
   card: {
     width: 120,
     height: 120,
