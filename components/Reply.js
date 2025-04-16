@@ -41,7 +41,7 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'flex-start',
-        marginBottom: 16,
+        marginBottom: 4,
         marginLeft: 52
     },
     profileImage: {
