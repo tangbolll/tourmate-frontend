@@ -50,7 +50,7 @@ const styles = StyleSheet.create({
   underline: {
     position: 'absolute',
     bottom: -1,
-    width: '50%',
+    width: '80%',
     height: 3,
     backgroundColor: '#000',
   },
