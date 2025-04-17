@@ -1,19 +1,23 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   Modal,
   TouchableOpacity,
-  TextInput,
   StyleSheet,
+  TextInput,
   TouchableWithoutFeedback,
-  Keyboard
+  Keyboard,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
+import CalendarPopup from './CalendarPopup';
+import dayjs from 'dayjs';
 
 const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
   const { gender, age, categories, travelPeriod, travelLocation } = filters;
+
+  const [calendarVisible, setCalendarVisible] = useState(false);
 
   const toggleCategory = (category) => {
     const newCategories = categories.includes(category)
@@ -44,104 +48,116 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
     '역사유적', '박물관/미술관'
   ];
 
+  const handleCalendarSelect = ({ startDate, endDate }) => {
+    if (startDate && endDate) {
+      const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
+      setTravelPeriod(formatted);
+    }
+  };
+
   return (
-    <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
-      <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
-        <View style={styles.centeredView}>
-          <View style={styles.modalView}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>필터</Text>
-              <TouchableOpacity onPress={onClose}>
-                <Icon name="close" size={18} color="black" />
+    <>
+      <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.centeredView}>
+            <View style={styles.modalView}>
+              {/* Header */}
+              <View style={styles.header}>
+                <Text style={styles.headerTitle}>필터</Text>
+                <TouchableOpacity onPress={onClose}>
+                  <Icon name="close" size={18} color="black" />
+                </TouchableOpacity>
+              </View>
+
+              {/* Travel Period */}
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>동행기간</Text>
+                <TouchableOpacity onPress={() => setCalendarVisible(true)} style={styles.inputContainer}>
+                  <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
+                  <Text style={styles.input}>
+                    {travelPeriod || '여행기간을 선택해주세요.'}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {/* Location */}
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>동행장소</Text>
+                <View style={styles.inputContainer}>
+                  <Icon2 name="location-on" size={18} color="black" style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="동행장소를 입력해주세요."
+                    placeholderTextColor="#343a40"
+                    value={travelLocation}
+                    onChangeText={setTravelLocation}
+                  />
+                </View>
+              </View>
+
+              {/* Gender */}
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>성별</Text>
+                <View style={styles.optionsRow}>
+                  {['여자만', '남자만', '남녀무관'].map((item) => (
+                    <TouchableOpacity
+                      key={item}
+                      style={[styles.option, gender === item && styles.selectedOption]}
+                      onPress={() => toggleGender(item)}
+                    >
+                      <Text style={[styles.optionText, gender === item && styles.selectedOptionText]}>{item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Age */}
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>연령</Text>
+                <View style={styles.optionsRow}>
+                  {['20대', '30대', '40대', '50대 이상', '누구나'].map((item) => (
+                    <TouchableOpacity
+                      key={item}
+                      style={[styles.option, age === item && styles.selectedOption]}
+                      onPress={() => toggleAge(item)}
+                    >
+                      <Text style={[styles.optionText, age === item && styles.selectedOptionText]}>{item}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              {/* Categories */}
+              <View style={styles.sectionContainer}>
+                <Text style={styles.sectionTitle}>카테고리</Text>
+                <View style={styles.categoriesContainer}>
+                  {categoryList.map((category) => (
+                    <TouchableOpacity
+                      key={category}
+                      style={[styles.categoryOption, categories.includes(category) && styles.selectedOption]}
+                      onPress={() => toggleCategory(category)}
+                    >
+                      <Text style={[styles.optionText, categories.includes(category) && styles.selectedOptionText]}>{category}</Text>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+
+              <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
+                <Text style={styles.applyButtonText}>적용하기</Text>
               </TouchableOpacity>
             </View>
-
-            {/* Travel Period */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>동행기간</Text>
-              <View style={styles.inputContainer}>
-                <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="여행기간을 선택해주세요."
-                  placeholderTextColor="#343a40" 
-                  value={travelPeriod}
-                  onChangeText={setTravelPeriod}
-                />
-              </View>
-            </View>
-
-            {/* Location */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>동행장소</Text>
-              <View style={styles.inputContainer}>
-                <Icon2 name="location-on" size={18} color="black" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="동행장소를 입력해주세요."
-                  placeholderTextColor="#343a40" 
-                  value={travelLocation}
-                  onChangeText={setTravelLocation}
-                />
-              </View>
-            </View>
-
-            {/* Gender */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>성별</Text>
-              <View style={styles.optionsRow}>
-                {['여자만', '남자만', '남녀무관'].map((item) => (
-                  <TouchableOpacity
-                    key={item}
-                    style={[styles.option, gender === item && styles.selectedOption]}
-                    onPress={() => toggleGender(item)}
-                  >
-                    <Text style={[styles.optionText, gender === item && styles.selectedOptionText]}>{item}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Age */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>연령</Text>
-              <View style={styles.optionsRow}>
-                {['20대', '30대', '40대', '50대 이상', '누구나'].map((item) => (
-                  <TouchableOpacity
-                    key={item}
-                    style={[styles.option, age === item && styles.selectedOption]}
-                    onPress={() => toggleAge(item)}
-                  >
-                    <Text style={[styles.optionText, age === item && styles.selectedOptionText]}>{item}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            {/* Categories */}
-            <View style={styles.sectionContainer}>
-              <Text style={styles.sectionTitle}>카테고리</Text>
-              <View style={styles.categoriesContainer}>
-                {categoryList.map((category) => (
-                  <TouchableOpacity
-                    key={category}
-                    style={[styles.categoryOption, categories.includes(category) && styles.selectedOption]}
-                    onPress={() => toggleCategory(category)}
-                  >
-                    <Text style={[styles.optionText, categories.includes(category) && styles.selectedOptionText]}>{category}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            </View>
-
-            <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
-              <Text style={styles.applyButtonText}>적용하기</Text>
-            </TouchableOpacity>
           </View>
-        </View>
-      </TouchableWithoutFeedback>
-    </Modal>
+        </TouchableWithoutFeedback>
+      </Modal>
+
+      {/* 📅 캘린더 팝업 */}
+      <CalendarPopup
+        visible={calendarVisible}
+        onClose={() => setCalendarVisible(false)}
+        onSelectDates={handleCalendarSelect}
+      />
+    </>
   );
 };
 
@@ -149,7 +165,7 @@ const styles = StyleSheet.create({
   centeredView: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end'
+    justifyContent: 'flex-end',
   },
   modalView: {
     backgroundColor: '#fff',
@@ -162,21 +178,21 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20
+    marginBottom: 20,
   },
   headerTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     flex: 1,
-    textAlign: 'center'
+    textAlign: 'center',
   },
-  sectionContainer: { 
-    marginBottom: 15
+  sectionContainer: {
+    marginBottom: 15,
   },
-  sectionTitle: { 
-    fontSize: 16, 
-    fontWeight: 'bold', 
-    marginBottom: 10
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 10,
   },
   inputContainer: {
     flexDirection: 'row',
@@ -184,18 +200,19 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#adb5bd',
     borderRadius: 8,
-    paddingHorizontal: 12
+    paddingHorizontal: 12,
+    height: 40,
   },
-  inputIcon: { 
-    marginRight: 8 },
-  input: { 
-    flex: 1, 
-    height: 40, 
-    padding: 8 
+  inputIcon: {
+    marginRight: 8,
   },
-  optionsRow: { 
-    flexDirection: 'row', 
-    flexWrap: 'wrap' 
+  input: {
+    flex: 1,
+    color: '#000',
+  },
+  optionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   option: {
     paddingHorizontal: 12,
@@ -206,19 +223,19 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 8,
   },
-  selectedOption: { 
-    backgroundColor: 'black', 
-    borderColor: 'black' 
+  selectedOption: {
+    backgroundColor: 'black',
+    borderColor: 'black',
   },
-  optionText: { 
-    color: '#333' 
+  optionText: {
+    color: '#333',
   },
-  selectedOptionText: { 
-    color: 'white' 
+  selectedOptionText: {
+    color: 'white',
   },
-  categoriesContainer: { 
+  categoriesContainer: {
     flexDirection: 'row',
-    flexWrap: 'wrap' 
+    flexWrap: 'wrap',
   },
   categoryOption: {
     paddingHorizontal: 12,
@@ -237,10 +254,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 10,
   },
-  applyButtonText: { 
-    color: 'white', 
-    fontWeight: 'bold', 
-    fontSize: 16 
+  applyButtonText: {
+    color: 'white',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 
