@@ -13,6 +13,18 @@ import Calendar from 'react-native-calendar-range-picker';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 // import dayjs from 'dayjs';
 
+// useEffect(() => {
+//   if (visible && scrollRef.current) {
+//     const now = dayjs();
+//     const monthDiff = now.diff(dayjs(`${now.year()}-01-01`), 'month'); // 0-index 기준
+//     const scrollOffset = monthDiff * 300; // 한 달당 스크롤 높이 추정값 (px)
+
+//     setTimeout(() => {
+//       scrollRef.current.scrollTo({ y: scrollOffset, animated: false });
+//     }, 200); // 렌더 이후 스크롤
+//   }
+// }, [visible]);
+
 const CUSTOM_LOCALE = {
   monthNames: [
     '1월', '2월', '3월', '4월', '5월', '6월',
@@ -32,6 +44,9 @@ export default function CalendarPopup({ visible, onClose, onSelectDates }) {
       onClose();
     }
   };
+  const resetSelection = () => {
+    setRange({ startDate: null, endDate: null });
+  };
 
   return (
     <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
@@ -40,6 +55,12 @@ export default function CalendarPopup({ visible, onClose, onSelectDates }) {
           <View style={styles.modalContent}>
             {/* Header */}
             <View style={styles.header}>
+            <TouchableOpacity onPress={resetSelection}>
+              <View style={styles.row}>
+                <Icon name="reload" size={15} color="gray" /> 
+                <Text style={styles.resetText}>  재설정</Text>
+              </View>
+              </TouchableOpacity>
               <Text style={styles.title}>날짜 선택</Text>
               <TouchableOpacity onPress={onClose}>
                 <Icon name="close" size={22} color="black" />
@@ -47,13 +68,16 @@ export default function CalendarPopup({ visible, onClose, onSelectDates }) {
             </View>
 
             {/* Calendar */}
-            <ScrollView>
+            <ScrollView >
+            {/* ref={scrollRef} */}
             <Calendar
               locale={CUSTOM_LOCALE}
               disabledBeforeToday
               futureYearRange={12}
               pastYearRange={0}
-              numberOfMonths={1}
+              numberOfMonths={12}
+              startDate={range.startDate}
+              endDate={range.endDate}
               style={{
                 dayTextColor: '#000',
                 holidayColor: '#999',
@@ -67,8 +91,6 @@ export default function CalendarPopup({ visible, onClose, onSelectDates }) {
               onChange={({ startDate, endDate }) => {
                 setRange({ startDate, endDate });
               }}
-              startDate={range.startDate}
-              endDate={range.endDate}
             />
             </ScrollView>
 
@@ -91,17 +113,21 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     backgroundColor: '#fff',
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    paddingHorizontal: 20,
-    paddingVertical: 25,
-    maxHeight: '90%',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    padding: 20,
+    maxHeight: '80%',
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 15,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   title: {
     fontSize: 18,
