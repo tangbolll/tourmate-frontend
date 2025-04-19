@@ -284,7 +284,7 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.1,
     },
     button: {
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 8,
         alignItems: 'center',
     },
@@ -302,7 +302,7 @@ const styles = StyleSheet.create({
         color: '#FFF',
     },
     buttonTextDisabled: {
-        color: '#888',
+        color: '#FFF',
     },
 });
 

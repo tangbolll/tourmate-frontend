@@ -112,11 +112,11 @@ const Step2 = ({
             <Text style={styles.label}>모집 정원</Text>
             <View style={styles.splitInputRow}>
                 <View style={styles.iconContainer}>
-                    <Ionicons name="person" size={15} color="black" />
+                    <Ionicons name="person" size={14} color="black" />
                 </View>
                 <TextInput
                     style={styles.numericInput}
-                    placeholder="최대 인원"
+                    placeholder="최대 모집인원 설정"
                     placeholderTextColor="#888"
                     keyboardType="numeric"
                     value={maxPeople}
@@ -131,7 +131,7 @@ const Step2 = ({
                 style={styles.dateInputRow}
             >
                 <View style={styles.iconContainer}>
-                    <FontAwesome6 name="calendar-check" size={16} color="black" />
+                    <FontAwesome6 name="calendar-check" size={14} color="black" />
                 </View>
                 <View style={styles.dateRangeContainer}>
                     <Text style={styles.dateText}>
@@ -234,7 +234,7 @@ const Step2 = ({
             <View style={styles.tagInputRow}>
                 <TextInput
                     style={styles.tagInput}
-                    placeholder="태그할 키워드를 입력해주세요"
+                    placeholder="키워드를 쉼표(,)로 구분하여 입력해주세요."
                     placeholderTextColor="#888"
                     value={tagInput}
                     onChangeText={setTagInput}
@@ -286,17 +286,17 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     iconContainer: {
-        paddingVertical: 15,
+        paddingVertical: 12,
         marginRight: 10,
     },
     numericInput: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 14,
         paddingVertical: 12,
         color: '#000',
     },
     unitText: {
-        fontSize: 16,
+        fontSize: 14,
         color: '#000',
         marginLeft: 5,
     },
@@ -357,10 +357,13 @@ const styles = StyleSheet.create({
         marginBottom: 15,
     },
     chip: {
+        height: 30,
         paddingVertical: 6,
         paddingHorizontal: 10,
-        backgroundColor: '#f0f0f0',
+        backgroundColor: '#fff',
         borderRadius: 20,
+        borderColor: '#ccc',
+        borderWidth: 1,
         marginRight: 8,
         marginBottom: 7,
     },
@@ -383,7 +386,7 @@ const styles = StyleSheet.create({
         flex: 1,
         paddingHorizontal: 10,
         paddingVertical: 12,
-        fontSize: 16,
+        fontSize: 14,
         color: '#000',
         borderWidth: 1,
         borderColor: '#ccc',
