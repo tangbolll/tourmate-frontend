@@ -21,8 +21,6 @@ const AccompanyCreation = ({ navigation }) => {
     const [title, setTitle] = useState('');
     const [location, setLocation] = useState('');
     const [dateRange, setDateRange] = useState({
-        startDate: formatDate(new Date()),
-        endDate: formatDate(new Date(Date.now() + 24 * 60 * 60 * 1000)),
         startDay: '',
         endDay: ''
     });
@@ -35,7 +33,7 @@ const AccompanyCreation = ({ navigation }) => {
     const [maxPeople, setMaxPeople] = useState('');
     const [recruitDateRange, setRecruitDateRange] = useState({
         startDate: formatDate(new Date()),
-        endDate: formatDate(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)),
+        endDate: formatDate(new Date()),
         startDay: '',
         endDay: ''
     });
@@ -213,7 +211,7 @@ const AccompanyCreation = ({ navigation }) => {
                             ? styles.buttonTextDisabled 
                             : styles.buttonTextEnabled
                     ]}>
-                        {currentStep === 1 ? '다음' : '등록하기'}
+                        {currentStep === 1 ? '다음' : '작성 완료'}
                     </Text>
                 </TouchableOpacity>
             </View>
@@ -278,11 +276,15 @@ const styles = StyleSheet.create({
         right: 0,
         padding: 16,
         backgroundColor: '#fff',
-        borderTopWidth: 1,
-        borderTopColor: '#eee',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: -2,
+        },
+        shadowOpacity: 0.1,
     },
     button: {
-        paddingVertical: 15,
+        paddingVertical: 10,
         borderRadius: 8,
         alignItems: 'center',
     },
@@ -293,7 +295,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#ccc',
     },
     buttonText: {
-        fontSize: 16,
+        fontSize: 18,
         fontWeight: 'bold',
     },
     buttonTextEnabled: {
