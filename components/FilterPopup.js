@@ -8,11 +8,13 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
+
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
-import CalendarPopup from './CalendarPopup';
+import CalendarPopup from '../components/CalendarPopup';
 import dayjs from 'dayjs';
+import { Pressable } from 'react-native';
 
 const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
   const { gender, age, categories, travelPeriod, travelLocation } = filters;
@@ -73,10 +75,15 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>동행기간</Text>
                 <TouchableOpacity onPress={() => setCalendarVisible(true)} style={styles.inputContainer}>
-                  <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
-                  <Text style={styles.input}>
-                    {travelPeriod || '여행기간을 선택해주세요.'}
-                  </Text>
+                <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
+                <TextInput
+                  style={styles.input}
+                  placeholder="여행기간을 선택해주세요."
+                  placeholderTextColor="#343a40"
+                  value={travelPeriod}
+                  editable={false} // 클릭 불가능하게
+                  pointerEvents="none" // iOS에서 터치 이벤트 무시
+                />
                 </TouchableOpacity>
               </View>
 
