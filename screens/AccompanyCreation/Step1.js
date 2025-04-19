@@ -48,11 +48,11 @@ const Step1 = ({
 
             <Text style={styles.label}>여행장소</Text>
             <View style={styles.inputWrapper}>
-                <MaterialIcons name="location-pin" size={20} color="#555" />
+                <MaterialIcons name="location-pin" size={14} color="#555" />
                 <TextInput
                     style={styles.inputWithIcon}
                     placeholder="여행장소를 입력해주세요."
-                    placeholderTextColor="#555"
+                    placeholderTextColor="#888"
                     value={location}
                     onChangeText={setLocation}
                 />
@@ -60,7 +60,7 @@ const Step1 = ({
             
             <Text style={styles.label}>여행기간</Text>
             <TouchableOpacity onPress={() => setDateVisible(true)} style={styles.inputWrapper}>
-                <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
+                <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
                 <Text style={[styles.inputWithIcon, { color: dateRange.startDate ? '#000' : '#888' }]}>
                     {dateRange.startDate 
                         ? `${dateRange.startDate} (${dateRange.startDay}) ~ ${dateRange.endDate} (${dateRange.endDay})` 
@@ -98,7 +98,7 @@ const Step1 = ({
 
             <Text style={styles.label}>모이는 장소</Text>
             <View style={styles.inputWrapper}>
-                <MaterialIcons name="location-pin" size={20} color="#555" />
+                <MaterialIcons name="location-pin" size={14} color="#555" />
                 <TextInput
                     style={styles.inputWithIcon}
                     placeholder="위치 추가"
@@ -141,13 +141,13 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         paddingHorizontal: 10,
         paddingVertical: 12,
-        fontSize: 16,
+        fontSize: 14,
         marginBottom: 12,
         color: '#000',
     },
     inputWithIcon: {
         flex: 1,
-        fontSize: 16,
+        fontSize: 14,
         marginLeft: 8,
         color: '#000',
     },
