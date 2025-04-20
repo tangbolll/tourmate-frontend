@@ -14,7 +14,7 @@ import Icon2 from 'react-native-vector-icons/MaterialIcons';
 import CalendarPopup from '../components/CalendarPopup';
 import dayjs from 'dayjs';
 
-const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters }) => {
+const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters, onOpenCalendar }) => {
   const { gender, age, categories, travelPeriod, travelLocation } = filters;
 
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -43,8 +43,13 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
   };
 
   const openCalendar = () => {
-    console.log("Opening calendar"); // 디버깅용
-    setCalendarVisible(true);
+  console.log("캘린더 여는 중 ✅");
+  setCalendarVisible(true);
+};
+
+  const closeCalendar = () => {
+    console.log("Closing calendar");
+    setCalendarVisible(false);
   };
 
   const categoryList = [
@@ -53,18 +58,28 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
     '역사유적', '박물관/미술관'
   ];
 
+
   const handleCalendarSelect = ({ startDate, endDate }) => {
     if (startDate && endDate) {
       const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
-      setTravelPeriod(formatted);
+      setFilters({ ...filters, travelPeriod: formatted });
     }
-    // 캘린더 닫기
-    setCalendarVisible(false);
+    closeCalendar();
   };
+
 
   return (
     <>
-      <Modal animationType="slide" transparent visible={visible} onRequestClose={onClose}>
+       <Modal
+        animationType="slide"
+        transparent
+        visible={visible}
+        onRequestClose={onClose}
+        onDismiss={() => {
+          // 모달이 닫힐 때 캘린더도 강제 닫기
+          closeCalendar();
+        }}
+      >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
           <View style={styles.centeredView}>
             <View style={styles.modalView}>
@@ -84,15 +99,15 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
                 <Text style={styles.sectionTitle}>동행기간</Text>
                 {/* 여기서 전체 영역을 TouchableOpacity로 변경 */}
                 <TouchableOpacity 
-                  onPress={openCalendar} 
-                  activeOpacity={0.7}
-                  style={styles.inputContainer}
-                >
-                  <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
-                  <Text style={[styles.input, !travelPeriod && styles.placeholder]}>
-                    {travelPeriod || "여행기간을 선택해주세요."}
-                  </Text>
-                </TouchableOpacity>
+  onPress={onOpenCalendar} 
+  activeOpacity={0.7}
+  style={styles.inputContainer}
+>
+  <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
+  <Text style={[styles.input, !travelPeriod && styles.placeholder]}>
+    {travelPeriod || "여행기간을 선택해주세요."}
+  </Text>
+</TouchableOpacity>
               </View>
 
               {/* Location */}
@@ -176,10 +191,7 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
       {/* 캘린더 팝업 */}
       <CalendarPopup
         visible={calendarVisible}
-        onClose={() => {
-          console.log("Closing calendar"); // 디버깅용
-          setCalendarVisible(false);
-        }}
+        onClose={closeCalendar}
         onSelectDates={handleCalendarSelect}
       />
     </>
