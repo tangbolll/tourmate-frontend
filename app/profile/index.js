@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function HomeScreen() {
+export default function ProfileScreen() {
     return (
         <View style={styles.container}>
-        <Text style={styles.text}>홈 페이지입니다</Text>
+        <Text style={styles.text}>프로필 페이지입니다</Text>
         </View>
     );
 }

@@ -122,9 +122,6 @@ const AccompanyList = ({ navigation }) => {
         <CreateAccompanyButton />
       </TouchableOpacity>
 
-      <View style={styles.bottomBarContainer}>
-        <BottomBar currentTab="accompany" onTabPress={(tab) => console.log(tab)} />
-      </View>
     </SafeAreaView>
   );
 };
@@ -132,17 +129,6 @@ const AccompanyList = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   floatingButton: { position: 'absolute', bottom: 70, right: 20, zIndex: 10 },
-  bottomBarContainer: {
-    position: 'absolute',
-    bottom: -30,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 2,
-    borderTopColor: '#eee',
-    paddingBottom: 0,
-    paddingTop: 0,
-  },
 });
 
 export default AccompanyList;
