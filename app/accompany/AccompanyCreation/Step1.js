@@ -9,9 +9,9 @@ import {
 } from 'react-native';
 import { MaterialIcons } from 'react-native-vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import Calendar from '../../components/Calendar';
-import ImageSelector from '../../components/ImageSelector';
-import { formatDate, getDayOfWeek } from '../../utils/dateUtils';
+import Calendar from '../../../components/Calendar';
+import ImageSelector from '../../../components/ImageSelector';
+import { formatDate, getDayOfWeek } from '../../../utils/dateUtils';
 
 const Step1 = ({ 
     title, setTitle, 

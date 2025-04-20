@@ -1,19 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
-import EventSchedule from '../components/EventSchedule';
-import Comment from '../components/Comment';
-import Reply from '../components/Reply';
-import Intro from '../components/Intro';
-import GatheringPlace from '../components/GatheringPlace';
-import Conditions from '../components/Conditions';
-import Categories from '../components/Categories';
-import WriteComment from '../components/WriteComment';
-import ApplicationButton from '../components/ApplicationButton';
-import AccompanyCloseButton from '../components/AccompanyCloseButton';
-import AlarmPopup from '../components/AlarmPopup';
-import MemberPopup from '../components/MemberPopup';
-import EventHeader from '../components/EventHeader';
+import EventSchedule from '../../components/EventSchedule';
+import Comment from '../../components/Comment';
+import Reply from '../../components/Reply';
+import Intro from '../../components/Intro';
+import GatheringPlace from '../../components/GatheringPlace';
+import Conditions from '../../components/Conditions';
+import Categories from '../../components/Categories';
+import WriteComment from '../../components/WriteComment';
+import ApplicationButton from '../../components/ApplicationButton';
+import AccompanyCloseButton from '../../components/AccompanyCloseButton';
+import AlarmPopup from '../../components/AlarmPopup';
+import MemberPopup from '../../components/MemberPopup';
+import EventHeader from '../../components/EventHeader';
 
 export default function App() {
     const [isHost] = useState(false);

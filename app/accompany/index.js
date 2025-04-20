@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
-import AccompanyListHeader from '../components/AccompanyListHeader';
-import FilterPopup from '../components/FilterPopup';
-import FilterTag from '../components/FilterTag';
-import AccompanyToggle from '../components/AccompanyToggle';
-import AccompanyCard from '../components/AccompanyCard';
-import AccompanyTabToggle from '../components/AccompanyTabToggle';
-import AccompanyFeed from '../components/AccompanyFeed';
-import BottomBar from '../components/BottomBar'; 
-import CreateAccompanyButton from '../components/CreateAccompanyButton';
+import AccompanyListHeader from '../../components/AccompanyListHeader';
+import FilterPopup from '../../components/FilterPopup';
+import FilterTag from '../../components/FilterTag';
+import AccompanyToggle from '../../components/AccompanyToggle';
+import AccompanyCard from '../../components/AccompanyCard';
+import AccompanyTabToggle from '../../components/AccompanyTabToggle';
+import AccompanyFeed from '../../components/AccompanyFeed';
+import BottomBar from '../../components/BottomBar'; 
+import CreateAccompanyButton from '../../components/CreateAccompanyButton';
 
 const AccompanyList = ({ navigation }) => {
   const [showFilterPopup, setShowFilterPopup] = useState(false);
