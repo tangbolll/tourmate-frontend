@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '../../../utils/dateUtils';
 import Step1 from './Step1';
 import Step2 from './Step2';
 
