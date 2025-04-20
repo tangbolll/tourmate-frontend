@@ -21,15 +21,28 @@ const CUSTOM_LOCALE = {
 };
 
 
-export default function CalendarPopup({ visible, onClose, onSelectDates }) {
+export default function CalendarPopup({ visible, onClose = () => {}, onSelectDates = () => {} }) {
   const [range, setRange] = useState({ startDate: null, endDate: null });
   const [currentMonth, setCurrentMonth] = useState(dayjs());
   const [isYearMonthOpen, setIsYearMonthOpen] = useState(false);
 
   const applyFilters = () => {
     if (range.startDate && range.endDate) {
-      onSelectDates(range);
+      // onSelectDates가 함수인지 확인 후 호출
+      if (typeof onSelectDates === 'function') {
+        onSelectDates(range);
+      } else {
+        console.warn('onSelectDates is not a function');
+      }
       onClose();
+    }
+  };
+
+  const CloseModal = () => {
+    if (typeof onClose === 'function') {
+      onClose();
+    } else {
+      console.warn('onClose is not a function');
     }
   };
 
@@ -62,7 +75,7 @@ export default function CalendarPopup({ visible, onClose, onSelectDates }) {
                 </View>
               </TouchableOpacity>
               <Text style={styles.title}>날짜 선택</Text>
-              <TouchableOpacity onPress={onClose}>
+              <TouchableOpacity onPress={CloseModal}>
                 <Icon name="close" size={22} color="black" />
               </TouchableOpacity>
             </View>
@@ -81,6 +94,7 @@ export default function CalendarPopup({ visible, onClose, onSelectDates }) {
                 <Text style={styles.arrow}>{'          >'}</Text>
               </TouchableOpacity>
             </View>
+
             {/* Calendar */}
             <CalendarPicker
             customDatesStyles={() => {}}

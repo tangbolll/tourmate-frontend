@@ -8,15 +8,13 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   Keyboard,
-
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
 import CalendarPopup from '../components/CalendarPopup';
 import dayjs from 'dayjs';
-import { Pressable } from 'react-native';
 
-const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
+const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters }) => {
   const { gender, age, categories, travelPeriod, travelLocation } = filters;
 
   const [calendarVisible, setCalendarVisible] = useState(false);
@@ -40,8 +38,13 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
   const setTravelLocation = (value) => setFilters({ ...filters, travelLocation: value });
 
   const applyFilters = () => {
-    onApply && onApply(filters);
+    if (onApply) onApply(filters);
     onClose();
+  };
+
+  const openCalendar = () => {
+    console.log("Opening calendar"); // 디버깅용
+    setCalendarVisible(true);
   };
 
   const categoryList = [
@@ -55,6 +58,8 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
       const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
       setTravelPeriod(formatted);
     }
+    // 캘린더 닫기
+    setCalendarVisible(false);
   };
 
   return (
@@ -66,7 +71,10 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
               {/* Header */}
               <View style={styles.header}>
                 <Text style={styles.headerTitle}>필터</Text>
-                <TouchableOpacity onPress={onClose}>
+                <TouchableOpacity 
+                  onPress={onClose}
+                  hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                >
                   <Icon name="close" size={18} color="black" />
                 </TouchableOpacity>
               </View>
@@ -74,16 +82,16 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
               {/* Travel Period */}
               <View style={styles.sectionContainer}>
                 <Text style={styles.sectionTitle}>동행기간</Text>
-                <TouchableOpacity onPress={() => setCalendarVisible(true)} style={styles.inputContainer}>
-                <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="여행기간을 선택해주세요."
-                  placeholderTextColor="#343a40"
-                  value={travelPeriod}
-                  editable={false} // 클릭 불가능하게
-                  pointerEvents="none" // iOS에서 터치 이벤트 무시
-                />
+                {/* 여기서 전체 영역을 TouchableOpacity로 변경 */}
+                <TouchableOpacity 
+                  onPress={openCalendar} 
+                  activeOpacity={0.7}
+                  style={styles.inputContainer}
+                >
+                  <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
+                  <Text style={[styles.input, !travelPeriod && styles.placeholder]}>
+                    {travelPeriod || "여행기간을 선택해주세요."}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
@@ -95,7 +103,7 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
                   <TextInput
                     style={styles.input}
                     placeholder="동행장소를 입력해주세요."
-                    placeholderTextColor="#343a40"
+                    placeholderTextColor="#777"
                     value={travelLocation}
                     onChangeText={setTravelLocation}
                   />
@@ -111,6 +119,7 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
                       key={item}
                       style={[styles.option, gender === item && styles.selectedOption]}
                       onPress={() => toggleGender(item)}
+                      activeOpacity={0.7}
                     >
                       <Text style={[styles.optionText, gender === item && styles.selectedOptionText]}>{item}</Text>
                     </TouchableOpacity>
@@ -127,6 +136,7 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
                       key={item}
                       style={[styles.option, age === item && styles.selectedOption]}
                       onPress={() => toggleAge(item)}
+                      activeOpacity={0.7}
                     >
                       <Text style={[styles.optionText, age === item && styles.selectedOptionText]}>{item}</Text>
                     </TouchableOpacity>
@@ -143,6 +153,7 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
                       key={category}
                       style={[styles.categoryOption, categories.includes(category) && styles.selectedOption]}
                       onPress={() => toggleCategory(category)}
+                      activeOpacity={0.7}
                     >
                       <Text style={[styles.optionText, categories.includes(category) && styles.selectedOptionText]}>{category}</Text>
                     </TouchableOpacity>
@@ -150,7 +161,11 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
                 </View>
               </View>
 
-              <TouchableOpacity style={styles.applyButton} onPress={applyFilters}>
+              <TouchableOpacity 
+                style={styles.applyButton} 
+                onPress={applyFilters}
+                activeOpacity={0.7}
+              >
                 <Text style={styles.applyButtonText}>적용하기</Text>
               </TouchableOpacity>
             </View>
@@ -158,10 +173,13 @@ const FilterPopup = ({ visible, onClose, onApply, filters, setFilters }) => {
         </TouchableWithoutFeedback>
       </Modal>
 
-      {/* 📅 캘린더 팝업 */}
+      {/* 캘린더 팝업 */}
       <CalendarPopup
         visible={calendarVisible}
-        onClose={() => setCalendarVisible(false)}
+        onClose={() => {
+          console.log("Closing calendar"); // 디버깅용
+          setCalendarVisible(false);
+        }}
         onSelectDates={handleCalendarSelect}
       />
     </>
@@ -204,11 +222,12 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     borderWidth: 1,
     borderColor: '#adb5bd',
     borderRadius: 8,
     paddingHorizontal: 12,
-    height: 40,
+    height: 45,
   },
   inputIcon: {
     marginRight: 8,
@@ -216,6 +235,10 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     color: '#000',
+    fontSize: 14,
+  },
+  placeholder: {
+    color: '#777',
   },
   optionsRow: {
     flexDirection: 'row',
@@ -250,7 +273,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#adb5bd',
     borderRadius: 20,
-    backgroundColor: '#e9ecef',
+    backgroundColor: '#f0f0f0',
     marginRight: 8,
     marginBottom: 8,
   },
