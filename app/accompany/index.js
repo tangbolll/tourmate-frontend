@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { useRouter } from 'expo-router';
 import AccompanyListHeader from '../../components/AccompanyListHeader';
 import FilterPopup from '../../components/FilterPopup';
 import FilterTag from '../../components/FilterTag';
@@ -9,6 +10,7 @@ import AccompanyTabToggle from '../../components/AccompanyTabToggle';
 import AccompanyFeed from '../../components/AccompanyFeed';
 import BottomBar from '../../components/BottomBar'; 
 import CreateAccompanyButton from '../../components/CreateAccompanyButton';
+
 
 const AccompanyList = ({ navigation }) => {
   const [showFilterPopup, setShowFilterPopup] = useState(false);
@@ -63,6 +65,8 @@ const AccompanyList = ({ navigation }) => {
     { id: 3, date: "01.05 ~ 03.01", title: "행궁뎅이 가서 브뤼셀 프라이 드실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
   ];
 
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -114,12 +118,19 @@ const AccompanyList = ({ navigation }) => {
           imageUrl=""
           liked={liked}
           onPressLike={handlePressLike}
-          onPress={() => navigation.navigate('AccompanyPost', { postId: '1' })}
+          onPress={() => router.push('/accompany/AccompanyPost?postId=1')}
         />
       </ScrollView>
 
-      <TouchableOpacity style={styles.floatingButton} onPress={() => console.log('동행 생성')}>
-        <CreateAccompanyButton />
+      <TouchableOpacity 
+        style={styles.floatingButton} 
+      >
+        <CreateAccompanyButton 
+          onPress={() => {
+            console.log('동행 생성 버튼 클릭');
+            router.push('/accompany/AccompanyCreation');
+          }}
+        />
       </TouchableOpacity>
 
     </SafeAreaView>
