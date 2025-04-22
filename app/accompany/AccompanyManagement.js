@@ -11,8 +11,8 @@ import {
     Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ApplicationButton from '../components/ApplicationButton';
-import CloseAlarmPopup from '../components/CloseAlarmPopup'; // 새로운 팝업 컴포넌트
+import ApplicationButton from '../../components/ApplicationButton';
+import CloseAlarmPopup from '../../components/CloseAlarmPopup'; // 새로운 팝업 컴포넌트
 
 const AccompanyManagement = ({ navigation }) => {
     const [likeCount, setLikeCount] = useState(122);
@@ -123,9 +123,9 @@ const AccompanyManagement = ({ navigation }) => {
         <View key={applicant.id} style={styles.memberRow}>
         <View style={styles.profileSection}>
             <Image 
-            source={require('../assets/defaultProfile.png')} 
+            source={require('../../assets/defaultProfile.png')} 
             style={styles.profileImage} 
-            defaultSource={require('../assets/defaultProfile.png')}
+            defaultSource={require('../../assets/defaultProfile.png')}
             />
             <View style={styles.userInfo}>
             <View style={styles.nameRow}>
@@ -152,9 +152,9 @@ const AccompanyManagement = ({ navigation }) => {
         <View key={companion.id} style={styles.memberRow}>
         <View style={styles.profileSection}>
             <Image 
-            source={require('../assets/defaultProfile.png')} 
+            source={require('../../assets/defaultProfile.png')} 
             style={styles.profileImage} 
-            defaultSource={require('../assets/defaultProfile.png')}
+            defaultSource={require('../../assets/defaultProfile.png')}
             />
             <View style={styles.userInfo}>
             <View style={styles.nameRow}>

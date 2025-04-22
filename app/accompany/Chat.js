@@ -12,7 +12,7 @@ import {
     Animated
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import MessageBubble from '../components/MessageBubble';
+import MessageBubble from '../../components/MessageBubble';
 import Icon from 'react-native-vector-icons/Feather';
 
 const Chat = ({ 

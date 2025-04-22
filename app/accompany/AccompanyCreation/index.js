@@ -1,19 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
     View, 
     Text, 
     TouchableOpacity,
     StyleSheet,
     SafeAreaView,
-    Platform
+    Platform,
+    Alert
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { Ionicons } from '@expo/vector-icons';
-import { formatDate } from '../../utils/dateUtils';
+import { formatDate } from '../../../utils/dateUtils';
 import Step1 from './Step1';
 import Step2 from './Step2';
+import { useRouter } from 'expo-router';
 
-const AccompanyCreation = ({ navigation }) => {
+const AccompanyCreation = () => {
+    const router = useRouter();
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
     
@@ -58,6 +61,37 @@ const AccompanyCreation = ({ navigation }) => {
         parseInt(maxPeople) > 0 && 
         selectedCategories.length > 0;
     
+    // 작성 중인 내용이 있는지 확인
+    const hasContent = () => {
+        return title || location || description || meetLocation || images.length > 0 || 
+               maxPeople || selectedCategories.length > 0 || tags.length > 0;
+    };
+    
+    // 작성 중 나가기 확인 알림
+    const showExitConfirmation = (onConfirm) => {
+        if (hasContent()) {
+            Alert.alert(
+                "작성 취소",
+                "작성 중인 내용이 저장되지 않습니다. 나가시겠습니까?",
+                [
+                    {
+                        text: "취소",
+                        style: "cancel"
+                    },
+                    {
+                        text: "나가기",
+                        onPress: onConfirm,
+                        style: "destructive"
+                    }
+                ],
+                { cancelable: false }
+            );
+        } else {
+            // 작성 중인 내용이 없으면 바로 나가기
+            onConfirm();
+        }
+    };
+    
     const nextStep = () => {
         if (currentStep === 1 && isStep1Valid) {
             setCurrentStep(2);
@@ -68,15 +102,17 @@ const AccompanyCreation = ({ navigation }) => {
     
     const prevStep = () => {
         if (currentStep === 2) {
+            // Step 2에서는 Step 1으로 돌아가기
             setCurrentStep(1);
         } else {
-            // 첫 단계에서 뒤로가기시 이전 화면으로 이동
-            navigation.goBack();
+            // Step 1에서는 AccompanyList로 나가기 (확인 알림 표시)
+            showExitConfirmation(() => router.push('/accompany'));
         }
     };
     
     const closeForm = () => {
-        navigation.goBack();
+        // X 버튼 클릭 시 나가기 확인 후 AccompanyList로 이동
+        showExitConfirmation(() => router.push('/accompany'));
     };
     
     const handleSubmit = async () => {
@@ -105,7 +141,7 @@ const AccompanyCreation = ({ navigation }) => {
             console.log('제출 데이터:', formData);
             
             // 성공 시 리스트로 이동
-            navigation.navigate('AccompanyList');
+            router.push('/accompany');
         } catch (error) {
             console.error('동행 등록 오류:', error);
         } finally {
