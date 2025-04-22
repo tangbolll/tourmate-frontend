@@ -1,4 +1,3 @@
-// app/accompany/index.js
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -54,7 +53,7 @@ const mockPosts = [
   },
   {
     id: '4',
-    type: 'feed',
+    type: 'mine',
     date: "03.15 토",
     title: "부산 해운대 같이 가요",
     location: "부산",
@@ -111,48 +110,52 @@ const AccompanyList = () => {
   // 현재 사용자 ID (실제 구현에서는 인증 시스템에서 가져옵니다)
   const currentUserId = "user001";
 
-  // 필터링된 포스트 업데이트
-  useEffect(() => {
-    let filtered = [...mockPosts];
-    
-    // 검색어로 필터링
-    if (searchText) {
-      const searchLower = searchText.toLowerCase();
-      filtered = filtered.filter(post => 
-        post.title.toLowerCase().includes(searchLower) || 
-        post.location.toLowerCase().includes(searchLower) ||
-        post.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
-    }
-    
-    // 성별 필터링
-    if (filters.gender) {
-      filtered = filtered.filter(post => 
-        post.tags.includes(filters.gender) || post.tags.includes('남녀무관')
-      );
-    }
-    
-    // 나이 필터링
-    if (filters.age) {
-      filtered = filtered.filter(post => 
-        post.tags.includes(filters.age) || post.tags.includes('누구나')
-      );
-    }
-    
-    // 카테고리 필터링
-    if (filters.categories.length > 0) {
-      filtered = filtered.filter(post => 
-        filters.categories.some(category => post.tags.includes(category))
-      );
-    }
-    
-    // 'mine' 탭이 선택된 경우에만 내가 만든 동행만 필터링
-    if (selectedTab === 'mine') {
-      filtered = filtered.filter(post => post.hostId === currentUserId);
-    }
-    
-    setFilteredPosts(filtered);
-  }, [searchText, filters, selectedTab]); // selectedTab을 의존성에 추가하여 탭 변경 시 다시 필터링
+// 필터링된 포스트 업데이트
+useEffect(() => {
+  let filtered = [...mockPosts];
+
+  console.log('원본:', mockPosts.map(p => ({ id: p.id, type: p.type, hostId: p.hostId })));
+
+  // 검색어로 필터링
+  if (searchText) {
+    const searchLower = searchText.toLowerCase();
+    filtered = filtered.filter(post =>
+      post.title.toLowerCase().includes(searchLower) ||
+      post.location.toLowerCase().includes(searchLower) ||
+      post.tags.some(tag => tag.toLowerCase().includes(searchLower))
+    );
+  }
+
+  // 성별 필터링
+  if (filters.gender) {
+    filtered = filtered.filter(post =>
+      post.tags.includes(filters.gender) || post.tags.includes('남녀무관')
+    );
+  }
+
+  // 나이 필터링
+  if (filters.age) {
+    filtered = filtered.filter(post =>
+      post.tags.includes(filters.age) || post.tags.includes('누구나')
+    );
+  }
+
+  // 카테고리 필터링
+  if (filters.categories.length > 0) {
+    filtered = filtered.filter(post =>
+      filters.categories.some(category => post.tags.includes(category))
+    );
+  }
+
+  // 탭에 따라 내 게시물만 / 내 게시물 제외
+  if (selectedTab === 'mine') {
+    filtered = filtered.filter(post => post.hostId === currentUserId);
+  } else if (selectedTab === 'feed') {
+    filtered = filtered.filter(post => post.hostId !== currentUserId);
+  }
+
+  setFilteredPosts(filtered);
+}, [searchText, filters, selectedTab]);
 
 
   const handleFilterPopup = () => {
@@ -176,6 +179,7 @@ const AccompanyList = () => {
       setShowFilterPopup(true);
     }, 300);
   };
+  
   const handleCloseFilterPopup = () => setShowFilterPopup(false);
 
   const handleApplyFilters = (newFilters) => {
@@ -211,39 +215,41 @@ const AccompanyList = () => {
     return tags;
   };
 
-// 피드 아이템을 렌더링하는 함수
-const renderFeedItems = () => {
-  if (filteredPosts.length === 0) {
-    return (
-      <View style={styles.emptyState}>
-        <Text style={styles.emptyStateText}>
-          {selectedTab === 'mine' 
-            ? '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!'
-            : '표시할 동행이 없습니다.\n필터를 조정해보세요.'}
-        </Text>
-      </View>
-    );
-  }
-  
-  return filteredPosts.map((post) => (
-    <AccompanyFeed
-      key={post.id}
-      id={post.id}
-      date={post.date}
-      title={post.title}
-      tags={post.tags}
-      location={post.location}
-      participants={post.participants}
-      maxParticipants={post.maxParticipants}
-      imageUrl={post.imageUrl}
-      liked={!!likedPosts[post.id]}
-      onPressLike={() => handlePressLike(post.id)}
-      onPress={() => {
-        console.log(`피드 아이템 클릭: ${item.title}`);
-        router.push(`/accompany/AccompanyPost?postId=${item.id}`);
+  // 공통 네비게이션 함수
+  const navigateToPost = (postId) => {
+    console.log(`포스트로 이동: ${postId}`);
+    router.push(`/accompany/AccompanyPost?postId=${postId}`);
+  };
 
-      }}
-    />
+  // 피드 아이템을 렌더링하는 함수
+  const renderFeedItems = () => {
+    if (filteredPosts.length === 0) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>
+            {selectedTab === 'mine' 
+              ? '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!'
+              : '표시할 동행이 없습니다.\n필터를 조정해보세요.'}
+          </Text>
+        </View>
+      );
+    }
+    
+    return filteredPosts.map((post) => (
+      <AccompanyFeed
+        key={post.id}
+        id={post.id}
+        date={post.date}
+        title={post.title}
+        tags={post.tags}
+        location={post.location}
+        participants={post.participants}
+        maxParticipants={post.maxParticipants}
+        imageUrl={post.imageUrl}
+        liked={!!likedPosts[post.id]}
+        onPressLike={() => handlePressLike(post.id)}
+        onPress={() => navigateToPost(post.id)}
+      />
     ));
   };
 
@@ -258,32 +264,33 @@ const renderFeedItems = () => {
           setSearchText={setSearchText}
         />
 
-<FilterPopup
-            visible={showFilterPopup}
-            onClose={() => setShowFilterPopup(false)}
-            onApply={(filters) => {
-              setFilters(filters);
-              setShowFilterPopup(false); // 👈 이건 캘린더 흐름이 아니라면 있어도 됩니다
-            }}
-            filters={filters}
-            setFilters={setFilters}
-            onOpenCalendar={() => {
-              setShowFilterPopup(false);
-              setTimeout(() => setCalendarVisible(true), 300);
-            }}
-          />
+        <FilterPopup
+          visible={showFilterPopup}
+          onClose={() => setShowFilterPopup(false)}
+          onApply={(filters) => {
+            setFilters(filters);
+            setShowFilterPopup(false);
+          }}
+          filters={filters}
+          setFilters={setFilters}
+          onOpenCalendar={() => {
+            setShowFilterPopup(false);
+            setTimeout(() => setCalendarVisible(true), 300);
+          }}
+        />
 
-          <CalendarPopup
-            visible={calendarVisible}
-            onClose={() => setCalendarVisible(false)}
-            onSelectDates={(range) => {
-              const { startDate, endDate } = range;
-              const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
-              setFilters(prev => ({ ...prev, travelPeriod: formatted }));
-              setCalendarVisible(false);
-              setTimeout(() => setShowFilterPopup(true), 300); // ❗ 여기 핵심
-            }}
-          />  
+        <CalendarPopup
+          visible={calendarVisible}
+          onClose={() => setCalendarVisible(false)}
+          onSelectDates={(range) => {
+            const { startDate, endDate } = range;
+            const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
+            setFilters(prev => ({ ...prev, travelPeriod: formatted }));
+            setCalendarVisible(false);
+            setTimeout(() => setShowFilterPopup(true), 300);
+          }}
+        />  
+        
         <View style={styles.filterTagsContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTagsScroll}>
             {getAllTags().map((tag) => (
@@ -304,17 +311,14 @@ const renderFeedItems = () => {
                 <AccompanyCard 
                   key={item.id} 
                   {...item} 
-                  onPress={() => {
-                    console.log(`${item.title} 카드 클릭`);
-                    router.push(`/accompany/AccompanyPost?postId=${item.id}`);
-                  }} 
+                  onPress={() => navigateToPost(item.id)} 
                 />
               ))}
             </ScrollView>
           </View>
         )}
 
-      <AccompanyTabToggle 
+        <AccompanyTabToggle 
           selectedTab={selectedTab} 
           onSelectTab={(tab) => {
             setSelectedTab(tab);
@@ -347,7 +351,8 @@ const styles = StyleSheet.create({
     position: 'absolute', 
     bottom: 25, 
     right: 20, 
-    zIndex: 10 },
+    zIndex: 10 
+  },
   filterTagsContainer: { 
     marginVertical: 8 
   },
