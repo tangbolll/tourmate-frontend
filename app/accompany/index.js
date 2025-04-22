@@ -1,15 +1,16 @@
 import React, { useState } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity } from 'react-native';
-import AccompanyListHeader from '../components/AccompanyListHeader';
-import FilterPopup from '../components/FilterPopup';
-import FilterTag from '../components/FilterTag';
-import CalendarPopup from '../components/CalendarPopup';
-import AccompanyToggle from '../components/AccompanyToggle';
-import AccompanyCard from '../components/AccompanyCard';
-import AccompanyTabToggle from '../components/AccompanyTabToggle';
-import AccompanyFeed from '../components/AccompanyFeed';
-import BottomBar from '../components/BottomBar'; 
-import CreateAccompanyButton from '../components/CreateAccompanyButton';
+import { useRouter } from 'expo-router';
+import AccompanyListHeader from '../../components/AccompanyListHeader';
+import FilterPopup from '../../components/FilterPopup';
+import FilterTag from '../../components/FilterTag';
+import AccompanyToggle from '../../components/AccompanyToggle';
+import AccompanyCard from '../../components/AccompanyCard';
+import AccompanyTabToggle from '../../components/AccompanyTabToggle';
+import AccompanyFeed from '../../components/AccompanyFeed';
+import BottomBar from '../../components/BottomBar'; 
+import CreateAccompanyButton from '../../components/CreateAccompanyButton';
+
 
 const AccompanyList = ({ navigation }) => {
   const [showFilterPopup, setShowFilterPopup] = useState(false);
@@ -64,6 +65,8 @@ const AccompanyList = ({ navigation }) => {
     { id: 3, date: "01.05 ~ 03.01", title: "행궁뎅이 가서 브뤼셀 프라이 드실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
   ];
 
+  const router = useRouter();
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
@@ -105,42 +108,31 @@ const AccompanyList = ({ navigation }) => {
 
         <AccompanyTabToggle selectedTab={selectedTab} onSelectTab={setSelectedTab} />
 
-        {selectedTab === 'feed' ? (
-          <AccompanyFeed
-            date="03.04 월"
-            title="공주 공산성에서 야경 같이 즐겨요"
-            tags={['야경', '여자만', '저녁식사', '걷기']}
-            location="공주"
-            participants={2}
-            maxParticipants={3}
-            imageUrl=""
-            liked={liked}
-            onPressLike={handlePressLike}
-            onPress={() => navigation.navigate('AccompanyPost', { postId: '1' })}
-          />
-        ) : (
-          <AccompanyFeed
-            date="04.10 수"
-            title="내가 만든 동행 예시입니다"
-            tags={['친목', '남자만']}
-            location="서울"
-            participants={1}
-            maxParticipants={4}
-            imageUrl=""
-            liked={!liked}
-            onPressLike={handlePressLike}
-            onPress={() => console.log('내 동행 클릭')}
-          />
-        )}
+        <AccompanyFeed
+          date="03.04 월"
+          title="공주 공산성에서 야경 같이 즐겨요"
+          tags={['야경', '여자만', '저녁식사', '걷기']}
+          location="공주"
+          participants={2}
+          maxParticipants={3}
+          imageUrl=""
+          liked={liked}
+          onPressLike={handlePressLike}
+          onPress={() => router.push('/accompany/AccompanyPost?postId=1')}
+        />
       </ScrollView>
 
-      <TouchableOpacity style={styles.floatingButton} onPress={() => console.log('동행 생성')}>
-        <CreateAccompanyButton />
+      <TouchableOpacity 
+        style={styles.floatingButton} 
+      >
+        <CreateAccompanyButton 
+          onPress={() => {
+            console.log('동행 생성 버튼 클릭');
+            router.push('/accompany/AccompanyCreation');
+          }}
+        />
       </TouchableOpacity>
 
-      <View style={styles.bottomBarContainer}>
-        <BottomBar currentTab="accompany" onTabPress={(tab) => console.log(tab)} />
-      </View>
     </SafeAreaView>
   );
 };
@@ -148,17 +140,6 @@ const AccompanyList = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   floatingButton: { position: 'absolute', bottom: 70, right: 20, zIndex: 10 },
-  bottomBarContainer: {
-    position: 'absolute',
-    bottom: -30,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 2,
-    borderTopColor: '#eee',
-    paddingBottom: 0,
-    paddingTop: 0,
-  },
 });
 
 export default AccompanyList;
