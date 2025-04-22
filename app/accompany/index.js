@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useRouter } from 'expo-router';
 import AccompanyListHeader from '../../components/AccompanyListHeader';
+import CalendarPopup from '../../components/CalendarPopup';
 import FilterPopup from '../../components/FilterPopup';
 import FilterTag from '../../components/FilterTag';
 import AccompanyToggle from '../../components/AccompanyToggle';
@@ -10,6 +11,7 @@ import AccompanyCard from '../../components/AccompanyCard';
 import AccompanyTabToggle from '../../components/AccompanyTabToggle';
 import AccompanyFeed from '../../components/AccompanyFeed';
 import CreateAccompanyButton from '../../components/CreateAccompanyButton';
+import dayjs from 'dayjs';
 
 // 목 데이터 - 실제 구현에서는 API에서 가져올 데이터
 const mockPosts = [
@@ -64,6 +66,9 @@ const cardData = [
   { id: "1", date: "03.01 ~ 03.05", title: "홍천 산천어 축제에서 놀아요", location: "홍천", imageUrl: "", buttonLabel: "승인" },
   { id: "2", date: "04.01 ~ 04.03", title: "부산 벚꽃축제 가실 분~", location: "부산", imageUrl: "", buttonLabel: "승인" },
   { id: "3", date: "01.05 ~ 03.01", title: "행궁뎅이 가서 브뤼셀 프라이 드실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
+  { id: 4, date: "01.04 ~ 03.01", title: "동탄가서 단백쿠키 드실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
+  { id: 5, date: "01.08 ~ 03.01", title: "수원에서 폰센트럴파크 러닝하실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
+  { id: 6, date: "01.02 ~ 03.01", title: "목동에서 국내최고 에그타르트 드실 분~", location: "서울", imageUrl: "", buttonLabel: "승인" },
 ];
 
 const AccompanyList = () => {
@@ -74,6 +79,7 @@ const AccompanyList = () => {
   const [filteredPosts, setFilteredPosts] = useState([]);
   const [myPosts, setMyPosts] = useState([]);
   const [likedPosts, setLikedPosts] = useState({});
+  const [calendarVisible, setCalendarVisible] = useState(false);
 
   const [filters, setFilters] = useState({
     gender: '여자만',
@@ -84,6 +90,8 @@ const AccompanyList = () => {
   });
 
   const router = useRouter();
+
+  
   
   // 현재 사용자 ID (실제 구현에서는 인증 시스템에서 가져옵니다)
   const currentUserId = "user001";
@@ -132,7 +140,27 @@ const AccompanyList = () => {
     }
   }, [searchText, filters, selectedTab]);
 
-  const handleFilterPopup = () => setShowFilterPopup(true);
+  const handleFilterPopup = () => {
+    setShowFilterPopup(false); // 먼저 닫았다가
+    setTimeout(() => {
+      setShowFilterPopup(true); // 다시 열기
+    }, 50); // iOS에서 안전하게 모달 재오픈하는 핵심
+  };
+
+  const handleCalendarSelect = (range) => {
+    const { startDate, endDate } = range;
+    const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
+    
+    setFilters(prev => ({ ...prev, travelPeriod: formatted }));
+  
+    // 1. 캘린더 닫고
+    setCalendarVisible(false);
+  
+    // 2. 약간의 지연 후 필터 다시 열기 (iOS 안전)
+    setTimeout(() => {
+      setShowFilterPopup(true);
+    }, 300);
+  };
   const handleCloseFilterPopup = () => setShowFilterPopup(false);
 
   const handleApplyFilters = (newFilters) => {
@@ -213,14 +241,32 @@ const AccompanyList = () => {
           setSearchText={setSearchText}
         />
 
-        <FilterPopup
-          visible={showFilterPopup}
-          onClose={handleCloseFilterPopup}
-          onApply={handleApplyFilters}
-          filters={filters}
-          setFilters={setFilters}
-        />
+<FilterPopup
+            visible={showFilterPopup}
+            onClose={() => setShowFilterPopup(false)}
+            onApply={(filters) => {
+              setFilters(filters);
+              setShowFilterPopup(false); // 👈 이건 캘린더 흐름이 아니라면 있어도 됩니다
+            }}
+            filters={filters}
+            setFilters={setFilters}
+            onOpenCalendar={() => {
+              setShowFilterPopup(false);
+              setTimeout(() => setCalendarVisible(true), 300);
+            }}
+          />
 
+          <CalendarPopup
+            visible={calendarVisible}
+            onClose={() => setCalendarVisible(false)}
+            onSelectDates={(range) => {
+              const { startDate, endDate } = range;
+              const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
+              setFilters(prev => ({ ...prev, travelPeriod: formatted }));
+              setCalendarVisible(false);
+              setTimeout(() => setShowFilterPopup(true), 300); // ❗ 여기 핵심
+            }}
+          />  
         <View style={styles.filterTagsContainer}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTagsScroll}>
             {getAllTags().map((tag) => (
@@ -269,10 +315,16 @@ const AccompanyList = () => {
 };
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff' 
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    position: 'relative', 
   },
+  floatingButton: { 
+    position: 'absolute', 
+    bottom: 25, 
+    right: 20, 
+    zIndex: 10 },
   filterTagsContainer: { 
     marginVertical: 8 
   },
@@ -284,12 +336,6 @@ const styles = StyleSheet.create({
   },
   cardsScroll: { 
     paddingHorizontal: 16 
-  },
-  floatingButton: { 
-    position: 'absolute', 
-    bottom: 70, 
-    right: 20, 
-    zIndex: 10 
   },
   emptyState: {
     padding: 32,
