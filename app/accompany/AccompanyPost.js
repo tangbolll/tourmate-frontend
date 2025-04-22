@@ -1,6 +1,8 @@
+// app/accompany/AccompanyPost.js
 import React, { useState, useRef, useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import EventSchedule from '../../components/EventSchedule';
 import Comment from '../../components/Comment';
 import Reply from '../../components/Reply';
@@ -15,8 +17,108 @@ import AlarmPopup from '../../components/AlarmPopup';
 import MemberPopup from '../../components/MemberPopup';
 import EventHeader from '../../components/EventHeader';
 
-export default function App() {
-    const [isHost] = useState(false);
+// Mock data - This would come from your backend in production
+const mockPosts = [
+  {
+    id: '1',
+    location: "강원도 화천",
+    hostName: "여라미",
+    postDate: "2025.03.01",
+    views: "122회",
+    eventDate: "3월4일(월)",
+    eventTimeStart: "15:00",
+    eventTimeEnd: "19:00",
+    recruitStart: "3월1일(금)",
+    recruitEnd: "3월3일(일)",
+    message: "화천 산천어 축제 함께 갈 메이트 구해요. 얼음낚시부터 눈썰매, 다양한 먹거리까지 같이 즐겁게 겨울을 보내요! ⛄️❄️",
+    gatheringPlace: "강원도 화천 산천어 축제",
+    gender: "여자만",
+    ageGroups: ["20대", "30대"],
+    types: ["아웃도어", "축제", "힐링여행"],
+    tags: ["자유로운", "낚시대결", "활기찬사람", "회떠먹기"],
+    participantsCurrent: 3,
+    participantsTotal: 5,
+    hostId: "user001", // 호스트의 사용자 ID
+    likes: 122
+  },
+  {
+    id: '2',
+    location: "공주 공산성",
+    hostName: "민지",
+    postDate: "2025.03.02",
+    views: "89회",
+    eventDate: "3월4일(월)",
+    eventTimeStart: "16:00",
+    eventTimeEnd: "21:00",
+    recruitStart: "3월1일(금)",
+    recruitEnd: "3월3일(일)",
+    message: "공주 공산성에서 야경 같이 즐겨요! 저녁식사도 함께하고 여유롭게 산책하면서 사진도 찍어요.",
+    gatheringPlace: "공주 공산성 주차장",
+    gender: "여자만",
+    ageGroups: ["20대"],
+    types: ["야경", "산책", "사진찍기"],
+    tags: ["여유로운", "공주시", "야경투어", "걷기"],
+    participantsCurrent: 2,
+    participantsTotal: 3,
+    hostId: "user002",
+    likes: 78
+  },
+  {
+    id: '3',
+    location: "홍천",
+    hostName: "준호",
+    postDate: "2025.02.28",
+    views: "156회",
+    eventDate: "3월1일(금)",
+    eventTimeStart: "09:00",
+    eventTimeEnd: "18:00",
+    recruitStart: "2월25일(월)",
+    recruitEnd: "2월29일(목)",
+    message: "홍천 산천어 축제에서 놀아요! 홍천에서 1박 2일로 여행 계획중입니다. 맛있는 음식도 먹고 즐거운 추억 만들어요.",
+    gatheringPlace: "홍천버스터미널",
+    gender: "남녀무관",
+    ageGroups: ["20대", "30대"],
+    types: ["축제", "맛집"],
+    tags: ["활기찬", "산천어", "여행"],
+    participantsCurrent: 2,
+    participantsTotal: 4,
+    hostId: "user003",
+    likes: 102
+  },
+  {
+    id: '4',
+    location: "부산",
+    hostName: "혜진",
+    postDate: "2025.03.03",
+    views: "211회",
+    eventDate: "4월1일(월)",
+    eventTimeStart: "10:00",
+    eventTimeEnd: "20:00",
+    recruitStart: "3월15일(금)",
+    recruitEnd: "3월30일(토)",
+    message: "부산 벚꽃축제 같이 가실 분 찾습니다. 해운대도 들르고 부산 맛집 탐방도 할 예정이에요!",
+    gatheringPlace: "부산역",
+    gender: "남녀무관",
+    ageGroups: ["누구나"],
+    types: ["벚꽃", "맛집탐방"],
+    tags: ["부산여행", "벚꽃구경", "맛집투어"],
+    participantsCurrent: 3,
+    participantsTotal: 4,
+    hostId: "user004",
+    likes: 188
+  }
+];
+
+export default function AccompanyPost() {
+    const params = useLocalSearchParams();
+    const router = useRouter();
+    const { postId } = params;
+    const [postData, setPostData] = useState(null);
+    
+    // 현재 사용자가 호스트인지 확인 (실제로는 인증 시스템에서 가져올 값)
+    const currentUserId = "user001"; // 예시 사용자 ID
+    const [isHost, setIsHost] = useState(false);
+    
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
     const [closed, setClosed] = useState(false); 
@@ -26,12 +128,16 @@ export default function App() {
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const scrollViewRef = useRef(null);
 
-    // Host information
-    const hostInfo = {
-        hostName: "여라미",
-        postDate: "2025.03.01",
-        views: "122회"
-    };
+    // postId를 사용하여 데이터 로드
+    useEffect(() => {
+        // 실제 구현에서는 API 호출로 대체할 부분
+        const post = mockPosts.find(p => p.id === postId);
+        if (post) {
+            setPostData(post);
+            // 현재 사용자가 호스트인지 확인
+            setIsHost(post.hostId === currentUserId);
+        }
+    }, [postId]);
 
     // Keyboard listeners to handle scrolling when keyboard appears
     useEffect(() => {
@@ -115,6 +221,17 @@ export default function App() {
         }
     ];
 
+    // 데이터가 로드되지 않았을 때 로딩 화면 표시
+    if (!postData) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text>로딩 중...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.safeArea}>
             <KeyboardAvoidingView 
@@ -132,15 +249,15 @@ export default function App() {
                     <View style={styles.grayBackground} />
                     
                     {/* Back button */}
-                    <TouchableOpacity style={styles.backButton}>
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                         <Ionicons name="chevron-back" size={24} color="black" />
                     </TouchableOpacity>
                     
                     {/* Event header card */}
                     <EventHeader 
-                        location="강원도 화천" 
-                        participantsCurrent={3} 
-                        participantsTotal={5}
+                        location={postData.location} 
+                        participantsCurrent={postData.participantsCurrent} 
+                        participantsTotal={postData.participantsTotal}
                         onParticipantsClick={handleParticipantsClick}
                     />
                     
@@ -153,34 +270,34 @@ export default function App() {
                     <View style={styles.hostInfoContainer}>
                         <Text style={styles.hostInfoText}>
                             <Text style={styles.hostInfoLabel}>호스트 </Text>
-                            <Text>{hostInfo.hostName} </Text>
+                            <Text>{postData.hostName} </Text>
                             <Text style={styles.hostInfoLabel}>게시일 </Text>
-                            <Text>{hostInfo.postDate} </Text>
+                            <Text>{postData.postDate} </Text>
                             <Text style={styles.hostInfoLabel}>조회수 </Text>
-                            <Text>{hostInfo.views}</Text>
+                            <Text>{postData.views}</Text>
                         </Text>
                     </View>
 
                     <EventSchedule 
-                        eventDate="3월4일(월)"
-                        eventTimeStart="15:00"
-                        eventTimeEnd="19:00"
-                        recruitStart="3월1일(금)"
-                        recruitEnd="3월3일(일)"
+                        eventDate={postData.eventDate}
+                        eventTimeStart={postData.eventTimeStart}
+                        eventTimeEnd={postData.eventTimeEnd}
+                        recruitStart={postData.recruitStart}
+                        recruitEnd={postData.recruitEnd}
                     />
                     <Intro
-                        message="화천 산천어 축제 함께 갈 메이트 구해요. 얼음낚시부터 눈썰매, 다양한 먹거리까지 같이 즐겁게 겨울을 보내요! ⛄️❄️"
+                        message={postData.message}
                     />
                     <GatheringPlace
-                        location={"강원도 화천 산천어 축제"}
+                        location={postData.gatheringPlace}
                     />    
                     <Conditions 
-                        gender="여자만" 
-                        ageGroups={["20대", "30대"]} 
+                        gender={postData.gender} 
+                        ageGroups={postData.ageGroups} 
                     />
                     <Categories
-                        types={["아웃도어", "축제", "힐링여행"]} 
-                        tags={["자유로운", "낚시대결", "활기찬사람", "회떠먹기"]} 
+                        types={postData.types} 
+                        tags={postData.tags} 
                     />
 
                     <Comment 
@@ -214,7 +331,7 @@ export default function App() {
                     <ApplicationButton
                         title={applied ? "동행 취소" : "동행 신청"}
                         onPress={handleApplicationPress}
-                        likes={122}
+                        likes={postData.likes}
                     />
                 )}
                 
@@ -223,7 +340,7 @@ export default function App() {
                     <AccompanyCloseButton
                         title={closed ? "모집이 마감된 동행입니다." : "모집 마감"}
                         onPress={handleClosedPress}
-                        likes={122}
+                        likes={postData.likes}
                     />
                 )}
 

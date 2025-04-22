@@ -5,7 +5,7 @@ export default function AccompanyLayout() {
         <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
         <Stack.Screen name="AccompanyPost" options={{ 
-            headerShown: true,
+            headerShown: false,
             headerTitle: '동행 상세' 
         }} />
         </Stack>
