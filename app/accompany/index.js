@@ -17,17 +17,20 @@ import dayjs from 'dayjs';
 const mockPosts = [
   {
     id: '1',
+    type: 'mine',
     date: "03.04 월",
     title: "공주 공산성에서 야경 같이 즐겨요",
     location: "공주",
     participants: 2,
     maxParticipants: 3,
     imageUrl: "",
+    liked: true,
     tags: ['야경', '여자만', '저녁식사', '걷기'],
-    hostId: "user001", // 현재 사용자 ID (예시)
+    hostId: "user001", // 현재 사용자 ID - 내가 만든 동행
   },
   {
     id: '2',
+    type: 'mine',
     date: "03.10 일",
     title: "서울 야경 투어 같이 하실 분",
     location: "서울",
@@ -35,10 +38,11 @@ const mockPosts = [
     maxParticipants: 4,
     imageUrl: "",
     tags: ['야경', '남녀무관', '도보여행'],
-    hostId: "user002",
+    hostId: "user002", // 다른 사용자 ID - 동행 피드
   },
   {
     id: '3',
+    type: 'feed',
     date: "04.05 금",
     title: "제주도 테마파크 동행 구해요",
     location: "제주",
@@ -46,10 +50,11 @@ const mockPosts = [
     maxParticipants: 5,
     imageUrl: "",
     tags: ['테마파크', '20대', '남녀무관'],
-    hostId: "user003",
+    hostId: "user003", // 다른 사용자 ID - 동행 피드
   },
   {
     id: '4',
+    type: 'feed',
     date: "03.15 토",
     title: "부산 해운대 같이 가요",
     location: "부산",
@@ -57,8 +62,20 @@ const mockPosts = [
     maxParticipants: 3,
     imageUrl: "",
     tags: ['바다', '남녀무관'],
-    hostId: "user001", // 현재 사용자 ID (예시)
-  }
+    hostId: "user001", // 현재 사용자 ID - 내가 만든 동행
+  },
+  {
+    id: '5', // 더 많은 내가 만든 동행 추가
+    type: 'mine',
+    date: "05.20 월",
+    title: "강릉 커피 투어 함께해요",
+    location: "강릉",
+    participants: 1,
+    maxParticipants: 4,
+    imageUrl: "",
+    tags: ['카페', '커피', '20대'],
+    hostId: "user001", // 현재 사용자 ID - 내가 만든 동행
+  },
 ];
 
 // 동행 카드 데이터
@@ -66,9 +83,9 @@ const cardData = [
   { id: "1", date: "03.01 ~ 03.05", title: "홍천 산천어 축제에서 놀아요", location: "홍천", imageUrl: "", buttonLabel: "승인" },
   { id: "2", date: "04.01 ~ 04.03", title: "부산 벚꽃축제 가실 분~", location: "부산", imageUrl: "", buttonLabel: "승인" },
   { id: "3", date: "01.05 ~ 03.01", title: "행궁뎅이 가서 브뤼셀 프라이 드실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
-  { id: 4, date: "01.04 ~ 03.01", title: "동탄가서 단백쿠키 드실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
-  { id: 5, date: "01.08 ~ 03.01", title: "수원에서 폰센트럴파크 러닝하실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
-  { id: 6, date: "01.02 ~ 03.01", title: "목동에서 국내최고 에그타르트 드실 분~", location: "서울", imageUrl: "", buttonLabel: "승인" },
+  { id: "4", date: "01.04 ~ 03.01", title: "동탄가서 단백쿠키 드실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
+  { id: "5", date: "01.08 ~ 03.01", title: "수원에서 폰센트럴파크 러닝하실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
+  { id: "6", date: "01.02 ~ 03.01", title: "목동에서 국내최고 에그타르트 드실 분~", location: "서울", imageUrl: "", buttonLabel: "승인" },
 ];
 
 const AccompanyList = () => {
@@ -90,8 +107,6 @@ const AccompanyList = () => {
   });
 
   const router = useRouter();
-
-  
   
   // 현재 사용자 ID (실제 구현에서는 인증 시스템에서 가져옵니다)
   const currentUserId = "user001";
@@ -131,14 +146,14 @@ const AccompanyList = () => {
       );
     }
     
-    // 탭에 따라 다른 결과 설정
-    if (selectedTab === 'myAccompany') {
-      // 사용자가 호스트인 포스트만 필터링
-      setMyPosts(filtered.filter(post => post.hostId === currentUserId));
-    } else {
-      setFilteredPosts(filtered);
+    // 'mine' 탭이 선택된 경우에만 내가 만든 동행만 필터링
+    if (selectedTab === 'mine') {
+      filtered = filtered.filter(post => post.hostId === currentUserId);
     }
-  }, [searchText, filters, selectedTab]);
+    
+    setFilteredPosts(filtered);
+  }, [searchText, filters, selectedTab]); // selectedTab을 의존성에 추가하여 탭 변경 시 다시 필터링
+
 
   const handleFilterPopup = () => {
     setShowFilterPopup(false); // 먼저 닫았다가
@@ -196,37 +211,39 @@ const AccompanyList = () => {
     return tags;
   };
 
-  // 피드 아이템을 렌더링하는 함수
-  const renderFeedItems = () => {
-    const postsToRender = selectedTab === 'myAccompany' ? myPosts : filteredPosts;
-    
-    if (postsToRender.length === 0) {
-      return (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>
-            {selectedTab === 'myAccompany' 
-              ? '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!'
-              : '표시할 동행이 없습니다.\n필터를 조정해보세요.'}
-          </Text>
-        </View>
-      );
-    }
-    
-    return postsToRender.map((post) => (
-      <AccompanyFeed
-        key={post.id}
-        id={post.id}
-        date={post.date}
-        title={post.title}
-        tags={post.tags}
-        location={post.location}
-        participants={post.participants}
-        maxParticipants={post.maxParticipants}
-        imageUrl={post.imageUrl}
-        liked={!!likedPosts[post.id]}
-        onPressLike={() => handlePressLike(post.id)}
-        onPress={() => router.push(`/accompany/AccompanyPost?postId=${post.id}`)}
-      />
+// 피드 아이템을 렌더링하는 함수
+const renderFeedItems = () => {
+  if (filteredPosts.length === 0) {
+    return (
+      <View style={styles.emptyState}>
+        <Text style={styles.emptyStateText}>
+          {selectedTab === 'mine' 
+            ? '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!'
+            : '표시할 동행이 없습니다.\n필터를 조정해보세요.'}
+        </Text>
+      </View>
+    );
+  }
+  
+  return filteredPosts.map((post) => (
+    <AccompanyFeed
+      key={post.id}
+      id={post.id}
+      date={post.date}
+      title={post.title}
+      tags={post.tags}
+      location={post.location}
+      participants={post.participants}
+      maxParticipants={post.maxParticipants}
+      imageUrl={post.imageUrl}
+      liked={!!likedPosts[post.id]}
+      onPressLike={() => handlePressLike(post.id)}
+      onPress={() => {
+        console.log(`피드 아이템 클릭: ${item.title}`);
+        router.push(`/accompany/AccompanyPost?postId=${item.id}`);
+
+      }}
+    />
     ));
   };
 
@@ -297,7 +314,13 @@ const AccompanyList = () => {
           </View>
         )}
 
-        <AccompanyTabToggle selectedTab={selectedTab} onSelectTab={setSelectedTab} />
+      <AccompanyTabToggle 
+          selectedTab={selectedTab} 
+          onSelectTab={(tab) => {
+            setSelectedTab(tab);
+            console.log(`탭 전환: ${tab}`); // feed 또는 mine
+          }} 
+        />
 
         {renderFeedItems()}
       </ScrollView>
