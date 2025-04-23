@@ -54,7 +54,8 @@
     "react-native-webview": "13.12.5",
     "react-navigation": "^5.0.0",
     "react-router-dom": "^7.5.1",
-    "tailwindcss": "^3.4.17"
+    "tailwindcss": "^3.4.17",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
