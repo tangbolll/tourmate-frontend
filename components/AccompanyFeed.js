@@ -19,7 +19,7 @@ export default function AccompanyFeed({
 }) 
 {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity onPress={onPress} style={styles.card}>
       <View style={styles.header}>
         <Text style={styles.date}>{date}</Text>
       </View>
@@ -49,7 +49,7 @@ export default function AccompanyFeed({
         <Icon name="heart" size={30} color={liked ? 'red' : 'lightgray'} />
         </TouchableOpacity>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

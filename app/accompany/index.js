@@ -217,7 +217,7 @@ useEffect(() => {
 
   // 공통 네비게이션 함수
   const navigateToPost = (postId) => {
-    console.log(`포스트로 이동: ${postId}`);
+    console.log('이동할 주소:', `/accompany/AccompanyPost?postId=${postId}`);
     router.push(`/accompany/AccompanyPost?postId=${postId}`);
   };
 
@@ -248,6 +248,7 @@ useEffect(() => {
         imageUrl={post.imageUrl}
         liked={!!likedPosts[post.id]}
         onPressLike={() => handlePressLike(post.id)}
+        {...post} 
         onPress={() => navigateToPost(post.id)}
       />
     ));
