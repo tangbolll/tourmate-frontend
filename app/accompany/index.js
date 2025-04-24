@@ -16,7 +16,7 @@ import dayjs from 'dayjs';
 const mockPosts = [
   {
     id: '1',
-    type: 'mine',
+    // type: 'mine',
     date: "03.04 월",
     title: "공주 공산성에서 야경 같이 즐겨요",
     location: "공주",
@@ -24,23 +24,24 @@ const mockPosts = [
     maxParticipants: 3,
     imageUrl: "",
     liked: true,
-    tags: ['야경', '여자만', '저녁식사', '걷기'],
+    tags: ['야경', '여자만', '누구나'],
     hostId: "user001", // 현재 사용자 ID - 내가 만든 동행
   },
   {
     id: '2',
-    type: 'mine',
+    // type: 'feed',
     date: "03.10 일",
     title: "서울 야경 투어 같이 하실 분",
     location: "서울",
     participants: 1,
     maxParticipants: 4,
     imageUrl: "",
-    tags: ['야경', '남녀무관', '도보여행'],
+    tags: ['야경', '남녀무관', '도보여행','누구나'],
     hostId: "user002", // 다른 사용자 ID - 동행 피드
   },
   {
     id: '3',
+    // type: 'feed',
     date: "04.05 금",
     title: "제주도 테마파크 동행 구하는데 서뤼경은 사절이에요🙅‍♀️",
     location: "제주",
@@ -52,26 +53,26 @@ const mockPosts = [
   },
   {
     id: '4',
-    type: 'mine',
+    // type: 'feed',
     date: "03.15 토",
     title: "부산 해운대 같이 가요",
     location: "부산",
     participants: 2,
     maxParticipants: 3,
     imageUrl: "",
-    tags: ['바다', '남녀무관'],
-    hostId: "user001", // 현재 사용자 ID - 내가 만든 동행
+    tags: ['바다', '남녀무관','누구나','야경'],
+    hostId: "user004", // 현재 사용자 ID - 내가 만든 동행
   },
   {
     id: '5', // 더 많은 내가 만든 동행 추가
-    type: 'mine',
+    // type: 'mine',
     date: "05.20 월",
     title: "강릉 커피 투어 함께해요",
     location: "강릉",
     participants: 1,
     maxParticipants: 4,
     imageUrl: "",
-    tags: ['카페', '커피', '20대'],
+    tags: ['카페', '커피', '20대','여자만'],
     hostId: "user001", // 현재 사용자 ID - 내가 만든 동행
   },
 ];
@@ -110,6 +111,7 @@ const AccompanyList = () => {
   const currentUserId = "user001";
 
 // 필터링된 포스트 업데이트
+
 useEffect(() => {
   let filtered = [...mockPosts];
 
@@ -145,16 +147,15 @@ useEffect(() => {
       filters.categories.some(category => post.tags.includes(category))
     );
   }
-
-  // 탭에 따라 내 게시물만 / 내 게시물 제외
-  if (selectedTab === 'mine') {
-    filtered = filtered.filter(post => post.hostId === currentUserId);
-  } else if (selectedTab === 'feed') {
-    filtered = filtered.filter(post => post.hostId !== currentUserId);
-  }
-
-  setFilteredPosts(filtered);
-}, [searchText, filters, selectedTab]);
+  
+    if (selectedTab === 'mine') {
+      filtered = filtered.filter(post => post.hostId === currentUserId);
+    } else if (selectedTab === 'feed') {
+      filtered = filtered.filter(post => post.hostId !== currentUserId);
+    }
+  
+    setFilteredPosts(filtered);
+  }, [searchText, filters, selectedTab, currentUserId]); // 👈 currentUserId 추가
 
 
   const handleFilterPopup = () => {
