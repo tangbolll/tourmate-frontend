@@ -33,7 +33,13 @@ export default function AccompanyCard({
               </View>
 
               {/* 타이틀 */}
-              <Text style={styles.title}>{title}</Text>
+              <Text
+                style={styles.title}
+                numberOfLines={2}
+                ellipsizeMode="tail"
+              >
+                {title}
+              </Text>
 
               {/* 위치 */}
               <View style={styles.locationRow}>
