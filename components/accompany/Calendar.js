@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate } from '../../utils/dateUtils';
 
 // 달력 컴포넌트 - 시작일과 종료일을 나란히 표시
 const Calendar = ({ onSelect, visible, startDate, endDate }) => {

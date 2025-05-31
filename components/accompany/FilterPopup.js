@@ -11,7 +11,7 @@ import {
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
-import CalendarPopup from '../components/CalendarPopup';
+import CalendarPopup from './CalendarPopup';
 import dayjs from 'dayjs';
 
 const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters, onOpenCalendar }) => {

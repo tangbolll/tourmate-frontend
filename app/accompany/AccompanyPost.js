@@ -3,19 +3,19 @@ import React, { useState, useRef, useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import EventSchedule from '../../components/EventSchedule';
-import Comment from '../../components/Comment';
-import Reply from '../../components/Reply';
-import Intro from '../../components/Intro';
-import GatheringPlace from '../../components/GatheringPlace';
-import Conditions from '../../components/Conditions';
-import Categories from '../../components/Categories';
-import WriteComment from '../../components/WriteComment';
-import ApplicationButton from '../../components/ApplicationButton';
-import AccompanyCloseButton from '../../components/AccompanyCloseButton';
-import AlarmPopup from '../../components/AlarmPopup';
-import MemberPopup from '../../components/MemberPopup';
-import EventHeader from '../../components/EventHeader';
+import EventSchedule from '../../components/accompany/EventSchedule';
+import Comment from '../../components/accompany/Comment';
+import Reply from '../../components/accompany/Reply';
+import Intro from '../../components/accompany/Intro';
+import GatheringPlace from '../../components/accompany/GatheringPlace';
+import Conditions from '../../components/accompany/Conditions';
+import Categories from '../../components/accompany/Categories';
+import WriteComment from '../../components/accompany/WriteComment';
+import ApplicationButton from '../../components/accompany/ApplicationButton';
+import AccompanyCloseButton from '../../components/accompany/AccompanyCloseButton';
+import AlarmPopup from '../../components/accompany/AlarmPopup';
+import MemberPopup from '../../components/accompany/MemberPopup';
+import EventHeader from '../../components/accompany/EventHeader';
 
 // Mock data - This would come from your backend in production
 const mockPosts = [

@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
 // default profile image
-const defaultProfile = require('../assets/defaultProfile1.png');
+const defaultProfile = require('../../assets/defaultProfile1.png');
 
 const Reply = ({ profileImage, nickname, time, content, onReplyPress, isHost }) => {
     // 이미지 source 설정
