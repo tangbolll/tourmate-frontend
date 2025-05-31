@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // default image for the feed
-const defaultImage = require('../assets/defaultFeed.png');
+const defaultImage = require('../../assets/defaultFeed.png');
 
 export default function AccompanyFeed({
   date,

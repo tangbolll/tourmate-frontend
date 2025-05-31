@@ -11,8 +11,8 @@ import {
     Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ApplicationButton from '../../components/ApplicationButton';
-import CloseAlarmPopup from '../../components/CloseAlarmPopup'; // 새로운 팝업 컴포넌트
+import ApplicationButton from '../../components/accompany/ApplicationButton';
+import CloseAlarmPopup from '../../components/accompany/CloseAlarmPopup'; // 새로운 팝업 컴포넌트
 
 const AccompanyManagement = ({ navigation }) => {
     const [likeCount, setLikeCount] = useState(122);

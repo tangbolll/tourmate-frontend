@@ -3,7 +3,7 @@ import { View, Text, ImageBackground, StyleSheet, TouchableOpacity } from 'react
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 // default background image
-const defaultImage = require('../assets/defaultBackground.png');
+const defaultImage = require('../../assets/defaultBackground.png');
 
 export default function AccompanyCard({
   date,

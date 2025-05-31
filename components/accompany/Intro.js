@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image } from 'react-native';
 
-const defaultPhoto = require('../assets/defaultPhoto.jpg'); // default image
+const defaultPhoto = require('../../assets/defaultPhoto.jpg'); // default image
 
 const Intro = ({ message }) => {
   return (

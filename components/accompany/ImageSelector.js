@@ -26,7 +26,7 @@ const ImageSelector = ({ images, setImages, thumbnailIndex, setThumbnailIndex, m
             if (response.errorCode) {
                 console.log('ImagePicker 오류: ', response.errorMessage);
                 // 오류 시 기본 이미지로 대체 (개발용)
-                const defaultImage = require('../assets/defaultProfile.png');
+                const defaultImage = require('../../assets/defaultProfile.png');
                 setImages([...images, defaultImage]);
                 return;
             }

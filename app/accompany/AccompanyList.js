@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
 import { useRouter } from 'expo-router';
-import AccompanyListHeader from '../../components/AccompanyListHeader';
-import CalendarPopup from '../../components/CalendarPopup';
-import FilterPopup from '../../components/FilterPopup';
-import FilterTag from '../../components/FilterTag';
-import AccompanyToggle from '../../components/AccompanyToggle';
-import AccompanyCard from '../../components/AccompanyCard';
-import AccompanyTabToggle from '../../components/AccompanyTabToggle';
-import AccompanyFeed from '../../components/AccompanyFeed';
-import CreateAccompanyButton from '../../components/CreateAccompanyButton';
+import AccompanyListHeader from '../../components/accompany/AccompanyListHeader';
+import CalendarPopup from '../../components/accompany/CalendarPopup';
+import FilterPopup from '../../components/accompany/FilterPopup';
+import FilterTag from '../../components/accompany/FilterTag';
+import AccompanyToggle from '../../components/accompany/AccompanyToggle';
+import AccompanyCard from '../../components/accompany/AccompanyCard';
+import AccompanyTabToggle from '../../components/accompany/AccompanyTabToggle';
+import AccompanyFeed from '../../components/accompany/AccompanyFeed';
+import CreateAccompanyButton from '../../components/accompany/CreateAccompanyButton';
 import dayjs from 'dayjs';
 
 // 목 데이터 - 실제 구현에서는 API에서 가져올 데이터
