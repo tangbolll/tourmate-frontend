@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const Categories = ({ types, tags }) => {
+const Categories = ({ category, tags }) => {
     return (
         <View style={styles.container}>
         {/* 카테고리 제목 */}
@@ -11,7 +11,7 @@ const Categories = ({ types, tags }) => {
         <View style={styles.row}>
             <Text style={styles.label}>유형</Text>
             <View style={styles.chipContainer}>
-            {types.map((type, index) => (
+            {category.map((type, index) => (
                 <View key={index} style={styles.chip}>
                 <Text style={styles.chipText}>{type}</Text>
                 </View>
