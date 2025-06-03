@@ -261,7 +261,7 @@ const AccompanyManagement = ({ navigation }) => {
         <ApplicationButton
             title={closed ? "모집이 마감된 동행입니다" : "모집 마감"}
             onPress={handleClosedPress}
-            likes={122}
+            closed={closed}
             customStyle={closed ? styles.disabledButton : {}}
             customTextStyle={closed ? styles.ButtonText : {}}
         />
@@ -383,7 +383,7 @@ const styles = StyleSheet.create({
     },
     actionButtons: {
         flexDirection: 'row',
-        width: 120, // 버튼 영역 고정 너비
+        width: 120,
     },
     acceptButton: {
         backgroundColor: 'black',
@@ -430,14 +430,12 @@ const styles = StyleSheet.create({
         borderRadius: 2,
         position: 'absolute',
     },
-    // 모집 마감 버튼 스타일
     closedButton: {
-        backgroundColor: '#808080', // 회색 배경
+        backgroundColor: '#808080',
     },
     closedButtonText: {
-        color: 'white', // 흰색 글씨
+        color: 'white',
     },
-    // 새로운 모달 팝업 스타일
     centeredView: {
         flex: 1,
         justifyContent: 'center',
@@ -465,7 +463,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 10,
-        textAlign: 'left', // 왼쪽 정렬로 변경
+        textAlign: 'left',
     },
     modalText: {
         fontSize: 14,
@@ -492,7 +490,7 @@ const styles = StyleSheet.create({
     },
     buttonTextBold: {
         fontSize: 16,
-        fontWeight: 'bold', // 볼드체로 변경
+        fontWeight: 'bold',
     }
 });
 
