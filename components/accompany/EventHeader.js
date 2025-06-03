@@ -3,21 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 
-const EventHeader = ({
-    title = '화천 산천어 축제에서 놀아요',
-    location = '강원도 화천',
-    participantsCurrent = 3,
-    participantsTotal = 5,
-    newApplication = false,
-    onParticipantsClick
-    }) => {
+const EventHeader = ({ title, location, participants, maxParticipants, newApplication = false, onParticipantsClick }) => {
     return (
         <HeaderWrapper>
         <View style={styles.container}>
-            {/* 제목 */}
             <Text style={styles.title}>{title}</Text>
 
-            {/* 위치 및 인원 정보 */}
             <View style={styles.infoRow}>
                 <MaterialIcons name="location-pin" size={16} color="black" />
                 <Text style={styles.infoText}>{location}</Text>
@@ -29,10 +20,10 @@ const EventHeader = ({
                 >
                     <Ionicons name="person" size={15} color="black" style={[styles.icon, { marginLeft: 12 }]} />
                     <Text style={styles.infoText}>
-                        {participantsCurrent}명 / {participantsTotal}명
+                        {participants}명 / {maxParticipants}명
                     </Text>
 
-                    {/* 새로운 신청이 있을 때만 빨간 점 표시 */}
+                    {/* 새로운 신청이 있을 때만 빨간 점 표시: 새로운 신청 있는지 파악하는 로직 짜야됨 */}
                     {newApplication && (
                         <View style={styles.redDot} />
                     )}
@@ -57,8 +48,8 @@ const HeaderWrapperStyles = StyleSheet.create({
         alignSelf: 'center',
         marginTop: 24,
         marginBottom: 12,
-        borderWidth: 0,     // 테두리 없이 그림자로 표현
-        padding: 12,        // 내부 여백 (텍스트와 테두리 사이 간격)
+        borderWidth: 0,
+        padding: 12,
         borderRadius: 20,
         backgroundColor: 'white',
         shadowOffset: { width: 0, height: 2 },

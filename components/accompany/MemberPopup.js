@@ -3,8 +3,8 @@ import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'rea
 import { Feather } from '@expo/vector-icons';
 
 const MemberPopup = ({ members, onClose }) => {
-    const currentMembers = members.length;
-    const totalMembers = 5;
+    const participants = members.length;
+    const maxParticipants = 5;
 
     return (
         <View style={styles.overlay}>
@@ -20,7 +20,7 @@ const MemberPopup = ({ members, onClose }) => {
                 {/* 인원 수 */}
                 <View style={styles.participantsCount}>
                     <Feather name="users" size={12} color="black" />
-                    <Text style={styles.countText}>{currentMembers}명 / {totalMembers}명</Text>
+                    <Text style={styles.countText}>{participants}명 / {maxParticipants}명</Text>
                 </View>
 
                 {/* 멤버 리스트 */}

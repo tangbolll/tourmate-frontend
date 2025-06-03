@@ -1,4 +1,3 @@
-// app/accompany/AccompanyPost.js
 import React, { useState, useRef, useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
@@ -256,8 +255,8 @@ export default function AccompanyPost() {
                     {/* Event header card */}
                     <EventHeader 
                         location={postData.location} 
-                        participantsCurrent={postData.participantsCurrent} 
-                        participantsTotal={postData.participantsTotal}
+                        participants={postData.participantsCurrent} 
+                        maxParticipants={postData.participantsTotal}
                         onParticipantsClick={handleParticipantsClick}
                     />
                     
@@ -332,6 +331,7 @@ export default function AccompanyPost() {
                         title={applied ? "동행 취소" : "동행 신청"}
                         onPress={handleApplicationPress}
                         likes={postData.likes}
+                        closed={false}
                     />
                 )}
                 

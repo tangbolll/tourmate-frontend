@@ -1,11 +1,5 @@
 import React from 'react';
-import { 
-    Modal, 
-    View, 
-    Text, 
-    TouchableOpacity, 
-    StyleSheet 
-} from 'react-native';
+import { Modal, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 
 const CloseAlarmPopup = ({ visible, onConfirm, onCancel }) => {
     return (
@@ -75,7 +69,7 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: 'bold',
         marginBottom: 20,
-        textAlign: 'left', // 왼쪽 정렬로 변경
+        textAlign: 'left',
     },
     modalText: {
         fontSize: 14,
@@ -102,7 +96,7 @@ const styles = StyleSheet.create({
     },
     buttonTextBold: {
         fontSize: 16,
-        fontWeight: 'bold', // 볼드체로 변경
+        fontWeight: 'bold',
     }
 });
 

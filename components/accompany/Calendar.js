@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { formatDate } from '../../utils/dateUtils';
 
-// 달력 컴포넌트 - 시작일과 종료일을 나란히 표시
 const Calendar = ({ onSelect, visible, startDate, endDate }) => {
     const [tempStartDate, setTempStartDate] = useState(startDate || new Date());
     const [tempEndDate, setTempEndDate] = useState(endDate || new Date());
@@ -15,7 +14,6 @@ const Calendar = ({ onSelect, visible, startDate, endDate }) => {
         const currentDate = selectedDate || tempStartDate;
         setTempStartDate(currentDate);
         
-        // 종료일이 시작일보다 이전인 경우 종료일을 시작일로 설정
         if (tempEndDate < currentDate) {
             setTempEndDate(currentDate);
         }
@@ -25,7 +23,6 @@ const Calendar = ({ onSelect, visible, startDate, endDate }) => {
         if (event.type === 'dismissed') return;
         const currentDate = selectedDate || tempEndDate;
         
-        // 종료일이 시작일보다 이전인 경우 경고
         if (currentDate < tempStartDate) {
             Alert.alert("날짜 오류", "종료일은 시작일 이후여야 합니다.");
             return;

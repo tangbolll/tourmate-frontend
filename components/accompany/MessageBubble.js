@@ -78,7 +78,7 @@ const styles = StyleSheet.create({
     },
     avatarText: {
         fontWeight: 'bold',
-        fontSize: 12, // 프로필 글자 크기도 함께 조정
+        fontSize: 12,
     },
     userName: {
         fontSize: 14,
@@ -86,14 +86,14 @@ const styles = StyleSheet.create({
         marginRight: 6,
     },
     hostTagContainer: {
-        backgroundColor: '#E5E7EB', // 회색 배경
+        backgroundColor: '#E5E7EB',
         paddingHorizontal: 6,
         paddingVertical: 2,
-        borderRadius: 10, // 둥근 모서리
+        borderRadius: 10,
     },
     hostTag: {
         fontSize: 10,
-        color: '#000000', // 검정색 텍스트
+        color: '#000000',
         fontWeight: '500',
     },
     messageBubbleWrapper: {

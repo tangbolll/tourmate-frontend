@@ -1,26 +1,14 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
 
-// 멤버 컴포넌트 - 각 사용자 정보를 표시
-const Member = ({ 
-    profileImage, 
-    nickname, 
-    gender, 
-    age, 
-    hashtags,
-    isApplicant = false, // 신청자인지 동행 목록인지 구분
-    onAccept, // 수락 버튼 클릭시
-    onReject // 거절 버튼 클릭시
-}) => {
+const Member = ({ profileImage, nickname, gender, age, hashtags, isApplicant = false, onAccept, onReject }) => {
     return (
         <View style={styles.container}>
-        {/* 좌측 프로필 이미지 */}
         <Image 
             source={profileImage || require('../assets/defaultProfile.png')} 
             style={styles.profileImage} 
         />
         
-        {/* 중앙 사용자 정보 */}
         <View style={styles.infoContainer}>
             <View style={styles.nameRow}>
             <Text style={styles.nickname}>{nickname}</Text>
@@ -31,7 +19,6 @@ const Member = ({
             <Text style={styles.hashtags}>{hashtags}</Text>
         </View>
         
-        {/* 우측 버튼 (신청자일 경우) */}
         {isApplicant && (
             <View style={styles.buttonContainer}>
             <TouchableOpacity 
