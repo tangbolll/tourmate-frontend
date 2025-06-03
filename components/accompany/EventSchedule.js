@@ -3,24 +3,23 @@ import { View, Text, StyleSheet } from 'react-native';
 import Wrapper from './Wrapper';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 
-const EventSchedule = ({ eventDate, eventTimeStart, eventTimeEnd, recruitStart, recruitEnd }) => {
+const EventSchedule = ({ travelStartDate, travelEndDate, recruitStartDate, recruitEndDate }) => {
     return (
         <View style={{ gap: 8 }}>
-            {/* 여행기간 */}
             <Wrapper>
                 <View style={styles.row}>
                     <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
                     <Text style={styles.text}>
-                        <Text style={styles.bold}>여행기간  </Text> {eventDate} {eventTimeStart} - {eventTimeEnd}
+                        <Text style={styles.bold}>여행기간  </Text> {travelStartDate} - {travelEndDate}
                     </Text>
                 </View>
             </Wrapper>
 
             <Wrapper>
                 <View style={styles.row}>
-                <FontAwesome6 name="hourglass-2" size={16} color="black" style={styles.icon} />
+                    <FontAwesome6 name="hourglass-2" size={16} color="black" style={styles.icon} />
                     <Text style={styles.text}>
-                        <Text style={styles.bold}>모집기간  </Text> {recruitStart} - {recruitEnd}
+                        <Text style={styles.bold}>모집기간  </Text> {recruitStartDate} - {recruitEndDate}
                     </Text>
                 </View>
             </Wrapper>

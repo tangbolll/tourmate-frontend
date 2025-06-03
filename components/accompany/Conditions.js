@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-const Conditions = ({ gender, ageGroups }) => {
+const Conditions = ({ gender, ageRange }) => {
     return (
         <View style={styles.container}>
         {/* 제목 */}
@@ -21,7 +21,7 @@ const Conditions = ({ gender, ageGroups }) => {
         <View style={styles.row}>
             <Text style={styles.label}>연령</Text>
             <View style={styles.chipContainer}>
-            {ageGroups.map((age, index) => (
+            {ageRange.map((age, index) => (
                 <View key={index} style={styles.chip}>
                 <Text style={styles.chipText}>{age}</Text>
                 </View>

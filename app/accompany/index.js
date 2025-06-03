@@ -16,17 +16,28 @@ import dayjs from 'dayjs';
 const mockPosts = [
     {
         id: '1',
-        // type: 'mine',
-        date: "03.04 월",
         title: "공주 공산성에서 야경 같이 즐겨요",
         location: "공주",
-        participants: 2,
+        meetingPoint: "공주 시외버스터미널", // 예시로 추가
+        travelStartDate: "2025-06-01",
+        travelEndDate: "2025-06-02",
+        recruitmentStartDate: "2025-05-01",  // 원래 date로 되어 있었음
+        recruitmentEndDate: "2025-05-30",
+        description: "야경 좋아하시는 분 함께해요!",
+        images: "",  // 원래 imageUrl로 되어 있었음
+        gender: "여자만",
+        ageRange: ["20대"],
+        category: ["야경"],
+        tags: ["야경", "여자만", "누구나"],
+        member: ["user001", "user002"],
+        createdAt: "2025-05-22T12:00:00",
+        createdBy: "user001",  // 원래 hostId로 되어 있었음
+        views: 0,
+        currentParticipants: 2,
         maxParticipants: 3,
-        imageUrl: "",
         liked: true,
-        tags: ['야경', '여자만', '누구나'],
-        hostId: "user001", // 현재 사용자 ID - 내가 만든 동행
     },
+
     {
         id: '2',
         // type: 'feed',
@@ -53,7 +64,6 @@ const mockPosts = [
     },
     {
         id: '4',
-        // type: 'feed',
         date: "03.15 토",
         title: "부산 해운대 같이 가요",
         location: "부산",

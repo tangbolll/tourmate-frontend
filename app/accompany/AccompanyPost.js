@@ -20,92 +20,91 @@ import EventHeader from '../../components/accompany/EventHeader';
 const mockPosts = [
   {
     id: '1',
+    title: "화천 산천어 축제 동행 구해요!",
     location: "강원도 화천",
-    hostName: "여라미",
-    postDate: "2025.03.01",
-    views: "122회",
-    eventDate: "3월4일(월)",
-    eventTimeStart: "15:00",
-    eventTimeEnd: "19:00",
-    recruitStart: "3월1일(금)",
-    recruitEnd: "3월3일(일)",
+    createdAt: "2025.03.01",
+    views: 122,
+    travelStartDate: "3월4일(월) 13:00",
+    travelEndDate: "3월4일(월) 19:00",
+    recruitStartDate: "3월1일(금)",
+    recruitEndDate: "3월3일(일)",
     message: "화천 산천어 축제 함께 갈 메이트 구해요. 얼음낚시부터 눈썰매, 다양한 먹거리까지 같이 즐겁게 겨울을 보내요! ⛄️❄️",
-    gatheringPlace: "강원도 화천 산천어 축제",
+    meetingPoint: "강원도 화천 산천어 축제",
     gender: "여자만",
-    ageGroups: ["20대", "30대"],
-    types: ["아웃도어", "축제", "힐링여행"],
+    ageRange: ["20대", "30대"],
+    category: ["아웃도어", "축제", "힐링여행"],
     tags: ["자유로운", "낚시대결", "활기찬사람", "회떠먹기"],
-    participantsCurrent: 3,
-    participantsTotal: 5,
-    hostId: "user001", // 호스트의 사용자 ID
+    currentParticipants: 3,
+    maxParticipants: 5,
+    createdBy: "user001",
     likes: 122
   },
-  {
-    id: '2',
-    location: "공주 공산성",
-    hostName: "민지",
-    postDate: "2025.03.02",
-    views: "89회",
-    eventDate: "3월4일(월)",
-    eventTimeStart: "16:00",
-    eventTimeEnd: "21:00",
-    recruitStart: "3월1일(금)",
-    recruitEnd: "3월3일(일)",
-    message: "공주 공산성에서 야경 같이 즐겨요! 저녁식사도 함께하고 여유롭게 산책하면서 사진도 찍어요.",
-    gatheringPlace: "공주 공산성 주차장",
-    gender: "여자만",
-    ageGroups: ["20대"],
-    types: ["야경", "산책", "사진찍기"],
-    tags: ["여유로운", "공주시", "야경투어", "걷기"],
-    participantsCurrent: 2,
-    participantsTotal: 3,
-    hostId: "user002",
-    likes: 78
-  },
-  {
-    id: '3',
-    location: "홍천",
-    hostName: "준호",
-    postDate: "2025.02.28",
-    views: "156회",
-    eventDate: "3월1일(금)",
-    eventTimeStart: "09:00",
-    eventTimeEnd: "18:00",
-    recruitStart: "2월25일(월)",
-    recruitEnd: "2월29일(목)",
-    message: "홍천 산천어 축제에서 놀아요! 홍천에서 1박 2일로 여행 계획중입니다. 맛있는 음식도 먹고 즐거운 추억 만들어요.",
-    gatheringPlace: "홍천버스터미널",
-    gender: "남녀무관",
-    ageGroups: ["20대", "30대"],
-    types: ["축제", "맛집"],
-    tags: ["활기찬", "산천어", "여행"],
-    participantsCurrent: 2,
-    participantsTotal: 4,
-    hostId: "user003",
-    likes: 102
-  },
-  {
-    id: '4',
-    location: "부산",
-    hostName: "혜진",
-    postDate: "2025.03.03",
-    views: "211회",
-    eventDate: "4월1일(월)",
-    eventTimeStart: "10:00",
-    eventTimeEnd: "20:00",
-    recruitStart: "3월15일(금)",
-    recruitEnd: "3월30일(토)",
-    message: "부산 벚꽃축제 같이 가실 분 찾습니다. 해운대도 들르고 부산 맛집 탐방도 할 예정이에요!",
-    gatheringPlace: "부산역",
-    gender: "남녀무관",
-    ageGroups: ["누구나"],
-    types: ["벚꽃", "맛집탐방"],
-    tags: ["부산여행", "벚꽃구경", "맛집투어"],
-    participantsCurrent: 3,
-    participantsTotal: 4,
-    hostId: "user004",
-    likes: 188
-  }
+//   {
+//     id: '2',
+//     location: "공주 공산성",
+//     hostName: "민지",
+//     postDate: "2025.03.02",
+//     views: "89회",
+//     eventDate: "3월4일(월)",
+//     eventTimeStart: "16:00",
+//     eventTimeEnd: "21:00",
+//     recruitStart: "3월1일(금)",
+//     recruitEnd: "3월3일(일)",
+//     message: "공주 공산성에서 야경 같이 즐겨요! 저녁식사도 함께하고 여유롭게 산책하면서 사진도 찍어요.",
+//     gatheringPlace: "공주 공산성 주차장",
+//     gender: "여자만",
+//     ageGroups: ["20대"],
+//     types: ["야경", "산책", "사진찍기"],
+//     tags: ["여유로운", "공주시", "야경투어", "걷기"],
+//     participantsCurrent: 2,
+//     participantsTotal: 3,
+//     hostId: "user002",
+//     likes: 78
+//   },
+//   {
+//     id: '3',
+//     location: "홍천",
+//     hostName: "준호",
+//     postDate: "2025.02.28",
+//     views: "156회",
+//     trableStartDate: "3월1일(금)",
+//     eventTimeStart: "09:00",
+//     eventTimeEnd: "18:00",
+//     recruitStart: "2월25일(월)",
+//     recruitEnd: "2월29일(목)",
+//     message: "홍천 산천어 축제에서 놀아요! 홍천에서 1박 2일로 여행 계획중입니다. 맛있는 음식도 먹고 즐거운 추억 만들어요.",
+//     gatheringPlace: "홍천버스터미널",
+//     gender: "남녀무관",
+//     ageGroups: ["20대", "30대"],
+//     types: ["축제", "맛집"],
+//     tags: ["활기찬", "산천어", "여행"],
+//     participantsCurrent: 2,
+//     participantsTotal: 4,
+//     hostId: "user003",
+//     likes: 102
+//   },
+//   {
+//     id: '4',
+//     location: "부산",
+//     hostName: "혜진",
+//     postDate: "2025.03.03",
+//     views: "211회",
+//     eventDate: "4월1일(월)",
+//     eventTimeStart: "10:00",
+//     eventTimeEnd: "20:00",
+//     recruitStart: "3월15일(금)",
+//     recruitEnd: "3월30일(토)",
+//     message: "부산 벚꽃축제 같이 가실 분 찾습니다. 해운대도 들르고 부산 맛집 탐방도 할 예정이에요!",
+//     gatheringPlace: "부산역",
+//     gender: "남녀무관",
+//     ageGroups: ["누구나"],
+//     types: ["벚꽃", "맛집탐방"],
+//     tags: ["부산여행", "벚꽃구경", "맛집투어"],
+//     participantsCurrent: 3,
+//     participantsTotal: 4,
+//     hostId: "user004",
+//     likes: 188
+//   }
 ];
 
 export default function AccompanyPost() {
@@ -254,9 +253,10 @@ export default function AccompanyPost() {
                     
                     {/* Event header card */}
                     <EventHeader 
+                        title={postData.title}
                         location={postData.location} 
-                        participants={postData.participantsCurrent} 
-                        maxParticipants={postData.participantsTotal}
+                        participants={postData.currentParticipants} 
+                        maxParticipants={postData.maxParticipants}
                         onParticipantsClick={handleParticipantsClick}
                     />
                     
@@ -269,33 +269,32 @@ export default function AccompanyPost() {
                     <View style={styles.hostInfoContainer}>
                         <Text style={styles.hostInfoText}>
                             <Text style={styles.hostInfoLabel}>호스트 </Text>
-                            <Text>{postData.hostName} </Text>
+                            <Text>{postData.createdBy} </Text>
                             <Text style={styles.hostInfoLabel}>게시일 </Text>
-                            <Text>{postData.postDate} </Text>
+                            <Text>{postData.createdAt} </Text>
                             <Text style={styles.hostInfoLabel}>조회수 </Text>
-                            <Text>{postData.views}</Text>
+                            <Text>{postData.views}회</Text>
                         </Text>
                     </View>
 
-                    <EventSchedule 
-                        eventDate={postData.eventDate}
-                        eventTimeStart={postData.eventTimeStart}
-                        eventTimeEnd={postData.eventTimeEnd}
-                        recruitStart={postData.recruitStart}
-                        recruitEnd={postData.recruitEnd}
+                    <EventSchedule
+                        travelStartDate={postData.travelStartDate}
+                        travelEndDate={postData.travelEndDate}
+                        recruitStartDate={postData.recruitStartDate}
+                        recruitEndDate={postData.recruitEndDate}
                     />
                     <Intro
                         message={postData.message}
                     />
                     <GatheringPlace
-                        location={postData.gatheringPlace}
+                        location={postData.meetingPoint}
                     />    
                     <Conditions 
                         gender={postData.gender} 
-                        ageGroups={postData.ageGroups} 
+                        ageRange={postData.ageRange} 
                     />
                     <Categories
-                        types={postData.types} 
+                        category={postData.category} 
                         tags={postData.tags} 
                     />
 
