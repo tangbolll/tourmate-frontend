@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     View, 
     Text, 
@@ -16,6 +16,7 @@ import Step2 from './Step2';
 import { useRouter } from 'expo-router';
 
 const AccompanyCreation = () => {
+
     const router = useRouter();
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
@@ -45,6 +46,40 @@ const AccompanyCreation = () => {
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState([]);
+
+    // 날짜 형식 변환 함수
+    const formatDateForBackend = (date) => {
+        if (!date) return null;
+        
+        // Date 객체인 경우
+        if (date instanceof Date) {
+            return date.toISOString().split('T')[0]; // "2025-07-01"
+        }
+        
+        // 문자열인 경우
+        if (typeof date === 'string') {
+            // 이미 YYYY-MM-DD 형식인지 확인
+            if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+                return date;
+            }
+            
+            // 요일이나 다른 형식인 경우 기본값 반환
+            if (date.length <= 3) { // "목", "토" 등
+                const today = new Date();
+                return today.toISOString().split('T')[0];
+            }
+            
+            // 다른 형식 시도
+            const parsedDate = new Date(date);
+            if (!isNaN(parsedDate.getTime())) {
+                return parsedDate.toISOString().split('T')[0];
+            }
+        }
+        
+        // 변환 불가능한 경우 오늘 날짜 반환
+        const today = new Date();
+        return today.toISOString().split('T')[0];
+    };
     
     // Step 1 유효성 검사
     const isStep1Valid = 
@@ -115,38 +150,103 @@ const AccompanyCreation = () => {
         showExitConfirmation(() => router.push('/accompany'));
     };
     
-    const handleSubmit = async () => {
-        setIsLoading(true);
+    // const handleSubmit = async () => {
+    //     setIsLoading(true);
         
-        try {
-            // 모든 데이터를 하나의 객체로 구성
-            const formData = {
-                title,
-                location,
-                dateRange,
-                description,
-                meetLocation,
-                thumbnailIndex,
-                maxPeople: parseInt(maxPeople),
-                recruitDateRange,
-                genders: selectedGenders,
-                ages: selectedAges,
-                categories: selectedCategories,
-                tags
+    //     try {
+    //         // 모든 데이터를 하나의 객체로 구성
+    //         const formData = {
+    //             title,
+    //             location,
+    //             dateRange,
+    //             description,
+    //             meetLocation,
+    //             thumbnailIndex,
+    //             maxPeople: parseInt(maxPeople),
+    //             recruitDateRange,
+    //             genders: selectedGenders,
+    //             ages: selectedAges,
+    //             categories: selectedCategories,
+    //             tags
+    //         };
+            
+    //         // API 호출 등의 로직을 여기에 구현
+    //         // 예: await createAccompany(formData, images);
+            
+    //         console.log('제출 데이터:', formData);
+            
+    //         // 성공 시 리스트로 이동
+    //         router.push('/accompany');
+    //     } catch (error) {
+    //         console.error('동행 등록 오류:', error);
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
+    const handleSubmit = async () => {
+    setIsLoading(true);
+    
+    try {
+        // 1. 프론트엔드 데이터를 백엔드 형식에 맞게 변환
+        const requestData = {
+                userId: 1, // TODO: 실제 로그인된 사용자 ID로 변경
+                title: title,
+                location: location,
+                meetingPoint: meetLocation,
+                description: description,
+                maxParticipants: parseInt(maxPeople),
+                travelStartDate: formatDateForBackend(dateRange.startDay),
+                travelEndDate: formatDateForBackend(dateRange.endDay),
+                recruitmentStartDate: formatDateForBackend(recruitDateRange.startDate),
+                recruitmentEndDate: formatDateForBackend(recruitDateRange.endDate),
+                imageUrl: images.length > 0 ? images : [],
+                gender: selectedGenders.includes('남녀무관') ? 'ALL' : selectedGenders[0],
+                ageRange: selectedAges.includes('누구나') ? ['ALL'] : selectedAges,
+                category: selectedCategories,
+                tag: tags,
             };
+
+        console.log('전송할 데이터:', requestData);
+
+        // 2. 백엔드로 POST 요청 전송
+        const response = await fetch('http://192.168.35.116:8080/api/accompany/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(requestData)
+        });
+
+        // 3. 응답 처리
+        if (response.ok) {
+            const result = await response.json();
+            console.log('동행 생성 성공:', result);
             
-            // API 호출 등의 로직을 여기에 구현
-            // 예: await createAccompany(formData, images);
-            
-            console.log('제출 데이터:', formData);
-            
-            // 성공 시 리스트로 이동
-            router.push('/accompany');
-        } catch (error) {
-            console.error('동행 등록 오류:', error);
-        } finally {
-            setIsLoading(false);
+            // 성공 알림
+            Alert.alert(
+                "완료", 
+                "동행이 성공적으로 등록되었습니다!",
+                [
+                    {
+                        text: "확인",
+                        onPress: () => router.push('/accompany')
+                    }
+                ]
+            );
+        } else {
+            // 에러 응답 처리
+            const errorData = await response.text();
+            console.error('서버 에러:', errorData);
+            Alert.alert("오류", "동행 등록에 실패했습니다. 다시 시도해주세요.");
         }
+        
+    } 
+    catch (error) {
+        console.error('네트워크 오류:', error);
+        Alert.alert("오류", "네트워크 연결을 확인해주세요.");
+    } finally {
+        setIsLoading(false);
+    }
     };
     
     const renderStep = () => {

@@ -23,13 +23,16 @@ const mockPosts = [
     title: "화천 산천어 축제 동행 구해요!",
     location: "강원도 화천",
     createdAt: "2025.03.01",
+    images: [],
     views: 122,
     travelStartDate: "3월4일(월) 13:00",
     travelEndDate: "3월4일(월) 19:00",
     recruitStartDate: "3월1일(금)",
     recruitEndDate: "3월3일(일)",
-    message: "화천 산천어 축제 함께 갈 메이트 구해요. 얼음낚시부터 눈썰매, 다양한 먹거리까지 같이 즐겁게 겨울을 보내요! ⛄️❄️",
+    description: "화천 산천어 축제 함께 갈 메이트 구해요. 얼음낚시부터 눈썰매, 다양한 먹거리까지 같이 즐겁게 겨울을 보내요! ⛄️❄️",
     meetingPoint: "강원도 화천 산천어 축제",
+    member: ["user001", "user002"],
+    applymember: ["user003","user004"],
     gender: "여자만",
     ageRange: ["20대", "30대"],
     category: ["아웃도어", "축제", "힐링여행"],
@@ -133,7 +136,7 @@ export default function AccompanyPost() {
         if (post) {
             setPostData(post);
             // 현재 사용자가 호스트인지 확인
-            setIsHost(post.hostId === currentUserId);
+            setIsHost(post.createdBy === currentUserId);
         }
     }, [postId]);
 
@@ -284,7 +287,7 @@ export default function AccompanyPost() {
                         recruitEndDate={postData.recruitEndDate}
                     />
                     <Intro
-                        message={postData.message}
+                        message={postData.description}
                     />
                     <GatheringPlace
                         location={postData.meetingPoint}
