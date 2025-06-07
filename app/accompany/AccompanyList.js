@@ -1,5 +1,6 @@
+import { Platform } from 'react-native';
 import React, { useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import AccompanyListHeader from '../../components/accompany/AccompanyListHeader';
 import CalendarPopup from '../../components/accompany/CalendarPopup';
@@ -12,72 +13,22 @@ import AccompanyFeed from '../../components/accompany/AccompanyFeed';
 import CreateAccompanyButton from '../../components/accompany/CreateAccompanyButton';
 import dayjs from 'dayjs';
 
-// 목 데이터 - 실제 구현에서는 API에서 가져올 데이터
-const mockPosts = [
-  {
-    id: '1',
-    // type: 'mine',
-    date: "03.04 월",
-    title: "공주 공산성에서 야경 같이 즐겨요",
-    location: "공주",
-    participants: 2,
-    maxParticipants: 3,
-    imageUrl: "",
-    liked: true,
-    tags: ['야경', '여자만', '누구나'],
-    hostId: "user001", // 현재 사용자 ID - 내가 만든 동행
-  },
-  {
-    id: '2',
-    // type: 'feed',
-    date: "03.10 일",
-    title: "서울 야경 투어 같이 하실 분",
-    location: "서울",
-    participants: 1,
-    maxParticipants: 4,
-    imageUrl: "",
-    tags: ['야경', '남녀무관', '도보여행','누구나'],
-    hostId: "user002", // 다른 사용자 ID - 동행 피드
-  },
-  {
-    id: '3',
-    // type: 'feed',
-    date: "04.05 금",
-    title: "제주도 테마파크 동행 구하는데 서뤼경은 사절이에요🙅‍♀️",
-    location: "제주",
-    participants: 3,
-    maxParticipants: 5,
-    imageUrl: "",
-    tags: ['테마파크', '20대', '남녀무관'],
-    hostId: "user003", // 다른 사용자 ID - 동행 피드
-  },
-  {
-    id: '4',
-    // type: 'feed',
-    date: "03.15 토",
-    title: "부산 해운대 같이 가요",
-    location: "부산",
-    participants: 2,
-    maxParticipants: 3,
-    imageUrl: "",
-    tags: ['바다', '남녀무관','누구나','야경'],
-    hostId: "user004", // 현재 사용자 ID - 내가 만든 동행
-  },
-  {
-    id: '5', // 더 많은 내가 만든 동행 추가
-    // type: 'mine',
-    date: "05.20 월",
-    title: "강릉 커피 투어 함께해요",
-    location: "강릉",
-    participants: 1,
-    maxParticipants: 4,
-    imageUrl: "",
-    tags: ['카페', '커피', '20대','여자만'],
-    hostId: "user001", // 현재 사용자 ID - 내가 만든 동행
-  },
-];
+// API 설정
+const getApiUrl = () => {
+  if (__DEV__) {
+    if (Platform.OS === 'android') {
+      return 'http://10.0.2.2:8080';
+    } else {
+      return 'http://192.168.35.116:8080'; // 본인 IP로 변경
+    }
+  } else {
+    return 'https://your-production-api.com';
+  }
+};
 
-// 동행 카드 데이터
+const API_URL = getApiUrl();
+
+// 동행 카드 데이터 (기존 유지)
 const cardData = [
   { id: "1", date: "03.01 ~ 03.05", title: "홍천 산천어 축제에서 놀아요", location: "홍천", imageUrl: "", buttonLabel: "승인" },
   { id: "2", date: "04.01 ~ 04.03", title: "부산 벚꽃축제 가실 분~", location: "부산", imageUrl: "", buttonLabel: "승인" },
@@ -93,76 +44,157 @@ const AccompanyList = () => {
   const [selectedTab, setSelectedTab] = useState('feed');
   const [showCards, setShowCards] = useState(true);
   const [filteredPosts, setFilteredPosts] = useState([]);
-  const [myPosts, setMyPosts] = useState([]);
   const [likedPosts, setLikedPosts] = useState({});
   const [calendarVisible, setCalendarVisible] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  // 실제 API 데이터 상태
+  const [myAccompanyList, setMyAccompanyList] = useState([]);
+  const [feedList, setFeedList] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const [filters, setFilters] = useState({
-    gender: '여자만',
-    age: '20대',
-    categories: ['야경', '테마파크'],
+    gender: '',
+    age: '',
+    categories: [],
     travelPeriod: '',
     travelLocation: '',
   });
 
   const router = useRouter();
   
-  // 현재 사용자 ID (실제 구현에서는 인증 시스템에서 가져옵니다)
-  const currentUserId = "user001";
+  // 현재 사용자 ID
+  const currentUserId = 1;
 
-// 필터링된 포스트 업데이트
+  // 백엔드 데이터를 프론트엔드 형식으로 변환
+  const transformAccompanyData = (accompanyData) => {
+    if (!accompanyData) return [];
+    
+    return accompanyData.map(item => ({
+      id: item.id?.toString() || Math.random().toString(),
+      title: item.title || '제목 없음',
+      location: item.location || '위치 미정',
+      description: item.intro || '',
+      meetingPoint: item.meetPlace || '',
+      participants: item.participants?.length || 0,
+      maxParticipants: item.maxRecruit || 0,
+      imageUrl: item.imageUrl?.[0] || '',
+      tags: [
+        ...(item.ageGroup || []),
+        ...(item.category || []),
+        ...(item.tag || []),
+        item.gender === 'ALL' ? '남녀무관' : item.gender
+      ].filter(Boolean),
+      date: item.tripStartDate ? 
+        dayjs(item.tripStartDate).format('MM.DD ddd') : 
+        dayjs().format('MM.DD ddd'),
+      hostId: item.host?.id || null,
+      liked: false, // 기본값
+    }));
+  };
 
-useEffect(() => {
-  let filtered = [...mockPosts];
-
-  console.log('원본:', mockPosts.map(p => ({ id: p.id, type: p.type, hostId: p.hostId })));
-
-  // 검색어로 필터링
-  if (searchText) {
-    const searchLower = searchText.toLowerCase();
-    filtered = filtered.filter(post =>
-      post.title.toLowerCase().includes(searchLower) ||
-      post.location.toLowerCase().includes(searchLower) ||
-      post.tags.some(tag => tag.toLowerCase().includes(searchLower))
-    );
-  }
-
-  // 성별 필터링
-  if (filters.gender) {
-    filtered = filtered.filter(post =>
-      post.tags.includes(filters.gender) || post.tags.includes('남녀무관')
-    );
-  }
-
-  // 나이 필터링
-  if (filters.age) {
-    filtered = filtered.filter(post =>
-      post.tags.includes(filters.age) || post.tags.includes('누구나')
-    );
-  }
-
-  // 카테고리 필터링
-  if (filters.categories.length > 0) {
-    filtered = filtered.filter(post =>
-      filters.categories.some(category => post.tags.includes(category))
-    );
-  }
-  
-    if (selectedTab === 'mine') {
-      filtered = filtered.filter(post => post.hostId === currentUserId);
-    } else if (selectedTab === 'feed') {
-      filtered = filtered.filter(post => post.hostId !== currentUserId);
+  // API에서 동행 데이터 가져오기
+  const fetchAccompanyData = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${API_URL}/api/accompany/home?userId=${currentUserId}`);
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('✅ API 응답:', data);
+        
+        // 백엔드 데이터를 프론트엔드 형식으로 변환
+        const transformedMyAccompany = transformAccompanyData(data.myAccompany);
+        const transformedFeed = transformAccompanyData(data.feed);
+        
+        setMyAccompanyList(transformedMyAccompany);
+        setFeedList(transformedFeed);
+        
+        console.log('✅ 변환된 내 동행:', transformedMyAccompany);
+        console.log('✅ 변환된 피드:', transformedFeed);
+      } else {
+        console.error('❌ API 호출 실패:', response.status);
+      }
+    } catch (error) {
+      console.error('❌ 네트워크 에러:', error);
+    } finally {
+      setLoading(false);
     }
-  
-    setFilteredPosts(filtered);
-  }, [searchText, filters, selectedTab, currentUserId]); // 👈 currentUserId 추가
+  };
 
+  // 새로고침 함수
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchAccompanyData();
+    setRefreshing(false);
+  };
+
+  // 컴포넌트 마운트 시 데이터 로드
+  useEffect(() => {
+    fetchAccompanyData();
+  }, []);
+
+  // 화면 포커스 시 데이터 새로고침 (동행 생성 후 돌아왔을 때)
+  useEffect(() => {
+    const unsubscribe = router.addListener ? router.addListener('focus', () => {
+      fetchAccompanyData();
+    }) : null;
+
+    return unsubscribe;
+  }, [router]);
+
+  // 필터링된 포스트 업데이트
+  useEffect(() => {
+    let allPosts = [];
+    
+    // 선택된 탭에 따라 데이터 소스 결정
+    if (selectedTab === 'mine') {
+      allPosts = [...myAccompanyList];
+    } else if (selectedTab === 'feed') {
+      allPosts = [...feedList];
+    }
+
+    let filtered = [...allPosts];
+
+    // 검색어로 필터링
+    if (searchText) {
+      const searchLower = searchText.toLowerCase();
+      filtered = filtered.filter(post =>
+        post.title.toLowerCase().includes(searchLower) ||
+        post.location.toLowerCase().includes(searchLower) ||
+        post.tags.some(tag => tag.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // 성별 필터링
+    if (filters.gender) {
+      filtered = filtered.filter(post =>
+        post.tags.includes(filters.gender) || post.tags.includes('남녀무관')
+      );
+    }
+
+    // 나이 필터링
+    if (filters.age) {
+      filtered = filtered.filter(post =>
+        post.tags.includes(filters.age) || post.tags.includes('누구나')
+      );
+    }
+
+    // 카테고리 필터링
+    if (filters.categories.length > 0) {
+      filtered = filtered.filter(post =>
+        filters.categories.some(category => post.tags.includes(category))
+      );
+    }
+    
+    setFilteredPosts(filtered);
+  }, [searchText, filters, selectedTab, myAccompanyList, feedList]);
 
   const handleFilterPopup = () => {
-    setShowFilterPopup(false); // 먼저 닫았다가
+    setShowFilterPopup(false);
     setTimeout(() => {
-      setShowFilterPopup(true); // 다시 열기
-    }, 50); // iOS에서 안전하게 모달 재오픈하는 핵심
+      setShowFilterPopup(true);
+    }, 50);
   };
 
   const handleCalendarSelect = (range) => {
@@ -170,11 +202,7 @@ useEffect(() => {
     const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
     
     setFilters(prev => ({ ...prev, travelPeriod: formatted }));
-  
-    // 1. 캘린더 닫고
     setCalendarVisible(false);
-  
-    // 2. 약간의 지연 후 필터 다시 열기 (iOS 안전)
     setTimeout(() => {
       setShowFilterPopup(true);
     }, 300);
@@ -198,11 +226,9 @@ useEffect(() => {
   const handleRemoveTag = (tagToRemove) => {
     setFilters(prev => {
       const updated = { ...prev };
-
       if (updated.gender === tagToRemove) updated.gender = '';
       if (updated.age === tagToRemove) updated.age = '';
       updated.categories = updated.categories.filter(tag => tag !== tagToRemove);
-
       return updated;
     });
   };
@@ -215,14 +241,21 @@ useEffect(() => {
     return tags;
   };
 
-  // 공통 네비게이션 함수
   const navigateToPost = (postId) => {
     console.log('이동할 주소:', `/accompany/AccompanyPost?postId=${postId}`);
     router.push(`/accompany/AccompanyPost?postId=${postId}`);
   };
 
-  // 피드 아이템을 렌더링하는 함수
+  // 피드 아이템 렌더링
   const renderFeedItems = () => {
+    if (loading) {
+      return (
+        <View style={styles.emptyState}>
+          <Text style={styles.emptyStateText}>로딩 중...</Text>
+        </View>
+      );
+    }
+
     if (filteredPosts.length === 0) {
       return (
         <View style={styles.emptyState}>
@@ -256,7 +289,16 @@ useEffect(() => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#000']} // Android
+            tintColor={'#000'} // iOS
+          />
+        }
+      >
         <AccompanyListHeader
           onPressAlarm={() => console.log('알림')}
           onPressDM={() => console.log('DM')}
@@ -323,7 +365,7 @@ useEffect(() => {
           selectedTab={selectedTab} 
           onSelectTab={(tab) => {
             setSelectedTab(tab);
-            console.log(`탭 전환: ${tab}`); // feed 또는 mine
+            console.log(`탭 전환: ${tab} - 내 동행: ${myAccompanyList.length}개, 피드: ${feedList.length}개`);
           }} 
         />
 
