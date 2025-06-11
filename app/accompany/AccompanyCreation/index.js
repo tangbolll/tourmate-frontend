@@ -15,6 +15,36 @@ import Step1 from './Step1';
 import Step2 from './Step2';
 import { useRouter } from 'expo-router';
 
+// // 파일 상단에 추가
+// const getBaseURL = () => {
+//     if (__DEV__) {
+//         // 개발 환경
+//         if (Platform.OS === 'web') {
+//             return 'http://localhost:8080';
+//         } else {
+//             // 모바일 앱 - 실제 IP 주소 사용
+//             return 'http://192.168.1.100:8080'; // 여기에 실제 IP 입력
+//         }
+//     } else {
+//         // 프로덕션 환경
+//         return 'https://your-production-server.com';
+//     }
+// };
+// API 설정
+    const getBaseURL = () => {
+    if (__DEV__) {
+        if (Platform.OS === 'android') {
+        return 'http://10.0.2.2:8080';
+        } else {
+        return 'http://192.168.35.116:8080'; // 본인 IP로 변경
+        }
+    } else {
+        return 'https://your-production-api.com';
+    }
+    };
+
+
+
 const AccompanyCreation = () => {
 
     const router = useRouter();
@@ -150,39 +180,6 @@ const AccompanyCreation = () => {
         showExitConfirmation(() => router.push('/accompany'));
     };
     
-    // const handleSubmit = async () => {
-    //     setIsLoading(true);
-        
-    //     try {
-    //         // 모든 데이터를 하나의 객체로 구성
-    //         const formData = {
-    //             title,
-    //             location,
-    //             dateRange,
-    //             description,
-    //             meetLocation,
-    //             thumbnailIndex,
-    //             maxPeople: parseInt(maxPeople),
-    //             recruitDateRange,
-    //             genders: selectedGenders,
-    //             ages: selectedAges,
-    //             categories: selectedCategories,
-    //             tags
-    //         };
-            
-    //         // API 호출 등의 로직을 여기에 구현
-    //         // 예: await createAccompany(formData, images);
-            
-    //         console.log('제출 데이터:', formData);
-            
-    //         // 성공 시 리스트로 이동
-    //         router.push('/accompany');
-    //     } catch (error) {
-    //         console.error('동행 등록 오류:', error);
-    //     } finally {
-    //         setIsLoading(false);
-    //     }
-    // };
     const handleSubmit = async () => {
     setIsLoading(true);
     
@@ -208,14 +205,16 @@ const AccompanyCreation = () => {
 
         console.log('전송할 데이터:', requestData);
 
-        // 2. 백엔드로 POST 요청 전송
-        const response = await fetch('http://192.168.35.116:8080/api/accompany/create', {
+        // handleSubmit에서 사용
+        const response = await fetch(`${getBaseURL()}/api/accompany/create`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(requestData)
         });
+
+        console.log('응답 상태:', response.status);
 
         // 3. 응답 처리
         if (response.ok) {
