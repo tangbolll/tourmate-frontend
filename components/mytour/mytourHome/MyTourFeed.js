@@ -119,10 +119,11 @@ export default function MyTourFeed({
 
 const styles = StyleSheet.create({
     card: {
-        width: (width - 32) / 2, // 양쪽 마진 16씩, 두 개가 들어가도록
+        width: (width - 48) / 2, // 양쪽 마진 16씩, 두 개가 들어가도록
         backgroundColor: '#fff',
         borderRadius: 12,
         marginBottom: 16,
+        marginRight: 8,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
