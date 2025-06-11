@@ -1,3 +1,5 @@
+console.log('새로운 AccompanyList 파일 로드됨!', new Date().toLocaleTimeString());
+
 import { Platform } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, RefreshControl } from 'react-native';
@@ -140,7 +142,12 @@ const AccompanyList = () => {
       fetchAccompanyData();
     }) : null;
 
-    return unsubscribe;
+    // cleanup 함수가 있을 때만 반환
+    return () => {
+      if (unsubscribe && typeof unsubscribe === 'function') {
+        unsubscribe();
+      }
+    };
   }, [router]);
 
   // 필터링된 포스트 업데이트

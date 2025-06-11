@@ -3,13 +3,16 @@ import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
 const defaultProfile = require('../../assets/defaultProfile1.png');
 
-const Reply = ({ profileImage, nickname, time, content, onReplyPress, isHost }) => {
-        const profileSrc = profileImage
-            ? { uri: profileImage }
-            : defaultProfile;
+const Reply = ({ profileImage, nickname, time, content, onReplyPress, isHost, style }) => {
+    const profileSrc = profileImage
+        ? { uri: profileImage }
+        : defaultProfile;
+
     return (
-        <View>
-            <View style={[styles.container]}>
+        <View style={[styles.wrapper, style]}>
+
+            
+            <View style={styles.container}>
                 <Image 
                     source={profileSrc} 
                     style={styles.profileImage}
@@ -32,7 +35,15 @@ const Reply = ({ profileImage, nickname, time, content, onReplyPress, isHost }) 
 };
 
 const styles = StyleSheet.create({
-    container: {
+    wrapper: {
+        marginLeft: 20, 
+        marginBottom: 8,
+    },
+    replyIndicator: {
+        marginLeft: 32,
+        marginBottom: 4,
+    },
+      container: {
         flexDirection: 'row',
         alignItems: 'flex-start',
         marginBottom: 4,
