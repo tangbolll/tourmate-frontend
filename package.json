@@ -15,6 +15,7 @@
     "preset": "jest-expo"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.0.0",
     "@expo/vector-icons": "^14.1.0",
     "@react-native-community/datetimepicker": "^8.3.0",
     "@react-native-masked-view/masked-view": "0.3.2",
