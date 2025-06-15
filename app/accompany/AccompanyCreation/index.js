@@ -15,28 +15,12 @@ import Step1 from './Step1';
 import Step2 from './Step2';
 import { useRouter } from 'expo-router';
 
-// // 파일 상단에 추가
-// const getBaseURL = () => {
-//     if (__DEV__) {
-//         // 개발 환경
-//         if (Platform.OS === 'web') {
-//             return 'http://localhost:8080';
-//         } else {
-//             // 모바일 앱 - 실제 IP 주소 사용
-//             return 'http://192.168.1.100:8080'; // 여기에 실제 IP 입력
-//         }
-//     } else {
-//         // 프로덕션 환경
-//         return 'https://your-production-server.com';
-//     }
-// };
-// API 설정
     const getBaseURL = () => {
     if (__DEV__) {
         if (Platform.OS === 'android') {
         return 'http://10.0.2.2:8080';
         } else {
-        return 'http://192.168.35.116:8080'; // 본인 IP로 변경
+        return 'http://192.168.219.46:8080'; // 본인 IP로 변경
         }
     } else {
         return 'https://your-production-api.com';
@@ -180,73 +164,156 @@ const AccompanyCreation = () => {
         showExitConfirmation(() => router.push('/accompany'));
     };
     
-    const handleSubmit = async () => {
+
+    // 완전한 handleSubmit 함수 - 기존 함수를 이걸로 완전히 교체하세요!
+
+const handleSubmit = async () => {
+    console.log('🚀 동행 생성 시작');
     setIsLoading(true);
-    
+
     try {
-        // 1. 프론트엔드 데이터를 백엔드 형식에 맞게 변환
+        // 1. 요청 데이터 준비
         const requestData = {
-                userId: 1, // TODO: 실제 로그인된 사용자 ID로 변경
-                title: title,
-                location: location,
-                meetingPoint: meetLocation,
-                description: description,
-                maxParticipants: parseInt(maxPeople),
-                travelStartDate: formatDateForBackend(dateRange.startDay),
-                travelEndDate: formatDateForBackend(dateRange.endDay),
-                recruitmentStartDate: formatDateForBackend(recruitDateRange.startDate),
-                recruitmentEndDate: formatDateForBackend(recruitDateRange.endDate),
-                imageUrl: images.length > 0 ? images : [],
-                gender: selectedGenders.includes('남녀무관') ? 'ALL' : selectedGenders[0],
-                ageRange: selectedAges.includes('누구나') ? ['ALL'] : selectedAges,
-                category: selectedCategories,
-                tag: tags,
-            };
+            userId: 2, // 현재는 고정값, 나중에 실제 로그인한 사용자 ID로 변경
+            title: title.trim(),
+            location: location.trim(),
+            meetPlace: meetLocation.trim(), // meetingPoint -> meetPlace로 변경
+            intro: description.trim(), // description -> intro로 변경
+            maxRecruit: parseInt(maxPeople) || 3, // maxParticipants -> maxRecruit로 변경
+            tripStartDate: formatDateForBackend(dateRange.startDay),
+            tripEndDate: formatDateForBackend(dateRange.endDay), 
+            recStartDate: formatDateForBackend(recruitDateRange.startDate), // recruitmentStartDate -> recStartDate
+            recEndDate: formatDateForBackend(recruitDateRange.endDate), // recruitmentEndDate -> recEndDate
+            imageUrl: images || [],
+            gender: selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'),
+            ageGroup: selectedAges.includes('누구나') ? ['ALL'] : selectedAges, // ageRange -> ageGroup
+            category: selectedCategories,
+            tag: tags || [],
+        };
 
-        console.log('전송할 데이터:', requestData);
+        console.log('📤 요청 데이터:', JSON.stringify(requestData, null, 2));
 
-        // handleSubmit에서 사용
-        const response = await fetch(`${getBaseURL()}/api/accompany/create`, {
+        // 2. API URL 설정
+        const url = `${getBaseURL()}/api/accompany/create`;
+        console.log('🌐 API URL:', url);
+
+        // 3. API 요청
+        console.log('📡 요청 전송 중...');
+        const response = await fetch(url, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
             },
             body: JSON.stringify(requestData)
         });
 
-        console.log('응답 상태:', response.status);
+        console.log('📡 응답 받음:');
+        console.log('  - 상태 코드:', response.status);
+        console.log('  - 상태 텍스트:', response.statusText);
+        console.log('  - Content-Type:', response.headers.get('content-type'));
 
-        // 3. 응답 처리
+        // 4. 응답 처리
         if (response.ok) {
             const result = await response.json();
-            console.log('동행 생성 성공:', result);
+            console.log('✅ 성공! 응답 데이터:', result);
             
-            // 성공 알림
+            // 🎉 성공 알림
             Alert.alert(
-                "완료", 
-                "동행이 성공적으로 등록되었습니다!",
+                "동행 생성 완료!", 
+                `"${title}" 동행이 성공적으로 등록되었습니다.\n\n다른 여행자들의 참여를 기다려보세요!`
+            );
+
+        } else {
+            // 5. 에러 응답 처리
+            console.log('❌ 에러 응답 분석 시작...');
+            
+            const contentType = response.headers.get('content-type');
+            console.log('❌ Content-Type:', contentType);
+
+            let errorData;
+            let errorText;
+            
+            try {
+                if (contentType && contentType.includes('application/json')) {
+                    errorData = await response.json();
+                    errorText = JSON.stringify(errorData, null, 2);
+                    console.log('❌ JSON 에러 응답:', errorData);
+                } else {
+                    errorText = await response.text();
+                    console.log('❌ 텍스트 에러 응답:', errorText);
+                }
+            } catch (parseError) {
+                console.error('❌ 에러 응답 파싱 실패:', parseError);
+                errorText = '응답 파싱 실패';
+            }
+
+            console.log('❌ 에러 상세 정보:');
+            console.log('  - HTTP 상태:', response.status);
+            console.log('  - 상태 텍스트:', response.statusText);
+            console.log('  - 에러 내용:', errorText);
+
+            // 에러별 메시지 설정
+            let errorMessage = '';
+            if (response.status === 400) {
+                errorMessage = '입력 정보에 오류가 있습니다.\n모든 필드를 올바르게 입력했는지 확인해주세요.';
+            } else if (response.status === 409) {
+                errorMessage = '중복된 데이터가 있습니다.\n제목이나 날짜를 조금 변경해서 다시 시도해주세요.';
+            } else if (response.status === 500) {
+                errorMessage = `서버에서 내부 오류가 발생했습니다.\n\n백엔드 콘솔 로그를 확인해주세요.\n\n에러 내용:\n${errorText.substring(0, 200)}${errorText.length > 200 ? '...' : ''}`;
+            } else {
+                errorMessage = `서버 오류가 발생했습니다.\n상태 코드: ${response.status}\n\n${errorText.substring(0, 200)}${errorText.length > 200 ? '...' : ''}`;
+            }
+
+            Alert.alert(
+                "동행 생성 실패", 
+                errorMessage,
                 [
-                    {
-                        text: "확인",
-                        onPress: () => router.push('/accompany')
+                    { text: "확인" },
+                    { 
+                        text: "로그 보기", 
+                        onPress: () => console.log('📋 전체 에러 정보:', errorText)
                     }
                 ]
             );
-        } else {
-            // 에러 응답 처리
-            const errorData = await response.text();
-            console.error('서버 에러:', errorData);
-            Alert.alert("오류", "동행 등록에 실패했습니다. 다시 시도해주세요.");
         }
+
+    } catch (error) {
+        // 6. 네트워크 에러 처리
+        console.error('❌ 네트워크 에러 상세:', error);
+        console.error('❌ 에러 타입:', error.name);
+        console.error('❌ 에러 메시지:', error.message);
+        console.error('❌ 전체 에러:', error);
+
+        let errorMessage = '';
         
-    } 
-    catch (error) {
-        console.error('네트워크 오류:', error);
-        Alert.alert("오류", "네트워크 연결을 확인해주세요.");
+        if (error.message.includes('Network request failed')) {
+            errorMessage = '네트워크 연결을 확인해주세요.\n\n확인사항:\n• WiFi나 모바일 데이터 연결\n• 서버가 실행 중인지 확인\n• IP 주소 및 포트 번호 확인';
+        } else if (error.message.includes('timeout')) {
+            errorMessage = '서버 응답 시간이 초과되었습니다.\n네트워크 상태를 확인하고 다시 시도해주세요.';
+        } else {
+            errorMessage = `예상치 못한 오류가 발생했습니다.\n\n${error.message}`;
+        }
+
+        Alert.alert(
+            "네트워크 오류",
+            errorMessage,
+            [
+                { text: "다시 시도", style: 'default' },
+                { 
+                    text: "나중에 시도", 
+                    onPress: () => router.push('/accompany'),
+                    style: 'cancel'
+                }
+            ]
+        );
+
     } finally {
+        // 7. 로딩 종료
         setIsLoading(false);
+        console.log('🔄 로딩 상태 해제');
     }
-    };
+};
     
     const renderStep = () => {
         if (currentStep === 1) {
