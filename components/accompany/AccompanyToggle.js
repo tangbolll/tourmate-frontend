@@ -19,7 +19,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
-        marginTop: 16,
     },
     label: {
         fontSize: 18,
