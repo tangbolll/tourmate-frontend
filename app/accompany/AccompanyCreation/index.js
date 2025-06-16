@@ -185,7 +185,7 @@ const handleSubmit = async () => {
             recruitmentEndDate: formatDateForBackend(recruitDateRange.endDate),     // 수정됨
             imageUrl: images || [],
             gender: selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'),
-            ageRange: selectedAges.includes('누구나') ? ['ALL'] : selectedAges, // 수정됨
+            ageRange: selectedAges.includes('나이무관') ? ['ALL'] : selectedAges,
             category: selectedCategories,
             tag: tags || [],
             createdAt: null // 서버에서 처리해도 괜찮음

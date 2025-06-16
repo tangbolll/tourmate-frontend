@@ -12,6 +12,7 @@ import AccompanyTabToggle from '../../components/accompany/AccompanyTabToggle';
 import AccompanyFeed from '../../components/accompany/AccompanyFeed';
 import CreateAccompanyButton from '../../components/accompany/CreateAccompanyButton';
 import dayjs from 'dayjs';
+import 'dayjs/locale/ko'; // 한국어로 요일 띄우기
 
 // API 설정
 const getApiUrl = () => {
@@ -64,7 +65,7 @@ const AccompanyList = () => {
   const router = useRouter();
   
   // 현재 사용자 ID
-  const currentUserId = 1;
+  const currentUserId = 2;
 
   // 백엔드 데이터를 프론트엔드 형식으로 변환
   const transformAccompanyData = (accompanyData) => {
@@ -80,18 +81,19 @@ const AccompanyList = () => {
       maxParticipants: item.maxRecruit || 0,
       imageUrl: item.imageUrl?.[0] || '',
       tags: [
-        ...(item.ageGroup || []),
         ...(item.category || []),
         ...(item.tag || []),
-        item.gender === 'ALL' ? '남녀무관' : item.gender
+        ...(item.ageGroup.map(age => age === "ALL" ? "나이무관" : age)),
+        item.gender === 'ALL' ? '성별무관' : item.gender
       ].filter(Boolean),
       date: item.tripStartDate ? 
-        dayjs(item.tripStartDate).format('MM.DD ddd') : 
-        dayjs().format('MM.DD ddd'),
+        dayjs(item.tripStartDate).locale('ko').format('M월 D일(ddd)') : 
+        dayjs().locale('ko').format('M월 D일(ddd)'),
       hostId: item.host?.id || null,
       liked: false, // 기본값
     }));
   };
+
 
   // API에서 동행 데이터 가져오기
 const fetchAccompanyData = async () => {
@@ -127,8 +129,8 @@ const fetchAccompanyData = async () => {
       setMyAccompanyList(transformedMyAccompany);
       setFeedList(transformedFeed);
       
-      console.log('✅ 변환된 내 동행:', transformedMyAccompany.length, '개');
-      console.log('✅ 변환된 피드:', transformedFeed.length, '개');
+      console.log('변환된 내 동행:', transformedMyAccompany.length, '개');
+      console.log('변환된 피드:', transformedFeed.length, '개');
     } else {
       const errorText = await response.text();
       console.error('❌ API 호출 실패');
@@ -251,7 +253,7 @@ const onRefresh = async () => {
 
   const handleCalendarSelect = (range) => {
     const { startDate, endDate } = range;
-    const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
+    const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
     
     setFilters(prev => ({ ...prev, travelPeriod: formatted }));
     setCalendarVisible(false);
@@ -379,7 +381,7 @@ const onRefresh = async () => {
           onClose={() => setCalendarVisible(false)}
           onSelectDates={(range) => {
             const { startDate, endDate } = range;
-            const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
+            const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
             setFilters(prev => ({ ...prev, travelPeriod: formatted }));
             setCalendarVisible(false);
             setTimeout(() => setShowFilterPopup(true), 300);
