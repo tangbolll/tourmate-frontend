@@ -12,7 +12,6 @@ import AccompanyTabToggle from '../../components/accompany/AccompanyTabToggle';
 import AccompanyFeed from '../../components/accompany/AccompanyFeed';
 import CreateAccompanyButton from '../../components/accompany/CreateAccompanyButton';
 import dayjs from 'dayjs';
-import { Alert } from 'react-native';
 
 // API 설정
 const getApiUrl = () => {
