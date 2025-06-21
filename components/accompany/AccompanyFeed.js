@@ -55,7 +55,7 @@ export default function AccompanyFeed({
 const styles = StyleSheet.create({
     card: {
         backgroundColor: '#fff',
-        padding: 14,
+        padding: 10,
         marginLeft: 14,
         marginRight: 12,
         marginBottom: 10,
@@ -70,8 +70,8 @@ const styles = StyleSheet.create({
     tagsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginBottom: 4,
-        marginTop: 2,
+        marginBottom: 14,
+        marginTop: 14,
     },
     tag: {
         backgroundColor: '#f1f1f1',
@@ -88,7 +88,7 @@ const styles = StyleSheet.create({
     infoContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 6
     },
     infoText: {
         marginBottom: -4,
@@ -103,7 +103,7 @@ const styles = StyleSheet.create({
     },
     contentRow: {
         flexDirection: 'row',
-        alignItems: 'flex-start', // 상단 기준 정렬
+        alignItems: 'flex-start'
     },
     textSection: {
         flex: 1,
@@ -119,7 +119,7 @@ const styles = StyleSheet.create({
         width: 80,
         height: 80,
         marginTop: 14, 
-        position: 'relative', // 좋아요 아이콘 위치 위해
+        position: 'relative', // 이미지와 하트 아이콘을 겹치게 하기 위해 relative로 설정
     },
     image: {
         width: 80,
