@@ -12,6 +12,7 @@ import AccompanyTabToggle from '../../components/accompany/AccompanyTabToggle';
 import AccompanyFeed from '../../components/accompany/AccompanyFeed';
 import CreateAccompanyButton from '../../components/accompany/CreateAccompanyButton';
 import dayjs from 'dayjs';
+import { Alert } from 'react-native';
 
 // API 설정
 const getApiUrl = () => {
@@ -19,7 +20,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://192.168.219.46:8080'; // 본인 IP로 변경
+      return 'http://192.168.0.47:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -292,11 +293,13 @@ const onRefresh = async () => {
     tags.push(...filters.categories);
     return tags;
   };
-
+  
+  //수정한 부분: 상세 동행
   const navigateToPost = (postId) => {
     console.log('이동할 주소:', `/accompany/AccompanyPost?postId=${postId}`);
     router.push(`/accompany/AccompanyPost?postId=${postId}`);
   };
+
 
   // 피드 아이템 렌더링
   const renderFeedItems = () => {
