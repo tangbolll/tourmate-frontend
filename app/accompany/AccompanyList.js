@@ -1,6 +1,4 @@
-console.log('새로운 AccompanyList 파일 로드됨!', new Date().toLocaleTimeString());
-
-import { Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import React, { useState, useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -14,6 +12,7 @@ import AccompanyTabToggle from '../../components/accompany/AccompanyTabToggle';
 import AccompanyFeed from '../../components/accompany/AccompanyFeed';
 import CreateAccompanyButton from '../../components/accompany/CreateAccompanyButton';
 import dayjs from 'dayjs';
+import 'dayjs/locale/ko'; // 한국어로 요일 띄우기
 
 // API 설정
 const getApiUrl = () => {
@@ -21,7 +20,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://192.168.35.116:8080'; // 본인 IP로 변경
+      return 'http://192.168.35.178:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -66,7 +65,7 @@ const AccompanyList = () => {
   const router = useRouter();
   
   // 현재 사용자 ID
-  const currentUserId = 1;
+  const currentUserId = 2;
 
   // 백엔드 데이터를 프론트엔드 형식으로 변환
   const transformAccompanyData = (accompanyData) => {
@@ -82,72 +81,120 @@ const AccompanyList = () => {
       maxParticipants: item.maxRecruit || 0,
       imageUrl: item.imageUrl?.[0] || '',
       tags: [
-        ...(item.ageGroup || []),
         ...(item.category || []),
         ...(item.tag || []),
-        item.gender === 'ALL' ? '남녀무관' : item.gender
+        ...(item.ageGroup.map(age => age === "ALL" ? "나이무관" : age)),
+        item.gender === 'ALL' ? '성별무관' : item.gender
       ].filter(Boolean),
       date: item.tripStartDate ? 
-        dayjs(item.tripStartDate).format('MM.DD ddd') : 
-        dayjs().format('MM.DD ddd'),
+        dayjs(item.tripStartDate).locale('ko').format('M월 D일(ddd)') : 
+        dayjs().locale('ko').format('M월 D일(ddd)'),
       hostId: item.host?.id || null,
       liked: false, // 기본값
     }));
   };
 
-  // API에서 동행 데이터 가져오기
-  const fetchAccompanyData = async () => {
-    try {
-      setLoading(true);
-      const response = await fetch(`${API_URL}/api/accompany/home?userId=${currentUserId}`);
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('✅ API 응답:', data);
-        
-        // 백엔드 데이터를 프론트엔드 형식으로 변환
-        const transformedMyAccompany = transformAccompanyData(data.myAccompany);
-        const transformedFeed = transformAccompanyData(data.feed);
-        
-        setMyAccompanyList(transformedMyAccompany);
-        setFeedList(transformedFeed);
-        
-        console.log('✅ 변환된 내 동행:', transformedMyAccompany);
-        console.log('✅ 변환된 피드:', transformedFeed);
-      } else {
-        console.error('❌ API 호출 실패:', response.status);
-      }
-    } catch (error) {
-      console.error('❌ 네트워크 에러:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
-  // 새로고침 함수
-  const onRefresh = async () => {
-    setRefreshing(true);
+  // API에서 동행 데이터 가져오기
+const fetchAccompanyData = async () => {
+  try {
+    setLoading(true);
+    const url = `${API_URL}/api/accompany/home?userId=${currentUserId}`;
+    
+    console.log('🌐 API 호출 시작:', url);
+    console.log('🔗 API_URL:', API_URL);
+    console.log('📱 Platform:', Platform.OS);
+    console.log('🚀 __DEV__:', __DEV__);
+    
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      },
+      timeout: 10000, // 10초 타임아웃
+    });
+    
+    console.log('📡 응답 상태:', response.status);
+    console.log('📡 응답 헤더:', response.headers);
+    
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ API 응답 성공:', data);
+      
+      // 백엔드 데이터를 프론트엔드 형식으로 변환
+      const transformedMyAccompany = transformAccompanyData(data.myAccompany);
+      const transformedFeed = transformAccompanyData(data.feed);
+      
+      setMyAccompanyList(transformedMyAccompany);
+      setFeedList(transformedFeed);
+      
+      console.log('변환된 내 동행:', transformedMyAccompany.length, '개');
+      console.log('변환된 피드:', transformedFeed.length, '개');
+    } else {
+      const errorText = await response.text();
+      console.error('❌ API 호출 실패');
+      console.error('❌ 상태 코드:', response.status);
+      console.error('❌ 상태 텍스트:', response.statusText);
+      console.error('❌ 에러 내용:', errorText);
+      
+      // 사용자에게 알림
+      Alert.alert(
+        '네트워크 오류', 
+        `서버 응답 오류 (${response.status}): ${response.statusText}`
+      );
+    }
+  } catch (error) {
+
+    
+    // 에러 타입별 처리
+    if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
+      Alert.alert(
+        '네트워크 연결 오류',
+        '서버에 연결할 수 없습니다.\n\n확인사항:\n1. 서버가 실행 중인지 확인\n2. IP 주소가 올바른지 확인\n3. 포트 번호가 맞는지 확인'
+      );
+    } else if (error.name === 'AbortError') {
+      Alert.alert('타임아웃', '서버 응답 시간이 초과되었습니다.');
+    } else {
+      Alert.alert('오류', `예상치 못한 오류가 발생했습니다: ${error.message}`);
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+// 개선된 새로고침 함수
+const onRefresh = async () => {
+  console.log('🔄 새로고침 시작');
+  setRefreshing(true);
+  
+  try {
     await fetchAccompanyData();
+    console.log('✅ 새로고침 완료');
+  } catch (error) {
+    console.error('❌ 새로고침 중 오류:', error);
+    // fetchAccompanyData 내부에서 이미 에러 처리를 하므로 여기서는 로그만
+  } finally {
     setRefreshing(false);
-  };
+    console.log('🔄 새로고침 상태 해제');
+  }
+};
 
   // 컴포넌트 마운트 시 데이터 로드
   useEffect(() => {
     fetchAccompanyData();
   }, []);
 
-  // 화면 포커스 시 데이터 새로고침 (동행 생성 후 돌아왔을 때)
+  // 화면 포커스 시 데이터 새로고침
   useEffect(() => {
-    const unsubscribe = router.addListener ? router.addListener('focus', () => {
-      fetchAccompanyData();
-    }) : null;
-
-    // cleanup 함수가 있을 때만 반환
-    return () => {
-      if (unsubscribe && typeof unsubscribe === 'function') {
-        unsubscribe();
-      }
-    };
+    if (router.addListener) {
+      const unsubscribe = router.addListener('focus', () => {
+        fetchAccompanyData();
+      });
+      
+      return unsubscribe; 
+    }
   }, [router]);
 
   // 필터링된 포스트 업데이트
@@ -206,7 +253,7 @@ const AccompanyList = () => {
 
   const handleCalendarSelect = (range) => {
     const { startDate, endDate } = range;
-    const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
+    const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
     
     setFilters(prev => ({ ...prev, travelPeriod: formatted }));
     setCalendarVisible(false);
@@ -334,7 +381,7 @@ const AccompanyList = () => {
           onClose={() => setCalendarVisible(false)}
           onSelectDates={(range) => {
             const { startDate, endDate } = range;
-            const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
+            const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
             setFilters(prev => ({ ...prev, travelPeriod: formatted }));
             setCalendarVisible(false);
             setTimeout(() => setShowFilterPopup(true), 300);
