@@ -24,7 +24,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://localhost:8080'; // 본인 IP로 변경
+      return 'http://192.168.35.178:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -40,11 +40,8 @@ export default function AccompanyPost() {
     const [postData, setPostData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState(null);
     
     // 현재 사용자가 호스트인지 확인 (실제로는 인증 시스템에서 가져올 값)
-    const currentUserId = "2"; // 실제 사용자 ID로 변경
     const currentUserId = "2"; // 실제 사용자 ID로 변경
     const [isHost, setIsHost] = useState(false);
     
@@ -58,7 +55,6 @@ export default function AccompanyPost() {
     const scrollViewRef = useRef(null);
 
     // 댓글 상태 관리 (답글 포함)
-    const [comments, setComments] = useState([]);
     const [comments, setComments] = useState([]);
 
     // 현재 답글을 달고 있는 댓글 ID (null이면 일반 댓글 모드)
@@ -181,7 +177,6 @@ export default function AccompanyPost() {
                 time: "방금 전",
                 profileImage: null,
                 isHost: currentUserId === postData?.createdBy // 현재 사용자가 호스트인지
-                isHost: currentUserId === postData?.createdBy // 현재 사용자가 호스트인지
             };
             
             return mockResponse;
@@ -192,18 +187,15 @@ export default function AccompanyPost() {
     };
 
     // 일반 댓글 추가 (기존 로직 유지)
-    // 일반 댓글 추가 (기존 로직 유지)
     const handleAddComment = async (content) => {
         if (!content.trim()) return;
 
         const tempComment = {
             id: `temp_${Date.now()}`,
-            id: `temp_${Date.now()}`,
             nickname: "내닉네임", 
             time: "방금 전",
             content: content.trim(),
             profileImage: null,
-            isHost: currentUserId === postData?.createdBy,
             isHost: currentUserId === postData?.createdBy,
             replies: [],
             isTemporary: true
@@ -239,7 +231,6 @@ export default function AccompanyPost() {
     };
 
     // 답글 추가 (기존 로직 유지)
-    // 답글 추가 (기존 로직 유지)
     const handleAddReply = async (content) => {
         if (!content.trim() || !replyingTo) return;
 
@@ -249,7 +240,6 @@ export default function AccompanyPost() {
             time: "방금 전", 
             content: content.trim(),
             profileImage: null,
-            isHost: currentUserId === postData?.createdBy,
             isHost: currentUserId === postData?.createdBy,
             isTemporary: true
         };
@@ -330,14 +320,7 @@ export default function AccompanyPost() {
     };
 
     // 🎯 postId를 사용하여 데이터 로드
-    // 🎯 postId를 사용하여 데이터 로드
     useEffect(() => {
-        if (postId) {
-            console.log('📍 postId로 데이터 로드:', postId);
-            fetchAccompanyDetail(postId);
-        } else {
-            setError('잘못된 동행 ID입니다.');
-            setLoading(false);
         if (postId) {
             console.log('📍 postId로 데이터 로드:', postId);
             fetchAccompanyDetail(postId);
@@ -406,54 +389,21 @@ export default function AccompanyPost() {
 
     // 🎯 멤버 데이터 (실제 데이터로 변환)
     const members = postData ? [
-    // 🎯 멤버 데이터 (실제 데이터로 변환)
-    const members = postData ? [
         {
-            name: postData.createdByName,
-            gender: '여', // 실제 데이터에서 가져와야 함
-            age: '22',   // 실제 데이터에서 가져와야 함
             name: postData.createdByName,
             gender: '여', // 실제 데이터에서 가져와야 함
             age: '22',   // 실제 데이터에서 가져와야 함
             isHost: true,
             tags: ['호스트']
-            tags: ['호스트']
         },
         // 참가자들도 실제 데이터로 변환 필요
     ] : [];
-        // 참가자들도 실제 데이터로 변환 필요
-    ] : [];
 
-    // 🔄 로딩 상태
-    if (loading) {
     // 🔄 로딩 상태
     if (loading) {
         return (
             <SafeAreaView style={styles.safeArea}>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 16, color: '#666' }}>동행 정보를 불러오는 중...</Text>
-                </View>
-            </SafeAreaView>
-        );
-    }
-
-    // ❌ 에러 상태
-    if (error || !postData) {
-        return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
-                    <Text style={{ fontSize: 18, color: '#FF6B6B', marginBottom: 10 }}>
-                        오류가 발생했습니다
-                    </Text>
-                    <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>
-                        {error || '동행 정보를 불러올 수 없습니다.'}
-                    </Text>
-                    <TouchableOpacity 
-                        style={{ backgroundColor: '#007AFF', padding: 12, borderRadius: 8 }}
-                        onPress={() => router.back()}
-                    >
-                        <Text style={{ color: 'white', fontSize: 16 }}>돌아가기</Text>
-                    </TouchableOpacity>
                     <Text style={{ fontSize: 16, color: '#666' }}>동행 정보를 불러오는 중...</Text>
                 </View>
             </SafeAreaView>
@@ -521,7 +471,6 @@ export default function AccompanyPost() {
                     <View style={styles.hostInfoContainer}>
                         <Text style={styles.hostInfoText}>
                             <Text style={styles.hostInfoLabel}>호스트 </Text>
-                            <Text>{postData.createdByName} </Text>
                             <Text>{postData.createdByName} </Text>
                             <Text style={styles.hostInfoLabel}>게시일 </Text>
                             <Text>{postData.createdAt} </Text>
