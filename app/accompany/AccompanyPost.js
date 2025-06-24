@@ -24,7 +24,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://localhost:8080'; // 본인 IP로 변경
+      return 'http://192.168.35.42:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -93,7 +93,7 @@ export default function AccompanyPost() {
             ageRange: (backendData.ageGroup || []).map(age => age === "ALL" ? "누구나" : age),
             category: backendData.category || [],
             tags: backendData.tag || [],
-            currentParticipants: backendData.participants?.length || 0,
+            currentParticipants: backendData.participants?.length || 1,
             maxParticipants: backendData.maxRecruit || 0,
             createdBy: backendData.host?.userId?.toString() || 'unknown',
             createdByName: backendData.host?.nickname || '알 수 없음',
@@ -583,7 +583,7 @@ export default function AccompanyPost() {
                     <AlarmPopup
                         alarmText={
                             applied
-                                ? `동행을 신청하였습니다.\n호스트에 의해 동행이 수락 또는 거절되면 알림이 발송됩니다.\n신청한 동행은 취소할 수 있습니다.`
+                                ? `동행을 신청하였습니다.\n동행을 취소하시려면 아래 버튼을 눌러주세요.`
                                 : `동행 신청이 취소되었습니다.\n다시 신청하시려면 아래 버튼을 눌러주세요.`
                         }
                         onClose={handleCloseAlarmPopup}

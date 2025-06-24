@@ -20,7 +20,7 @@ import { useRouter } from 'expo-router';
         if (Platform.OS === 'android') {
         return 'http://10.0.2.2:8080';
         } else {
-        return 'http://localhost:8080'; // 본인 IP로 변경
+        return 'http://192.168.35.42:8080'; // 본인 IP로 변경
         }
     } else {
         return 'https://your-production-api.com';

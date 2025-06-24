@@ -20,7 +20,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://192.168.35.178:8080'; // 본인 IP로 변경
+      return 'http://192.168.35.42:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -77,7 +77,7 @@ const AccompanyList = () => {
       location: item.location || '위치 미정',
       description: item.intro || '',
       meetingPoint: item.meetPlace || '',
-      participants: item.participants?.length || 0,
+      participants: item.participants?.length || 1,
       maxParticipants: item.maxRecruit || 0,
       imageUrl: item.imageUrl?.[0] || '',
       tags: [
