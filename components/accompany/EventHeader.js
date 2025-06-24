@@ -2,8 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
-const EventHeader = ({ title, location, participants, maxParticipants, newApplication = false, onParticipantsClick }) => {
+import ToChatroom from '../../components/accompany/ToChatroom'; 
+const EventHeader = ({ title, location, participants, maxParticipants, newApplication = false, onParticipantsClick, postId }) => {
     return (
         <HeaderWrapper>
         <View style={styles.container}>
@@ -28,6 +28,7 @@ const EventHeader = ({ title, location, participants, maxParticipants, newApplic
                         <View style={styles.redDot} />
                     )}
                 </TouchableOpacity>
+                <ToChatroom postId={postId}/>
             </View>
         </View>
         </HeaderWrapper>
