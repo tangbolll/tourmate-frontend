@@ -460,6 +460,7 @@ export default function AccompanyPost() {
                         participants={postData.currentParticipants} 
                         maxParticipants={postData.maxParticipants}
                         onParticipantsClick={handleParticipantsClick}
+                        postId={postId}
                     />
                     
                     {/* More button outside header */}

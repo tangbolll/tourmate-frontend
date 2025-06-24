@@ -1,133 +1,52 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Modal, Dimensions } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import {
+  TouchableOpacity,
+  Text,
+  StyleSheet,
+  View,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-const { width, height } = Dimensions.get('window');
+const ToChatroom = ({ postId, style }) => {
+  const router = useRouter();
 
-const ToChatRoom = ({ 
-    onPress, 
-    title = "그룹채팅 입장", 
-    onClose 
-}) => {
-    
-    const handlePress = () => {
-        if (onPress) {
-            onPress();
-        }
-    };
-
-    const handleBackdropPress = () => {
-        if (onClose) {
-            onClose();
-        }
-    };
-
-    return (
-        <Modal
-            visible={true}
-            transparent={true}
-            animationType="slide"
-            onRequestClose={onClose}
-        >
-            {/* 어두운 배경 */}
-            <TouchableOpacity 
-                style={styles.overlay}
-                activeOpacity={1}
-                onPress={handleBackdropPress}
-            >
-                {/* 하단 컨테이너 */}
-                <TouchableOpacity 
-                    style={styles.container}
-                    activeOpacity={1}
-                    onPress={() => {}} // 버블링 방지
-                >
-                    {/* 상단 핸들 바 */}
-                    <View style={styles.handleBar} />
-                    
-                    {/* 닫기 버튼 */}
-                    <TouchableOpacity 
-                        style={styles.closeButton}
-                        onPress={onClose}
-                    >
-                        <Ionicons name="close" size={24} color="#666" />
-                    </TouchableOpacity>
-                    
-                    {/* 메인 버튼 */}
-                    <TouchableOpacity 
-                        style={styles.button} 
-                        onPress={handlePress}
-                        activeOpacity={0.8}
-                    >
-                        <Ionicons 
-                            name="chat" 
-                            size={24} 
-                            color="white"
-                        />
-                        <Text style={styles.buttonText}>
-                            {title}
-                        </Text>
-                    </TouchableOpacity>
-                </TouchableOpacity>
-            </TouchableOpacity>
-        </Modal>
-    );
+  const handlePress = () => {
+    console.log('그룹채팅 버튼 클릭 - postId:', postId);
+    router.push(`/chat/${postId}`);
+  };
+  
+  return (
+    <TouchableOpacity 
+      style={[styles.container, style]} 
+      onPress={handlePress}
+      activeOpacity={0.7}
+    >
+      <View style={styles.iconContainer}>
+        <MaterialCommunityIcons name="chat" size={16} color="black" />
+      </View>
+      <Text style={styles.text}> 그룹채팅</Text>
+    </TouchableOpacity>
+  );
 };
 
 const styles = StyleSheet.create({
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
-    },
-    container: {
-        backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        paddingHorizontal: 20,
-        paddingTop: 12,
-        paddingBottom: 34, // Safe area 고려
-        minHeight: 120,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 10,
-        elevation: 10,
-    },
-    handleBar: {
-        width: 40,
-        height: 4,
-        backgroundColor: '#E5E5E5',
-        borderRadius: 2,
-        alignSelf: 'center',
-        marginBottom: 16,
-    },
-    closeButton: {
-        position: 'absolute',
-        top: 16,
-        right: 16,
-        padding: 4,
-        zIndex: 1,
-    },
-    button: {
-        backgroundColor: '#007AFF',
-        paddingVertical: 16,
-        borderRadius: 12,
-        alignItems: 'center',
-        flexDirection: 'row',
-        justifyContent: 'center',
-        gap: 8,
-        marginTop: 8,
-        shadowColor: '#007AFF',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4,
-        elevation: 3,
-    },
-    buttonText: {
-        color: 'white',
-        fontSize: 18,
-        fontWeight: 'bold',
-    },
+  container: {
+    backgroundColor: '#E8E8E8',
+    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+  },
+  text: {
+    fontSize: 13,
+    fontWeight: '500',
+    color: '#000000',
+    textAlign: 'center',
+  },
 });
 
-export default ToChatRoom;
+export default ToChatroom;
