@@ -18,7 +18,7 @@ export const BottomSheet = ({ isOpen, onClose, children, onHeightChange }) => {
     const scrollDirection = useRef('up');
 
     const FULL_HEIGHT = SCREEN_HEIGHT * 0.6;
-    const COLLAPSED_HEIGHT = 80; // 꼬리 부분 높이
+    const COLLAPSED_HEIGHT = 80; 
 
     const handleScroll = (event) => {
         const currentScrollY = event.nativeEvent.contentOffset.y;
@@ -241,7 +241,6 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     content: {
-        paddingHorizontal: 16,
-        paddingBottom: 50, // 여유 공간
+        paddingBottom: 50,
     },
 });

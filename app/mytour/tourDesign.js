@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import SearchRegionHeader from '../../components/mytour/createItinerary/SearchRegionHeader';
 import Continent from '../../components/mytour/createItinerary/Continent';
 import Country from '../../components/mytour/createItinerary/Country';
-import { SelectedRegions } from '../../components/mytour/createItinerary/SelectedRegions';
+import SelectedRegions from '../../components/mytour/createItinerary/SelectedRegions';
 import { BottomSheet } from '../../components/mytour/createItinerary/BottomSheet';
 import CreateItineraryButton from '../../components/mytour/createItinerary/CreateItineraryButton';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -63,15 +63,6 @@ const TourDesign = () => {
                     <Text style={styles.mapPlaceholderText}>지도 영역</Text>
                 </View>
                 
-                {/* 선택된 지역 표시 */}
-                {selectedRegions.length > 0 && (
-                    <View style={styles.selectedRegionsOverlay}>
-                        <SelectedRegions 
-                            selectedRegions={selectedRegions}
-                            onRemoveRegion={handleRemoveRegion}
-                        />
-                    </View>
-                )}
             </View>
 
             {/* 바텀 시트 */}
@@ -80,6 +71,12 @@ const TourDesign = () => {
                 onClose={() => setIsBottomSheetOpen(false)}
                 onHeightChange={setSheetHeight}
             >
+                {/* 바텀 시트 내부 선택된 지역 표시 */}
+                <SelectedRegions 
+                    selectedRegions={selectedRegions}
+                    onRemoveRegion={handleRemoveRegion}
+                />
+                
                 <Continent 
                     selectedContinent={selectedContinent}
                     onContinentSelect={handleContinentSelect}
@@ -89,13 +86,6 @@ const TourDesign = () => {
                     onRegionSelect={handleRegionSelect}
                     selectedRegions={selectedRegions}
                 />
-                
-                {selectedRegions.length > 0 && (
-                    <CreateTripButton 
-                        onCreateTrip={handleCreateTrip}
-                        selectedCount={selectedRegions.length}
-                    />
-                )}
             </BottomSheet>
         </SafeAreaView>
         </GestureHandlerRootView>

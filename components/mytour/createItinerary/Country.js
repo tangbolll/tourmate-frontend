@@ -5,9 +5,11 @@ import { MockRegion } from './MockRegion';
 
 const defaultImage = require('../../../assets/defaultBackground.png');
 
-const Country = ({ selectedContinent }) => {
+const Country = ({ selectedContinent, onRegionSelect, selectedRegions = [] }) => {
     const [expandedCountries, setExpandedCountries] = useState({});
-    const [selectedRegions, setSelectedRegions] = useState({});
+
+    // 선택된 지역 키들을 Set으로 변환 (빠른 조회를 위해)
+    const selectedRegionKeys = new Set(selectedRegions.map(r => r.key));
 
     // 선택된 대륙에 해당하는 국가들 필터링
     const getCountriesByContinent = () => {
@@ -27,19 +29,19 @@ const Country = ({ selectedContinent }) => {
     };
 
     const toggleRegion = (countryName, regionName) => {
-        setSelectedRegions(prev => ({
-            ...prev,
-            [`${countryName}-${regionName}`]: !prev[`${countryName}-${regionName}`]
-        }));
+        const regionKey = `${countryName}-${regionName}`;
+        if (onRegionSelect) {
+            onRegionSelect(regionKey, countryName, regionName);
+        }
     };
 
     const getDisplayRegions = (regions) => {
-        if (regions.length <= 4) {
+        if (regions.length <= 3) {
             return { display: regions, remaining: 0 };
         }
         return { 
-            display: regions.slice(0, 4), 
-            remaining: regions.length - 4 
+            display: regions.slice(0, 3), 
+            remaining: regions.length - 3 
         };
     };
 
@@ -67,27 +69,43 @@ const Country = ({ selectedContinent }) => {
                                     activeOpacity={0.7}
                                 >
                                     <View style={styles.countryInfo}>
-                                        <Image 
-                                            source={defaultImage}
-                                            style={styles.countryImage}
-                                            resizeMode="cover"
-                                        />
-                                        <View style={styles.countryDetails}>
-                                            <Text style={styles.countryName}>{country.country}</Text>
+                                        <View style={styles.imageContainer}>
+                                            <Image 
+                                                source={defaultImage}
+                                                style={styles.countryImage}
+                                                resizeMode="cover"
+                                            />
                                             {!isExpanded && (
-                                                <View style={styles.regionPreview}>
-                                                    <Text style={styles.regionPreviewText}>
+                                                <View style={styles.plusIconContainer}>
+                                                    <AntDesign 
+                                                        name="plus" 
+                                                        style={styles.plusIcon} 
+                                                    />
+                                                </View>
+                                            )}
+                                        </View>
+                                        <View style={styles.countryDetails}>
+                                            {!isExpanded ? (
+                                                <View style={styles.countryPreviewContainer}>
+                                                    <Text style={styles.countryName} numberOfLines={1}>{country.country}</Text>
+                                                    <Text style={styles.separator}> | </Text>
+                                                    <Text style={styles.regionPreviewText} numberOfLines={1}>
                                                         {display.join(', ')}
                                                         {remaining > 0 && ` 외 ${remaining}개 도시`}
                                                     </Text>
                                                 </View>
+                                            ) : (
+                                                <Text style={styles.countryName}>{country.country}</Text>
                                             )}
                                         </View>
                                     </View>
-                                    <AntDesign 
-                                        name={isExpanded ? "up" : "down"} 
-                                        style={styles.chevronIcon} 
-                                    />
+                                    
+                                    {!isExpanded ? null : (
+                                        <AntDesign 
+                                            name="up" 
+                                            style={styles.chevronIcon} 
+                                        />
+                                    )}
                                 </TouchableOpacity>
                                 
                                 {isExpanded && (
@@ -99,13 +117,13 @@ const Country = ({ selectedContinent }) => {
                                                     onPress={() => toggleRegion(country.country, region)}
                                                     style={[
                                                         styles.regionChip,
-                                                        selectedRegions[`${country.country}-${region}`] && styles.regionChipSelected
+                                                        selectedRegionKeys.has(`${country.country}-${region}`) && styles.regionChipSelected
                                                     ]}
                                                     activeOpacity={0.8}
                                                 >
                                                     <Text style={[
                                                         styles.regionChipText,
-                                                        selectedRegions[`${country.country}-${region}`] && styles.regionChipTextSelected
+                                                        selectedRegionKeys.has(`${country.country}-${region}`) && styles.regionChipTextSelected
                                                     ]}>
                                                         {region}
                                                     </Text>
@@ -127,9 +145,10 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#ffffff',
+        paddingHorizontal: 16,
     },
     contentContainer: {
-        paddingHorizontal: 16,
+        paddingHorizontal: 8,
         paddingVertical: 8,
     },
     emptyContainer: {
@@ -152,7 +171,6 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingVertical: 8,
     },
     countryInfo: {
         flexDirection: 'row',
@@ -160,30 +178,68 @@ const styles = StyleSheet.create({
         flex: 1,
         marginRight: 12,
     },
-    countryImage: {
-        width: 48,
-        height: 48,
-        borderRadius: 8,
+    imageContainer: {
+        position: 'relative',
         marginRight: 12,
+    },
+    countryImage: {
+        width: 36,
+        height: 36,
+        borderRadius: 8,
     },
     countryDetails: {
         flex: 1,
+        justifyContent: 'center',
+    },
+    countryPreviewContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    countryPreviewText: {
+        fontSize: 14,
+        lineHeight: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     countryName: {
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#111827',
+        flexShrink: 0,
+    },
+    countryNameExpanded: {
         fontSize: 18,
         fontWeight: '600',
         color: '#111827',
         marginBottom: 4,
     },
-    regionPreview: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        flexWrap: 'wrap',
+    separator: {
+        fontSize: 14,
+        color: '#6b7280',
+        fontWeight: '400',
+        flexShrink: 0,
     },
     regionPreviewText: {
         fontSize: 14,
         color: '#6b7280',
-        lineHeight: 20,
+        flex: 1,
+    },
+    plusIconContainer: {
+        position: 'absolute',
+        top: -2,
+        right: -2,
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    plusIcon: {
+        fontSize: 12,
+        color: '#ffffff',
+        fontWeight: 'bold',
     },
     chevronIcon: {
         fontSize: 16,
@@ -191,7 +247,7 @@ const styles = StyleSheet.create({
     },
     regionsContainer: {
         paddingTop: 16,
-        paddingLeft: 60,
+        paddingLeft: 40,
         paddingBottom: 8,
     },
     regionsGrid: {
