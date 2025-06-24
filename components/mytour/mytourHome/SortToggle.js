@@ -5,7 +5,8 @@ import {
     TouchableOpacity, 
     Modal, 
     StyleSheet,
-    Dimensions 
+    Dimensions,
+    TouchableWithoutFeedback
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -58,59 +59,57 @@ export const SortToggle = ({ onSortChange, defaultSort = 'latest' }) => {
             {/* 드롭다운 모달 */}
             <Modal
                 animationType="fade"
-                transparent={true}
+                transparent={true} 
                 visible={modalVisible}
                 onRequestClose={() => setModalVisible(false)}
             >
-                <TouchableOpacity 
-                    style={styles.modalOverlay}
-                    activeOpacity={1}
-                    onPress={() => setModalVisible(false)}
-                >
-                    <View style={[
-                        styles.dropdownContainer,
-                        {
-                            top: buttonPosition.y,
-                            left: buttonPosition.x - 50,
-                        }
-                    ]}>
-                        {sortOptions.map((option) => (
-                            <TouchableOpacity
-                                key={option.key}
-                                style={[
-                                    styles.dropdownItem,
-                                    // 마지막 항목의 경우 하단 테두리 제거
-                                    sortOptions[sortOptions.length - 1].key === option.key && 
-                                    { borderBottomWidth: 0 }
-                                ]}
-                                onPress={() => handleSortSelect(option.key)}
-                            >
-                                <Text style={[
-                                    styles.dropdownText,
-                                    selectedSort === option.key && styles.selectedText
-                                ]}>
-                                    {option.label}
-                                </Text>
-                                {selectedSort === option.key && (
-                                    <MaterialIcons name="check" size={18} color="#007AFF" />
-                                )}
-                            </TouchableOpacity>
-                        ))}
+                {/* TouchableWithoutFeedback 사용 */}
+                <TouchableWithoutFeedback onPress={() => setModalVisible(false)}>
+                    <View style={styles.modalOverlay}>
+                        <View style={[
+                            styles.dropdownContainer,
+                            {
+                                top: buttonPosition.y,
+                                left: buttonPosition.x - 50,
+                            }
+                        ]}>
+                            {sortOptions.map((option) => (
+                                <TouchableOpacity
+                                    key={option.key}
+                                    style={[
+                                        styles.dropdownItem,
+                                        // 마지막 항목의 경우 하단 테두리 제거
+                                        sortOptions[sortOptions.length - 1].key === option.key && 
+                                        { borderBottomWidth: 0 }
+                                    ]}
+                                    onPress={() => handleSortSelect(option.key)}
+                                >
+                                    <Text style={[
+                                        styles.dropdownText,
+                                        selectedSort === option.key && styles.selectedText
+                                    ]}>
+                                        {option.label}
+                                    </Text>
+                                    {selectedSort === option.key && (
+                                        <MaterialIcons name="check" size={18} color="#007AFF" />
+                                    )}
+                                </TouchableOpacity>
+                            ))}
+                        </View>
                     </View>
-                </TouchableOpacity>
+                </TouchableWithoutFeedback>
             </Modal>
         </View>
     );
 };
 
-// 스타일 정의
 const styles = StyleSheet.create({
     sortButton: {
         padding: 4,
     },
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        backgroundColor: 'rgba(0,0,0,0.5)',
     },
     dropdownContainer: {
         position: 'absolute',

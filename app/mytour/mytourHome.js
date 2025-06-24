@@ -7,8 +7,6 @@ import {
 import BookmarkedTab from '../../components/mytour/mytourHome/BookMarkedTab';
 import MyTourTab from '../../components/mytour/mytourHome/MyTourTab';
 
-{ /* index.js에 들어갈 코드. 다른 화면 코드 테스트 위해 복제해둠 */}
-
 // 목 데이터 - 모든 여행 데이터
 const mockMyTours = [
     {
@@ -121,7 +119,7 @@ export default function MyTourHome({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: '#fff', 
     },
     myTourSection: {
         flex: 1,

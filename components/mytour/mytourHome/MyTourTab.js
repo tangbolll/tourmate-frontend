@@ -20,16 +20,13 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
         travelLocation: '',
     });
 
-    // mytours prop이 변경되면 로컬 state 업데이트
     React.useEffect(() => {
         setTours(mytours);
     }, [mytours]);
 
-    // 필터링 및 정렬된 투어 데이터
     const filteredAndSortedTours = useMemo(() => {
         let filteredTours = [...tours];
         
-        // 필터링 적용
         if (activeFilters.travelLocation) {
             filteredTours = filteredTours.filter(tour => 
                 tour.location.toLowerCase().includes(activeFilters.travelLocation.toLowerCase())
@@ -69,30 +66,25 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
         return filteredTours;
     }, [tours, sortType, activeFilters]);
 
-    // 정렬 변경 핸들러
     const handleSortChange = (newSortType) => {
         setSortType(newSortType);
         console.log('정렬 방식 변경:', newSortType);
     };
 
-    // 필터 버튼 핸들러
     const handleFilterPress = () => {
         console.log('필터 버튼 클릭');
     };
 
-    // 필터 적용 핸들러
     const handleFilterApply = (appliedFilters) => {
         setActiveFilters(appliedFilters);
         console.log('필터 적용됨:', appliedFilters);
     };
 
-    // 투어 카드 클릭 핸들러
     const handleTourPress = (tourId) => {
         console.log('투어 상세 페이지로 이동:', tourId);
         // 투어 상세 페이지로 네비게이션
     };
 
-    // 북마크 토글 핸들러
     const handleBookmarkToggle = (tourId) => {
         const updatedTours = tours.map(tour => 
             tour.id === tourId 
@@ -101,15 +93,11 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
         );
         setTours(updatedTours);
         
-        // 상위 컴포넌트에 업데이트된 데이터 전달
         if (onBookmarkUpdate) {
             onBookmarkUpdate(updatedTours);
         }
-        
-        console.log('북마크 토글:', tourId);
     };
 
-    // 여행 디자인 버튼 핸들러
     const handleTourDesignPress = () => {
         console.log('여행 디자인 페이지로 이동');
     };
@@ -160,7 +148,7 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff', // 배경색 통일
+        backgroundColor: '#fff', 
     },
     scrollableSection: {
         flex: 1,

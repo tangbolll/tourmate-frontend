@@ -79,15 +79,12 @@ export default function MyTourHome({
 }) {
     const [tours, setTours] = useState(mytours);
     
-    // 북마크된 여행들만 필터링
     const bookmarkedEvents = tours.filter(tour => tour.isBookmarked);
 
-    // 북마크 상태 업데이트 핸들러
     const handleBookmarkUpdate = (updatedTours) => {
         setTours(updatedTours);
     };
 
-    // 즐겨찾기 탭에서 북마크 해제 핸들러
     const handleBookmarkedEventUpdate = (eventId) => {
         const updatedTours = tours.map(tour => 
             tour.id === eventId 
@@ -105,7 +102,7 @@ export default function MyTourHome({
                 onBookmarkUpdate={handleBookmarkedEventUpdate}
             />
             
-            {/* 나의 여행 탭 - 스크롤 가능한 영역 */}
+            {/* 나의 여행 탭 - 스크롤 가능 */}
             <View style={styles.myTourSection}>
                 <MyTourTab
                     mytours={tours}
@@ -119,7 +116,7 @@ export default function MyTourHome({
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff', // 배경색 통일
+        backgroundColor: '#fff',
     },
     myTourSection: {
         flex: 1,
