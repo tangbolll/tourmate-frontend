@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { FontAwesome } from '@expo/vector-icons';
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
+import FontAwesome from 'react-native-vector-icons/FontAwesome';
 import SearchRegionHeader from './SearchRegionHeader';
 
 const SearchRegionHistory = () => {
@@ -15,95 +16,95 @@ const SearchRegionHistory = () => {
         setSearchedRegions(newRegions);
     };
 
-    const handleSearchChange = (e) => {
-        setSearchText(e.target.value);
+    const handleSearchChange = (text) => {
+        setSearchText(text);
     };
 
     const handleSearch = () => {
         if (searchText.trim() !== '') {
-        console.log('지도에서 검색:', searchText);
-        
-        // 검색 기록에 추가 (중복 제거 후 맨 앞에 추가)
-        const newSearchedRegions = [searchText, ...searchedRegions.filter(region => region !== searchText)];
-        setSearchedRegions(newSearchedRegions);
-        
-        // 검색어 초기화
-        setSearchText('');
-        }
-    };
-
-    const handleKeyPress = (e) => {
-        if (e.key === 'Enter') {
-        handleSearch();
+            console.log('지도에서 검색:', searchText);
+            
+            // 검색 기록에 추가 (중복 제거 후 맨 앞에 추가)
+            const newSearchedRegions = [searchText, ...searchedRegions.filter(region => region !== searchText)];
+            setSearchedRegions(newSearchedRegions);
+            
+            // 검색어 초기화
+            setSearchText('');
         }
     };
 
     return (
-        <div style={styles.container}>
-        <SearchRegionHeader 
-            searchText={searchText}
-            onSearchChange={handleSearchChange}
-            onBack={handleBack}
-            onSearch={handleSearch}
-            onKeyPress={handleKeyPress}
-        />
-        
-        {/* 최근 검색 */}
-        <div style={styles.recentSection}>
-            <h3 style={styles.sectionTitle}>최근 검색</h3>
-            <div style={styles.regionList}>
-            {searchedRegions.map((region, index) => (
-                <div key={index} style={styles.regionItem}>
-                <span style={styles.regionText}>{region}</span>
-                <FontAwesome
-                    name="times"
-                    size={16}
-                    color="#666"
-                    style={styles.removeIcon}
-                    onPress={() => handleRemoveRegion(index)}
-                />
-                </div>
-            ))}
-            </div>
-        </div>
-        </div>
+        <View style={styles.container}>
+            <SearchRegionHeader 
+                searchText={searchText}
+                onSearchChange={handleSearchChange}
+                onBack={handleBack}
+                onSearch={handleSearch}
+            />
+            
+            <ScrollView style={styles.scrollView}>
+                {/* 최근 검색 */}
+                <View style={styles.recentSection}>
+                    <Text style={styles.sectionTitle}>최근 검색</Text>
+                    <View style={styles.regionList}>
+                        {searchedRegions.map((region, index) => (
+                            <View key={index} style={styles.regionItem}>
+                                <Text style={styles.regionText}>{region}</Text>
+                                <TouchableOpacity
+                                    onPress={() => handleRemoveRegion(index)}
+                                    style={styles.removeButton}
+                                    activeOpacity={0.7}
+                                >
+                                    <FontAwesome
+                                        name="times"
+                                        size={16}
+                                        color="#666"
+                                    />
+                                </TouchableOpacity>
+                            </View>
+                        ))}
+                    </View>
+                </View>
+            </ScrollView>
+        </View>
     );
 };
 
-export default SearchRegionHistory;
-
-const styles = {
+const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: 'white',
-        paddingTop: '20px'
+    },
+    scrollView: {
+        flex: 1,
     },
     recentSection: {
-        padding: '20px 16px'
+        padding: 20,
+        paddingHorizontal: 16,
     },
     sectionTitle: {
-        fontSize: '18px',
+        fontSize: 18,
         fontWeight: '600',
         color: '#333',
-        marginBottom: '16px'
+        marginBottom: 8,
     },
     regionList: {
-        gap: '12px'
+        gap: 4,
     },
     regionItem: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingVertical: '12px',
-        borderBottomWidth: '1px',
-        borderBottomColor: '#f5f5f5'
+        paddingVertical: 12,
+        paddingHorizontal: 12,
     },
     regionText: {
-        fontSize: '16px',
-        color: '#333'
+        fontSize: 16,
+        color: '#333',
     },
-    removeIcon: {
-        cursor: 'pointer',
-        padding: '4px'
-    }
-};
+    removeButton: {
+        padding: 4,
+    },
+});
+
+export default SearchRegionHistory;
