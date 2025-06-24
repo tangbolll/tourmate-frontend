@@ -3,7 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-nati
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import BookmarkedEvent from './BookMarkedEvent';
 
-export default function BookmarkedTab({ bookmarkedEvents = [] }) {
+export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate }) {
     const [isExpanded, setIsExpanded] = useState(true);
 
     const toggleExpanded = () => {
@@ -16,7 +16,10 @@ export default function BookmarkedTab({ bookmarkedEvents = [] }) {
     };
 
     const handleBookmarkPress = (event) => {
-        // 북마크 토글 로직
+        // 북마크 토글 로직 - 즐겨찾기 탭에서 해제시 제거
+        if (onBookmarkUpdate) {
+            onBookmarkUpdate(event.id);
+        }
         console.log('Bookmark toggled:', event);
     };
 
@@ -32,7 +35,7 @@ export default function BookmarkedTab({ bookmarkedEvents = [] }) {
                         style={styles.iconButton}
                     >
                         <Icon 
-                            name={isExpanded ? "chevron-up" : "chevron-down"} 
+                            name={isExpanded ? "chevron-down" : "chevron-up"} 
                             size={24} 
                             color="#333" 
                         />
@@ -79,7 +82,6 @@ export default function BookmarkedTab({ bookmarkedEvents = [] }) {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#fff',
-        marginBottom: 16,
         width: '100%',
     },
     header: {
@@ -90,6 +92,7 @@ const styles = StyleSheet.create({
         borderBottomColor: '#f0f0f0',
     },
     titleContainer: {
+        marginLeft: 8,
         flexDirection: 'row',
         alignItems: 'center',
     },

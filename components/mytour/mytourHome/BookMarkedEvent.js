@@ -26,7 +26,6 @@ export default function BookmarkedEvent({
 
     const handleCardPress = () => {
         // 상세 여행일정 페이지로 라우팅
-        // navigation.navigate('TravelDetailScreen', { travelId });
         if (onPress) {
             onPress();
         }
@@ -51,12 +50,16 @@ export default function BookmarkedEvent({
                     {/* 상단 날짜와 즐겨찾기 버튼 */}
                     <View style={styles.topRow}>
                         <Text style={styles.date}>{formattedDateRange}</Text>
+                        <TouchableOpacity 
+                            onPress={handleBookmarkPress}
+                            style={styles.bookmarkButton}
+                        >
                             <Icon 
                                 name={isBookmarked ? "star" : "star-outline"} 
-                                size={25} 
+                                size={24} 
                                 color="#FFD700" 
-                                onPress={handleBookmarkPress}
                             />
+                        </TouchableOpacity>
                     </View>
 
                     {/* 타이틀 */}
@@ -70,7 +73,7 @@ export default function BookmarkedEvent({
 
                     {/* 장소 */}
                     <View style={styles.locationRow}>
-                        <Icon name="map-marker" size={16} color="#fff" />
+                        <Icon name="map-marker" size={14} color="#fff" />
                         <Text style={styles.location}>{location}</Text>
                     </View>
                 </View>
@@ -87,16 +90,16 @@ const styles = StyleSheet.create({
         borderRadius: 8,
     },
     card: {
-        width: 120,
-        height: 100,
-        marginRight: 8,
+        width: 140,
+        height: 120,
+        marginRight: 12,
         borderRadius: 8,
         overflow: 'hidden',
     },
     image: {
         flex: 1,
         justifyContent: 'space-between',
-        padding: 10,
+        padding: 12, 
         borderRadius: 8,
     },
     overlay: {
@@ -110,25 +113,25 @@ const styles = StyleSheet.create({
     },
     date: {
         color: '#fff',
-        fontSize: 10,
+        marginTop: 6,
+        fontSize: 11,
         fontWeight: '500',
     },
     bookmarkButton: {
-        padding: 2,
-        borderRadius: 12,
-        backgroundColor: 'rgba(0, 0, 0, 0.3)',
+        padding: 0,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     title: {
         color: '#fff',
         fontSize: 13,
         fontWeight: 'bold',
-        marginBottom: 16,
         lineHeight: 16,
+        textAlign: 'left',
     },
     locationRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 4,
     },
     location: {
         color: '#fff',

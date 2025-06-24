@@ -100,19 +100,19 @@ export default function MyTourFeed({
                         <Text style={styles.infoText}>{getMemberDisplay()}</Text>
                     </View>
                 </View>
-
-                {/* 북마크 버튼 */}
-                <TouchableOpacity 
-                    onPress={handleBookmarkPress} 
-                    style={styles.bookmarkButton}
-                >
-                    <MaterialIcons 
-                        name={isBookmarked ? "star" : "star-border"} 
-                        size={24} 
-                        color={isBookmarked ? "#FFD700" : "#ccc"} 
-                    />
-                </TouchableOpacity>
             </View>
+
+            {/* 북마크 버튼 - 우하단으로 이동 */}
+            <TouchableOpacity 
+                onPress={handleBookmarkPress} 
+                style={styles.bookmarkButton}
+            >
+                <MaterialIcons 
+                    name={isBookmarked ? "star" : "star-border"} 
+                    size={24} 
+                    color={isBookmarked ? "#FFD700" : "#ccc"} 
+                />
+            </TouchableOpacity>
         </TouchableOpacity>
     );
 }
@@ -122,6 +122,8 @@ const styles = StyleSheet.create({
         width: (width - 48) / 2, // 양쪽 마진 16씩, 두 개가 들어가도록
         backgroundColor: '#fff',
         borderRadius: 12,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
         marginBottom: 16,
         marginRight: 8,
         shadowColor: '#000',
@@ -133,6 +135,7 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
         elevation: 5,
         overflow: 'hidden',
+        position: 'relative', // 북마크 버튼 위치를 위해 추가
     },
     imageContainer: {
         width: '100%',
@@ -144,7 +147,7 @@ const styles = StyleSheet.create({
     },
     contentContainer: {
         padding: 12,
-        position: 'relative',
+        paddingBottom: 0,
     },
     date: {
         fontSize: 12,
@@ -177,7 +180,7 @@ const styles = StyleSheet.create({
     },
     bookmarkButton: {
         position: 'absolute',
-        top: 8,
+        bottom: 8,
         right: 8,
         padding: 4,
     },
