@@ -36,13 +36,15 @@ export default function MyTourHeader({ onSortChange, onFilterPress }) {
                     >
                         <Icon 
                             name="tune-variant" 
-                            size={24} 
-                            color="#333" 
+                            size={20} 
+                            color="#666" 
                         />
                     </TouchableOpacity>
                 </View>
             </View>
-            <View style={styles.divider} />
+            <View style={styles.dividerContainer}>
+                <View style={styles.divider} />
+            </View>
         </View>
     );
 }
@@ -57,9 +59,10 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 16,
+        paddingVertical: 8,
     },
     title: {
+        marginLeft: 8,
         fontSize: 22,
         fontWeight: 'bold',
         color: '#333',
@@ -69,12 +72,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     iconButton: {
-        padding: 8,
-        marginLeft: 8,
+        padding: 4,
+        marginRight: 4,
+    },
+    dividerContainer: {
+        alignItems: 'center',
     },
     divider: {
-        height: 2,
+        height: 1,
         backgroundColor: '#333',
-        width: '100%',
+        width: '90%',
     },
 });

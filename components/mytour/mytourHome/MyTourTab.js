@@ -3,18 +3,22 @@ import {
     View, 
     ScrollView, 
     StyleSheet, 
-    SafeAreaView,
     Dimensions 
 } from 'react-native';
 import MyTourHeader from './MyTourHeader';
 import MyTourFeed from './MyTourFeed';
+import TourDesignButton from './TourDesignButton';
 
 const { width } = Dimensions.get('window');
 
-export default function MyTourTab({ mytours = [] }) {
+export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
     const [sortType, setSortType] = useState('latest');
-    
     const [tours, setTours] = useState(mytours);
+
+    // mytours prop이 변경되면 로컬 state 업데이트
+    React.useEffect(() => {
+        setTours(mytours);
+    }, [mytours]);
 
     // 정렬된 투어 데이터
     const sortedTours = useMemo(() => {
@@ -55,18 +59,28 @@ export default function MyTourTab({ mytours = [] }) {
 
     // 북마크 토글 핸들러
     const handleBookmarkToggle = (tourId) => {
-        setTours(prevTours => 
-            prevTours.map(tour => 
-                tour.id === tourId 
-                    ? { ...tour, isBookmarked: !tour.isBookmarked }
-                    : tour
-            )
+        const updatedTours = tours.map(tour => 
+            tour.id === tourId 
+                ? { ...tour, isBookmarked: !tour.isBookmarked }
+                : tour
         );
+        setTours(updatedTours);
+        
+        // 상위 컴포넌트에 업데이트된 데이터 전달
+        if (onBookmarkUpdate) {
+            onBookmarkUpdate(updatedTours);
+        }
+        
         console.log('북마크 토글:', tourId);
     };
 
+    // 여행 디자인 버튼 핸들러
+    const handleTourDesignPress = () => {
+        console.log('여행 디자인 페이지로 이동');
+    };
+
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             {/* 헤더 고정 */}
             <MyTourHeader 
                 onSortChange={handleSortChange}
@@ -74,43 +88,54 @@ export default function MyTourTab({ mytours = [] }) {
             />
             
             {/* 스크롤 가능한 컨텐츠 영역 */}
-            <ScrollView 
-                style={styles.scrollContainer}
-                contentContainerStyle={styles.contentContainer}
-                showsVerticalScrollIndicator={false}
-            >
-                <View style={styles.feedContainer}>
-                    {sortedTours.map((tour) => (
-                        <MyTourFeed
-                            key={tour.id}
-                            imageUrl={tour.imageUrl}
-                            tourStartDate={tour.tourStartDate}
-                            tourEndDate={tour.tourEndDate}
-                            title={tour.title}
-                            location={tour.location}
-                            members={tour.members}
-                            isBookmarked={tour.isBookmarked}
-                            onPress={() => handleTourPress(tour.id)}
-                            onBookmarkPress={() => handleBookmarkToggle(tour.id)}
-                        />
-                    ))}
+            <View style={styles.scrollableSection}>
+                <ScrollView 
+                    style={styles.scrollContainer}
+                    contentContainerStyle={styles.contentContainer}
+                    showsVerticalScrollIndicator={false}
+                >
+                    <View style={styles.feedContainer}>
+                        {sortedTours.map((tour) => (
+                            <MyTourFeed
+                                key={tour.id}
+                                imageUrl={tour.imageUrl}
+                                tourStartDate={tour.tourStartDate}
+                                tourEndDate={tour.tourEndDate}
+                                title={tour.title}
+                                location={tour.location}
+                                members={tour.members}
+                                isBookmarked={tour.isBookmarked}
+                                onPress={() => handleTourPress(tour.id)}
+                                onBookmarkPress={() => handleBookmarkToggle(tour.id)}
+                            />
+                        ))}
+                    </View>
+                </ScrollView>
+                
+                {/* 플로팅 여행 디자인 버튼 */}
+                <View style={styles.floatingButtonContainer}>
+                    <TourDesignButton onPress={handleTourDesignPress} />
                 </View>
-            </ScrollView>
-        </SafeAreaView>
+            </View>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#fff', // 배경색 통일
+    },
+    scrollableSection: {
+        flex: 1,
+        position: 'relative',
     },
     scrollContainer: {
         flex: 1,
     },
     contentContainer: {
         flexGrow: 1,
-        paddingBottom: 20,
+        paddingBottom: 80, // 플로팅 버튼 공간 확보
     },
     feedContainer: {
         flexDirection: 'row',
@@ -118,5 +143,14 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingTop: 16,
+        backgroundColor: '#fff', // 배경색 통일
+    },
+    floatingButtonContainer: {
+        position: 'absolute',
+        bottom: 20,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 1,
     },
 });

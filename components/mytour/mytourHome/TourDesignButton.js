@@ -19,8 +19,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingVertical: 12,
         borderRadius: 20,
-        alignSelf: 'center',
+        alignSelf: 'flex-end',
         marginTop: 12,
+        marginRight: 24,
     },
     text: {
         color: '#fff',

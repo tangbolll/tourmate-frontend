@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
     View, 
     Text, 
@@ -14,74 +14,91 @@ const { width } = Dimensions.get('window');
 export const SortToggle = ({ onSortChange, defaultSort = 'latest' }) => {
     const [selectedSort, setSelectedSort] = useState(defaultSort);
     const [modalVisible, setModalVisible] = useState(false);
+    const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
+    const buttonRef = useRef(null);
 
     const sortOptions = [
         {
-        key: 'latest',
-        label: '최신 여행순'
+            key: 'latest',
+            label: '최신 여행순'
         },
         {
-        key: 'oldest',
-        label: '지난 여행순'
+            key: 'oldest',
+            label: '지난 여행순'
         }
     ];
+
+    const handleSortPress = () => {
+        // 버튼 위치 측정
+        buttonRef.current?.measure((fx, fy, width, height, px, py) => {
+            setButtonPosition({ x: px, y: py + height + 4 }); // 4px 간격 추가
+            setModalVisible(true);
+        });
+    };
 
     const handleSortSelect = (key) => {
         setSelectedSort(key);
         setModalVisible(false);
         if (onSortChange) {
-        onSortChange(key);
+            onSortChange(key);
         }
-    };
-
-    const getCurrentSortLabel = () => {
-        const currentOption = sortOptions.find(option => option.key === selectedSort);
-        return currentOption ? currentOption.label : '정렬';
     };
 
     return (
         <View>
-        {/* 정렬 아이콘만 */}
-        <TouchableOpacity 
-            style={styles.sortButton} 
-            onPress={() => setModalVisible(true)}
-        >
-            <MaterialIcons name="import-export" size={24} color="#666" />
-        </TouchableOpacity>
-
-        {/* 드롭다운 모달 */}
-        <Modal
-            animationType="fade"
-            transparent={true}
-            visible={modalVisible}
-            onRequestClose={() => setModalVisible(false)}
-        >
+            {/* 정렬 아이콘만 */}
             <TouchableOpacity 
-            style={styles.modalOverlay}
-            activeOpacity={1}
-            onPress={() => setModalVisible(false)}
+                ref={buttonRef}
+                style={styles.sortButton} 
+                onPress={handleSortPress}
             >
-            <View style={styles.dropdownContainer}>
-                {sortOptions.map((option) => (
-                <TouchableOpacity
-                    key={option.key}
-                    style={styles.dropdownItem}
-                    onPress={() => handleSortSelect(option.key)}
-                >
-                    <Text style={[
-                    styles.dropdownText,
-                    selectedSort === option.key && styles.selectedText
-                    ]}>
-                    {option.label}
-                    </Text>
-                    {selectedSort === option.key && (
-                    <MaterialIcons name="check" size={18} color="#007AFF" />
-                    )}
-                </TouchableOpacity>
-                ))}
-            </View>
+                <MaterialIcons name="import-export" size={24} color="#666" />
             </TouchableOpacity>
-        </Modal>
+
+            {/* 드롭다운 모달 */}
+            <Modal
+                animationType="fade"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => setModalVisible(false)}
+            >
+                <TouchableOpacity 
+                    style={styles.modalOverlay}
+                    activeOpacity={1}
+                    onPress={() => setModalVisible(false)}
+                >
+                    <View style={[
+                        styles.dropdownContainer,
+                        {
+                            top: buttonPosition.y,
+                            left: buttonPosition.x - 50,
+                        }
+                    ]}>
+                        {sortOptions.map((option) => (
+                            <TouchableOpacity
+                                key={option.key}
+                                style={[
+                                    styles.dropdownItem,
+                                    // 마지막 항목의 경우 하단 테두리 제거
+                                    sortOptions[sortOptions.length - 1].key === option.key && 
+                                    { borderBottomWidth: 0 }
+                                ]}
+                                onPress={() => handleSortSelect(option.key)}
+                            >
+                                <Text style={[
+                                    styles.dropdownText,
+                                    selectedSort === option.key && styles.selectedText
+                                ]}>
+                                    {option.label}
+                                </Text>
+                                {selectedSort === option.key && (
+                                    <MaterialIcons name="check" size={18} color="#007AFF" />
+                                )}
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                </TouchableOpacity>
+            </Modal>
         </View>
     );
 };
@@ -97,7 +114,6 @@ const styles = StyleSheet.create({
     },
     dropdownContainer: {
         position: 'absolute',
-        // top, right 나중에 지정
         backgroundColor: 'white',
         borderRadius: 8,
         minWidth: 120,
