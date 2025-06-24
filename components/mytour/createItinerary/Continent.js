@@ -1,83 +1,78 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { View, Text, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
 import { MockRegion } from './MockRegion';
 
-const Continent = () => {
-    const [selectedContinent, setSelectedContinent] = useState('국내');
-    
+const Continent = ({ selectedContinent, onContinentSelect }) => {
     const continents = MockRegion.map(region => region.continent);
 
-    const handleContinentClick = (continent) => {
-        setSelectedContinent(continent);
+    const handleContinentPress = (continent) => {
+        onContinentSelect(continent);
     };
 
     return (
-        <div className="continent-container">
-            <div className="continent-chips-container">
-            {continents.map((continent, index) => (
-                <button
-                key={index}
-                onClick={() => handleContinentClick(continent)}
-                className={`continent-chip ${
-                    selectedContinent === continent ? 'selected' : ''
-                }`}
-                >
-                {continent}
-                </button>
-            ))}
-            </div>
-        </div>
+        <View style={styles.container}>
+            <ScrollView 
+                horizontal 
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.scrollContainer}
+                bounces={false}
+            >
+                {continents.map((continent, index) => (
+                    <TouchableOpacity
+                        key={index}
+                        onPress={() => handleContinentPress(continent)}
+                        style={[
+                            styles.continentChip,
+                            selectedContinent === continent && styles.continentChipSelected
+                        ]}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={[
+                            styles.continentChipText,
+                            selectedContinent === continent && styles.continentChipTextSelected
+                        ]}>
+                            {continent}
+                        </Text>
+                    </TouchableOpacity>
+                ))}
+            </ScrollView>
+        </View>
     );
 };
 
+const styles = StyleSheet.create({
+    container: {
+        backgroundColor: 'white',
+        paddingVertical: 16,
+    },
+    scrollContainer: {
+        paddingHorizontal: 16,
+        gap: 12,
+    },
+    continentChip: {
+        paddingHorizontal: 16,
+        paddingVertical: 8,
+        borderRadius: 20,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        backgroundColor: 'white',
+        minWidth: 60,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    continentChipSelected: {
+        backgroundColor: '#000000',
+        borderColor: '#000000',
+    },
+    continentChipText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#000000',
+        textAlign: 'center',
+    },
+    continentChipTextSelected: {
+        color: 'white',
+    },
+});
+
 export default Continent;
-
-/* Styles */
-const styles = `
-    .continent-container {
-        width: 100%;
-        padding: 16px;
-    }
-
-    .continent-chips-container {
-        display: flex;
-        gap: 12px;
-        min-width: max-content;
-        padding: 4px 0;
-    }
-
-    .continent-chip {
-        padding: 8px 16px;
-        border-radius: 20px;
-        font-size: 14px;
-        font-weight: 500;
-        border: 1px solid #d1d5db;
-        background-color: white;
-        color: black;
-        white-space: nowrap;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        outline: none;
-    }
-
-    .continent-chip:hover {
-        border-color: #9ca3af;
-        background-color: #f9fafb;
-    }
-
-    .continent-chip.selected {
-        background-color: black;
-        color: white;
-        border-color: black;
-    }
-
-    .continent-chip.selected:hover {
-        background-color: #374151;
-    }
-`;
-
-// 스타일 주입
-if (typeof document !== 'undefined') {
-    const styleSheet = document.createElement('style');
-    styleSheet.innerText = styles;
-    document.head.appendChild(styleSheet);
-}
