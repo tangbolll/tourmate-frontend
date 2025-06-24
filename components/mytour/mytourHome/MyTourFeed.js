@@ -125,7 +125,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#e0e0e0',
         marginBottom: 16,
-        marginRight: 8,
+        marginLeft: 4,
+        marginRight: 4,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
