@@ -1,51 +1,78 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SortToggle } from './SortToggle';
+import FilterPopup from './FilterPopup';
 
-export default function MyTourHeader({ onSortChange, onFilterPress }) {
+export default function MyTourHeader({ onSortChange, onFilterPress, onFilterApply }) {
+    const [filterVisible, setFilterVisible] = useState(false);
+    const [filters, setFilters] = useState({
+        travelPeriod: '',
+        travelLocation: '',
+    });
+
     const handleSortChange = (sortKey) => {
-        // 정렬 변경 처리
         if (onSortChange) {
             onSortChange(sortKey);
         }
-        console.log('Sort changed to:', sortKey);
     };
 
     const handleFilterPress = () => {
-        // 필터 기능 추후 구현
+        setFilterVisible(true);
         if (onFilterPress) {
             onFilterPress();
         }
-        console.log('Filter pressed');
+    };
+
+    const handleFilterClose = () => {
+        setFilterVisible(false);
+    };
+
+    const handleFilterApply = (appliedFilters) => {
+        console.log('Filters applied:', appliedFilters);
+        if (onFilterApply) {
+            onFilterApply(appliedFilters);
+        }
+        setFilterVisible(false);
     };
 
     return (
-        <View style={styles.container}>
-            <View style={styles.headerRow}>
-                <Text style={styles.title}>나의 여행</Text>
-                <View style={styles.iconContainer}>
-                    <SortToggle 
-                        onSortChange={handleSortChange}
-                        defaultSort="latest"
-                    />
-                    <TouchableOpacity 
-                        onPress={handleFilterPress}
-                        style={styles.iconButton}
-                        activeOpacity={0.7}
-                    >
-                        <Icon 
-                            name="tune-variant" 
-                            size={20} 
-                            color="#666" 
+        <>
+            <View style={styles.container}>
+                <View style={styles.headerRow}>
+                    <Text style={styles.title}>나의 여행</Text>
+                    <View style={styles.iconContainer}>
+                        <SortToggle 
+                            onSortChange={handleSortChange}
+                            defaultSort="latest"
                         />
-                    </TouchableOpacity>
+                        <TouchableOpacity 
+                            onPress={handleFilterPress}
+                            style={styles.iconButton}
+                            activeOpacity={0.7}
+                        >
+                            <Icon 
+                                name="tune-variant" 
+                                size={20} 
+                                color="#666" 
+                            />
+                        </TouchableOpacity>
+                    </View>
+                </View>
+                <View style={styles.dividerContainer}>
+                    <View style={styles.divider} />
                 </View>
             </View>
-            <View style={styles.dividerContainer}>
-                <View style={styles.divider} />
-            </View>
-        </View>
+
+            <FilterPopup
+                visible={filterVisible}
+                onClose={handleFilterClose}
+                onApply={handleFilterApply}
+                filters={filters}
+                setFilters={setFilters}
+                onOpenCalendar={null}
+            />
+        </>
     );
 }
 
