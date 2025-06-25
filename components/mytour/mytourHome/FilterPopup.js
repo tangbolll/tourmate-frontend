@@ -2,19 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, Modal, TouchableOpacity, StyleSheet, TextInput, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
-import CalendarPopup from './CalendarPopup';
-import dayjs from 'dayjs';
 
 const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters, onOpenCalendar }) => {
     const { travelPeriod, travelLocation } = filters;
-    const [calendarVisible, setCalendarVisible] = useState(false);
-
-    // FilterPopup이 닫힐 때 CalendarPopup도 닫기
-    useEffect(() => {
-        if (!visible) {
-            setCalendarVisible(false);
-        }
-    }, [visible]);
 
     const setTravelPeriod = (value) => setFilters({ ...filters, travelPeriod: value });
     const setTravelLocation = (value) => setFilters({ ...filters, travelLocation: value });
@@ -26,30 +16,16 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
 
     const openCalendar = () => {
         console.log('Opening calendar...'); // 디버깅용
-        setCalendarVisible(true);
-    };
-
-    const closeCalendar = () => {
-        console.log('Closing calendar...'); // 디버깅용
-        setCalendarVisible(false);
-    };
-
-    const handleCalendarSelect = ({ startDate, endDate }) => {
-        console.log('Calendar dates selected:', { startDate, endDate }); // 디버깅용
-        if (startDate && endDate) {
-            const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
-            setFilters({ ...filters, travelPeriod: formatted });
+        if (onOpenCalendar) {
+            onOpenCalendar();
         }
-        closeCalendar();
     };
 
     const handleClose = () => {
-        setCalendarVisible(false);
         onClose();
     };
 
     return (
-        <>
         <Modal
             animationType="slide"
             transparent
@@ -116,16 +92,6 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
             </TouchableWithoutFeedback>
             </KeyboardAvoidingView>
         </Modal>
-
-        {/* 캘린더 팝업 - FilterPopup이 열려있을 때만 렌더링 */}
-        {visible && (
-            <CalendarPopup
-                visible={calendarVisible}
-                onClose={closeCalendar}
-                onSelectDates={handleCalendarSelect}
-            />
-        )}
-        </>
     );
 };
 
