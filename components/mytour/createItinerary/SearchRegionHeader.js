@@ -1,50 +1,56 @@
 import React from 'react';
-import { FontAwesome } from '@expo/vector-icons';
+import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 
-const SearchRegionHeader = ({ searchText, onSearchChange, onBack, onSearch, onKeyPress }) => {
+
+const SearchRegionHeader = ({ searchText, onSearchChange, onBack, onSearch }) => {
     return (
-        <div style={styles.header}>
-        <FontAwesome 
-            name="chevron-left" 
-            size={16} 
-            color="black" 
-            style={styles.backIcon}
-            onPress={onBack}
-        />
-        <input
-            type="text"
-            placeholder="원하는 여행 지역을 검색해보세요"
-            value={searchText}
-            onChange={onSearchChange}
-            onKeyPress={onKeyPress}
-            style={styles.searchInput}
-        />
-        </div>
+        <View style={styles.header}>
+            <TouchableOpacity 
+                onPress={onBack}
+                style={styles.backButton}
+                activeOpacity={0.7}
+            >
+                <Ionicons name="chevron-back" size={24} color="black" />
+            </TouchableOpacity>
+            <TextInput
+                placeholder="원하는 여행 지역을 검색해보세요"
+                value={searchText}
+                onChangeText={onSearchChange}
+                style={styles.searchInput}
+                returnKeyType="search"
+                onSubmitEditing={onSearch}
+                placeholderTextColor="#9ca3af"
+            />
+        </View>
     );
 };
 
-export default SearchRegionHeader;
-
-const styles = {
+const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: '16px',
-        paddingVertical: '12px',
-        borderBottomWidth: '1px',
-        borderBottomColor: '#f0f0f0'
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        backgroundColor: 'white',
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
     },
-    backIcon: {
-        marginRight: '12px',
-        cursor: 'pointer'
+    backButton: {
+        marginRight: 8,
+        padding: 4,
     },
     searchInput: {
         flex: 1,
-        padding: '12px 16px',
-        border: '1px solid #e0e0e0',
-        borderRadius: '8px',
-        fontSize: '16px',
+        paddingHorizontal: 12,
+        paddingVertical: 12,
+        borderWidth: 1,
+        borderColor: '#e0e0e0',
+        borderRadius: 8,
+        fontSize: 16,
         color: '#333',
-        outline: 'none'
-    }
-};
+        backgroundColor: '#fff',
+    },
+});
+
+export default SearchRegionHeader;
