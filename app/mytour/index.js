@@ -1,123 +1,124 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
-import SearchRegionHeader from '../../components/mytour/createItinerary/SearchRegionHeader';
-import Continent from '../../components/mytour/createItinerary/Continent';
-import Country from '../../components/mytour/createItinerary/Country';
-import SelectedRegions from '../../components/mytour/createItinerary/SelectedRegions';
-import { BottomSheet } from '../../components/mytour/createItinerary/BottomSheet';
-import CreateItineraryButton from '../../components/mytour/createItinerary/CreateItineraryButton';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import {
+    View,
+    StyleSheet,
+    SafeAreaView
+} from 'react-native';
+import BookmarkedTab from '../../components/mytour/mytourHome/BookMarkedTab';
+import MyTourTab from '../../components/mytour/mytourHome/MyTourTab';
 
-const TourDesign = () => {
-    const [searchText, setSearchText] = useState('');
-    const [selectedContinent, setSelectedContinent] = useState('국내');
-    const [selectedRegions, setSelectedRegions] = useState([]);
-    const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(true);
-    const [sheetHeight, setSheetHeight] = useState(0.6); // 0.6 = 60%
+// 목 데이터 - 모든 여행 데이터
+const mockMyTours = [
+    {
+        id: 'tour1',
+        tourStartDate: '2024-06-30',
+        tourEndDate: '2024-07-02',
+        title: '오스트레일리아 말고 오스트리아 여행',
+        location: '오스트리아, 빈',
+        members: ['김철수', '이영희', '박민수'],
+        isBookmarked: false
+    },
+    {
+        id: 'tour2',
+        tourStartDate: '2024-05-30',
+        tourEndDate: '2024-05-31',
+        title: '해봄은 나들이 갈 수 밖에',
+        location: '해봄동',
+        members: ['just_A79'],
+        isBookmarked: true
+    },
+    {
+        id: 'tour3',
+        tourStartDate: '2024-04-30',
+        tourEndDate: '2024-04-30',
+        title: '런던 해리 포터 투어',
+        location: '런던, 영국',
+        members: ['Hogwart2'],
+        isBookmarked: false
+    },
+    {
+        id: 'tour4',
+        tourStartDate: '2024-01-12',
+        tourEndDate: '2024-01-15',
+        title: '겨울 알프스 스키 여행',
+        location: '스위스, 알프스',
+        members: ['최스키', '김보드'],
+        isBookmarked: true
+    },
+    {
+        id: 'tour5',
+        tourStartDate: '2024-03-20',
+        tourEndDate: '2024-03-25',
+        title: '도쿄 벚꽃 축제',
+        location: '도쿄, 일본',
+        members: ['사쿠라좋아', '벚꽃마니아', '일본여행러버'],
+        isBookmarked: false
+    },
+    {
+        id: 'tour6',
+        tourStartDate: '2024-08-01',
+        tourEndDate: '2024-08-07',
+        title: '태국 방콕 맛집 투어',
+        location: '방콕, 태국',
+        members: ['맛집헌터', '태국러버'],
+        isBookmarked: true
+    },
+    {
+        id: 'tour7',
+        tourStartDate: '2024-09-10',
+        tourEndDate: '2024-09-12',
+        title: '서울 도심 핫플레이스 탐방',
+        location: '서울, 한국',
+        members: ['서울러'],
+        isBookmarked: true
+    }
+];
 
-    const handleSearchChange = (text) => {
-        setSearchText(text);
+export default function MyTourHome({
+    mytours = mockMyTours
+}) {
+    const [tours, setTours] = useState(mytours);
+    
+    const bookmarkedEvents = tours.filter(tour => tour.isBookmarked);
+
+    const handleBookmarkUpdate = (updatedTours) => {
+        setTours(updatedTours);
     };
 
-    const handleBack = () => {
-        console.log('뒤로 가기');
-        // 네비게이션 처리
-    };
-
-    const handleContinentSelect = (continent) => {
-        setSelectedContinent(continent);
-    };
-
-    const handleRegionSelect = (regionKey, country, region) => {
-        setSelectedRegions(prev => {
-            const exists = prev.find(r => r.key === regionKey);
-            if (exists) {
-                return prev.filter(r => r.key !== regionKey);
-            } else {
-                return [...prev, { key: regionKey, country, region }];
-            }
-        });
-    };
-
-    const handleRemoveRegion = (regionKey) => {
-        setSelectedRegions(prev => prev.filter(r => r.key !== regionKey));
-    };
-
-    const handleCreateTrip = () => {
-        console.log('여행일정 생성', selectedRegions);
+    const handleBookmarkedEventUpdate = (eventId) => {
+        const updatedTours = tours.map(tour => 
+            tour.id === eventId 
+                ? { ...tour, isBookmarked: false }
+                : tour
+        );
+        setTours(updatedTours);
     };
 
     return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaView style={styles.container}>
-            {/* 상단 헤더 */}
-            <SearchRegionHeader 
-                searchText={searchText}
-                onSearchChange={handleSearchChange}
-                onBack={handleBack}
+            {/* 즐겨찾기 섹션 - 고정 */}
+            <BookmarkedTab 
+                bookmarkedEvents={bookmarkedEvents} 
+                onBookmarkUpdate={handleBookmarkedEventUpdate}
             />
             
-            {/* 지도 영역 */}
-            <View style={styles.mapContainer}>
-                <View style={styles.mapPlaceholder}>
-                    <Text style={styles.mapPlaceholderText}>지도 영역</Text>
-                </View>
-                
+            {/* 나의 여행 탭 - 스크롤 가능 */}
+            <View style={styles.myTourSection}>
+                <MyTourTab
+                    mytours={tours}
+                    onBookmarkUpdate={handleBookmarkUpdate}
+                />
             </View>
-
-            {/* 바텀 시트 */}
-            <BottomSheet
-                isOpen={isBottomSheetOpen}
-                onClose={() => setIsBottomSheetOpen(false)}
-                onHeightChange={setSheetHeight}
-            >
-                {/* 바텀 시트 내부 선택된 지역 표시 */}
-                <SelectedRegions 
-                    selectedRegions={selectedRegions}
-                    onRemoveRegion={handleRemoveRegion}
-                />
-                
-                <Continent 
-                    selectedContinent={selectedContinent}
-                    onContinentSelect={handleContinentSelect}
-                />
-                <Country 
-                    selectedContinent={selectedContinent}
-                    onRegionSelect={handleRegionSelect}
-                    selectedRegions={selectedRegions}
-                />
-            </BottomSheet>
         </SafeAreaView>
-        </GestureHandlerRootView>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#fff',
     },
-    mapContainer: {
+    myTourSection: {
         flex: 1,
-        position: 'relative',
-    },
-    mapPlaceholder: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f3f4f6',
-    },
-    mapPlaceholderText: {
-        fontSize: 18,
-        color: '#6b7280',
-    },
-    selectedRegionsOverlay: {
-        position: 'absolute',
-        top: 20,
-        left: 0,
-        right: 0,
-        zIndex: 50,
     },
 });
-
-export default TourDesign;

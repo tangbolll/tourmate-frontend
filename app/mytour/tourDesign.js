@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { useRouter } from 'expo-router';
 import SearchRegionHeader from '../../components/mytour/createItinerary/SearchRegionHeader';
 import Continent from '../../components/mytour/createItinerary/Continent';
 import Country from '../../components/mytour/createItinerary/Country';
@@ -9,6 +10,7 @@ import CreateItineraryButton from '../../components/mytour/createItinerary/Creat
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const TourDesign = () => {
+    const router = useRouter();
     const [searchText, setSearchText] = useState('');
     const [selectedContinent, setSelectedContinent] = useState('국내');
     const [selectedRegions, setSelectedRegions] = useState([]);
@@ -21,7 +23,8 @@ const TourDesign = () => {
 
     const handleBack = () => {
         console.log('뒤로 가기');
-        // 네비게이션 처리
+        // Expo Router 뒤로가기
+        router.back();
     };
 
     const handleContinentSelect = (continent) => {
@@ -44,8 +47,16 @@ const TourDesign = () => {
     };
 
     const handleCreateTrip = () => {
-        console.log('여행일정 생성', selectedRegions);
+        router.push({
+            pathname: 'mytour/createItinerary',
+            params: {
+                selectedRegions: JSON.stringify(selectedRegions)
+            }
+        });
     };
+
+    // 하나 이상의 지역이 선택되었는지 확인
+    const isCreateButtonActive = selectedRegions.length > 0;
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
@@ -87,6 +98,14 @@ const TourDesign = () => {
                     selectedRegions={selectedRegions}
                 />
             </BottomSheet>
+
+            {/* 플로팅 여행일정 생성 버튼 */}
+            <View style={styles.floatingButtonContainer}>
+                <CreateItineraryButton 
+                    isActive={isCreateButtonActive}
+                    onPress={handleCreateTrip}
+                />
+            </View>
         </SafeAreaView>
         </GestureHandlerRootView>
     );
@@ -117,6 +136,14 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         zIndex: 50,
+    },
+    floatingButtonContainer: {
+        position: 'absolute',
+        bottom: 20,
+        left: 0,
+        right: 0,
+        alignItems: 'center',
+        zIndex: 1000,
     },
 });
 

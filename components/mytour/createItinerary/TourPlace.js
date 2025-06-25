@@ -1,56 +1,75 @@
 import React from 'react';
+import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
 const TourPlace = ({ selectedRegion = [] }) => {
     const formatRegionText = () => {
-        return selectedRegion.map(item => {
-            const regionList = item.regions.join(', ');
-            return `${item.country}(${regionList})`;
+        if (selectedRegion.length === 0) return '여행 장소를 선택하세요';
+        
+        // 나라별로 지역들을 그룹화
+        const countryGroups = selectedRegion.reduce((acc, item) => {
+            const country = item.country || '';
+            const region = item.region || '';
+            
+            if (!acc[country]) {
+                acc[country] = [];
+            }
+            acc[country].push(region);
+            
+            return acc;
+        }, {});
+        
+        // 각 나라별로 "나라(지역1, 지역2)" 형태로 만들기
+        return Object.entries(countryGroups).map(([country, regions]) => {
+            const regionList = regions.join(', ');
+            return `${country}(${regionList})`;
         }).join(', ');
     };
 
-    const handleClick = () => {
+    const handlePress = () => {
         console.log('지역선택화면으로 이동');
     };
 
     return (
-        <div style={styles.container}>
-        <h2 style={styles.heading}>여행장소</h2>
-        <div style={styles.inputContainer} onClick={handleClick}>
-            <MaterialIcons name="location-pin" color="black" style={styles.icon} />
-            <span style={styles.text}>{formatRegionText()}</span>
-        </div>
-        </div>
+        <View style={styles.container}>
+            <Text style={styles.heading}>여행장소</Text>
+            <TouchableOpacity style={styles.inputContainer} onPress={handlePress}>
+                <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
+                <Text style={styles.text}>{formatRegionText()}</Text>
+            </TouchableOpacity>
+        </View>
     );
 };
 
 export default TourPlace;
 
-    const styles = {
+const styles = StyleSheet.create({
     container: {
-        marginBottom: '24px'
+        padding: 12,
+        marginBottom: 12,
     },
     heading: {
-        fontSize: '1.25rem',
+        fontSize: 18,
         fontWeight: '600',
-        marginBottom: '16px',
+        marginBottom: 16,
     },
     inputContainer: {
         width: '100%',
-        padding: '12px 16px',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        backgroundColor: '#f9fafb',
-        display: 'flex',
+        padding: 12,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        backgroundColor: '#fff',
+        flexDirection: 'row',
         alignItems: 'center',
-        cursor: 'pointer',
-        transition: 'all 0.2s ease'
     },
     icon: {
-        marginRight: '8px',
-        fontSize: '16px'
+        marginRight: 8,
     },
     text: {
-        flex: 1
-    }
-};
+        flex: 1,
+        fontSize: 16,
+        color: '#000',
+    },
+});
