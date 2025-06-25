@@ -3,9 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { SortToggle } from './SortToggle';
 import FilterPopup from './FilterPopup';
+import CalendarPopup from './CalendarPopup';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ko';
+
+dayjs.locale('ko');
 
 export default function MyTourHeader({ onSortChange, onFilterPress, onFilterApply }) {
-    const [filterVisible, setFilterVisible] = useState(false);
+    const [showFilterPopup, setShowFilterPopup] = useState(false);
+    const [calendarVisible, setCalendarVisible] = useState(false); 
     const [filters, setFilters] = useState({
         travelPeriod: '',
         travelLocation: '',
@@ -18,22 +24,34 @@ export default function MyTourHeader({ onSortChange, onFilterPress, onFilterAppl
     };
 
     const handleFilterPress = () => {
-        setFilterVisible(true);
+        setShowFilterPopup(true);
         if (onFilterPress) {
             onFilterPress();
         }
     };
 
     const handleFilterClose = () => {
-        setFilterVisible(false);
+        setShowFilterPopup(false);
     };
 
     const handleFilterApply = (appliedFilters) => {
         console.log('Filters applied:', appliedFilters);
+        setFilters(appliedFilters);
         if (onFilterApply) {
             onFilterApply(appliedFilters);
         }
-        setFilterVisible(false);
+        setShowFilterPopup(false);
+    };
+
+    const handleCalendarSelect = (range) => {
+        const { startDate, endDate } = range;
+        const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
+        
+        setFilters(prev => ({ ...prev, travelPeriod: formatted }));
+        setCalendarVisible(false);
+        setTimeout(() => {
+            setShowFilterPopup(true);
+        }, 300);
     };
 
     return (
@@ -65,13 +83,28 @@ export default function MyTourHeader({ onSortChange, onFilterPress, onFilterAppl
             </View>
 
             <FilterPopup
-                visible={filterVisible}
-                onClose={handleFilterClose}
-                onApply={handleFilterApply}
+                visible={showFilterPopup}
+                onClose={() => setShowFilterPopup(false)}
+                onApply={(filters) => {
+                    setFilters(filters);
+                    setShowFilterPopup(false);
+                    if (onFilterApply) {
+                        onFilterApply(filters);
+                    }
+                }}
                 filters={filters}
                 setFilters={setFilters}
-                onOpenCalendar={null}
+                onOpenCalendar={() => {
+                    setShowFilterPopup(false);
+                    setTimeout(() => setCalendarVisible(true), 300);
+                }}
             />
+
+            <CalendarPopup
+                visible={calendarVisible}
+                onClose={() => setCalendarVisible(false)}
+                onSelectDates={handleCalendarSelect}
+            />  
         </>
     );
 }
