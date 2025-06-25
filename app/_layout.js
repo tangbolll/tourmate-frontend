@@ -1,7 +1,6 @@
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-// FontAwesome6 import 방식 변경
 import { FontAwesome6 } from '@expo/vector-icons';
 import { Text, View } from 'react-native';
 

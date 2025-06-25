@@ -5,6 +5,7 @@ import {
     StyleSheet, 
     Dimensions 
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import MyTourHeader from './MyTourHeader';
 import MyTourFeed from './MyTourFeed';
 import TourDesignButton from './TourDesignButton';
@@ -13,6 +14,7 @@ import dayjs from 'dayjs';
 const { width } = Dimensions.get('window');
 
 export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
+    const router = useRouter(); // Expo Router 사용
     const [sortType, setSortType] = useState('latest');
     const [tours, setTours] = useState(mytours);
     const [activeFilters, setActiveFilters] = useState({
@@ -100,6 +102,12 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
 
     const handleTourDesignPress = () => {
         console.log('여행 디자인 페이지로 이동');
+        try {
+            // Expo Router를 사용한 네비게이션
+            router.push('/mytour/tourDesign');
+        } catch (error) {
+            console.error('Navigation error:', error);
+        }
     };
 
     return (

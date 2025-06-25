@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
-import AntDesign from 'react-native-vector-icons/AntDesign';
+import { Ionicons } from '@expo/vector-icons';
+
 
 const SearchRegionHeader = ({ searchText, onSearchChange, onBack, onSearch }) => {
     return (
@@ -10,11 +11,7 @@ const SearchRegionHeader = ({ searchText, onSearchChange, onBack, onSearch }) =>
                 style={styles.backButton}
                 activeOpacity={0.7}
             >
-                <AntDesign 
-                    name="left" 
-                    size={16} 
-                    color="black" 
-                />
+                <Ionicons name="chevron-back" size={24} color="black" />
             </TouchableOpacity>
             <TextInput
                 placeholder="원하는 여행 지역을 검색해보세요"
@@ -33,14 +30,14 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingHorizontal: 16,
+        paddingHorizontal: 12,
         paddingVertical: 12,
         backgroundColor: 'white',
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
     },
     backButton: {
-        marginRight: 12,
+        marginRight: 8,
         padding: 4,
     },
     searchInput: {

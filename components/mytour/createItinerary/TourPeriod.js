@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { FontAwesome6 } from '@expo/vector-icons';
 
 const TourPeriod = () => {
@@ -9,161 +10,166 @@ const TourPeriod = () => {
     };
 
     const renderDateInputs = () => (
-        <div style={styles.dateInputsContainer}>
-        <div style={styles.dateInputWrapper}>
-            <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
-            <input
-            type="text"
-            placeholder="여행시작일"
-            style={styles.dateInput}
-            />
-        </div>
-        <span style={styles.separator}>-</span>
-        <div style={styles.dateInputWrapper}>
-            <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
-            <input
-            type="text"
-            placeholder="여행종료일"
-            style={styles.dateInput}
-            />
-        </div>
-        </div>
+        <View style={styles.dateInputsContainer}>
+            <View style={styles.dateInputWrapper}>
+                <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
+                <TextInput
+                    placeholder="여행시작일"
+                    style={styles.dateInput}
+                    placeholderTextColor="#9ca3af"
+                />
+            </View>
+            <Text style={styles.separator}>-</Text>
+            <View style={styles.dateInputWrapper}>
+                <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
+                <TextInput
+                    placeholder="여행종료일"
+                    style={styles.dateInput}
+                    placeholderTextColor="#9ca3af"
+                />
+            </View>
+        </View>
     );
 
     const renderDurationInputs = () => (
-        <div style={styles.durationInputsContainer}>
-        <input
-            type="number"
-            style={styles.durationInput}
-        />
-        <span style={styles.durationText}>박</span>
-        <input
-            type="number"
-            style={styles.durationInput}
-        />
-        <span style={styles.durationText}>일</span>
-        </div>
+        <View style={styles.durationInputsContainer}>
+            <TextInput
+                keyboardType="numeric"
+                style={styles.durationInput}
+                placeholderTextColor="#9ca3af"
+            />
+            <Text style={styles.durationText}>박</Text>
+            <TextInput
+                keyboardType="numeric"
+                style={styles.durationInput}
+                placeholderTextColor="#9ca3af"
+            />
+            <Text style={styles.durationText}>일</Text>
+        </View>
     );
 
     return (
-        <div style={styles.container}>
-        <h2 style={styles.heading}>여행기간</h2>
-        
-        <div style={styles.typeSelectionContainer}>
-            <div style={styles.typeOption} onClick={() => handleTypeChange('date')}>
-            <div style={selectedType === 'date' ? styles.radioSelected : styles.radioUnselected}>
-                {selectedType === 'date' && <div style={styles.radioInner} />}
-            </div>
-            <span style={styles.typeText}>날짜로 등록</span>
-            </div>
+        <View style={styles.container}>
+            <Text style={styles.heading}>여행기간</Text>
             
-            <div style={styles.typeOption} onClick={() => handleTypeChange('duration')}>
-            <div style={selectedType === 'duration' ? styles.radioSelected : styles.radioUnselected}>
-                {selectedType === 'duration' && <div style={styles.radioInner} />}
-            </div>
-            <span style={styles.typeText}>기간으로 등록</span>
-            </div>
-        </div>
+            <View style={styles.typeSelectionContainer}>
+                <TouchableOpacity style={styles.typeOption} onPress={() => handleTypeChange('date')}>
+                    <View style={selectedType === 'date' ? styles.radioSelected : styles.radioUnselected}>
+                        {selectedType === 'date' && <View style={styles.radioInner} />}
+                    </View>
+                    <Text style={styles.typeText}>날짜로 등록</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.typeOption} onPress={() => handleTypeChange('duration')}>
+                    <View style={selectedType === 'duration' ? styles.radioSelected : styles.radioUnselected}>
+                        {selectedType === 'duration' && <View style={styles.radioInner} />}
+                    </View>
+                    <Text style={styles.typeText}>기간으로 등록</Text>
+                </TouchableOpacity>
+            </View>
 
-        {selectedType === 'date' ? renderDateInputs() : renderDurationInputs()}
-        </div>
+            {selectedType === 'date' ? renderDateInputs() : renderDurationInputs()}
+        </View>
     );
 };
 
 export default TourPeriod;
 
-const styles = {
+const styles = StyleSheet.create({
     container: {
-        marginBottom: '24px'
+        padding: 12,
+        marginBottom: 12,
     },
     heading: {
-        fontSize: '1.25rem',
+        fontSize: 18,
         fontWeight: '600',
-        marginBottom: '16px',
-        color: '#374151'
+        marginBottom: 16,
     },
     typeSelectionContainer: {
-        display: 'flex',
-        gap: '24px',
-        marginBottom: '16px'
+        flexDirection: 'row',
+        gap: 24,
+        marginLeft: 4,
+        marginBottom: 16,
     },
     typeOption: {
-        display: 'flex',
+        flexDirection: 'row',
         alignItems: 'center',
-        cursor: 'pointer',
-        gap: '8px'
+        gap: 8,
     },
     radioSelected: {
-        width: '20px',
-        height: '20px',
-        borderRadius: '50%',
+        width: 15,
+        height: 15,
+        borderRadius: 10,
         backgroundColor: 'black',
-        display: 'flex',
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
     },
     radioUnselected: {
-        width: '20px',
-        height: '20px',
-        borderRadius: '50%',
-        border: '2px solid #d1d5db',
-        backgroundColor: 'white'
+        width: 15,
+        height: 15,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#d1d5db',
+        backgroundColor: 'white',
     },
     radioInner: {
-        width: '8px',
-        height: '8px',
-        borderRadius: '50%',
-        backgroundColor: 'white'
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: 'white',
     },
     typeText: {
         color: 'black',
-        fontSize: '16px'
+        fontSize: 16,
     },
     dateInputsContainer: {
-        display: 'flex',
+        flexDirection: 'row',
         alignItems: 'center',
-        gap: '12px'
+        gap: 12,
     },
     dateInputWrapper: {
-        display: 'flex',
+        flexDirection: 'row',
         alignItems: 'center',
-        padding: '12px 16px',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
+        padding: 12,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
         backgroundColor: 'white',
-        flex: 1
+        flex: 1,
     },
     icon: {
-        marginRight: '8px'
+        marginRight: 8,
     },
     dateInput: {
-        border: 'none',
-        outline: 'none',
         flex: 1,
         color: 'black',
-        fontSize: '16px'
+        fontSize: 16,
     },
     separator: {
         color: 'black',
-        fontSize: '16px'
+        fontSize: 16,
     },
     durationInputsContainer: {
-        display: 'flex',
+        flexDirection: 'row',
         alignItems: 'center',
-        gap: '8px'
+        gap: 8,
     },
     durationInput: {
-        width: '80px',
-        padding: '12px 16px',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        outline: 'none',
+        width: 80,
+        height: 40,
+        padding: 12,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
         textAlign: 'center',
         color: 'black',
-        fontSize: '16px'
+        fontSize: 16,
+        backgroundColor: 'white',
     },
     durationText: {
         color: 'black',
-        fontSize: '16px'
-    }
-};
+        fontSize: 16,
+    },
+});
