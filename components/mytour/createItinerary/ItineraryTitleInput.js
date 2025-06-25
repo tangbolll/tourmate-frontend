@@ -1,41 +1,44 @@
 import React from 'react';
+import { View, Text, TextInput, StyleSheet } from 'react-native';
 
-export const ItineraryTitleInput = ({ selectedRegion }) => {
+const ItineraryTitleInput = ({ selectedRegion, placeholder }) => {
     const cities = selectedRegion.reduce((acc, region) => {
-        return acc.concat(region.regions);
+        return acc.concat(region.regions || []);
     }, []);
-    const getPlaceholder = () => {
-        if (cities.length === 1) return `${cities[0]} 여행`;
-        return `${cities[0]} 외 ${cities.length - 1}개 도시 여행`;
-    };
 
     return (
-        <div style={styles.container}>
-        <h2 style={styles.heading}>여행 제목</h2>
-        <input
-            type="text"
-            placeholder={getPlaceholder()}
-            style={styles.input}
-        />
-        </div>
+        <View style={styles.container}>
+            <Text style={styles.heading}>여행 제목</Text>
+            <TextInput
+                placeholder={placeholder}
+                style={styles.input}
+                placeholderTextColor="#9ca3af"
+            />
+        </View>
     );
 };
 
-const styles = {
+export default ItineraryTitleInput;
+
+const styles = StyleSheet.create({
     container: {
-        marginBottom: '24px'
+        padding: 12,
+        marginBottom: 12,
     },
     heading: {
-        fontSize: '1.25rem',
+        fontSize: 18,
         fontWeight: '600',
-        marginBottom: '16px',
+        marginBottom: 8,
     },
     input: {
         width: '100%',
-        padding: '12px 16px',
-        border: '1px solid #d1d5db',
-        borderRadius: '8px',
-        outline: 'none',
-        transition: 'all 0.2s ease'
-    }
-};
+        padding: 12,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        backgroundColor: '#fff',
+        fontSize: 16,
+        color: '#000',
+    },
+});
