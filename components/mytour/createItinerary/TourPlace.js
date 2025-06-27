@@ -1,12 +1,14 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 const TourPlace = ({ selectedRegion = [] }) => {
+    router = useRouter();
+
     const formatRegionText = () => {
         if (selectedRegion.length === 0) return '여행 장소를 선택하세요';
         
-        // 나라별로 지역들을 그룹화
         const countryGroups = selectedRegion.reduce((acc, item) => {
             const country = item.country || '';
             const region = item.region || '';
@@ -19,7 +21,6 @@ const TourPlace = ({ selectedRegion = [] }) => {
             return acc;
         }, {});
         
-        // 각 나라별로 "나라(지역1, 지역2)" 형태로 만들기
         return Object.entries(countryGroups).map(([country, regions]) => {
             const regionList = regions.join(', ');
             return `${country}(${regionList})`;
@@ -27,15 +28,22 @@ const TourPlace = ({ selectedRegion = [] }) => {
     };
 
     const handlePress = () => {
-        console.log('지역선택화면으로 이동');
+        // router.back();
+        // TODO: 지역 선택 화면으로 이동 ?
     };
 
     return (
-        <View style={styles.container}>
+        <View style={styles.inputSection}>
             <Text style={styles.heading}>여행장소</Text>
             <TouchableOpacity style={styles.inputContainer} onPress={handlePress}>
                 <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
-                <Text style={styles.text}>{formatRegionText()}</Text>
+                <Text 
+                    style={styles.text}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
+                >
+                    {formatRegionText()}
+                </Text>
             </TouchableOpacity>
         </View>
     );
@@ -44,7 +52,7 @@ const TourPlace = ({ selectedRegion = [] }) => {
 export default TourPlace;
 
 const styles = StyleSheet.create({
-    container: {
+    inputSection: {
         padding: 12,
         marginBottom: 12,
     },
@@ -55,6 +63,7 @@ const styles = StyleSheet.create({
     },
     inputContainer: {
         width: '100%',
+        height: 44,
         padding: 12,
         paddingHorizontal: 16,
         borderWidth: 1,
