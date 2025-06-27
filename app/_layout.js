@@ -88,7 +88,7 @@ export default function AppLayout() {
             
             {/* 내 여행 */}
             <Tabs.Screen
-                name="mytrips"
+                name="mytour"
                 options={{
                     tabBarLabel: ({ focused }) => (
                         <Text style={{
