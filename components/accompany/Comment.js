@@ -8,9 +8,6 @@ const Comment = ({ profileImage, nickname, time, content, onReplyPress, isHost }
 
     return (
         <View>
-            <View style={styles.divider} />
-            <Text style={styles.title}> 코멘트</Text>
-
             <View style={styles.container}>
                 <Image 
                     source={profileSrc} 
