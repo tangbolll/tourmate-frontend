@@ -1,5 +1,13 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Dimensions, TouchableOpacity } from 'react-native';
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    ScrollView, 
+    Dimensions, 
+    TouchableOpacity 
+} from 'react-native';
+import { MaterialIcons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 const COLUMN_WIDTH = width - 32; // 좌우 패딩 제외
@@ -10,8 +18,8 @@ const ItineraryBlock = ({
     endDate, 
     nights, 
     days, 
-    schedules = [], // 일정 데이터
-    onTimeBlockClick // 시간 블록 클릭 핸들러
+    schedules = [],
+    onTimeBlockClick
 }) => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const scrollViewRef = useRef(null);
@@ -49,7 +57,7 @@ const ItineraryBlock = ({
         return dateArray;
     };
 
-    // 시간 배열 생성 (7시부터 24시까지)
+    // 시간 배열 생성 (7시부터 23시까지)
     const timeSlots = [];
     for (let hour = 7; hour <= 23; hour++) {
         timeSlots.push(hour);
@@ -62,7 +70,7 @@ const ItineraryBlock = ({
         const targetDate = periodType === 'date' ? dateInfo.fullDate : dateInfo.displayText;
         
         return schedules.find(schedule => {
-            const scheduleDate = periodType === 'date' ? schedule.date : schedule.date;
+            const scheduleDate = schedule.date;
             const scheduleHour = parseInt(schedule.startTime.split(':')[0]);
             
             return scheduleDate === targetDate && scheduleHour === hour;
@@ -72,10 +80,10 @@ const ItineraryBlock = ({
     // 카테고리별 색상 반환
     const getCategoryStyle = (category) => {
         const categoryStyles = {
-            '숙소': { backgroundColor: '#e3f2fd', borderColor: '#2196f3', textColor: '#1976d2' },
-            '식사': { backgroundColor: '#fff3e0', borderColor: '#ff9800', textColor: '#f57c00' },
-            '관광': { backgroundColor: '#e8f5e8', borderColor: '#4caf50', textColor: '#388e3c' },
-            '휴식': { backgroundColor: '#f3e5f5', borderColor: '#9c27b0', textColor: '#7b1fa2' }
+            '숙소': { backgroundColor: '#FFF5CC', borderColor: '#FFD965', textColor: '#000' },
+            '식사': { backgroundColor: '#FFE5D5', borderColor: '#FF9E6D', textColor: '#000' },
+            '관광': { backgroundColor: '#E6F1FB', borderColor: '#A3C8E9', textColor: '#000' },
+            '휴식': { backgroundColor: '#EFF5EC', borderColor: '#C6D6C3', textColor: '#000' }
         };
         
         return categoryStyles[category] || categoryStyles['관광'];
@@ -117,7 +125,9 @@ const ItineraryBlock = ({
         
         return (
             <View key={hour} style={styles.timeSlot}>
-                <Text style={styles.timeText}>{hour}</Text>
+                <View style={styles.timeLabel}>
+                    <Text style={styles.timeText}>{hour}</Text>
+                </View>
                 <TouchableOpacity
                     style={[
                         styles.timeBlock,
@@ -130,7 +140,7 @@ const ItineraryBlock = ({
                     onPress={() => handleTimeBlockPress(dateInfo, hour)}
                     activeOpacity={0.7}
                 >
-                    {schedule && (
+                    {schedule ? (
                         <View style={styles.scheduleContent}>
                             <Text style={[
                                 styles.scheduleTitle,
@@ -138,21 +148,20 @@ const ItineraryBlock = ({
                             ]} numberOfLines={1}>
                                 {schedule.title}
                             </Text>
-                            <Text style={[
-                                styles.scheduleTime,
-                                { color: categoryStyle.textColor }
-                            ]}>
-                                {schedule.startTime} - {schedule.endTime}
-                            </Text>
                             {schedule.location && (
-                                <Text style={[
-                                    styles.scheduleLocation,
-                                    { color: categoryStyle.textColor }
-                                ]} numberOfLines={1}>
-                                    📍 {schedule.location}
-                                </Text>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    <MaterialIcons name="location-pin" size={12} color={categoryStyle.textColor} />
+                                    <Text
+                                        style={[styles.scheduleLocation, { color: categoryStyle.textColor, marginLeft: 4 }]}
+                                        numberOfLines={1}
+                                    >
+                                        {schedule.location}
+                                    </Text>
+                                </View>
                             )}
                         </View>
+                    ) : (
+                        <Text style={styles.emptyBlockText}>일정 추가</Text>
                     )}
                 </TouchableOpacity>
             </View>
@@ -160,10 +169,9 @@ const ItineraryBlock = ({
     };
 
     const renderDateColumn = (dateInfo, index) => {
-        const isLastColumn = index === dates.length - 1;
-        
         return (
-            <View key={index} style={[styles.dateColumn, isLastColumn && { marginRight: 64 }]}>
+            <View key={index} style={styles.dateColumn}>
+                {/* 고정된 날짜 헤더 */}
                 <View style={styles.dateHeader}>
                     {periodType === 'date' ? (
                         <Text style={styles.dateText}>
@@ -174,10 +182,12 @@ const ItineraryBlock = ({
                     )}
                 </View>
                 
+                {/* 스크롤 가능한 시간 블록 영역 */}
                 <ScrollView 
                     style={styles.timeSlotContainer}
                     showsVerticalScrollIndicator={false}
                     scrollEventThrottle={16}
+                    nestedScrollEnabled={true}
                 >
                     {timeSlots.map((hour) => renderTimeSlot(hour, dateInfo))}
                 </ScrollView>
@@ -188,29 +198,32 @@ const ItineraryBlock = ({
     return (
         <View style={styles.container}>
             {/* 상단 슬라이드바 */}
-            <View style={styles.slideBar}>
-                <View style={styles.slideTrack}>
-                    <View 
-                        style={[
-                            styles.slideIndicator, 
-                            { 
-                                left: dates.length > 1 ? `${(currentIndex / (dates.length - 1)) * (100 - (40 / (width - 32)) * 100)}%` : 0
-                            }
-                        ]} 
-                    />
-                </View>
-                <View style={styles.slideButtons}>
-                    {dates.map((_, index) => (
-                        <TouchableOpacity
-                            key={index}
-                            style={styles.slideButton}
-                            onPress={() => handleSlideBarPress(index)}
+            {dates.length > 1 && (
+                <View style={styles.slideBar}>
+                    <View style={styles.slideTrack}>
+                        <View 
+                            style={[
+                                styles.slideIndicator, 
+                                { 
+                                    left: dates.length > 1 ? 
+                                        `${(currentIndex / (dates.length - 1)) * (100 - (40 / (width - 32)) * 100)}%` : 0
+                                }
+                            ]} 
                         />
-                    ))}
+                    </View>
+                    <View style={styles.slideButtons}>
+                        {dates.map((_, index) => (
+                            <TouchableOpacity
+                                key={index}
+                                style={styles.slideButton}
+                                onPress={() => handleSlideBarPress(index)}
+                            />
+                        ))}
+                    </View>
                 </View>
-            </View>
+            )}
 
-            {/* 메인 스크롤 영역 */}
+            {/* 메인 스크롤 영역 (좌우 스크롤만) */}
             <ScrollView
                 ref={scrollViewRef}
                 horizontal
@@ -223,6 +236,7 @@ const ItineraryBlock = ({
                 decelerationRate="fast"
                 snapToInterval={COLUMN_WIDTH}
                 snapToAlignment="start"
+                style={styles.horizontalScrollView}
             >
                 {dates.map((dateInfo, index) => renderDateColumn(dateInfo, index))}
             </ScrollView>
@@ -236,7 +250,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     slideBar: {
-        height: 40,
+        height: 30,
         backgroundColor: '#fff',
         paddingHorizontal: 16,
         paddingVertical: 8,
@@ -247,24 +261,27 @@ const styles = StyleSheet.create({
         backgroundColor: '#f3f4f6',
         borderRadius: 2,
         position: 'relative',
-        marginBottom: 6,
+        marginBottom: 8,
     },
     slideIndicator: {
         position: 'absolute',
         top: 0,
         width: 40,
         height: 4,
-        backgroundColor: '#000',
+        backgroundColor: '#000000',
         borderRadius: 2,
     },
     slideButtons: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        height: 18,
+        height: 20,
     },
     slideButton: {
         flex: 1,
         marginHorizontal: 2,
+    },
+    horizontalScrollView: {
+        flex: 1,
     },
     scrollContent: {
         flexDirection: 'row',
@@ -272,57 +289,72 @@ const styles = StyleSheet.create({
     dateColumn: {
         width: COLUMN_WIDTH,
         paddingHorizontal: 16,
+        flex: 1,
     },
     dateHeader: {
-        paddingVertical: 8,
+        marginVertical: 8,
         alignItems: 'center',
+        backgroundColor: '#fff',
     },
     dateText: {
-        fontSize: 16,
-        fontWeight: '600',
+        fontSize: 18,
+        fontWeight: '700',
         color: '#111827',
     },
     timeSlotContainer: {
         flex: 1,
+        paddingTop: 8,
     },
     timeSlot: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
-        minHeight: 60,
+        paddingVertical: 6,
+        minHeight: 70,
+    },
+    timeLabel: {
+        width: 40,
+        alignItems: 'center',
+        justifyContent: 'center',
     },
     timeText: {
-        fontSize: 14,
+        fontSize: 16,
         color: '#6b7280',
-        width: 30,
-        textAlign: 'center',
+        fontWeight: '600',
     },
     timeBlock: {
         flex: 1,
-        minHeight: 44,
+        minHeight: 60,
         backgroundColor: '#f9fafb',
         marginLeft: 12,
-        borderRadius: 8,
+        borderRadius: 12,
         borderWidth: 1,
         borderColor: '#e5e7eb',
-        padding: 8,
+        padding: 12,
         justifyContent: 'center',
     },
     scheduleContent: {
         flex: 1,
     },
     scheduleTitle: {
-        fontSize: 12,
-        fontWeight: '600',
-        marginBottom: 2,
+        fontSize: 14,
+        fontWeight: '700',
+        marginBottom: 4,
     },
     scheduleTime: {
-        fontSize: 10,
+        fontSize: 12,
         marginBottom: 2,
+        fontWeight: '500',
     },
     scheduleLocation: {
-        fontSize: 10,
+        padding: 2,
+        fontSize: 11,
         opacity: 0.8,
+    },
+    emptyBlockText: {
+        fontSize: 12,
+        color: '#9ca3af',
+        textAlign: 'center',
+        fontWeight: '500',
     },
 });
 
