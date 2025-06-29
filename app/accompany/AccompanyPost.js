@@ -24,7 +24,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://192.168.35.42:8080'; // 본인 IP로 변경
+      return 'http://172.30.1.94:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -230,7 +230,7 @@ export default function AccompanyPost() {
         }
     };
 
-    // 답글 추가 (기존 로직 유지)
+    // 답글 추가
     const handleAddReply = async (content) => {
         if (!content.trim() || !replyingTo) return;
 
@@ -319,7 +319,7 @@ export default function AccompanyPost() {
         setReplyingTo(null);
     };
 
-    // 🎯 postId를 사용하여 데이터 로드
+    // postId를 사용하여 데이터 로드
     useEffect(() => {
         if (postId) {
             console.log('📍 postId로 데이터 로드:', postId);
@@ -501,6 +501,10 @@ export default function AccompanyPost() {
                         tags={postData.tags} 
                     />
 
+                    {/* 댓글 섹션 제목 (항상 표시) */}
+                    <View style={styles.commentDivider} />
+                    <Text style={styles.commentTitle}> 코멘트</Text>
+
                     {/* 댓글 목록 동적 렌더링 */}
                     {comments.map((comment) => (
                         <React.Fragment key={`comment_${comment.id}`}>
@@ -529,7 +533,6 @@ export default function AccompanyPost() {
                             ))}
                         </React.Fragment>
                     ))}
-
                     <WriteComment 
                         onSend={handleSend}
                         onFocus={() => {
@@ -571,7 +574,10 @@ export default function AccompanyPost() {
                 {/* Popups */}
                 {showAlarmPopupHost && (
                     <AlarmPopup
-                        alarmText={`동행을 마감하시겠습니까?\n마감된 동행은 다시 되돌릴 수 없습니다.`}
+                        alarmText={
+                            <Text style={styles.alarmPopupText}>
+                                `동행을 마감하시겠습니까?\n마감된 동행은 다시 되돌릴 수 없습니다.`
+                            </Text>}
                         onClose={handleCloseAlarmPopupHost}
                         onConfirm={handleConfirmClose}
                         confirmText="네"
@@ -582,10 +588,13 @@ export default function AccompanyPost() {
 
                 {showAlarmPopup && (
                     <AlarmPopup
+                    
                         alarmText={
-                            applied
-                                ? `동행을 신청하였습니다.\n동행을 취소하시려면 아래 버튼을 눌러주세요.`
-                                : `동행 신청이 취소되었습니다.\n다시 신청하시려면 아래 버튼을 눌러주세요.`
+                            <Text style={styles.alarmPopupText}>
+                                {applied
+                                    ? `동행 신청이 완료되었습니다.\n호스트가 수락하거나 거절하면 알림이 발송됩니다.\n수락되기 전까지 신청을 취소할 수 있습니다.`
+                                    : `동행 신청이 취소되었습니다.\n다시 신청하시려면 아래 버튼을 눌러주세요.`}
+                            </Text>
                         }
                         onClose={handleCloseAlarmPopup}
                     />
@@ -660,4 +669,21 @@ const styles = StyleSheet.create({
     confirmButton: {
         backgroundColor: '#FF6B6B',
     },
+    alarmPopupText: {
+        fontSize: 15,
+
+    },
+    commentDivider: {
+        borderBottomWidth: 1,
+        borderBottomColor: '#E5E7EB',
+        marginTop: 12,
+        marginBottom: 4,
+    },
+    commentTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 12,
+        marginTop: 16,
+    },
+
 });

@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Image} from 'react-native';
 
 const defaultProfile = require('../../assets/defaultProfile1.png');
 
-const Reply = ({ profileImage, nickname, time, content, onReplyPress, isHost, style }) => {
+const Reply = ({ profileImage, nickname, time, content, isHost, style }) => {
     const profileSrc = profileImage
         ? { uri: profileImage }
         : defaultProfile;
@@ -22,9 +22,6 @@ const Reply = ({ profileImage, nickname, time, content, onReplyPress, isHost, st
                     <View style={styles.headerRow}>
                         <Text style={styles.nickname}>{nickname}</Text>
                         <Text style={styles.time}>· {time}</Text>
-                        <TouchableOpacity onPress={onReplyPress}>
-                            <Text style={styles.replyText}>답글</Text>
-                        </TouchableOpacity>
                         {isHost && <Text style={styles.hostLabel}>호스트</Text>}
                     </View>
                     <Text style={styles.contentText}>{content}</Text>
@@ -47,7 +44,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'flex-start',
         marginBottom: 4,
-        marginLeft: 52
+        marginLeft: 30
     },
     profileImage: {
         width: 40,
@@ -72,11 +69,6 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#000',
         marginRight: 6,
-    },
-    replyText: {
-        fontSize: 12,
-        color: '#6B7280',
-        textDecorationLine: 'underline',
     },
     hostLabel: {
         fontSize: 10,

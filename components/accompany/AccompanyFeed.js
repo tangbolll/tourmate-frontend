@@ -16,6 +16,8 @@ export default function AccompanyFeed({
     onPressLike,
     onPress,
 }) {
+    console.log('AccompanyFeed liked 값:', liked);
+    
     return (
         <TouchableOpacity onPress={onPress} style={styles.card}>
             <View style={styles.contentRow}>
@@ -71,7 +73,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         marginBottom: 14,
-        marginTop: 14,
+        marginTop: 6,
     },
     tag: {
         backgroundColor: '#f1f1f1',
@@ -103,7 +105,7 @@ const styles = StyleSheet.create({
     },
     contentRow: {
         flexDirection: 'row',
-        alignItems: 'flex-start'
+        alignItems: 'center',
     },
     textSection: {
         flex: 1,
@@ -113,12 +115,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         marginBottom: 8,
-        marginRight: 0, 
+        marginTop: 4,
     },
     imageContainer: {
         width: 80,
         height: 80,
-        marginTop: 14, 
         position: 'relative', // 이미지와 하트 아이콘을 겹치게 하기 위해 relative로 설정
     },
     image: {

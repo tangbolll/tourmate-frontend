@@ -20,7 +20,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://192.168.35.42:8080'; // 본인 IP로 변경
+      return 'http://172.30.1.94:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -40,6 +40,7 @@ const cardData = [
 ];
 
 const AccompanyList = () => {
+    console.log('=== 컴포넌트 시작 ===');
   const [showFilterPopup, setShowFilterPopup] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedTab, setSelectedTab] = useState('feed');
@@ -90,7 +91,7 @@ const AccompanyList = () => {
         dayjs(item.tripStartDate).locale('ko').format('M월 D일(ddd)') : 
         dayjs().locale('ko').format('M월 D일(ddd)'),
       hostId: item.host?.id || null,
-      liked: false, // 기본값
+      liked: false, 
     }));
   };
 
@@ -301,7 +302,10 @@ const onRefresh = async () => {
   };
 
   // 피드 아이템 렌더링
-  const renderFeedItems = () => {
+const renderFeedItems = () => {
+    console.log('renderFeedItems 호출됨'); // 이 줄 추가
+    console.log('loading:', loading); // 이 줄 추가
+    console.log('filteredPosts.length:', filteredPosts.length); // 이 줄 추가
     if (loading) {
       return (
         <View style={styles.emptyState}>
@@ -322,27 +326,35 @@ const onRefresh = async () => {
       );
     }
     
-    return filteredPosts.map((post) => (
-      <AccompanyFeed
-        key={post.id}
-        id={post.id}
-        date={post.date}
-        title={post.title}
-        tags={post.tags}
-        location={post.location}
-        participants={post.participants}
-        maxParticipants={post.maxParticipants}
-        imageUrl={post.imageUrl}
-        liked={!!likedPosts[post.id]}
-        onPressLike={() => handlePressLike(post.id)}
-        {...post} 
-        onPress={() => navigateToPost(post.id)}
-      />
-    ));
+    return filteredPosts.map((post) => {
+      console.log('post.id:', post.id, 'typeof:', typeof post.id);
+      console.log('likedPosts:', likedPosts);
+      console.log('likedPosts[post.id]:', likedPosts[post.id]);
+      console.log(`Post ${post.id} liked:`, !!likedPosts[post.id]);
+      
+      return (
+        <AccompanyFeed
+          key={post.id}
+          {...post}
+          id={post.id}
+          date={post.date}
+          title={post.title}
+          tags={post.tags}
+          location={post.location}
+          participants={post.participants}
+          maxParticipants={post.maxParticipants}
+          imageUrl={post.imageUrl}
+          liked={!!likedPosts[post.id]}
+          onPressLike={() => handlePressLike(post.id)}
+          onPress={() => navigateToPost(post.id)}
+        />
+      );
+    });
   };
 
   return (
     <SafeAreaView style={styles.container}>
+       {console.log('🔥 SafeAreaView 렌더링')}
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -422,7 +434,7 @@ const onRefresh = async () => {
             console.log(`탭 전환: ${tab} - 내 동행: ${myAccompanyList.length}개, 피드: ${feedList.length}개`);
           }} 
         />
-
+       {console.log('🔥 renderFeedItems 호출 직전')}
         {renderFeedItems()}
       </ScrollView>
 
