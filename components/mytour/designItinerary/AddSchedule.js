@@ -18,7 +18,7 @@ const AddSchedule = ({
     onDelete,
     selectedDate, 
     selectedTime, 
-    existingSchedule 
+    existingSchedule
 }) => {
     const [category, setCategory] = useState('숙소');
     const [title, setTitle] = useState('');
@@ -26,40 +26,51 @@ const AddSchedule = ({
     const [endTime, setEndTime] = useState('08:30');
     const [location, setLocation] = useState('');
     const [memo, setMemo] = useState('');
+    const [dateText, setDateText] = useState(''); // 날짜 텍스트 편집 가능
 
     const categories = [
-        { key: '숙소', label: '숙소', icon: 'home' },
-        { key: '식사', label: '식사', icon: 'coffee' },
-        { key: '관광', label: '관광', icon: 'camera' },
-        { key: '휴식', label: '휴식', icon: 'pause-circle' }
+        { key: '숙소', label: '숙소', icon: 'home', color: '#FFD965' },
+        { key: '식사', label: '식사', icon: 'coffee', color: '#FF9E6D' },
+        { key: '관광', label: '관광', icon: 'camera', color: '#A3C8E9' },
+        { key: '휴식', label: '휴식', icon: 'pause-circle', color: '#C6D6C3' }
     ];
 
     const isEditMode = !!existingSchedule;
     const popupTitle = isEditMode ? '일정 수정' : '일정 추가';
+
+    // 저장 버튼 활성화 조건 체크
+    const isSaveEnabled = title.trim() && location.trim();
 
     // 기존 일정 데이터로 초기화
     useEffect(() => {
         if (existingSchedule) {
             setCategory(existingSchedule.category || '숙소');
             setTitle(existingSchedule.title || '');
-            setStartTime(existingSchedule.startTime || '07:30');
-            setEndTime(existingSchedule.endTime || '08:30');
+            setStartTime(existingSchedule.startTime || '');
+            setEndTime(existingSchedule.endTime || '');
             setLocation(existingSchedule.location || '');
             setMemo(existingSchedule.memo || '');
+            setDateText(existingSchedule.dateText || selectedDate || '');
         } else {
             // 새 일정 추가시 기본값 설정
             setCategory('숙소');
             setTitle('');
-            setStartTime(selectedTime ? `${selectedTime.toString().padStart(2, '0')}:00` : '07:30');
-            setEndTime(selectedTime ? `${(selectedTime + 1).toString().padStart(2, '0')}:00` : '08:30');
+            setStartTime(selectedTime ? `${selectedTime.toString().padStart(2, '0')}:00` : '');
+            setEndTime(selectedTime ? `${(selectedTime + 1).toString().padStart(2, '0')}:00` : '');
             setLocation('');
             setMemo('');
+            setDateText(selectedDate || '');
         }
-    }, [existingSchedule, selectedTime, visible]);
+    }, [existingSchedule, selectedTime, selectedDate, visible]);
 
     const handleSave = () => {
         if (!title.trim()) {
             Alert.alert('알림', '일정 제목을 입력해주세요.');
+            return;
+        }
+
+        if (!location.trim()) {
+            Alert.alert('알림', '위치를 입력해주세요.');
             return;
         }
 
@@ -72,7 +83,8 @@ const AddSchedule = ({
             location: location.trim(),
             memo: memo.trim(),
             date: selectedDate,
-            timeSlot: selectedTime
+            timeSlot: selectedTime,
+            dateText: dateText.trim() // 날짜 텍스트 저장
         };
 
         onSave && onSave(scheduleData);
@@ -107,19 +119,22 @@ const AddSchedule = ({
             key={categoryItem.key}
             style={[
                 styles.categoryButton,
-                category === categoryItem.key && styles.categoryButtonActive
+                category === categoryItem.key && {
+                    backgroundColor: categoryItem.color,
+                    borderColor: categoryItem.color
+                }
             ]}
             onPress={() => setCategory(categoryItem.key)}
         >
             <View style={[
-                styles.categoryIcon,
-                category === categoryItem.key && styles.categoryIconActive
+                styles.radioButton,
+                category === categoryItem.key && {
+                    backgroundColor: categoryItem.color
+                }
             ]}>
-                <Feather 
-                    name={categoryItem.icon} 
-                    size={16} 
-                    color={category === categoryItem.key ? '#fff' : '#666'} 
-                />
+                {category === categoryItem.key && (
+                    <View style={styles.radioInner} />
+                )}
             </View>
             <Text style={[
                 styles.categoryText,
@@ -149,7 +164,7 @@ const AddSchedule = ({
         <Modal
             visible={visible}
             transparent={true}
-            animationType="slide"
+            animationType="fade"
             onRequestClose={onClose}
         >
             <View style={styles.overlay}>
@@ -158,60 +173,64 @@ const AddSchedule = ({
                     <View style={styles.header}>
                         <Text style={styles.title}>{popupTitle}</Text>
                         <TouchableOpacity onPress={onClose} style={styles.closeButton}>
-                            <Feather name="x" size={24} color="black" />
+                            <Feather name="x" size={20} color="#666" />
                         </TouchableOpacity>
                     </View>
 
                     {/* 콘텐츠 */}
                     <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-                        {/* 날짜 정보 */}
-                        <View style={styles.dateInfo}>
-                            <Text style={styles.dateText}>{formatDateDisplay()}</Text>
+                        {/* 일정 제목 */}
+                        <View style={styles.section}>
+                            <TextInput
+                                style={styles.titleInput}
+                                value={title}
+                                onChangeText={setTitle}
+                                placeholder="일정 제목 입력 *"
+                                placeholderTextColor="#CCCCCC"
+                            />
                         </View>
 
                         {/* 카테고리 선택 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>카테고리</Text>
                             <View style={styles.categoryContainer}>
                                 {categories.map(renderCategoryButton)}
                             </View>
                         </View>
 
-                        {/* 일정 제목 */}
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>일정 제목 *</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={title}
-                                onChangeText={setTitle}
-                                placeholder="일정 제목을 입력하세요"
-                                placeholderTextColor="#999"
-                            />
-                        </View>
-
-                        {/* 시간 설정 */}
-                        <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>시간</Text>
-                            <View style={styles.timeContainer}>
-                                <View style={styles.timeInputContainer}>
-                                    <Text style={styles.timeLabel}>시작</Text>
+                        {/* 날짜와 시간 */}
+                        <View style={styles.dateTimeSection}>
+                            <View style={styles.dateTimeRow}>
+                                <View style={styles.iconContainer}>
+                                    <Feather name="calendar" size={16} color="#666" />
+                                </View>
+                                <TextInput
+                                    style={styles.dateTextInput}
+                                    value={dateText}
+                                    onChangeText={setDateText}
+                                    placeholder="날짜 입력"
+                                    placeholderTextColor="#CCCCCC"
+                                />
+                            </View>
+                            
+                            <View style={styles.dateTimeRow}>
+                                <View style={styles.iconContainer}>
+                                    <Feather name="clock" size={16} color="#666" />
+                                </View>
+                                <View style={styles.timeInputRow}>
                                     <TextInput
                                         style={styles.timeInput}
                                         value={startTime}
                                         onChangeText={setStartTime}
                                         placeholder="07:30"
-                                        placeholderTextColor="#999"
+                                        placeholderTextColor="#CCCCCC"
                                     />
-                                </View>
-                                <Text style={styles.timeSeparator}>~</Text>
-                                <View style={styles.timeInputContainer}>
-                                    <Text style={styles.timeLabel}>종료</Text>
+                                    <Text style={styles.timeSeparator}>—</Text>
                                     <TextInput
                                         style={styles.timeInput}
                                         value={endTime}
                                         onChangeText={setEndTime}
                                         placeholder="08:30"
-                                        placeholderTextColor="#999"
+                                        placeholderTextColor="#CCCCCC"
                                     />
                                 </View>
                             </View>
@@ -219,29 +238,34 @@ const AddSchedule = ({
 
                         {/* 장소 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>장소</Text>
-                            <TextInput
-                                style={styles.input}
-                                value={location}
-                                onChangeText={setLocation}
-                                placeholder="장소를 입력하세요"
-                                placeholderTextColor="#999"
-                            />
+                            <View style={styles.inputRow}>
+                                <View style={styles.iconContainer}>
+                                    <Feather name="map-pin" size={16} color="#666" />
+                                </View>
+                                <TextInput
+                                    style={styles.input}
+                                    value={location}
+                                    onChangeText={setLocation}
+                                    placeholder="위치 추가 *"
+                                    placeholderTextColor="#CCCCCC"
+                                />
+                            </View>
                         </View>
 
                         {/* 메모 */}
                         <View style={styles.section}>
-                            <Text style={styles.sectionTitle}>메모</Text>
-                            <TextInput
-                                style={[styles.input, styles.memoInput]}
-                                value={memo}
-                                onChangeText={setMemo}
-                                placeholder="메모를 입력하세요"
-                                placeholderTextColor="#999"
-                                multiline={true}
-                                numberOfLines={4}
-                                textAlignVertical="top"
-                            />
+                            <View style={styles.inputRow}>
+                                <View style={styles.iconContainer}>
+                                    <Feather name="file-text" size={16} color="#666" />
+                                </View>
+                                <TextInput
+                                    style={styles.input}
+                                    value={memo}
+                                    onChangeText={setMemo}
+                                    placeholder="메모 추가"
+                                    placeholderTextColor="#CCCCCC"
+                                />
+                            </View>
                         </View>
                     </ScrollView>
 
@@ -256,11 +280,19 @@ const AddSchedule = ({
                             </TouchableOpacity>
                         )}
                         <TouchableOpacity 
-                            style={[styles.saveButton, isEditMode && styles.saveButtonWithDelete]} 
+                            style={[
+                                styles.saveButton, 
+                                isEditMode && styles.saveButtonWithDelete,
+                                !isSaveEnabled && styles.saveButtonDisabled
+                            ]} 
                             onPress={handleSave}
+                            disabled={!isSaveEnabled}
                         >
-                            <Text style={styles.saveButtonText}>
-                                {isEditMode ? '수정' : '저장'}
+                            <Text style={[
+                                styles.saveButtonText,
+                                !isSaveEnabled && styles.saveButtonTextDisabled
+                            ]}>
+                                저장
                             </Text>
                         </TouchableOpacity>
                     </View>
@@ -274,85 +306,88 @@ const styles = StyleSheet.create({
     overlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'flex-end',
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 40,
     },
     container: {
         backgroundColor: '#fff',
-        borderTopLeftRadius: 20,
-        borderTopRightRadius: 20,
-        maxHeight: '90%',
-        paddingBottom: 20,
+        borderRadius: 16,
+        width: '100%',
+        maxHeight: '60%',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 5,
     },
     header: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        padding: 20,
+        paddingHorizontal: 24,
+        paddingVertical: 20,
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
     },
     title: {
         fontSize: 18,
-        fontWeight: 'bold',
+        fontWeight: '600',
         color: '#333',
     },
     closeButton: {
         padding: 4,
     },
     content: {
-        flex: 1,
-        padding: 20,
-    },
-    dateInfo: {
-        backgroundColor: '#f8f9fa',
-        padding: 16,
-        borderRadius: 12,
-        marginBottom: 20,
-    },
-    dateText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        textAlign: 'center',
+        height: '100%',
+        paddingHorizontal: 24,
+        paddingTop: 20,
     },
     section: {
-        marginBottom: 24,
+        marginBottom: 20,
     },
-    sectionTitle: {
+    titleInput: {
         fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 12,
+        height: 48, // 높이 고정
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        borderRadius: 8,
+        backgroundColor: '#fff',
+        textAlign: 'center',
     },
     categoryContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
+        justifyContent: 'space-around',
+        paddingHorizontal: 20,
     },
     categoryButton: {
-        flex: 1,
         alignItems: 'center',
-        marginHorizontal: 4,
-        paddingVertical: 12,
-        backgroundColor: '#f8f9fa',
-        borderRadius: 12,
-        borderWidth: 1,
-        borderColor: '#e9ecef',
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderRadius: 20,
+        minWidth: 60,
     },
-    categoryButtonActive: {
-        backgroundColor: '#007AFF',
-        borderColor: '#007AFF',
-    },
-    categoryIcon: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
+    radioButton: {
+        width: 20,
+        height: 20,
+        borderRadius: 10,
+        borderWidth: 2,
+        borderColor: '#E0E0E0',
         backgroundColor: '#fff',
         justifyContent: 'center',
         alignItems: 'center',
-        marginBottom: 6,
+        marginBottom: 4,
     },
-    categoryIconActive: {
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    radioInner: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#fff',
     },
     categoryText: {
         fontSize: 12,
@@ -360,84 +395,119 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     categoryTextActive: {
-        color: '#fff',
+        color: '#333',
+        fontWeight: '600',
     },
-    input: {
-        borderWidth: 1,
-        borderColor: '#e9ecef',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 16,
-        backgroundColor: '#fff',
+    dateTimeSection: {
+        marginBottom: 20,
     },
-    timeContainer: {
+    dateTimeRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        marginBottom: 12,
     },
-    timeInputContainer: {
-        flex: 1,
+    inputRow: {
+        flexDirection: 'row',
         alignItems: 'center',
     },
-    timeLabel: {
+    iconContainer: {
+        width: 24,
+        alignItems: 'center',
+        marginRight: 12,
+    },
+    dateTimeText: {
         fontSize: 14,
-        color: '#666',
-        marginBottom: 8,
+        color: '#333',
+        fontWeight: '500',
+    },
+    dateTextInput: {
+        fontSize: 14,
+        color: '#333',
+        fontWeight: '500',
+        height: 32, // 높이 고정
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        borderRadius: 6,
+        backgroundColor: '#fff',
+        flex: 1,
+    },
+    timeInputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
     },
     timeInput: {
+        flex: 1,
+        fontSize: 14,
+        height: 32, // 높이 고정
+        paddingVertical: 8,
+        paddingHorizontal: 12,
         borderWidth: 1,
-        borderColor: '#e9ecef',
-        borderRadius: 12,
-        paddingHorizontal: 16,
-        paddingVertical: 14,
-        fontSize: 16,
+        borderColor: '#E0E0E0',
+        borderRadius: 6,
         backgroundColor: '#fff',
         textAlign: 'center',
-        width: '100%',
     },
     timeSeparator: {
-        fontSize: 18,
+        fontSize: 14,
         color: '#666',
-        marginHorizontal: 16,
-        marginTop: 24,
+        marginHorizontal: 12,
     },
-    memoInput: {
-        height: 100,
-        paddingTop: 14,
+    input: {
+        flex: 1,
+        fontSize: 14,
+        height: 32, // 높이 고정
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        borderRadius: 6,
+        backgroundColor: '#fff',
     },
     buttonContainer: {
         flexDirection: 'row',
-        paddingHorizontal: 20,
-        paddingTop: 16,
+        paddingHorizontal: 24,
+        paddingVertical: 20,
         gap: 12,
+        borderTopWidth: 1,
+        borderTopColor: '#f0f0f0',
     },
     deleteButton: {
         flex: 1,
-        backgroundColor: '#ff3b30',
-        paddingVertical: 16,
-        borderRadius: 12,
+        backgroundColor: '#fff',
+        paddingVertical: 12,
+        borderRadius: 20,
         alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
     },
     deleteButtonText: {
-        color: '#fff',
-        fontSize: 16,
-        fontWeight: '600',
+        color: '#666',
+        fontSize: 14,
+        fontWeight: '500',
     },
     saveButton: {
-        flex: 1,
-        backgroundColor: '#007AFF',
-        paddingVertical: 16,
-        borderRadius: 12,
+        flex: 2,
+        backgroundColor: '#000',
+        paddingVertical: 12,
+        borderRadius: 20,
         alignItems: 'center',
     },
     saveButtonWithDelete: {
-        flex: 1,
+        flex: 2,
+    },
+    saveButtonDisabled: {
+        backgroundColor: '#CCCCCC',
     },
     saveButtonText: {
         color: '#fff',
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
+    },
+    saveButtonTextDisabled: {
+        color: '#999',
     },
 });
 

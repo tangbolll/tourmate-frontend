@@ -7,6 +7,7 @@ import ItineraryBlock from '../../components/mytour/designItinerary/ItineraryBlo
 import BottomSheet from '../../components/mytour/designItinerary/BottomSheet';
 import AiItineraryDesignPopup from '../../components/mytour/designItinerary/AiItineraryDesignPopup';
 import MemberPopup from '../../components/mytour/designItinerary/MemberPopup'; // MemberPopup import 추가
+import ItineraryWithSchedule from '../../components/mytour/designItinerary/ItineraryWithSchedule';  
 
 export default function DesignItinerary() {
     const router = useRouter();
@@ -157,15 +158,15 @@ export default function DesignItinerary() {
                 onDaySelect={handleDaySelect}
             />
             
-            <View style={styles.content}>
-                <ItineraryBlock
+
+                <ItineraryWithSchedule 
                     periodType={period.type}
                     startDate={period.startDate}
                     endDate={period.endDate}
                     nights={period.nights}
                     days={period.days}
                 />
-            </View>
+
 
             <BottomSheet
                 regions={regions}
