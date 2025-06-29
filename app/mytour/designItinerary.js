@@ -6,6 +6,7 @@ import DateSelectButtons from '../../components/mytour/designItinerary/DateSelec
 import ItineraryBlock from '../../components/mytour/designItinerary/ItineraryBlock';
 import BottomSheet from '../../components/mytour/designItinerary/BottomSheet';
 import AiItineraryDesignPopup from '../../components/mytour/designItinerary/AiItineraryDesignPopup';
+import MemberPopup from '../../components/mytour/designItinerary/MemberPopup'; // MemberPopup import 추가
 
 export default function DesignItinerary() {
     const router = useRouter();
@@ -21,6 +22,37 @@ export default function DesignItinerary() {
     
     // AI 일정 디자인 팝업 상태
     const [showAiPopup, setShowAiPopup] = useState(false);
+    
+    // 멤버 팝업 상태 추가
+    const [showMemberPopup, setShowMemberPopup] = useState(false);
+    
+    // 임시 멤버 데이터 (실제로는 props나 API에서 받아올 데이터)
+    const [members, setMembers] = useState([
+        {
+            id: 'current_user',
+            name: '여라미',
+            gender: '여',
+            age: 22,
+            isUser: true,
+            tags: ['즉흥적인', '계획가', '유머러스']
+        },
+        {
+            id: 'member1',
+            name: '지백',
+            gender: '여',
+            age: 24,
+            isUser: false,
+            tags: ['무계획여행', '맛집탐방']
+        },
+        {
+            id: 'member2',
+            name: '주리를틀어라',
+            gender: '여',
+            age: 21,
+            isUser: false,
+            tags: ['힐링', '탐험', '맛집탐방']
+        }
+    ]);
     
     console.log('전달받은 데이터들:');
     console.log('- 지역 데이터:', regions);
@@ -83,6 +115,25 @@ export default function DesignItinerary() {
         setShowActionButtons(true); // 버튼 세 개 보여주기
     };
 
+    // 멤버 아이콘 클릭 핸들러
+    const handleMemberPress = () => {
+        setShowMemberPopup(true);
+    };
+
+    const handleCloseMemberPopup = () => {
+        setShowMemberPopup(false);
+    };
+
+    // 멤버 삭제 핸들러
+    const handleMemberDelete = (memberToDelete) => {
+        setMembers(prev => prev.filter(member => member.id !== memberToDelete.id));
+    };
+
+    // 멤버 추가 핸들러
+    const handleMemberAdd = (newMember) => {
+        setMembers(prev => [...prev, newMember]);
+    };
+
     const dateInfo = formatDateRange();
 
     return (
@@ -94,6 +145,7 @@ export default function DesignItinerary() {
                 endDate={dateInfo.endDate}
                 periodType={period.type}
                 onBackPress={handleBackPress}
+                onMemberPress={handleMemberPress} // 멤버 아이콘 클릭 핸들러 전달
             />
             
             <DateSelectButtons
@@ -135,6 +187,16 @@ export default function DesignItinerary() {
                 nights={period.nights}
                 days={period.days}
             />
+
+            {/* MemberPopup을 최상위 레벨에서 렌더링 */}
+            {showMemberPopup && (
+                <MemberPopup 
+                    members={members}
+                    onClose={handleCloseMemberPopup}
+                    onMemberDelete={handleMemberDelete}
+                    onMemberAdd={handleMemberAdd}
+                />
+            )}
         </SafeAreaView>
     );
 }

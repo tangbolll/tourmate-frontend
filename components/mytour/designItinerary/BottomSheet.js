@@ -10,10 +10,11 @@ import {
     PanResponder,
     Dimensions,
     FlatList,
-    Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { touristAttractions, regionCategories } from './MockData';
+import FloatingActionButtons from './FloatingActionButtons';
+import AttractionCard from './AttractionCard';
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -33,7 +34,7 @@ const BottomSheet = ({
     const [sheetHeight, setSheetHeight] = useState(0); // 0: 최소, 1: 중간, 2: 전체
     
     const translateY = useRef(new Animated.Value(screenHeight * 0.85)).current;
-    const lastGesture = useRef(0);
+    const buttonOpacity = useRef(new Animated.Value(0)).current;
 
     // 바텀시트 높이 설정
     const heights = [
@@ -44,55 +45,55 @@ const BottomSheet = ({
 
     const panResponder = PanResponder.create({
         onMoveShouldSetPanResponder: (evt, gestureState) => {
-        return Math.abs(gestureState.dy) > 20;
+            return Math.abs(gestureState.dy) > 20;
         },
         onPanResponderMove: (evt, gestureState) => {
-        const newValue = heights[sheetHeight] + gestureState.dy;
-        if (newValue >= heights[2] && newValue <= heights[0]) {
-            translateY.setValue(newValue);
-        }
+            const newValue = heights[sheetHeight] + gestureState.dy;
+            if (newValue >= heights[2] && newValue <= heights[0]) {
+                translateY.setValue(newValue);
+            }
         },
         onPanResponderRelease: (evt, gestureState) => {
-        const { dy, vy } = gestureState;
-        const currentHeight = heights[sheetHeight];
-        
-        if (Math.abs(vy) > 0.5) {
-            // 빠른 스와이프
-            if (vy > 0) {
-            // 아래로 스와이프
-            const nextHeight = Math.min(sheetHeight + 1, 2);
-            animateToHeight(nextHeight);
+            const { dy, vy } = gestureState;
+            const currentHeight = heights[sheetHeight];
+            
+            if (Math.abs(vy) > 0.5) {
+                // 빠른 스와이프
+                if (vy > 0) {
+                    // 아래로 스와이프
+                    const nextHeight = Math.min(sheetHeight + 1, 2);
+                    animateToHeight(nextHeight);
+                } else {
+                    // 위로 스와이프
+                    const nextHeight = Math.max(sheetHeight - 1, 0);
+                    animateToHeight(nextHeight);
+                }
             } else {
-            // 위로 스와이프
-            const nextHeight = Math.max(sheetHeight - 1, 0);
-            animateToHeight(nextHeight);
+                // 느린 드래그 - 가장 가까운 높이로
+                const currentY = currentHeight + dy;
+                let targetHeight = 0;
+                let minDistance = Math.abs(currentY - heights[0]);
+                
+                heights.forEach((height, index) => {
+                    const distance = Math.abs(currentY - height);
+                    if (distance < minDistance) {
+                        minDistance = distance;
+                        targetHeight = index;
+                    }
+                });
+                
+                animateToHeight(targetHeight);
             }
-        } else {
-            // 느린 드래그 - 가장 가까운 높이로
-            const currentY = currentHeight + dy;
-            let targetHeight = 0;
-            let minDistance = Math.abs(currentY - heights[0]);
-            
-            heights.forEach((height, index) => {
-            const distance = Math.abs(currentY - height);
-            if (distance < minDistance) {
-                minDistance = distance;
-                targetHeight = index;
-            }
-            });
-            
-            animateToHeight(targetHeight);
-        }
         },
     });
 
     const animateToHeight = (heightIndex) => {
         setSheetHeight(heightIndex);
         Animated.spring(translateY, {
-        toValue: heights[heightIndex],
-        useNativeDriver: true,
-        tension: 100,
-        friction: 8,
+            toValue: heights[heightIndex],
+            useNativeDriver: true,
+            tension: 100,
+            friction: 8,
         }).start();
     };
 
@@ -100,6 +101,25 @@ const BottomSheet = ({
     useEffect(() => {
         animateToHeight(0);
     }, []);
+
+    // 액션 버튼 표시/숨김 애니메이션
+    useEffect(() => {
+        if (showActionButtons) {
+            // 버튼 표시와 동시에 바텀시트를 1단계로 낮춤
+            animateToHeight(0);
+            Animated.timing(buttonOpacity, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }).start();
+        } else {
+            Animated.timing(buttonOpacity, {
+                toValue: 0,
+                duration: 200,
+                useNativeDriver: true,
+            }).start();
+        }
+    }, [showActionButtons]);
 
     // 검색 필터링
     const getFilteredAttractions = () => {
@@ -109,8 +129,8 @@ const BottomSheet = ({
         if (!searchText) return attractions;
         
         return attractions.filter(attraction =>
-        attraction.name.toLowerCase().includes(searchText.toLowerCase()) ||
-        attraction.description.toLowerCase().includes(searchText.toLowerCase())
+            attraction.name.toLowerCase().includes(searchText.toLowerCase()) ||
+            attraction.description.toLowerCase().includes(searchText.toLowerCase())
         );
     };
 
@@ -121,8 +141,8 @@ const BottomSheet = ({
 
     const toggleSection = (attractionId) => {
         setExpandedSections(prev => ({
-        ...prev,
-        [attractionId]: !prev[attractionId]
+            ...prev,
+            [attractionId]: !prev[attractionId]
         }));
     };
 
@@ -138,181 +158,98 @@ const BottomSheet = ({
 
     const renderRegionButton = ({ item }) => (
         <TouchableOpacity
-        style={[
-            styles.regionButton,
-            selectedRegion === item.region && styles.selectedRegionButton
-        ]}
-        onPress={() => handleRegionSelect(item.region)}
+            style={[
+                styles.regionButton,
+                selectedRegion === item.region && styles.selectedRegionButton
+            ]}
+            onPress={() => handleRegionSelect(item.region)}
         >
-        <Text style={[
-            styles.regionButtonText,
-            selectedRegion === item.region && styles.selectedRegionButtonText
-        ]}>
-            {item.region}
-        </Text>
+            <Text style={[
+                styles.regionButtonText,
+                selectedRegion === item.region && styles.selectedRegionButtonText
+            ]}>
+                {item.region}
+            </Text>
         </TouchableOpacity>
     );
 
-    const renderAttraction = (attraction) => {
-        const isSelected = isAttractionSelected(attraction.id);
-        const isExpanded = expandedSections[attraction.id];
-
-        return (
-        <View key={attraction.id} style={styles.attractionContainer}>
-            {/* + 버튼을 상자 외부 왼쪽에 배치 */}
-            <TouchableOpacity
-                style={[
-                styles.addButton,
-                isSelected && styles.selectedAddButton
-                ]}
-                onPress={() => handleAttractionToggle(attraction)}
-            >
-                {isSelected ? (
-                <Ionicons name="checkmark" size={16} color="#666" />
-                ) : (
-                <Ionicons name="add" size={16} color="#fff" />
-                )}
-            </TouchableOpacity>
-
-            <View style={styles.attractionCard}>
-                <View style={styles.attractionHeader}>
-                    <View style={styles.attractionInfo}>
-                        <Text style={styles.attractionName}>{attraction.name}</Text>
-                    </View>
-                    
-                    <TouchableOpacity
-                        style={styles.expandButton}
-                        onPress={() => toggleSection(attraction.id)}
-                    >
-                        <Ionicons
-                        name={isExpanded ? "chevron-up" : "chevron-down"}
-                        size={20}
-                        color="#666"
-                        />
-                    </TouchableOpacity>
-                </View>
-                
-                {isExpanded && (
-                <View style={styles.attractionDetails}>
-                    <View style={styles.detailsContent}>
-                        <View style={styles.textContent}>
-                            <Text style={styles.attractionDescription}>{attraction.description}</Text>
-                            
-                            <View style={styles.infoRow}>
-                                <View style={styles.infoItem}>
-                                    <Ionicons name="location-outline" size={16} color="#666" />
-                                    <Text style={styles.infoText}>{attraction.location}</Text>
-                                </View>
-                            </View>
-                            
-                            <View style={styles.infoRow}>
-                                <View style={styles.infoItem}>
-                                    <Ionicons name="time-outline" size={16} color="#666" />
-                                    <Text style={styles.infoText}>{attraction.hours}</Text>
-                                </View>
-                            </View>
-                        </View>
-                        
-                        <View style={styles.imageContainer}>
-                            <Image 
-                                source={{ uri: attraction.image || "https://via.placeholder.com/120x80/E0E0E0/666666?text=이미지" }}
-                                style={styles.attractionImage}
-                                resizeMode="cover"
-                            />
-                        </View>
-                    </View>
-                </View>
-                )}
-            </View>
-        </View>
-        );
-    };
-
     return (
         <Animated.View
-        style={[
-            styles.container,
-            {
-            transform: [{ translateY }],
-            },
-        ]}
-        {...panResponder.panHandlers}
-        >
-        <View style={styles.handle} />
-        
-        {/* AI 일정 생성 완료 후 액션 버튼들 */}
-        {showActionButtons && (
-            <View style={styles.actionButtonsContainer}>
-                <TouchableOpacity
-                    style={[styles.actionButton, styles.confirmButton]}
-                    onPress={onConfirmItinerary}
-                >
-                    <Text style={styles.confirmButtonText}>일정 확정하기</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                    style={[styles.actionButton, styles.recommendButton]}
-                    onPress={onRecommendAgain}
-                >
-                    <Text style={styles.recommendButtonText}>다시 추천받기</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity
-                    style={styles.backButton}
-                    onPress={onGoBack}
-                >
-                    <Ionicons name="arrow-back" size={20} color="#333" />
-                </TouchableOpacity>
-            </View>
-        )}
-        
-        <View style={styles.header}>
-            <View style={styles.searchContainer}>
-            <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
-            <TextInput
-                style={styles.searchInput}
-                placeholder="관심있는 관광지를 검색해보세요!"
-                placeholderTextColor="#999"
-                value={searchText}
-                onChangeText={setSearchText}
-            />
-            </View>
-            
-            <TouchableOpacity
             style={[
-                styles.aiButton,
-                hasSelectedAttractions && styles.aiButtonActive
+                styles.container,
+                {
+                    transform: [{ translateY }],
+                },
             ]}
-            disabled={!hasSelectedAttractions}
-            onPress={onAiItineraryPress}
-            >
-            <Text style={[
-                styles.aiButtonText,
-                hasSelectedAttractions && styles.aiButtonTextActive
-            ]}>
-                AI 일정
-            </Text>
-            </TouchableOpacity>
-        </View>
-
-        <View style={styles.regionContainer}>
-            <FlatList
-            data={regions}
-            renderItem={renderRegionButton}
-            keyExtractor={(item) => item.key}
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            style={styles.regionList}
+            {...panResponder.panHandlers}
+        >
+            {/* 플로팅 액션 버튼들 */}
+            <FloatingActionButtons
+                showActionButtons={showActionButtons}
+                buttonOpacity={buttonOpacity}
+                onGoBack={onGoBack}
+                onConfirmItinerary={onConfirmItinerary}
+                onRecommendAgain={onRecommendAgain}
             />
-        </View>
-
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* 선택된 지역의 관광지 목록 렌더링 */}
-            {getFilteredAttractions().map(renderAttraction)}
             
-            {/* 추가 공간 확보 */}
-            <View style={{ height: 100 }} />
-        </ScrollView>
+            <View style={styles.handle} />
+            
+            <View style={styles.header}>
+                <View style={styles.searchContainer}>
+                    <Ionicons name="search" size={20} color="#666" style={styles.searchIcon} />
+                    <TextInput
+                        style={styles.searchInput}
+                        placeholder="관심있는 관광지를 검색해보세요!"
+                        placeholderTextColor="#999"
+                        value={searchText}
+                        onChangeText={setSearchText}
+                    />
+                </View>
+                
+                <TouchableOpacity
+                    style={[
+                        styles.aiButton,
+                        hasSelectedAttractions && styles.aiButtonActive
+                    ]}
+                    disabled={!hasSelectedAttractions}
+                    onPress={onAiItineraryPress}
+                >
+                    <Text style={[
+                        styles.aiButtonText,
+                        hasSelectedAttractions && styles.aiButtonTextActive
+                    ]}>
+                        AI 일정
+                    </Text>
+                </TouchableOpacity>
+            </View>
+
+            <View style={styles.regionContainer}>
+                <FlatList
+                    data={regions}
+                    renderItem={renderRegionButton}
+                    keyExtractor={(item) => item.key}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    style={styles.regionList}
+                />
+            </View>
+
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                {/* 선택된 지역의 관광지 목록 렌더링 */}
+                {getFilteredAttractions().map(attraction => (
+                    <AttractionCard
+                        key={attraction.id}
+                        attraction={attraction}
+                        isSelected={isAttractionSelected(attraction.id)}
+                        isExpanded={expandedSections[attraction.id]}
+                        onToggle={handleAttractionToggle}
+                        onExpand={toggleSection}
+                    />
+                ))}
+                
+                {/* 추가 공간 확보 */}
+                <View style={{ height: 100 }} />
+            </ScrollView>
         </Animated.View>
     );
 };
@@ -329,8 +266,8 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 20,
         shadowColor: '#000',
         shadowOffset: {
-        width: 0,
-        height: -2,
+            width: 0,
+            height: -2,
         },
         shadowOpacity: 0.25,
         shadowRadius: 3.84,
@@ -344,51 +281,6 @@ const styles = StyleSheet.create({
         alignSelf: 'center',
         marginTop: 8,
         marginBottom: 16,
-    },
-    // 액션 버튼들 스타일
-    actionButtonsContainer: {
-        flexDirection: 'row',
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-        gap: 8,
-        alignItems: 'center',
-    },
-    actionButton: {
-        paddingHorizontal: 20,
-        paddingVertical: 12,
-        borderRadius: 25,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    confirmButton: {
-        backgroundColor: '#000',
-        flex: 1,
-    },
-    confirmButtonText: {
-        color: '#fff',
-        fontSize: 14,
-        fontWeight: '600',
-    },
-    recommendButton: {
-        backgroundColor: '#fff',
-        borderWidth: 1,
-        borderColor: '#ddd',
-        flex: 1,
-    },
-    recommendButtonText: {
-        color: '#333',
-        fontSize: 14,
-        fontWeight: '500',
-    },
-    backButton: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: '#f8f8f8',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderWidth: 1,
-        borderColor: '#e0e0e0',
     },
     header: {
         flexDirection: 'row',
@@ -464,94 +356,6 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingHorizontal: 16,
-    },
-    attractionContainer: {
-        flexDirection: 'row',
-        marginBottom: 12,
-        alignItems: 'flex-start',
-    },
-    addButton: {
-        width: 32,
-        height: 32,
-        borderRadius: 16,
-        backgroundColor: '#000',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 12,
-        marginTop: 16,
-    },
-    selectedAddButton: {
-        backgroundColor: '#f0f0f0',
-        borderWidth: 1,
-        borderColor: '#ddd',
-    },
-    attractionCard: {
-        flex: 1,
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        shadowColor: '#000',
-        shadowOffset: {
-        width: 0,
-        height: 1,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 2,
-        elevation: 2,
-    },
-    attractionHeader: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 16,
-    },
-    attractionInfo: {
-        flex: 1,
-    },
-    attractionName: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-    },
-    expandButton: {
-        padding: 4,
-    },
-    attractionDetails: {
-        paddingHorizontal: 16,
-        paddingBottom: 16,
-    },
-    detailsContent: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    textContent: {
-        flex: 1,
-    },
-    attractionDescription: {
-        fontSize: 14,
-        color: '#666',
-        lineHeight: 20,
-        marginBottom: 12,
-    },
-    infoRow: {
-        marginBottom: 8,
-    },
-    infoItem: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 6,
-    },
-    infoText: {
-        fontSize: 14,
-        color: '#666',
-        flex: 1,
-    },
-    imageContainer: {
-        width: 120,
-        height: 80,
-    },
-    attractionImage: {
-        width: '100%',
-        height: '100%',
-        borderRadius: 8,
     },
 });
 

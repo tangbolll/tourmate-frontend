@@ -8,7 +8,8 @@ const DesignItineraryHeader = ({
     startDate, 
     endDate, 
     periodType, 
-    onBackPress 
+    onBackPress,
+    onMemberPress // 멤버 아이콘 클릭 핸들러 props로 받기
 }) => {
     const formatDate = (dateString) => {
         if (!dateString) return '';
@@ -41,9 +42,12 @@ const DesignItineraryHeader = ({
                 </View>
                 
                 <View style={styles.rightIcons}>
-                    <View style={styles.iconContainer}>
+                    <TouchableOpacity 
+                        style={styles.iconContainer}
+                        onPress={onMemberPress}
+                    >
                         <Ionicons name="people-outline" size={24} color="black" style={styles.peopleIcon} />
-                    </View>
+                    </TouchableOpacity>
                     <View style={styles.iconContainer}>
                         <Ionicons name="map-outline" size={24} color="black" />
                     </View>
