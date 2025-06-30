@@ -196,14 +196,14 @@ const BottomSheet = ({
                                 ]}>
                                     {dayInfo.day}일차
                                 </Text>
-                                {dayInfo.date && (
+                                {/* {dayInfo.date && (
                                     <Text style={[
                                         styles.dayButtonDate,
                                         selectedDay === dayInfo.day && styles.selectedDayButtonDate
                                     ]}>
                                         {dayInfo.date} ({dayInfo.dayOfWeek})
                                     </Text>
-                                )}
+                                )} */}
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     orderText: {
         fontSize: 12,
         fontWeight: 'bold',
-        color: '#000',
+        color: '#fff',
     },
     locationName: {
         fontSize: 14,

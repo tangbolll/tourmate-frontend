@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, ScrollView, StyleSheet } from 'react-native';
+import { View, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import DateSelectButton from './DateSelectButton';
 
@@ -9,9 +9,11 @@ const DateSelectButtons = ({
     endDate, 
     nights, 
     days, 
-    onDaySelect 
+    onDaySelect,
+    onGridToggle // 그리드 토글 콜백 추가
 }) => {
     const [selectedDay, setSelectedDay] = useState(null);
+    const [isGridMode, setIsGridMode] = useState(false); // 그리드 모드 상태
 
     // 날짜 문자열을 Date 객체로 변환
     const parseDate = (dateString) => {
@@ -82,14 +84,40 @@ const DateSelectButtons = ({
 
     const handleDayPress = (dayNumber) => {
         setSelectedDay(dayNumber);
+        setIsGridMode(false); // 날짜 선택 시 그리드 모드 해제
         onDaySelect && onDaySelect(dayNumber);
+    };
+
+    // 그리드 아이콘 클릭 핸들러
+    const handleGridPress = () => {
+        const newGridMode = !isGridMode;
+        setIsGridMode(newGridMode);
+        
+        if (newGridMode) {
+            setSelectedDay(null); // 그리드 모드 활성화 시 날짜 선택 해제
+            onDaySelect && onDaySelect(null);
+        }
+        
+        onGridToggle && onGridToggle(newGridMode);
+    };
+
+    // 그리드 아이콘 배경색 결정
+    const getIconBackgroundColor = () => {
+        return selectedDay ? '#9ca3af' : '#000';
     };
 
     return (
         <View style={styles.container}>
-            <View style={styles.iconContainer}>
+            <TouchableOpacity 
+                style={[
+                    styles.iconContainer, 
+                    { backgroundColor: getIconBackgroundColor() }
+                ]}
+                onPress={handleGridPress}
+                activeOpacity={0.7}
+            >
                 <Ionicons name="grid-outline" size={20} color="#fff" />
-            </View>
+            </TouchableOpacity>
             
             <ScrollView 
                 horizontal 
@@ -124,7 +152,6 @@ const styles = StyleSheet.create({
         width: 40,
         height: 40,
         borderRadius: 20,
-        backgroundColor: '#000',
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,

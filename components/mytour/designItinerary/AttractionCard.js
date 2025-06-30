@@ -20,9 +20,9 @@ const AttractionCard = ({
                 onPress={() => onToggle(attraction)}
             >
                 {isSelected ? (
-                    <Ionicons name="checkmark" size={16} color="#666" />
+                    <Ionicons name="checkmark-sharp" size={18} color="#666" />
                 ) : (
-                    <Ionicons name="add" size={16} color="#fff" />
+                    <Ionicons name="add-sharp" size={18} color="#fff" />
                 )}
             </TouchableOpacity>
 
@@ -117,7 +117,11 @@ const styles = StyleSheet.create({
     attractionHeader: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 16,
+        paddingVertical: 8,
+        paddingHorizontal: 16,
+        // 아래에 선추가
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
     },
     attractionInfo: {
         flex: 1,
@@ -137,12 +141,13 @@ const styles = StyleSheet.create({
     detailsContent: {
         flexDirection: 'row',
         gap: 12,
+        paddingTop: 12,
     },
     textContent: {
         flex: 1,
     },
     attractionDescription: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#666',
         lineHeight: 20,
         marginBottom: 12,

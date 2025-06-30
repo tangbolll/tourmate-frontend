@@ -86,10 +86,10 @@ const styles = StyleSheet.create({
     },
     header: {
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingVertical: 8,
         backgroundColor: '#fff',
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        // borderBottomWidth: 1,
+        // borderBottomColor: '#f0f0f0',
     },
     titleContainer: {
         marginLeft: 8,

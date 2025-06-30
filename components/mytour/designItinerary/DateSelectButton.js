@@ -37,8 +37,8 @@ const DateSelectButton = ({
 const styles = StyleSheet.create({
     button: {
         backgroundColor: '#fff',
-        paddingHorizontal: 16,
-        paddingVertical: 8,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
         borderRadius: 10,
         borderWidth: 1,
         borderColor: '#d1d5db',
@@ -52,10 +52,10 @@ const styles = StyleSheet.create({
         borderWidth: 0,
     },
     dayText: {
-        fontSize: 14,
+        fontSize: 16,
         fontWeight: '600',
         color: '#374151',
-        marginBottom: 2,
+        marginBottom: 1,
     },
     selectedDayText: {
         color: '#fff',
