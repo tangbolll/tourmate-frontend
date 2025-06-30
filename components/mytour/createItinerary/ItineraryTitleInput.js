@@ -1,18 +1,15 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet } from 'react-native';
 
-const ItineraryTitleInput = ({ selectedRegion, placeholder }) => {
-    const cities = selectedRegion.reduce((acc, region) => {
-        return acc.concat(region.regions || []);
-    }, []);
-
+const ItineraryTitleInput = ({ placeholder, onTitleChange }) => {
     return (
-        <View style={styles.container}>
+        <View style={styles.inputSection}>
             <Text style={styles.heading}>여행 제목</Text>
             <TextInput
                 placeholder={placeholder}
                 style={styles.input}
                 placeholderTextColor="#9ca3af"
+                onChangeText={onTitleChange}
             />
         </View>
     );
@@ -21,7 +18,7 @@ const ItineraryTitleInput = ({ selectedRegion, placeholder }) => {
 export default ItineraryTitleInput;
 
 const styles = StyleSheet.create({
-    container: {
+    inputSection: {
         padding: 12,
         marginBottom: 12,
     },
@@ -32,6 +29,7 @@ const styles = StyleSheet.create({
     },
     input: {
         width: '100%',
+        height: 44,
         padding: 12,
         paddingHorizontal: 16,
         borderWidth: 1,

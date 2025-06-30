@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,12 +9,22 @@ import TourPeriod from '../../components/mytour/createItinerary/TourPeriod';
 
 export default function CreateItinerary() {
     const router = useRouter();
-    const { selectedRegions } = useLocalSearchParams();
+    const { selectedRegions, currentTitle, currentPeriod } = useLocalSearchParams();
+    
+    // 상태 관리 - 수정 모드일 때 기존 데이터로 초기화
+    const [itineraryTitle, setItineraryTitle] = useState(currentTitle || '');
+    const [periodData, setPeriodData] = useState(
+        currentPeriod ? JSON.parse(currentPeriod) : {
+            type: 'date',
+            startDate: '',
+            endDate: '',
+            nights: '',
+            days: ''
+        }
+    );
     
     // JSON 문자열을 다시 객체로 변환
     const regions = selectedRegions ? JSON.parse(selectedRegions) : [];
-    
-    console.log('전달받은 지역 데이터:', regions);
 
     const handleBack = () => {
         router.back();
@@ -28,8 +38,28 @@ export default function CreateItinerary() {
         return `${firstCity} 외 ${remainingCount}개 도시 여행`;
     };
 
+    const handleTitleChange = (title) => {
+        setItineraryTitle(title);
+    };
+
+    const handlePeriodChange = (data) => {
+        setPeriodData(data);
+    };
+
+    // handleCompletePress 함수 정의
     const handleCompletePress = () => {
         console.log('완료 버튼 클릭');
+        console.log('여행 제목:', itineraryTitle || getTitle());
+        console.log('기간 데이터:', periodData);
+        
+        router.push({
+            pathname: './designItinerary',
+            params: {
+                selectedRegions: JSON.stringify(regions),
+                itineraryTitle: itineraryTitle || getTitle(),
+                periodData: JSON.stringify(periodData)
+            }
+        });
     };
 
     return (
@@ -48,9 +78,16 @@ export default function CreateItinerary() {
 
             {/* 메인 컨텐츠 영역 */}
             <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-                <ItineraryTitleInput selectedRegion={regions} placeholder={getTitle()} />
-                <TourPlace selectedRegion={regions} />
-                <TourPeriod />
+                <ItineraryTitleInput 
+                    placeholder={getTitle()} 
+                    onTitleChange={handleTitleChange}
+                />
+                <TourPlace 
+                    selectedRegion={regions} 
+                />
+                <TourPeriod 
+                    onPeriodChange={handlePeriodChange}
+                />
             </ScrollView>
 
             {/* 고정 푸터 */}
@@ -94,7 +131,7 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        backgroundColor: '#f9fafb',
+        backgroundColor: '#fff',
     },
     contentContainer: {
         padding: 16,

@@ -2,30 +2,76 @@ import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { FontAwesome6 } from '@expo/vector-icons';
 
-const TourPeriod = () => {
-    const [selectedType, setSelectedType] = useState('date'); // 'date' or 'duration'
+const TourPeriod = ({ onPeriodChange }) => {
+    const [selectedType, setSelectedType] = useState('date');
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    const [nights, setNights] = useState('');
+    const [days, setDays] = useState('');
 
     const handleTypeChange = (type) => {
         setSelectedType(type);
+        // 타입이 변경될 때마다 부모 컴포넌트에 알림
+        onPeriodChange({
+            type,
+            startDate: type === 'date' ? startDate : '',
+            endDate: type === 'date' ? endDate : '',
+            nights: type === 'duration' ? nights : '',
+            days: type === 'duration' ? days : ''
+        });
+    };
+
+    const handleDateChange = (field, value) => {
+        const newData = {
+            type: selectedType,
+            startDate: field === 'start' ? value : startDate,
+            endDate: field === 'end' ? value : endDate,
+            nights: '',
+            days: ''
+        };
+        
+        if (field === 'start') setStartDate(value);
+        if (field === 'end') setEndDate(value);
+        
+        onPeriodChange(newData);
+    };
+
+    const handleDurationChange = (field, value) => {
+        const newData = {
+            type: selectedType,
+            startDate: '',
+            endDate: '',
+            nights: field === 'nights' ? value : nights,
+            days: field === 'days' ? value : days
+        };
+        
+        if (field === 'nights') setNights(value);
+        if (field === 'days') setDays(value);
+        
+        onPeriodChange(newData);
     };
 
     const renderDateInputs = () => (
         <View style={styles.dateInputsContainer}>
             <View style={styles.dateInputWrapper}>
-                <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
+                <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
                 <TextInput
                     placeholder="여행시작일"
                     style={styles.dateInput}
                     placeholderTextColor="#9ca3af"
+                    value={startDate}
+                    onChangeText={(value) => handleDateChange('start', value)}
                 />
             </View>
             <Text style={styles.separator}>-</Text>
             <View style={styles.dateInputWrapper}>
-                <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
+                <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
                 <TextInput
                     placeholder="여행종료일"
                     style={styles.dateInput}
                     placeholderTextColor="#9ca3af"
+                    value={endDate}
+                    onChangeText={(value) => handleDateChange('end', value)}
                 />
             </View>
         </View>
@@ -37,19 +83,23 @@ const TourPeriod = () => {
                 keyboardType="numeric"
                 style={styles.durationInput}
                 placeholderTextColor="#9ca3af"
+                value={nights}
+                onChangeText={(value) => handleDurationChange('nights', value)}
             />
             <Text style={styles.durationText}>박</Text>
             <TextInput
                 keyboardType="numeric"
                 style={styles.durationInput}
                 placeholderTextColor="#9ca3af"
+                value={days}
+                onChangeText={(value) => handleDurationChange('days', value)}
             />
             <Text style={styles.durationText}>일</Text>
         </View>
     );
 
     return (
-        <View style={styles.container}>
+        <View style={styles.inputSection}>
             <Text style={styles.heading}>여행기간</Text>
             
             <View style={styles.typeSelectionContainer}>
@@ -76,7 +126,7 @@ const TourPeriod = () => {
 export default TourPeriod;
 
 const styles = StyleSheet.create({
-    container: {
+    inputSection: {
         padding: 12,
         marginBottom: 12,
     },
@@ -137,6 +187,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         backgroundColor: 'white',
         flex: 1,
+        height: 44,
     },
     icon: {
         marginRight: 8,
@@ -157,7 +208,7 @@ const styles = StyleSheet.create({
     },
     durationInput: {
         width: 80,
-        height: 40,
+        height: 44,
         padding: 12,
         paddingHorizontal: 16,
         borderWidth: 1,
