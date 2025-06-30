@@ -335,9 +335,9 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     addMemberSection: {
-        borderTopWidth: 1,
-        borderTopColor: '#e0e0e0',
-        paddingTop: 16,
+        // borderTopWidth: 1,
+        // borderTopColor: '#e0e0e0',
+        paddingTop: 12,
         paddingHorizontal: 16,
     },
     searchRow: {

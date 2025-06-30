@@ -273,7 +273,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 16,
         width: screenWidth - 32,
-        height: screenHeight * 0.7, // 명시적으로 높이 설정
+        height: screenHeight * 0.6, // 명시적으로 높이 설정
         overflow: 'hidden',
     },
     header: {
@@ -282,8 +282,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 24,
         paddingVertical: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        // borderBottomWidth: 1,
+        // borderBottomColor: '#f0f0f0',
     },
     title: {
         fontSize: 18,
@@ -301,7 +301,7 @@ const styles = StyleSheet.create({
         paddingBottom: 20, 
     },
     section: {
-        paddingVertical: 20,
+        paddingVertical: 12,
         paddingHorizontal: 12,
     },
     sectionTitle: {
@@ -326,7 +326,7 @@ const styles = StyleSheet.create({
     dateOption: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 12,
+        paddingVertical: 8,
         paddingHorizontal: 4,
     },
     selectedDateOption: {
@@ -361,7 +361,7 @@ const styles = StyleSheet.create({
     preferenceOption: {
         flexDirection: 'row',
         alignItems: 'center',
-        paddingVertical: 8,
+        paddingVertical: 4,
         paddingHorizontal: 4,
     },
     selectedPreferenceOption: {
@@ -397,8 +397,8 @@ const styles = StyleSheet.create({
     },
     footer: {
         padding: 20,
-        borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
+        // borderTopWidth: 1,
+        // borderTopColor: '#f0f0f0',
     },
     confirmButton: {
         backgroundColor: '#333',

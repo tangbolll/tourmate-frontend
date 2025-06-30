@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 
 const defaultImage = require('../../../assets/defaultBackground.png');
 const { width } = Dimensions.get('window');
@@ -65,12 +66,26 @@ export default function MyTourFeed({
                     style={styles.image}
                     resizeMode="cover"
                 />
+                {/* 그라데이션 오버레이 */}
+                <LinearGradient
+                    colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0)']}
+                    style={styles.gradientOverlay}
+                />
             </View>
 
             {/* 컨텐츠 영역 */}
             <View style={styles.contentContainer}>
-                {/* 날짜 */}
+                {/* 날짜 + 북마크 한 줄 */}
+                <View style={styles.dateRow}>
                 <Text style={styles.date}>{getDateRange()}</Text>
+                <TouchableOpacity onPress={handleBookmarkPress}>
+                    <MaterialIcons 
+                    name={isBookmarked ? "star" : "star-border"} 
+                    size={24} 
+                    color={isBookmarked ? "#FFD700" : "#ccc"} 
+                    />
+                </TouchableOpacity>
+                </View>
 
                 {/* 제목 */}
                 <Text 
@@ -93,7 +108,7 @@ export default function MyTourFeed({
                     <View style={styles.infoRow}>
                         <Ionicons 
                             name="person" 
-                            size={15} 
+                            size={16} 
                             color="black" 
                             style={[styles.icon]} 
                         />
@@ -101,18 +116,6 @@ export default function MyTourFeed({
                     </View>
                 </View>
             </View>
-
-            {/* 북마크 버튼 - 우하단으로 이동 */}
-            <TouchableOpacity 
-                onPress={handleBookmarkPress} 
-                style={styles.bookmarkButton}
-            >
-                <MaterialIcons 
-                    name={isBookmarked ? "star" : "star-border"} 
-                    size={24} 
-                    color={isBookmarked ? "#FFD700" : "#ccc"} 
-                />
-            </TouchableOpacity>
         </TouchableOpacity>
     );
 }
@@ -141,19 +144,34 @@ const styles = StyleSheet.create({
     imageContainer: {
         width: '100%',
         height: 120,
+        position: 'relative',
     },
     image: {
         width: '100%',
         height: '100%',
     },
+    gradientOverlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+    },
     contentContainer: {
-        padding: 12,
-        paddingBottom: 0,
+        paddingHorizontal: 12,
+        paddingTop: 8,
+    },
+    dateRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginTop: 0,
+        marginBottom: 4,
     },
     date: {
         fontSize: 12,
         color: '#666',
-        marginBottom: 4,
+        // marginBottom: 4,
     },
     title: {
         fontSize: 14,
@@ -177,7 +195,7 @@ const styles = StyleSheet.create({
         flex: 1,
     },
     icon: {
-        marginRight: 4,
+        // marginRight: 4,
     },
     bookmarkButton: {
         position: 'absolute',

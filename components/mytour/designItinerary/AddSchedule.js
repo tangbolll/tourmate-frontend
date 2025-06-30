@@ -117,19 +117,14 @@ const AddSchedule = ({
     const renderCategoryButton = (categoryItem) => (
         <TouchableOpacity
             key={categoryItem.key}
-            style={[
-                styles.categoryButton,
-                category === categoryItem.key && {
-                    backgroundColor: categoryItem.color,
-                    borderColor: categoryItem.color
-                }
-            ]}
+            style={styles.categoryButton}
             onPress={() => setCategory(categoryItem.key)}
         >
             <View style={[
                 styles.radioButton,
                 category === categoryItem.key && {
-                    backgroundColor: categoryItem.color
+                    backgroundColor: categoryItem.color,
+                    borderColor: categoryItem.color
                 }
             ]}>
                 {category === categoryItem.key && (
@@ -259,7 +254,7 @@ const AddSchedule = ({
                                     <Feather name="file-text" size={16} color="#666" />
                                 </View>
                                 <TextInput
-                                    style={styles.input}
+                                    style={styles.memoInput}
                                     value={memo}
                                     onChangeText={setMemo}
                                     placeholder="메모 추가"
@@ -314,7 +309,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 16,
         width: '100%',
-        maxHeight: '60%',
+        maxHeight: '55%',
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -330,8 +325,8 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 24,
         paddingVertical: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
+        // borderBottomWidth: 1,
+        // borderBottomColor: '#f0f0f0',
     },
     title: {
         fontSize: 18,
@@ -347,11 +342,11 @@ const styles = StyleSheet.create({
         paddingTop: 20,
     },
     section: {
-        marginBottom: 20,
+        marginBottom: 12,
     },
     titleInput: {
         fontSize: 16,
-        height: 48, // 높이 고정
+        height: 36, // 높이 고정
         paddingVertical: 12,
         paddingHorizontal: 16,
         borderWidth: 1,
@@ -369,7 +364,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 8,
         paddingHorizontal: 12,
-        borderRadius: 20,
         minWidth: 60,
     },
     radioButton: {
@@ -399,7 +393,7 @@ const styles = StyleSheet.create({
         fontWeight: '600',
     },
     dateTimeSection: {
-        marginBottom: 20,
+        marginBottom: 12,
     },
     dateTimeRow: {
         flexDirection: 'row',
@@ -466,13 +460,24 @@ const styles = StyleSheet.create({
         borderRadius: 6,
         backgroundColor: '#fff',
     },
+    memoInput: {
+        flex: 1,
+        fontSize: 14,
+        height: 32,
+        paddingVertical: 8,
+        paddingHorizontal: 12,
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        borderRadius: 6,
+        backgroundColor: '#fff',
+    },
     buttonContainer: {
         flexDirection: 'row',
         paddingHorizontal: 24,
         paddingVertical: 20,
         gap: 12,
-        borderTopWidth: 1,
-        borderTopColor: '#f0f0f0',
+        // borderTopWidth: 1,
+        // borderTopColor: '#f0f0f0',
     },
     deleteButton: {
         flex: 1,
