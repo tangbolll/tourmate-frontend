@@ -2,10 +2,12 @@ import React from 'react';
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { FontAwesome6 } from '@expo/vector-icons';
-import { Text, View } from 'react-native';
+import { Text, View, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function AppLayout() {
     return (
+        <GestureHandlerRootView style={styles.container}>
         <Tabs
             screenOptions={{
                 tabBarShowLabel: true,
@@ -120,5 +122,12 @@ export default function AppLayout() {
                 }}
             />
         </Tabs>
+        </GestureHandlerRootView>
     );
 }
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+});

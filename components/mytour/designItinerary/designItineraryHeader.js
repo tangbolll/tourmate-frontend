@@ -1,6 +1,8 @@
+
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 
 const DesignItineraryHeader = ({ 
     title, 
@@ -9,8 +11,14 @@ const DesignItineraryHeader = ({
     endDate, 
     periodType, 
     onBackPress,
-    onMemberPress // 멤버 아이콘 클릭 핸들러 props로 받기
+    onMemberPress, // 멤버 아이콘 클릭 핸들러 props로 받기
+    // 지도 페이지로 전달할 데이터들
+    selectedRegions,
+    itineraryTitle,
+    periodData
 }) => {
+    const router = useRouter();
+
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -25,6 +33,24 @@ const DesignItineraryHeader = ({
             return `${formatDate(startDate)} - ${formatDate(endDate)}`;
         }
         return dateRange || '';
+    };
+
+    // 지도 아이콘 클릭 핸들러
+    const handleMapPress = () => {
+        router.push({
+            pathname: '/mytour/designItinerary/itineraryMap',
+            params: {
+                selectedRegions: selectedRegions ? JSON.stringify(selectedRegions) : undefined,
+                itineraryTitle: itineraryTitle || title,
+                periodData: periodData ? JSON.stringify(periodData) : JSON.stringify({
+                    type: periodType,
+                    startDate: startDate,
+                    endDate: endDate,
+                    nights: periodData?.nights,
+                    days: periodData?.days
+                })
+            }
+        });
     };
 
     return (
@@ -48,9 +74,12 @@ const DesignItineraryHeader = ({
                     >
                         <Ionicons name="people-outline" size={24} color="black" style={styles.peopleIcon} />
                     </TouchableOpacity>
-                    <View style={styles.iconContainer}>
+                    <TouchableOpacity 
+                        style={styles.iconContainer}
+                        onPress={handleMapPress}
+                    >
                         <Ionicons name="map-outline" size={24} color="black" />
-                    </View>
+                    </TouchableOpacity>
                 </View>
             </View>
         </View>

@@ -1,13 +1,12 @@
 import React, { useState } from 'react';
 import { View, StyleSheet, SafeAreaView } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import DesignItineraryHeader from '../../components/mytour/designItinerary/designItineraryHeader';
-import DateSelectButtons from '../../components/mytour/designItinerary/DateSelectButtons';
-import ItineraryBlock from '../../components/mytour/designItinerary/ItineraryBlock';
-import BottomSheet from '../../components/mytour/designItinerary/BottomSheet';
-import AiItineraryDesignPopup from '../../components/mytour/designItinerary/AiItineraryDesignPopup';
-import MemberPopup from '../../components/mytour/designItinerary/MemberPopup'; // MemberPopup import 추가
-import ItineraryWithSchedule from '../../components/mytour/designItinerary/ItineraryWithSchedule';  
+import DesignItineraryHeader from '../../../components/mytour/designItinerary/designItineraryHeader';
+import DateSelectButtons from '../../../components/mytour/designItinerary/DateSelectButtons';
+import BottomSheet from '../../../components/mytour/designItinerary/BottomSheet';
+import AiItineraryDesignPopup from '../../../components/mytour/designItinerary/AiItineraryDesignPopup';
+import MemberPopup from '../../../components/mytour/designItinerary/MemberPopup'; // MemberPopup import 추가
+import ItineraryWithSchedule from '../../../components/mytour/designItinerary/ItineraryWithSchedule';  
 
 export default function DesignItinerary() {
     const router = useRouter();
