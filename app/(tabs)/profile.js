@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function ProfileScreen() {
+export default function ProfileHome() {
     return (
         <View style={styles.container}>
         <Text style={styles.text}>프로필 페이지입니다</Text>

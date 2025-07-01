@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'; // useState, useEffect 추가
 import { View, Text, StyleSheet } from 'react-native';
 
-export default function HomeScreen() {
+export default function Home() {
     const [message, setMessage] = useState('로딩 중...'); // 상태 추가
 
     useEffect(() => {
