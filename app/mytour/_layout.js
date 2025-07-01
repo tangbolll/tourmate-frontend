@@ -1,6 +1,6 @@
 import { Stack } from 'expo-router';
 
-export default function AccompanyLayout() {
+export default function MytourLayout() {
     return (
         <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="index" />
