@@ -72,8 +72,7 @@ const styles = StyleSheet.create({
     tagsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        marginBottom: 14,
-        marginTop: 6,
+        marginBottom: 8,
     },
     tag: {
         backgroundColor: '#f1f1f1',
