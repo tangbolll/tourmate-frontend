@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+
 import { 
     View, 
     Text, 
@@ -20,7 +21,7 @@ import { useRouter } from 'expo-router';
         if (Platform.OS === 'android') {
         return 'http://10.0.2.2:8080';
         } else {
-        return 'http://192.168.35.42:8080'; // 본인 IP로 변경
+        return 'http://192.168.35.34:8080'; // 본인 IP로 변경
         }
     } else {
         return 'https://your-production-api.com';
@@ -94,11 +95,12 @@ const AccompanyCreation = () => {
         const today = new Date();
         return today.toISOString().split('T')[0];
     };
-    
+
+
     // Step 1 유효성 검사
-    const isStep1Valid = 
-        title && 
-        title.length >= 10 && 
+    const isStep1Valid =
+        title &&
+        title.length >= 10 &&
         location && 
         description && 
         description.length >= 20 && 
@@ -163,11 +165,10 @@ const AccompanyCreation = () => {
         // X 버튼 클릭 시 나가기 확인 후 AccompanyList로 이동
         showExitConfirmation(() => router.push('/accompany'));
     };
-    
 
-    // 완전한 handleSubmit 함수 - 기존 함수를 이걸로 완전히 교체하세요!
 
-const handleSubmit = async () => {
+
+    const handleSubmit = async () => {
     console.log('🚀 동행 생성 시작');
     setIsLoading(true);
 
@@ -176,13 +177,13 @@ const handleSubmit = async () => {
             userId: 2, // TODO: 나중에 로그인 사용자 ID로 변경
             title: title.trim(),
             location: location.trim(),
-            meetingPoint: meetLocation.trim(), // 수정됨
-            description: description.trim(),   // 수정됨
-            maxParticipants: parseInt(maxPeople), // 수정됨
-            travelStartDate: formatDateForBackend(dateRange.startDay), // 수정됨
-            travelEndDate: formatDateForBackend(dateRange.endDay),     // 수정됨
-            recruitmentStartDate: formatDateForBackend(recruitDateRange.startDate), // 수정됨
-            recruitmentEndDate: formatDateForBackend(recruitDateRange.endDate),     // 수정됨
+            meetingPoint: meetLocation.trim(), 
+            description: description.trim(),  
+            maxParticipants: parseInt(maxPeople), 
+            travelStartDate: formatDateForBackend(dateRange.startDay),
+            travelEndDate: formatDateForBackend(dateRange.endDay),    
+            recruitmentStartDate: formatDateForBackend(recruitDateRange.startDate), 
+            recruitmentEndDate: formatDateForBackend(recruitDateRange.endDate),    
             imageUrl: images || [],
             gender: selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'),
             ageRange: selectedAges.includes('나이무관') ? ['ALL'] : selectedAges,

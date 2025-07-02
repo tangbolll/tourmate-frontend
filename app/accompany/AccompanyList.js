@@ -20,7 +20,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://172.30.1.94:8080'; // 본인 IP로 변경
+      return 'http://192.168.35.34:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -40,7 +40,6 @@ const cardData = [
 ];
 
 const AccompanyList = () => {
-    console.log('=== 컴포넌트 시작 ===');
   const [showFilterPopup, setShowFilterPopup] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [selectedTab, setSelectedTab] = useState('feed');
@@ -102,11 +101,6 @@ const fetchAccompanyData = async () => {
     setLoading(true);
     const url = `${API_URL}/api/accompany/home?userId=${currentUserId}`;
     
-    console.log('🌐 API 호출 시작:', url);
-    console.log('🔗 API_URL:', API_URL);
-    console.log('📱 Platform:', Platform.OS);
-    console.log('🚀 __DEV__:', __DEV__);
-    
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -116,8 +110,7 @@ const fetchAccompanyData = async () => {
       timeout: 10000, // 10초 타임아웃
     });
     
-    console.log('📡 응답 상태:', response.status);
-    console.log('📡 응답 헤더:', response.headers);
+
     
     if (response.ok) {
       const data = await response.json();
@@ -130,8 +123,7 @@ const fetchAccompanyData = async () => {
       setMyAccompanyList(transformedMyAccompany);
       setFeedList(transformedFeed);
       
-      console.log('변환된 내 동행:', transformedMyAccompany.length, '개');
-      console.log('변환된 피드:', transformedFeed.length, '개');
+
     } else {
       const errorText = await response.text();
       console.error('❌ API 호출 실패');
@@ -303,9 +295,7 @@ const onRefresh = async () => {
 
   // 피드 아이템 렌더링
 const renderFeedItems = () => {
-    console.log('renderFeedItems 호출됨'); // 이 줄 추가
-    console.log('loading:', loading); // 이 줄 추가
-    console.log('filteredPosts.length:', filteredPosts.length); // 이 줄 추가
+
     if (loading) {
       return (
         <View style={styles.emptyState}>
@@ -327,10 +317,6 @@ const renderFeedItems = () => {
     }
     
     return filteredPosts.map((post) => {
-      console.log('post.id:', post.id, 'typeof:', typeof post.id);
-      console.log('likedPosts:', likedPosts);
-      console.log('likedPosts[post.id]:', likedPosts[post.id]);
-      console.log(`Post ${post.id} liked:`, !!likedPosts[post.id]);
       
       return (
         <AccompanyFeed
@@ -354,7 +340,6 @@ const renderFeedItems = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-       {console.log('🔥 SafeAreaView 렌더링')}
       <ScrollView
         refreshControl={
           <RefreshControl
@@ -431,17 +416,17 @@ const renderFeedItems = () => {
           selectedTab={selectedTab} 
           onSelectTab={(tab) => {
             setSelectedTab(tab);
-            console.log(`탭 전환: ${tab} - 내 동행: ${myAccompanyList.length}개, 피드: ${feedList.length}개`);
+
           }} 
         />
-       {console.log('🔥 renderFeedItems 호출 직전')}
+
         {renderFeedItems()}
       </ScrollView>
 
       <TouchableOpacity style={styles.floatingButton}>
         <CreateAccompanyButton 
           onPress={() => {
-            console.log('동행 생성 버튼 클릭');
+
             router.push('/accompany/AccompanyCreation');
           }}
         />
