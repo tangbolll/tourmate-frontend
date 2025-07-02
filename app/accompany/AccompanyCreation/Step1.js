@@ -135,7 +135,7 @@ const Step1 = ({
             <Text style={styles.label}>여행장소</Text>
             <View style={styles.autocompleteContainer}>
                 <View style={styles.inputWrapper}>
-                    <MaterialIcons name="location-pin" size={16} color="#888" style={styles.icon} />
+                    <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
                     <TextInput
                         style={styles.inputWithIcon}
                         placeholder="여행장소를 입력해주세요."
