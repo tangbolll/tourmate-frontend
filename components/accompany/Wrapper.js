@@ -12,7 +12,7 @@ function Wrapper({ children }) {
 const styles = StyleSheet.create({
     container: {
         borderWidth: 1,
-        borderColor: 'rgba(0, 0, 0, 0.32)',
+        borderColor: '#ccc',
         padding: 8,
         paddingLeft: 12,
         borderRadius: 8,

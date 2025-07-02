@@ -113,35 +113,38 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
                     </View>
                 </View>
 
-                {/* Gender */}
-                <View style={styles.sectionContainer}>
-                    <Text style={styles.sectionTitle}>성별</Text>
-                    <View style={styles.optionsRow}>
-                    {['여자만', '남자만', '남녀무관'].map((item) => (
-                        <TouchableOpacity
-                        key={item}
-                        style={[styles.option, gender === item && styles.selectedOption]}
-                        onPress={() => toggleGender(item)}
-                        activeOpacity={0.7}
-                        >
-                        <Text style={[styles.optionText, gender === item && styles.selectedOptionText]}>{item}</Text>
-                        </TouchableOpacity>
-                    ))}
+                <View>
+                    <Text style={styles.sectionTitle}>동행 조건</Text>
+                    {/* Gender */}
+                    <View style={styles.conditionRow}>
+                        <Text style={styles.conditionLabelInline}>성별</Text>
+                        <View style={styles.chipContainer}>
+                        {['여자만', '남자만', '남녀무관'].map((item) => (
+                            <TouchableOpacity
+                            key={item}
+                            style={[styles.chip, gender === item && styles.chipSelected]}
+                            onPress={() => toggleGender(item)}
+                            activeOpacity={0.7}
+                            >
+                            <Text style={[styles.chipText, gender === item && styles.chipTextSelected]}>{item}</Text>
+                            </TouchableOpacity>
+                        ))}
+                        </View>
                     </View>
                 </View>
 
                 {/* Age */}
-                <View style={styles.sectionContainer}>
-                    <Text style={styles.sectionTitle}>연령</Text>
-                    <View style={styles.optionsRow}>
+                <View style={styles.conditionRow}>
+                    <Text style={styles.conditionLabelInline}>연령</Text>
+                    <View style={styles.chipContainer}>
                     {['20대', '30대', '40대', '50대 이상', '누구나'].map((item) => (
                         <TouchableOpacity
                         key={item}
-                        style={[styles.option, age === item && styles.selectedOption]}
+                        style={[styles.chip, age === item && styles.chipSelected]}
                         onPress={() => toggleAge(item)}
                         activeOpacity={0.7}
                         >
-                        <Text style={[styles.optionText, age === item && styles.selectedOptionText]}>{item}</Text>
+                        <Text style={[styles.chipText, age === item && styles.chipTextSelected]}>{item}</Text>
                         </TouchableOpacity>
                     ))}
                     </View>
@@ -154,11 +157,11 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
                     {categoryList.map((category) => (
                         <TouchableOpacity
                         key={category}
-                        style={[styles.categoryOption, categories.includes(category) && styles.selectedOption]}
+                        style={[styles.chip, categories.includes(category) && styles.chipSelected]}
                         onPress={() => toggleCategory(category)}
                         activeOpacity={0.7}
                         >
-                        <Text style={[styles.optionText, categories.includes(category) && styles.selectedOptionText]}>{category}</Text>
+                        <Text style={[styles.chipText, categories.includes(category) && styles.chipTextSelected]}>{category}</Text>
                         </TouchableOpacity>
                     ))}
                     </View>
@@ -217,14 +220,16 @@ const styles = StyleSheet.create({
     sectionTitle: {
         fontSize: 16,
         fontWeight: 'bold',
-        marginBottom: 10,
+        marginLeft: 5,
+        marginTop: 5,
+        marginBottom: 8
     },
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
         borderWidth: 1,
-        borderColor: '#adb5bd',
+        borderColor: '#ccc',
         borderRadius: 8,
         paddingHorizontal: 12,
         height: 45,
@@ -240,42 +245,46 @@ const styles = StyleSheet.create({
     placeholder: {
         color: '#777',
     },
-    optionsRow: {
+    conditionRow: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+        marginBottom: 8,
+    },
+    conditionLabelInline: {
+        fontSize: 15,
+        color: '#555',
+        width: 50,
+        marginTop: 6,
+        marginLeft: 10
+    },
+    chipContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
     },
-    option: {
-        paddingHorizontal: 12,
+    chip: {
+        height: 30,
         paddingVertical: 6,
+        paddingHorizontal: 10,
+        backgroundColor: '#fff',
         borderRadius: 20,
+        borderColor: '#ccc',
         borderWidth: 1,
-        borderColor: '#adb5bd',
         marginRight: 8,
-        marginBottom: 8,
+        marginBottom: 7,
     },
-    selectedOption: {
-        backgroundColor: 'black',
-        borderColor: 'black',
+    chipSelected: {
+        backgroundColor: '#222',
+        borderColor: 'black'
     },
-    optionText: {
-        color: '#333',
+    chipText: {
+        color: '#555',
     },
-    selectedOptionText: {
-        color: 'white',
+    chipTextSelected: {
+        color: '#FFF',
     },
     categoriesContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-    },
-    categoryOption: {
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderWidth: 1,
-        borderColor: '#adb5bd',
-        borderRadius: 20,
-        backgroundColor: '#f0f0f0',
-        marginRight: 8,
-        marginBottom: 8,
     },
     applyButton: {
         backgroundColor: 'black',

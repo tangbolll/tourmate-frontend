@@ -48,7 +48,7 @@ const Step1 = ({
 
             <Text style={styles.label}>여행장소</Text>
             <View style={styles.inputWrapper}>
-                <MaterialIcons name="location-pin" size={14} color="#555" />
+                <MaterialIcons name="location-pin" size={16} color="black" />
                 <TextInput
                     style={styles.inputWithIcon}
                     placeholder="여행장소를 입력해주세요."
@@ -136,6 +136,7 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     input: {
+        height: 44,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
@@ -147,6 +148,7 @@ const styles = StyleSheet.create({
     },
     inputWithIcon: {
         flex: 1,
+        height: 16,
         fontSize: 14,
         marginLeft: 8,
         color: '#000',
