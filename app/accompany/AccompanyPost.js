@@ -24,7 +24,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://172.30.1.94:8080'; // 본인 IP로 변경
+      return 'http://172.30.1.81:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -473,9 +473,9 @@ export default function AccompanyPost() {
                         <Text style={styles.hostInfoText}>
                             <Text style={styles.hostInfoLabel}>호스트 </Text>
                             <Text>{postData.createdByName} </Text>
-                            <Text style={styles.hostInfoLabel}>게시일 </Text>
+                            <Text style={styles.hostInfoLabel}> 게시일 </Text>
                             <Text>{postData.createdAt} </Text>
-                            <Text style={styles.hostInfoLabel}>조회수 </Text>
+                            <Text style={styles.hostInfoLabel}> 조회수 </Text>
                             <Text>{postData.views}회</Text>
                         </Text>
                     </View>

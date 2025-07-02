@@ -156,7 +156,7 @@ const Step2 = ({
             <Text style={styles.label}>동행 조건</Text>
             
             <View style={styles.conditionRow}>
-                <Text style={styles.conditionLabelInline}> 성별</Text>
+                <Text style={styles.conditionLabelInline}>성별</Text>
                 <View style={styles.inlineChipContainer}>
                     {genderOptions.map((gender) => (
                         <TouchableOpacity 
@@ -179,7 +179,7 @@ const Step2 = ({
             </View>
             
             <View style={styles.conditionRow}>
-                <Text style={styles.conditionLabelInline}>연령대</Text>
+                <Text style={styles.conditionLabelInline}>연령</Text>
                 <View style={styles.inlineChipContainer}>
                     {ageOptions.map((age) => (
                         <TouchableOpacity 
@@ -343,13 +343,14 @@ const styles = StyleSheet.create({
     },
     titleWithNoteContainer: {
         flexDirection: 'row',
-        alignItems: 'center', 
+        alignItems: 'center',
         marginBottom: 8,
     },
     noteText: {
         fontSize: 12,
         color: '#888',
         marginLeft: 10,
+        marginBottom: 2,
     },
     chipContainer: {
         flexDirection: 'row',
@@ -369,6 +370,7 @@ const styles = StyleSheet.create({
     },
     chipSelected: {
         backgroundColor: '#222',
+        borderColor: 'black'
     },
     chipText: {
         color: '#555',
