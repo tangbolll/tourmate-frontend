@@ -257,6 +257,7 @@ const styles = StyleSheet.create({
         marginRight: 8,
     },
     input: {
+        height: 44,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
@@ -268,6 +269,7 @@ const styles = StyleSheet.create({
     },
     inputWithIcon: {
         flex: 1,
+        height: 16,
         fontSize: 14,
         marginLeft: 8,
         color: '#000',
