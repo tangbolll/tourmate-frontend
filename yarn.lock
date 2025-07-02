@@ -6055,6 +6055,13 @@ prop-types@^15.6.0, prop-types@^15.6.2, prop-types@^15.7.2:
     object-assign "^4.1.1"
     react-is "^16.13.1"
 
+prop-types@15.5.8:
+  version "15.5.8"
+  resolved "https://registry.npmjs.org/prop-types/-/prop-types-15.5.8.tgz"
+  integrity sha512-QiDx7s0lWoAVxmEmOYnn3rIZGduup2PZgj3rta5O5y0NfPKu3ApWi+GdMfTto7PmO/5+p4yamSLMZkj0jaTL4A==
+  dependencies:
+    fbjs "^0.8.9"
+
 psl@^1.1.33:
   version "1.15.0"
   resolved "https://registry.npmjs.org/psl/-/psl-1.15.0.tgz"
