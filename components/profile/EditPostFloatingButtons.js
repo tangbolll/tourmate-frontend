@@ -22,7 +22,7 @@ const EditPostFloatingButtons = ({
             onPress={onDelete}
             activeOpacity={0.8}
         >
-            <Icon name="delete" size={20} color="#000" />
+            <Icon name="delete" size={24} color="#000" />
         </TouchableOpacity>
 
         {/* 다운로드 버튼 */}
@@ -31,7 +31,7 @@ const EditPostFloatingButtons = ({
             onPress={onDownload}
             activeOpacity={0.8}
         >
-            <Icon name="file-download" size={20} color="#000" />
+            <Icon name="file-download" size={24} color="#000" />
         </TouchableOpacity>
 
         {/* 잠금/잠금해제 버튼 */}
@@ -42,7 +42,7 @@ const EditPostFloatingButtons = ({
         >
             <Icon 
             name={isLocked ? "lock" : "lock-open"} 
-            size={20} 
+            size={24} 
             color="#000" 
             />
         </TouchableOpacity>
@@ -53,7 +53,7 @@ const EditPostFloatingButtons = ({
             onPress={onEdit}
             activeOpacity={0.8}
         >
-            <Icon name="edit" size={20} color="#000" />
+            <Icon name="edit" size={24} color="#000" />
         </TouchableOpacity>
         </View>
     );
@@ -63,12 +63,12 @@ const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 12,
+        gap: 16,
     },
     button: {
-        width: 44,
-        height: 44,
-        borderRadius: 22,
+        width: 56,
+        height: 56,
+        borderRadius: 38,
         backgroundColor: '#fff',
         alignItems: 'center',
         justifyContent: 'center',
@@ -76,10 +76,10 @@ const styles = StyleSheet.create({
         shadowColor: '#000',
         shadowOffset: {
         width: 0,
-        height: 2,
+        height: 1,
         },
-        shadowOpacity: 0.1,
-        shadowRadius: 8,
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
         // Shadow for Android
         elevation: 4,
     },
