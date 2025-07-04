@@ -135,11 +135,11 @@ const Step2 = ({
                 </View>
                 <View style={styles.dateRangeContainer}>
                     <Text style={styles.dateText}>
-                        {`${recruitDateRange.startDate} (${recruitDateRange.startDay || getDayOfWeek(recruitDateRange.startDate)})`}
+                        {recruitDateRange.startDate ? `${recruitDateRange.startDate} (${recruitDateRange.startDay || getDayOfWeek(recruitDateRange.startDate)})` : '시작일'}
                     </Text>
                     <Text style={styles.dateSeparator}>~</Text>
                     <Text style={styles.dateText}>
-                        {`${recruitDateRange.endDate} (${recruitDateRange.endDay || getDayOfWeek(recruitDateRange.endDate)})`}
+                        {recruitDateRange.endDate ? `${recruitDateRange.endDate} (${recruitDateRange.endDay || getDayOfWeek(recruitDateRange.endDate)})` : '종료일'}
                     </Text>
                 </View>
             </TouchableOpacity>
@@ -148,8 +148,8 @@ const Step2 = ({
                 <Calendar 
                     visible={recruitDateVisible}
                     onSelect={handleRecruitDateSelect}
-                    startDate={new Date(recruitDateRange.startDate)}
-                    endDate={new Date(recruitDateRange.endDate)}
+                    startDate={recruitDateRange.startDate ? new Date(recruitDateRange.startDate) : new Date()}
+                    endDate={recruitDateRange.endDate ? new Date(recruitDateRange.endDate) : new Date()}
                 />
             )}
             
@@ -252,8 +252,8 @@ const Step2 = ({
             </View>
             
             <View style={styles.tagsContainer}>
-                {tags.map((tag) => (
-                    <View key={tag} style={styles.tag}>
+                {tags.map((tag, index) => (
+                    <View key={`${tag}-${index}`} style={styles.tag}>
                         <Text style={styles.tagText}>{tag}</Text>
                         <TouchableOpacity onPress={() => handleRemoveTag(tag)}>
                             <Ionicons name="close-circle" size={16} color="#555" />
@@ -430,7 +430,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     tagText: {
-        color: 'FFF',
+        color: '#000',
         marginRight: 5,
     },
 });

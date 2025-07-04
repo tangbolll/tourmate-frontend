@@ -25,40 +25,40 @@ const Step1 = ({
     thumbnailIndex, setThumbnailIndex
 }) => {
     const [dateVisible, setDateVisible] = useState(false);
-    const [inputValue, setInputValue] = useState('');
-    const [suggestions, setSuggestions] = useState([]);
-    const [isOpen, setIsOpen] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [locationInput, setLocationInput] = useState('');
+    // const [suggestions, setSuggestions] = useState([]);
+    // const [isOpen, setIsOpen] = useState(false);
+    // const [isLoading, setIsLoading] = useState(false);
     
-    const mockTravelData = [
-        { contentid: "2871024", title: "가나돈까스의집", addr1: "서울특별시 강남구 언주로 608" },
-        { contentid: "2899721", title: "가나안약국", addr1: "서울특별시 강남구 도산대로 113(신사동)" },
-        { contentid: "2869760", title: "가담", addr1: "서울특별시 강남구 언주로167길 35" },
-        { contentid: "2871443", title: "가람국시", addr1: "서울특별시 강남구 언주로135길 13" },
-        { contentid: "1001", title: "부산해운대", addr1: "부산광역시 해운대구 해운대해변로 264" },
-        { contentid: "1002", title: "부산광안리", addr1: "부산광역시 수영구 광안해변로 219" },
-        { contentid: "1003", title: "부천중앙공원", addr1: "경기도 부천시 원미구 중동로 160" },
-        { contentid: "1004", title: "부여백제문화단지", addr1: "충청남도 부여군 규암면 백제문로 455" },
-        { contentid: "1005", title: "부안변산반도", addr1: "전라북도 부안군 변산면 변산해변로 42" },
-        { contentid: "1006", title: "부암동", addr1: "서울특별시 종로구 부암동" },
-        { contentid: "1007", title: "부평구청", addr1: "인천광역시 부평구 부평대로 168" }
-    ];
+    // const mockTravelData = [
+    //     { contentid: "2871024", title: "가나돈까스의집", addr1: "서울특별시 강남구 언주로 608" },
+    //     { contentid: "2899721", title: "가나안약국", addr1: "서울특별시 강남구 도산대로 113(신사동)" },
+    //     { contentid: "2869760", title: "가담", addr1: "서울특별시 강남구 언주로167길 35" },
+    //     { contentid: "2871443", title: "가람국시", addr1: "서울특별시 강남구 언주로135길 13" },
+    //     { contentid: "1001", title: "부산해운대", addr1: "부산광역시 해운대구 해운대해변로 264" },
+    //     { contentid: "1002", title: "부산광안리", addr1: "부산광역시 수영구 광안해변로 219" },
+    //     { contentid: "1003", title: "부천중앙공원", addr1: "경기도 부천시 원미구 중동로 160" },
+    //     { contentid: "1004", title: "부여백제문화단지", addr1: "충청남도 부여군 규암면 백제문로 455" },
+    //     { contentid: "1005", title: "부안변산반도", addr1: "전라북도 부안군 변산면 변산해변로 42" },
+    //     { contentid: "1006", title: "부암동", addr1: "서울특별시 종로구 부암동" },
+    //     { contentid: "1007", title: "부평구청", addr1: "인천광역시 부평구 부평대로 168" }
+    // ];
 
-    // 입력값 변경 시 검색 실행
-    useEffect(() => {
-        if (inputValue.length > 0) {
-            setIsLoading(true);
-            // 디바운싱을 위한 타이머
-            const timer = setTimeout(() => {
-                searchTravelLocations(inputValue);
-            }, 300);
+    // // 입력값 변경 시 검색 실행
+    // useEffect(() => {
+    //     if (inputValue.length > 0) {
+    //         setIsLoading(true);
+    //         // 디바운싱을 위한 타이머
+    //         const timer = setTimeout(() => {
+    //             searchTravelLocations(inputValue);
+    //         }, 300);
 
-            return () => clearTimeout(timer);
-        } else {
-            setSuggestions([]);
-            setIsOpen(false);
-        }
-    }, [inputValue]);
+    //         return () => clearTimeout(timer);
+    //     } else {
+    //         setSuggestions([]);
+    //         setIsOpen(false);
+    //     }
+    // }, [inputValue]);
 
     const handleDateSelect = (startDate, endDate) => {
         setDateRange({ 
@@ -70,54 +70,59 @@ const Step1 = ({
         setDateVisible(false);
     };
 
-    // 실제 API 호출 함수 (모의 검색으로 구현)
-    const searchTravelLocations = async (keyword) => {
-        try {
-            // 실제 API 호출 시 주석을 해제하고 사용
-            // const response = await fetch(`http://your-api-url/api/myTour/search?keyword=${encodeURIComponent(keyword)}`);
-            // const data = await response.json();
-            // setSuggestions(data.response.body.items.item || []);
+    const handleLocationChange = (text) => {
+        setLocationInput(text);
+        setLocation(text); // 간단하게 텍스트만 저장
+    };
+
+    // // 실제 API 호출 함수 (모의 검색으로 구현)
+    // const searchTravelLocations = async (keyword) => {
+    //     try {
+    //         // 실제 API 호출 시 주석을 해제하고 사용
+    //         // const response = await fetch(`http://your-api-url/api/myTour/search?keyword=${encodeURIComponent(keyword)}`);
+    //         // const data = await response.json();
+    //         // setSuggestions(data.response.body.items.item || []);
             
-            // 모의 검색 (실제 구현시 위 코드로 교체)
-            const filtered = mockTravelData.filter(item => 
-                item.title.includes(keyword) || 
-                item.addr1.includes(keyword)
-            );
-            setSuggestions(filtered);
-            setIsOpen(true);
-            setIsLoading(false);
-        } catch (error) {
-            console.error('검색 실패:', error);
-            setIsLoading(false);
-        }
-    };
+    //         // 모의 검색 (실제 구현시 위 코드로 교체)
+    //         const filtered = mockTravelData.filter(item => 
+    //             item.title.includes(keyword) || 
+    //             item.addr1.includes(keyword)
+    //         );
+    //         setSuggestions(filtered);
+    //         setIsOpen(true);
+    //         setIsLoading(false);
+    //     } catch (error) {
+    //         console.error('검색 실패:', error);
+    //         setIsLoading(false);
+    //     }
+    // };
 
-    const handleInputChange = (text) => {
-        setInputValue(text);
-    };
+    // const handleInputChange = (text) => {
+    //     setInputValue(text);
+    // };
 
-    const handleSuggestionPress = (suggestion) => {
-        setInputValue(suggestion.title);
-        setLocation(suggestion); // 선택된 위치 저장
-        setIsOpen(false);
-        console.log('선택된 여행지:', suggestion);
-    };
+    // const handleSuggestionPress = (suggestion) => {
+    //     setInputValue(suggestion.title);
+    //     setLocation(suggestion); // 선택된 위치 저장
+    //     setIsOpen(false);
+    //     console.log('선택된 여행지:', suggestion);
+    // };
 
-    const clearInput = () => {
-        setInputValue('');
-        setSuggestions([]);
-        setIsOpen(false);
-    };
+    // const clearInput = () => {
+    //     setInputValue('');
+    //     setSuggestions([]);
+    //     setIsOpen(false);
+    // };
 
-    const renderSuggestionItem = ({ item }) => (
-        <TouchableOpacity 
-            style={styles.suggestionItem}
-            onPress={() => handleSuggestionPress(item)}
-        >
-            <Text style={styles.suggestionTitle}>{item.title}</Text>
-            <Text style={styles.suggestionAddress}>{item.addr1}</Text>
-        </TouchableOpacity>
-    );
+    // const renderSuggestionItem = ({ item }) => (
+    //     <TouchableOpacity 
+    //         style={styles.suggestionItem}
+    //         onPress={() => handleSuggestionPress(item)}
+    //     >
+    //         <Text style={styles.suggestionTitle}>{item.title}</Text>
+    //         <Text style={styles.suggestionAddress}>{item.addr1}</Text>
+    //     </TouchableOpacity>
+    // );
 
     return (
         <ScrollView style={styles.form}>
@@ -131,26 +136,26 @@ const Step1 = ({
                 maxLength={30}
             />
 
-            {/* 여행장소 자동완성 */}
             <Text style={styles.label}>여행장소</Text>
-            <View style={styles.autocompleteContainer}>
+            {/* <View style={styles.autocompleteContainer}> */}
                 <View style={styles.inputWrapper}>
                     <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
                     <TextInput
                         style={styles.inputWithIcon}
                         placeholder="여행장소를 입력해주세요."
                         placeholderTextColor="#888"
-                        value={inputValue}
-                        onChangeText={handleInputChange}
+                        value={locationInput} 
+                        onChangeText={handleLocationChange} // 연동 후에는 handleInputChange로 바꾸기
                     />
-                    {inputValue.length > 0 && (
+                </View>
+                    {/* {inputValue.length > 0 && (
                         <TouchableOpacity onPress={clearInput} style={styles.clearButton}>
                             <MaterialIcons name="close" size={16} color="#888" />
                         </TouchableOpacity>
                     )}
-                </View>
+                </View> */}
 
-                {/* 드롭다운 리스트 */}
+                {/* 드롭다운 리스트
                 {isOpen && (
                     <View style={styles.dropdown}>
                         {isLoading ? (
@@ -173,7 +178,7 @@ const Step1 = ({
                         ) : null}
                     </View>
                 )}
-            </View>
+            </View> */}
             
             <Text style={styles.label}>여행기간</Text>
             <TouchableOpacity onPress={() => setDateVisible(true)} style={styles.inputWrapper}>
