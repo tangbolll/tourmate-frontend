@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image, Alert } from "react-native";
+import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image, Alert, Modal } from "react-native";
 import { Feather } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import PostDirectoryHeader from "../../components/profile/PostDirectoryHeader";
 import SaveButton from "../../components/profile/SaveButton";
+import EditPostFloatingButtons from "../../components/profile/EditPostFloatingButtons";
+import SelectPostDesign from "../../components/profile/selectPostDesign"; // 모달로 사용할 컴포넌트
 
 const WritePost = () => {
     const router = useRouter();
@@ -22,6 +24,13 @@ const WritePost = () => {
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedPostcard, setSelectedPostcard] = useState(null);
+    
+    // 모달 상태 추가
+    const [isPostcardModalVisible, setIsPostcardModalVisible] = useState(false);
+    // 엽서 오버레이 상태 추가
+    const [isPostcardOverlayVisible, setIsPostcardOverlayVisible] = useState(false);
+    // 저장 완료 상태 추가
+    const [isSaved, setIsSaved] = useState(false);
 
     // 전달받은 디렉토리 정보 설정 - 한 번만 실행
     useEffect(() => {
@@ -46,26 +55,7 @@ const WritePost = () => {
                 };
             });
         }
-    }, [params.directoryId, params.directoryName, params.startDate, params.endDate]); // 구체적인 의존성
-
-    // 엽서 선택 정보 처리
-    useEffect(() => {
-        if (params.selectedPostcard) {
-            console.log('선택된 엽서:', params.selectedPostcard);
-            const postcardData = JSON.parse(params.selectedPostcard);
-            setSelectedPostcard(postcardData);
-            
-            // 현재 엽서에 선택된 템플릿 저장
-            setPostcards(prev => {
-                const updated = [...prev];
-                updated[currentIndex] = {
-                    ...updated[currentIndex],
-                    postcardTemplate: postcardData
-                };
-                return updated;
-            });
-        }
-    }, [params.selectedPostcard, currentIndex]);
+    }, [params.directoryId, params.directoryName, params.startDate, params.endDate]);
 
     // 날짜 포맷팅 함수 - useCallback으로 메모이제이션
     const formatDate = useCallback((date) => {
@@ -136,11 +126,52 @@ const WritePost = () => {
         setSelectedPostcard(postcards[index].postcardTemplate);
     }, [postcards]);
 
-    // 엽서 선택 페이지로 이동
+    // 엽서 영역 터치 핸들러
+    const handlePostcardAreaPress = useCallback(() => {
+        if (selectedPostcard) {
+            // 이미 엽서가 선택되어 있으면 오버레이 표시
+            setIsPostcardOverlayVisible(true);
+        } else {
+            // 엽서가 선택되지 않았으면 바로 선택 모달 열기
+            setIsPostcardModalVisible(true);
+        }
+    }, [selectedPostcard]);
+
+    // 엽서 선택 모달 열기
     const handlePostcardSelect = useCallback(() => {
-        console.log('엽서 선택 페이지로 이동');
-        router.push('profile/selectPostDesign');
-    }, [router]);
+        setIsPostcardOverlayVisible(false);
+        setIsPostcardModalVisible(true);
+    }, []);
+
+    // 모달에서 엽서 선택 완료
+    const handlePostcardDesignSelect = useCallback((selectedDesignData) => {
+        console.log('선택된 엽서:', selectedDesignData);
+        
+        setSelectedPostcard(selectedDesignData);
+        
+        // 현재 엽서에 선택된 템플릿 저장
+        setPostcards(prev => {
+            const updated = [...prev];
+            updated[currentIndex] = {
+                ...updated[currentIndex],
+                postcardTemplate: selectedDesignData
+            };
+            return updated;
+        });
+        
+        // 모달 닫기
+        setIsPostcardModalVisible(false);
+    }, [currentIndex]);
+
+    // 모달 닫기
+    const handlePostcardModalClose = useCallback(() => {
+        setIsPostcardModalVisible(false);
+    }, []);
+
+    // 오버레이 닫기
+    const handleOverlayClose = useCallback(() => {
+        setIsPostcardOverlayVisible(false);
+    }, []);
 
     // 엽서 템플릿 렌더링 함수
     const renderPostcardTemplate = useCallback((template) => {
@@ -175,6 +206,51 @@ const WritePost = () => {
         );
     }, []);
 
+    // 엽서 오버레이 렌더링
+    const renderPostcardOverlay = useCallback(() => {
+        if (!isPostcardOverlayVisible) return null;
+
+        return (
+            <TouchableOpacity 
+                style={styles.overlay}
+                activeOpacity={1}
+                onPress={handleOverlayClose}
+            >
+                <View style={styles.overlayContent}>
+                    <TouchableOpacity 
+                        style={styles.overlayOption}
+                        onPress={handlePostcardSelect}
+                    >
+                        <Feather name="edit" size={24} color="#fff" />
+                        <Text style={styles.overlayOptionText}>엽서 변경</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                        style={styles.overlayOption}
+                        onPress={() => {
+                            // 글쓰기 기능 (필요시 구현)
+                            setIsPostcardOverlayVisible(false);
+                        }}
+                    >
+                        <Feather name="edit-3" size={24} color="#fff" />
+                        <Text style={styles.overlayOptionText}>글쓰기</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                        style={styles.overlayOption}
+                        onPress={() => {
+                            // 그리기 기능 (필요시 구현)
+                            setIsPostcardOverlayVisible(false);
+                        }}
+                    >
+                        <Feather name="pen-tool" size={24} color="#fff" />
+                        <Text style={styles.overlayOptionText}>그리기</Text>
+                    </TouchableOpacity>
+                </View>
+            </TouchableOpacity>
+        );
+    }, [isPostcardOverlayVisible, handleOverlayClose, handlePostcardSelect]);
+
     // 저장 기능
     const handleSave = useCallback(() => {
         if (selectedImage && selectedPostcard) {
@@ -184,8 +260,55 @@ const WritePost = () => {
                 allPostcards: postcards
             });
             Alert.alert('저장 완료', '엽서가 저장되었습니다.');
+            setIsSaved(true);
         }
     }, [selectedImage, selectedPostcard, postcards]);
+
+    // EditPostFloatingButtons 핸들러들
+    const handleDelete = useCallback(() => {
+        Alert.alert(
+            '삭제 확인',
+            '정말로 삭제하시겠습니까?',
+            [
+                { text: '취소', style: 'cancel' },
+                { 
+                    text: '삭제', 
+                    style: 'destructive',
+                    onPress: () => {
+                        // 삭제 로직
+                        console.log('엽서 삭제');
+                        setIsSaved(false);
+                        setSelectedImage(null);
+                        setSelectedPostcard(null);
+                        setPostcards(prev => {
+                            const updated = [...prev];
+                            updated[currentIndex] = {
+                                ...updated[currentIndex],
+                                image: null,
+                                postcardTemplate: null
+                            };
+                            return updated;
+                        });
+                    }
+                }
+            ]
+        );
+    }, [currentIndex]);
+
+    const handleDownload = useCallback(() => {
+        console.log('다운로드');
+        Alert.alert('다운로드', '엽서가 갤러리에 저장되었습니다.');
+    }, []);
+
+    const handleLock = useCallback(() => {
+        console.log('잠금 토글');
+        Alert.alert('잠금', '엽서가 잠겼습니다.');
+    }, []);
+
+    const handleEdit = useCallback(() => {
+        console.log('편집');
+        Alert.alert('편집', '편집 기능을 실행합니다.');
+    }, []);
 
     // 저장 버튼 활성화 조건
     const isSaveEnabled = selectedImage && selectedPostcard;
@@ -248,7 +371,13 @@ const WritePost = () => {
             {/* 메인 컨텐츠 영역 */}
             <View style={styles.contentContainer}>
                 {/* 사진 추가 영역 */}
-                <TouchableOpacity style={styles.photoArea} onPress={pickImage}>
+                <TouchableOpacity 
+                    style={[
+                        styles.photoArea,
+                        selectedImage && styles.photoAreaSelected
+                    ]} 
+                    onPress={pickImage}
+                >
                     {selectedImage ? (
                         <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
                     ) : (
@@ -260,9 +389,18 @@ const WritePost = () => {
                 </TouchableOpacity>
 
                 {/* 엽서 선택 영역 */}
-                <TouchableOpacity style={styles.postcardArea} onPress={handlePostcardSelect}>
+                <TouchableOpacity 
+                    style={[
+                        styles.postcardArea,
+                        selectedPostcard && styles.postcardAreaSelected
+                    ]} 
+                    onPress={handlePostcardAreaPress}
+                >
                     {selectedPostcard ? (
-                        renderPostcardTemplate(selectedPostcard)
+                        <View style={styles.postcardContainer}>
+                            {renderPostcardTemplate(selectedPostcard)}
+                            {renderPostcardOverlay()}
+                        </View>
                     ) : (
                         <View style={styles.postcardPlaceholder}>
                             <Feather name="file-text" size={32} color="#999" />
@@ -272,14 +410,38 @@ const WritePost = () => {
                 </TouchableOpacity>
             </View>
 
-            {/* 저장 버튼 */}
+            {/* 저장 버튼 또는 EditPostFloatingButtons */}
             <View style={styles.saveButtonContainer}>
-                <SaveButton
-                    title="엽서 저장"
-                    onPress={handleSave}
-                    disabled={!isSaveEnabled}
-                />
+                {!isSaved ? (
+                    <SaveButton
+                        title="엽서 저장"
+                        onPress={handleSave}
+                        disabled={!isSaveEnabled}
+                    />
+                ) : (
+                    <EditPostFloatingButtons
+                        onDelete={handleDelete}
+                        onDownload={handleDownload}
+                        onLock={handleLock}
+                        onEdit={handleEdit}
+                        isLocked={false}
+                        style={styles.floatingButtons}
+                    />
+                )}
             </View>
+
+            {/* 엽서 선택 모달 */}
+            <Modal
+                visible={isPostcardModalVisible}
+                animationType="slide"
+                presentationStyle="pageSheet"
+                onRequestClose={handlePostcardModalClose}
+            >
+                <SelectPostDesign
+                    onPostcardSelect={handlePostcardDesignSelect}
+                    onClose={handlePostcardModalClose}
+                />
+            </Modal>
         </View>
     );
 };
@@ -315,7 +477,6 @@ const styles = StyleSheet.create({
     slideImage: {
         width: '100%',
         height: '100%',
-        // borderRadius: 6,
     },
     slideEmpty: {
         flex: 1,
@@ -355,6 +516,11 @@ const styles = StyleSheet.create({
         backgroundColor: '#fafafa',
         minHeight: 200,
     },
+    photoAreaSelected: {
+        borderStyle: 'solid',
+        borderColor: 'transparent',
+        backgroundColor: 'transparent',
+    },
     photoPlaceholder: {
         alignItems: 'center',
         gap: 8,
@@ -365,9 +531,8 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     selectedImage: {
-        width: '101%',
-        height: '101%',
-        // borderRadius: 10,
+        width: '100%',
+        height: '100%',
     },
     postcardArea: {
         flex: 1,
@@ -378,6 +543,16 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#fafafa',
         minHeight: 200,
+    },
+    postcardAreaSelected: {
+        borderStyle: 'solid',
+        borderColor: 'transparent',
+        backgroundColor: 'transparent',
+    },
+    postcardContainer: {
+        width: '100%',
+        height: '100%',
+        position: 'relative',
     },
     postcardPlaceholder: {
         alignItems: 'center',
@@ -392,11 +567,14 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 32,
     },
+    floatingButtons: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
     // 엽서 템플릿 스타일
     postcardTemplate: {
         width: '100%',
         height: '100%',
-        borderRadius: 10,
         padding: 16,
         justifyContent: 'space-between',
     },
@@ -448,6 +626,33 @@ const styles = StyleSheet.create({
         fontSize: 10,
         color: '#666',
         textAlign: 'center',
+    },
+    // 오버레이 스타일
+    overlay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        backgroundColor: 'rgba(0, 0, 0, 0.6)',
+        justifyContent: 'center',
+        alignItems: 'center',
+        zIndex: 10,
+    },
+    overlayContent: {
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 40,
+    },
+    overlayOption: {
+        alignItems: 'center',
+        gap: 8,
+    },
+    overlayOptionText: {
+        color: '#fff',
+        fontSize: 14,
+        fontWeight: '500',
     },
 });
 

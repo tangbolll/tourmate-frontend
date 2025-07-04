@@ -9,27 +9,21 @@ import {
     Dimensions,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
-import SaveButton from "../../components/profile/SaveButton";
+import SaveButton from "./SaveButton";
 
 const { width } = Dimensions.get('window');
 
-const SelectPostDesign = () => {
-    const router = useRouter();
+const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
     const [selectedTab, setSelectedTab] = useState('Line');
     const [selectedDesign, setSelectedDesign] = useState(null);
-
-    const handleBackPress = () => {
-        router.back();
-    };
 
     const handleDesignSelect = (designId) => {
         setSelectedDesign(designId);
     };
 
     const handleSavePress = () => {
-        if (selectedDesign) {
-            // 선택된 디자인 정보를 이전 화면으로 전달
+        if (selectedDesign && onPostcardSelect) {
+            // 선택된 디자인 정보를 부모 컴포넌트로 전달
             const selectedDesignData = {
                 id: selectedDesign,
                 tab: selectedTab,
@@ -37,10 +31,13 @@ const SelectPostDesign = () => {
             };
             
             console.log('Selected design:', selectedDesignData);
-            router.push({
-                pathname: '/writePost',
-                params: { selectedPostcard: JSON.stringify(selectedDesignData) }
-            });
+            onPostcardSelect(selectedDesignData);
+        }
+    };
+
+    const handleClose = () => {
+        if (onClose) {
+            onClose();
         }
     };
 
@@ -115,14 +112,13 @@ const SelectPostDesign = () => {
         <SafeAreaView style={styles.container}>
             {/* 헤더 */}
             <View style={styles.header}>
-                <TouchableOpacity 
-                    style={styles.backButton}
-                    onPress={handleBackPress}
-                >
-                    <Feather name="chevron-left" size={24} color="#333" />
-                </TouchableOpacity>
                 <Text style={styles.headerTitle}>엽서 선택</Text>
-                <View style={styles.headerRight} />
+                <TouchableOpacity 
+                    style={styles.closeButton}
+                    onPress={handleClose}
+                >
+                    <Feather name="x" size={24} color="#333" />
+                </TouchableOpacity>
             </View>
 
             {/* 탭 메뉴 */}
@@ -175,23 +171,22 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         paddingHorizontal: 16,
-        paddingVertical: 10,
+        paddingVertical: 20,
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
-    },
-    backButton: {
-        padding: 8,
-        marginLeft: -8,
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: '600',
         color: '#333',
     },
-    headerRight: {
-        width: 40,
+    closeButton: {
+        position: 'absolute',
+        right: 16,
+        padding: 8,
+        marginRight: -8,
     },
     tabContainer: {
         flexDirection: 'row',
@@ -248,8 +243,7 @@ const styles = StyleSheet.create({
     },
     postcardDesign: {
         width: '100%',
-        height: 200, // 5:4 비율로 더 넓게 (width가 화면 너비-32px일 때 적절한 높이)
-        // borderRadius: 8,
+        height: 200,
         padding: 16,
         elevation: 2,
         shadowColor: '#000',

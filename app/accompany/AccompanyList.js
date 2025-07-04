@@ -484,6 +484,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#888',
     lineHeight: 24,
+    marginTop: 100,
   },
 });
 

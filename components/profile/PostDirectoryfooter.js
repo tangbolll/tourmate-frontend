@@ -37,7 +37,7 @@ const PostDirectoryFooter = ({
             >
                 <Icon
                 name="delete"
-                size={24}
+                size={26}
                 color={selectedCount > 0 ? '#000' : '#ccc'}
                 />
             </TouchableOpacity>
@@ -50,7 +50,7 @@ const PostDirectoryFooter = ({
             >
                 <Icon
                 name="file-download"
-                size={24}
+                size={26}
                 color={selectedCount > 0 ? '#000' : '#ccc'}
                 />
             </TouchableOpacity>
@@ -63,7 +63,7 @@ const PostDirectoryFooter = ({
             >
                 <Icon
                 name="lock"
-                size={24}
+                size={26}
                 color={selectedCount > 0 ? '#000' : '#ccc'}
                 />
             </TouchableOpacity>
@@ -83,8 +83,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingHorizontal: 24,
+        paddingTop: 12,
         backgroundColor: '#fff',
     },
     countContainer: {
@@ -98,10 +98,10 @@ const styles = StyleSheet.create({
     actionContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 20,
+        gap: 12,
     },
     actionButton: {
-        padding: 8,
+        padding: 4,
         borderRadius: 4,
     },
 });
