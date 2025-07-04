@@ -21,7 +21,7 @@ import { useRouter } from 'expo-router';
         if (Platform.OS === 'android') {
         return 'http://10.0.2.2:8080';
         } else {
-        return 'http://192.168.35.34:8080'; // 본인 IP로 변경
+        return 'http://192.168.35.74:8080'; // 본인 IP로 변경
         }
     } else {
         return 'https://your-production-api.com';
@@ -168,7 +168,7 @@ const AccompanyCreation = () => {
 
 
 
-    const handleSubmit = async () => {
+   const handleSubmit = async () => {
     console.log('🚀 동행 생성 시작');
     setIsLoading(true);
 
@@ -177,16 +177,16 @@ const AccompanyCreation = () => {
             userId: 2, // TODO: 나중에 로그인 사용자 ID로 변경
             title: title.trim(),
             location: location.trim(),
-            meetingPoint: meetLocation.trim(), 
-            description: description.trim(),  
-            maxParticipants: parseInt(maxPeople), 
-            travelStartDate: formatDateForBackend(dateRange.startDay),
-            travelEndDate: formatDateForBackend(dateRange.endDay),    
-            recruitmentStartDate: formatDateForBackend(recruitDateRange.startDate), 
-            recruitmentEndDate: formatDateForBackend(recruitDateRange.endDate),    
+            meetPlace: meetLocation.trim(),          // meetingPoint → meetPlace
+            intro: description.trim(),               // description → intro
+            maxRecruit: parseInt(maxPeople),         // maxParticipants → maxRecruit
+            travelStartDate: formatDateForBackend(dateRange.startDate || dateRange.startDay),
+            travelEndDate: formatDateForBackend(dateRange.endDate || dateRange.endDay),
+            recStartDate: formatDateForBackend(recruitDateRange.startDate), // recruitmentStartDate → recStartDate
+            recEndDate: formatDateForBackend(recruitDateRange.endDate),     // recruitmentEndDate → recEndDate
             imageUrl: images || [],
             gender: selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'),
-            ageRange: selectedAges.includes('나이무관') ? ['ALL'] : selectedAges,
+            ageGroup: selectedAges.includes('누구나') ? ['ALL'] : selectedAges,
             category: selectedCategories,
             tag: tags || [],
             createdAt: null // 서버에서 처리해도 괜찮음
@@ -213,7 +213,13 @@ const AccompanyCreation = () => {
             console.log('✅ 성공 응답:', result);
             Alert.alert(
                 "동행 생성 완료!", 
-                `"${title}" 동행이 등록되었습니다!`
+                `"${title}" 동행이 등록되었습니다!`,
+                [
+                    {
+                        text: "확인",
+                        onPress: () => router.push('/accompany')
+                    }
+                ]
             );
         } else {
             const contentType = response.headers.get('content-type');
