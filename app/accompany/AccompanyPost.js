@@ -54,6 +54,26 @@ export default function AccompanyPost() {
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const scrollViewRef = useRef(null);
 
+        const getImageUrl = (item) => {
+    // images 필드가 있으면 사용 (Response DTO)
+    if (item.images && item.images.length > 0) {
+        return item.images[0];
+    }
+    
+    // imageUrls 필드가 있으면 사용 (엔티티 직접)
+    if (item.imageUrls && item.imageUrls.length > 0) {
+        return item.imageUrls[0];
+    }
+    
+    // imageUrl 필드가 있으면 사용 (다른 구조)
+    if (item.imageUrl) {
+        return item.imageUrl;
+    }
+    
+    // 모두 없으면 빈 문자열
+    return '';
+    };
+
     // 댓글 상태 관리 (답글 포함)
     const [comments, setComments] = useState([]);
 
@@ -71,7 +91,7 @@ export default function AccompanyPost() {
             createdAt: backendData.postDate ? 
                 dayjs(backendData.postDate).locale('ko').format('M월 D일(ddd)') : 
                 dayjs().locale('ko').format('M월 D일(ddd)'),
-            images: backendData.imageUrl || [],
+            imageUrl: getImageUrl(backendData),
             views: backendData.views || 0,
             travelStartDate: backendData.tripStartDate ? 
                 dayjs(backendData.tripStartDate).locale('ko').format('M월 D일(ddd)') : 
@@ -123,11 +143,12 @@ export default function AccompanyPost() {
             
             if (response.ok) {
                 const backendData = await response.json();
-                console.log('✅ 백엔드 원본 데이터:', backendData);
-                
+                console.log('🔍 API 응답:', backendData);
+                console.log('🔍 imageUrls 필드:', backendData.imageUrls);
+
                 // 백엔드 데이터를 프론트엔드 형식으로 변환
                 const transformedData = transformAccompanyDetail(backendData);
-                console.log('🔄 변환된 데이터:', transformedData);
+                
                 
                 setPostData(transformedData);
                 
@@ -167,8 +188,6 @@ export default function AccompanyPost() {
     // 서버에 댓글/답글 저장하는 함수 (기존 유지)
     const saveToServer = async (data, isReply = false) => {
         try {
-            // 실제 환경에서는 이 부분을 실제 API 호출로 교체
-            await new Promise(resolve => setTimeout(resolve, 1000)); // 서버 지연 시뮬레이션
             
             // Mock 응답 데이터
             const mockResponse = {
