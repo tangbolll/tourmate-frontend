@@ -79,7 +79,7 @@ const AccompanyList = () => {
       meetingPoint: item.meetPlace || '',
       participants: item.participants?.length || 1,
       maxParticipants: item.maxRecruit || 0,
-      imageUrl: item.imageUrl?.[0] || '',
+      imageUrl: item.images?.length > 0 ? item.images[0] : '',
       tags: [
         ...(item.category || []),
         ...(item.tag || []),
@@ -115,6 +115,9 @@ const fetchAccompanyData = async () => {
     if (response.ok) {
       const data = await response.json();
       console.log('✅ API 응답 성공:', data);
+
+      console.log('🔍 API 응답:', data);
+      console.log('🔍 images 필드:', data.feed[0]?.images);
       
       // 백엔드 데이터를 프론트엔드 형식으로 변환
       const transformedMyAccompany = transformAccompanyData(data.myAccompany);
@@ -287,7 +290,7 @@ const onRefresh = async () => {
     tags.push(...filters.categories);
     return tags;
   };
-
+  
   const navigateToPost = (postId) => {
     console.log('이동할 주소:', `/accompany/AccompanyPost?postId=${postId}`);
     router.push(`/accompany/AccompanyPost?postId=${postId}`);

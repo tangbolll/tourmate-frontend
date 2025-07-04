@@ -6,8 +6,8 @@ import {
     TouchableOpacity,
     StyleSheet,
     ScrollView,
-    FlatList,
-    ActivityIndicator
+    // FlatList,
+    // ActivityIndicator  => api에서 가져올 때 사용
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';

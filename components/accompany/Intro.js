@@ -18,7 +18,7 @@ const Intro = ({ message, photos = [defaultPhoto, defaultPhoto] }) => {
             <View style={styles.imageContainer}>
                 {photos.map((photo, index) => (
                     <View style={styles.imageBox} key={index}>
-                        <Image source={photo} style={styles.image} resizeMode="cover" />
+                        <Image source={typeof photo === 'string' ? { uri: photo } : photo} style={styles.image} resizeMode="cover" />
                     </View>
                 ))}
             </View>
