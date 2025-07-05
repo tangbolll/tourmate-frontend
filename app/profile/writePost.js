@@ -20,7 +20,7 @@ const WritePost = () => {
         endDate: ''
     });
     
-    const [postcards, setPostcards] = useState([{ id: 1, image: null, postcardTemplate: null }]);
+    const [postcards, setPostcards] = useState([{ id: 1, image: null, postcardTemplate: null, isSaved: false }]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedPostcard, setSelectedPostcard] = useState(null);
@@ -29,8 +29,10 @@ const WritePost = () => {
     const [isPostcardModalVisible, setIsPostcardModalVisible] = useState(false);
     // 엽서 오버레이 상태 추가
     const [isPostcardOverlayVisible, setIsPostcardOverlayVisible] = useState(false);
-    // 저장 완료 상태 추가
+    // 저장 완료 상태 추가 (전체 엽서 저장 상태)
     const [isSaved, setIsSaved] = useState(false);
+    // 편집 모드 상태 추가
+    const [isEditMode, setIsEditMode] = useState(true);
 
     // 전달받은 디렉토리 정보 설정 - 한 번만 실행
     useEffect(() => {
@@ -67,6 +69,12 @@ const WritePost = () => {
 
     // 갤러리에서 이미지 선택
     const pickImage = useCallback(async () => {
+        // 편집 모드가 아니거나 저장이 완료된 상태에서는 이미지 선택 불가
+        if (!isEditMode || isSaved) {
+            Alert.alert('알림', '편집 모드가 아닙니다. 편집 버튼을 눌러 편집 모드로 전환해주세요.');
+            return;
+        }
+
         try {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
@@ -102,32 +110,47 @@ const WritePost = () => {
             console.error('이미지 선택 오류:', error);
             Alert.alert('오류', '이미지 선택 중 오류가 발생했습니다.');
         }
-    }, [currentIndex]);
+    }, [currentIndex, isEditMode, isSaved]);
 
     // 새 엽서 추가
     const addNewPostcard = useCallback(() => {
+        // 편집 모드가 아니거나 저장이 완료된 상태에서는 새 엽서 추가 불가
+        if (!isEditMode || isSaved) {
+            Alert.alert('알림', '편집 모드가 아닙니다. 편집 버튼을 눌러 편집 모드로 전환해주세요.');
+            return;
+        }
+
         setPostcards(prev => {
             const newPostcard = {
                 id: prev.length + 1,
                 image: null,
-                postcardTemplate: null
+                postcardTemplate: null,
+                isSaved: false
             };
             return [...prev, newPostcard];
         });
         setCurrentIndex(prev => prev + 1);
         setSelectedImage(null);
         setSelectedPostcard(null);
-    }, []);
+    }, [isEditMode, isSaved]);
 
     // 엽서 선택 변경
     const selectPostcard = useCallback((index) => {
         setCurrentIndex(index);
         setSelectedImage(postcards[index].image);
         setSelectedPostcard(postcards[index].postcardTemplate);
+        setIsSaved(postcards[index].isSaved || false);
+        setIsEditMode(!postcards[index].isSaved);
     }, [postcards]);
 
     // 엽서 영역 터치 핸들러
     const handlePostcardAreaPress = useCallback(() => {
+        // 편집 모드가 아니거나 저장이 완료된 상태에서는 엽서 선택 불가
+        if (!isEditMode || isSaved) {
+            Alert.alert('알림', '편집 모드가 아닙니다. 편집 버튼을 눌러 편집 모드로 전환해주세요.');
+            return;
+        }
+
         if (selectedPostcard) {
             // 이미 엽서가 선택되어 있으면 오버레이 표시
             setIsPostcardOverlayVisible(true);
@@ -135,7 +158,7 @@ const WritePost = () => {
             // 엽서가 선택되지 않았으면 바로 선택 모달 열기
             setIsPostcardModalVisible(true);
         }
-    }, [selectedPostcard]);
+    }, [selectedPostcard, isEditMode, isSaved]);
 
     // 엽서 선택 모달 열기
     const handlePostcardSelect = useCallback(() => {
@@ -251,18 +274,30 @@ const WritePost = () => {
         );
     }, [isPostcardOverlayVisible, handleOverlayClose, handlePostcardSelect]);
 
-    // 저장 기능
+    // 저장 기능 - 현재 엽서만 저장
     const handleSave = useCallback(() => {
         if (selectedImage && selectedPostcard) {
-            console.log('엽서 저장:', {
+            console.log('현재 엽서 저장:', {
+                index: currentIndex,
                 image: selectedImage,
-                postcard: selectedPostcard,
-                allPostcards: postcards
+                postcard: selectedPostcard
             });
+            
+            // 현재 엽서를 저장된 상태로 표시
+            setPostcards(prev => {
+                const updated = [...prev];
+                updated[currentIndex] = {
+                    ...updated[currentIndex],
+                    isSaved: true
+                };
+                return updated;
+            });
+            
             Alert.alert('저장 완료', '엽서가 저장되었습니다.');
             setIsSaved(true);
+            setIsEditMode(false); // 저장 후 편집 모드 비활성화
         }
-    }, [selectedImage, selectedPostcard, postcards]);
+    }, [selectedImage, selectedPostcard, currentIndex]);
 
     // EditPostFloatingButtons 핸들러들
     const handleDelete = useCallback(() => {
@@ -275,9 +310,10 @@ const WritePost = () => {
                     text: '삭제', 
                     style: 'destructive',
                     onPress: () => {
-                        // 삭제 로직
-                        console.log('엽서 삭제');
+                        // 현재 엽서만 삭제
+                        console.log('현재 엽서 삭제:', currentIndex);
                         setIsSaved(false);
+                        setIsEditMode(true);
                         setSelectedImage(null);
                         setSelectedPostcard(null);
                         setPostcards(prev => {
@@ -285,7 +321,8 @@ const WritePost = () => {
                             updated[currentIndex] = {
                                 ...updated[currentIndex],
                                 image: null,
-                                postcardTemplate: null
+                                postcardTemplate: null,
+                                isSaved: false
                             };
                             return updated;
                         });
@@ -297,20 +334,22 @@ const WritePost = () => {
 
     const handleDownload = useCallback(() => {
         console.log('다운로드');
-        Alert.alert('다운로드', '엽서가 갤러리에 저장되었습니다.');
+        Alert.alert('다운로드', '모든 엽서가 갤러리에 저장되었습니다.');
     }, []);
 
     const handleLock = useCallback(() => {
         console.log('잠금 토글');
-        Alert.alert('잠금', '엽서가 잠겼습니다.');
+        Alert.alert('잠금', '이게 잠금기능이 맞나 ? 뭐지');
     }, []);
 
     const handleEdit = useCallback(() => {
-        console.log('편집');
-        Alert.alert('편집', '편집 기능을 실행합니다.');
+        console.log('편집 모드 활성화');
+        setIsEditMode(true);
+        setIsSaved(false);
+        Alert.alert('편집 모드', '편집 모드가 활성화되었습니다.');
     }, []);
 
-    // 저장 버튼 활성화 조건
+    // 저장 버튼 활성화 조건 - 현재 엽서가 완성되었는지 확인
     const isSaveEnabled = selectedImage && selectedPostcard;
 
     return (
@@ -361,9 +400,20 @@ const WritePost = () => {
                         </TouchableOpacity>
                     ))}
                     
-                    {/* 새 엽서 추가 버튼 */}
-                    <TouchableOpacity style={styles.addButton} onPress={addNewPostcard}>
-                        <Feather name="plus" size={24} color="#999" />
+                    {/* 새 엽서 추가 버튼 - 편집 모드일 때만 활성화 */}
+                    <TouchableOpacity 
+                        style={[
+                            styles.addButton,
+                            (!isEditMode || isSaved) && styles.addButtonDisabled
+                        ]} 
+                        onPress={addNewPostcard}
+                        disabled={!isEditMode || isSaved}
+                    >
+                        <Feather 
+                            name="plus" 
+                            size={24} 
+                            color="#999"
+                        />
                     </TouchableOpacity>
                 </ScrollView>
             </View>
@@ -377,13 +427,20 @@ const WritePost = () => {
                         selectedImage && styles.photoAreaSelected
                     ]} 
                     onPress={pickImage}
+                    disabled={!isEditMode || isSaved}
                 >
                     {selectedImage ? (
                         <Image source={{ uri: selectedImage }} style={styles.selectedImage} />
                     ) : (
                         <View style={styles.photoPlaceholder}>
-                            <Feather name="camera" size={32} color="#999" />
-                            <Text style={styles.photoText}>사진 추가</Text>
+                            <Feather 
+                                name="camera" 
+                                size={32} 
+                                color="#999"
+                            />
+                            <Text style={styles.photoText}>
+                                사진 추가
+                            </Text>
                         </View>
                     )}
                 </TouchableOpacity>
@@ -395,6 +452,7 @@ const WritePost = () => {
                         selectedPostcard && styles.postcardAreaSelected
                     ]} 
                     onPress={handlePostcardAreaPress}
+                    disabled={!isEditMode || isSaved}
                 >
                     {selectedPostcard ? (
                         <View style={styles.postcardContainer}>
@@ -403,8 +461,14 @@ const WritePost = () => {
                         </View>
                     ) : (
                         <View style={styles.postcardPlaceholder}>
-                            <Feather name="file-text" size={32} color="#999" />
-                            <Text style={styles.postcardText}>엽서 선택</Text>
+                            <Feather 
+                                name="file-text" 
+                                size={32} 
+                                color="#999"
+                            />
+                            <Text style={styles.postcardText}>
+                                엽서 선택
+                            </Text>
                         </View>
                     )}
                 </TouchableOpacity>
@@ -412,7 +476,7 @@ const WritePost = () => {
 
             {/* 저장 버튼 또는 EditPostFloatingButtons */}
             <View style={styles.saveButtonContainer}>
-                {!isSaved ? (
+                {isEditMode && !isSaved ? (
                     <SaveButton
                         title="엽서 저장"
                         onPress={handleSave}
@@ -470,6 +534,9 @@ const styles = StyleSheet.create({
     slideItemActive: {
         borderColor: '#007AFF',
     },
+    slideItemDisabled: {
+        // 삭제된 스타일 - 더 이상 사용하지 않음
+    },
     slideImageContainer: {
         flex: 1,
         position: 'relative',
@@ -501,6 +568,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
+    addButtonDisabled: {
+        backgroundColor: '#f9f9f9',
+    },
     contentContainer: {
         flex: 1,
         padding: 16,
@@ -515,11 +585,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#fafafa',
         minHeight: 200,
+        position: 'relative',
     },
     photoAreaSelected: {
         borderStyle: 'solid',
         borderColor: 'transparent',
         backgroundColor: 'transparent',
+    },
+    photoAreaDisabled: {
+        // 삭제된 스타일 - 더 이상 사용하지 않음
     },
     photoPlaceholder: {
         alignItems: 'center',
@@ -543,11 +617,15 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         backgroundColor: '#fafafa',
         minHeight: 200,
+        position: 'relative',
     },
     postcardAreaSelected: {
         borderStyle: 'solid',
         borderColor: 'transparent',
         backgroundColor: 'transparent',
+    },
+    postcardAreaDisabled: {
+        // 삭제된 스타일 - 더 이상 사용하지 않음
     },
     postcardContainer: {
         width: '100%',
@@ -562,6 +640,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#999',
         fontWeight: '500',
+    },
+    disabledText: {
+        // 삭제된 스타일 - 더 이상 사용하지 않음
+    },
+    disabledOverlay: {
+        // 삭제된 스타일 - 더 이상 사용하지 않음
     },
     saveButtonContainer: {
         padding: 16,

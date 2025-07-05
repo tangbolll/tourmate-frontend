@@ -13,7 +13,7 @@ const PostDirectoryFooter = ({
     selectedCount = 0,
     onDelete,
     onDownload,
-    onLock,
+    onShare,
     }) => {
     if (!isVisible) return null;
 
@@ -55,14 +55,14 @@ const PostDirectoryFooter = ({
                 />
             </TouchableOpacity>
 
-            {/* 잠금 버튼 */}
+            {/* 공유 버튼 */}
             <TouchableOpacity
                 style={styles.actionButton}
-                onPress={onLock}
+                onPress={onShare}
                 disabled={selectedCount === 0}
             >
                 <Icon
-                name="lock"
+                name="share"
                 size={26}
                 color={selectedCount > 0 ? '#000' : '#ccc'}
                 />

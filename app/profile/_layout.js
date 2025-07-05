@@ -16,6 +16,10 @@ export default function ProfileLayout() {
             headerShown: false,
             headerTitle: '모든 엽서' 
         }} />
+        <Stack.Screen name="sharePost" options={{ 
+            headerShown: false,
+            headerTitle: '엽서 공유' 
+        }} />
         </Stack>
     );
 }
