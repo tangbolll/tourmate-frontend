@@ -288,6 +288,7 @@ const styles = StyleSheet.create({
         padding: 20,
         width: '100%',
         maxWidth: 350,
+        height: '50%'
     },
     calendarHeader: {
         flexDirection: 'row',
