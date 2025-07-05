@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
@@ -10,19 +10,16 @@ const PostDirectoryHeader = ({
     onSelectPress,
     onCancelPress,
     showActionButton = true, // 오른쪽 버튼 표시 여부
+    isSelectMode = false, // 외부에서 선택 모드 상태 받기
 }) => {
-    const [isSelectMode, setIsSelectMode] = useState(false);
-
     const handleSelectToggle = () => {
         if (isSelectMode) {
             // 취소 모드일 때
-            setIsSelectMode(false);
             if (onCancelPress) {
                 onCancelPress();
             }
         } else {
             // 선택 모드일 때
-            setIsSelectMode(true);
             if (onSelectPress) {
                 onSelectPress();
             }

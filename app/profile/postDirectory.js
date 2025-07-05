@@ -163,10 +163,24 @@ export default function PostDirectory() {
         // 다운로드 로직 구현
     }, [selectedPostcards]);
 
-    const handleLock = useCallback(() => {
-        console.log('선택된 엽서 잠금:', Array.from(selectedPostcards));
-        // 잠금 로직 구현
-    }, [selectedPostcards]);
+    const handleShare = useCallback(() => {
+        console.log('선택된 엽서 공유:', Array.from(selectedPostcards));
+        
+        // 선택된 엽서들의 정보를 공유 페이지로 전달
+        const selectedPostcardsData = mockPostcards.filter(postcard => 
+            selectedPostcards.has(postcard.id)
+        );
+        
+        router.push({
+            pathname: 'profile/sharePost',
+            params: {
+                selectedPostcards: JSON.stringify(selectedPostcardsData),
+                directoryTitle: directoryTitle,
+                startDate: startDate,
+                endDate: endDate,
+            }
+        });
+    }, [selectedPostcards, router, directoryTitle, startDate, endDate]);
 
     return (
         <View style={styles.container}>
@@ -262,7 +276,7 @@ export default function PostDirectory() {
                 selectedCount={selectedPostcards.size}
                 onDelete={handleDelete}
                 onDownload={handleDownload}
-                onLock={handleLock}
+                onShare={handleShare}
             />
         </View>
     );
