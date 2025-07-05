@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
@@ -9,19 +9,17 @@ const PostDirectoryHeader = ({
     onBackPress,
     onSelectPress,
     onCancelPress,
+    showActionButton = true, // 오른쪽 버튼 표시 여부
+    isSelectMode = false, // 외부에서 선택 모드 상태 받기
 }) => {
-    const [isSelectMode, setIsSelectMode] = useState(false);
-
     const handleSelectToggle = () => {
         if (isSelectMode) {
             // 취소 모드일 때
-            setIsSelectMode(false);
             if (onCancelPress) {
                 onCancelPress();
             }
         } else {
             // 선택 모드일 때
-            setIsSelectMode(true);
             if (onSelectPress) {
                 onSelectPress();
             }
@@ -33,6 +31,9 @@ const PostDirectoryHeader = ({
             onBackPress();
         }
     };
+
+    // onSelectPress나 onCancelPress가 없으면 버튼 숨김
+    const shouldShowButton = showActionButton && (onSelectPress || onCancelPress);
 
     return (
         <View style={styles.container}>
@@ -50,15 +51,19 @@ const PostDirectoryHeader = ({
                 <Text style={styles.dateRange}>{startDate} - {endDate}</Text>
             </View>
 
-            {/* 오른쪽 선택/취소 버튼 */}
-            <TouchableOpacity 
-                style={styles.actionButton}
-                onPress={handleSelectToggle}
-            >
-                <Text style={styles.actionButtonText}>
-                    {isSelectMode ? '취소' : '선택'}
-                </Text>
-            </TouchableOpacity>
+            {/* 오른쪽 선택/취소 버튼 - 조건부 렌더링 */}
+            {shouldShowButton ? (
+                <TouchableOpacity 
+                    style={styles.actionButton}
+                    onPress={handleSelectToggle}
+                >
+                    <Text style={styles.actionButtonText}>
+                        {isSelectMode ? '취소' : '선택'}
+                    </Text>
+                </TouchableOpacity>
+            ) : (
+                <View style={styles.actionButtonPlaceholder} />
+            )}
         </View>
     );
 };
@@ -74,6 +79,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
         height: 70,
+        marginTop: 50, // 헤더 높이 조정
     },
     backButton: {
         padding: 8,
@@ -81,20 +87,19 @@ const styles = StyleSheet.create({
     },
     titleContainer: {
         flex: 1,
-        alignItems: 'center',
+        alignItems: 'flex-start',
         justifyContent: 'center',
         marginHorizontal: 16,
     },
     title: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: '600',
         color: '#333',
         marginBottom: 2,
     },
     dateRange: {
         fontSize: 14,
-        color: '#999',
-        fontWeight: '400',
+        color: '#666',
     },
     actionButton: {
         paddingHorizontal: 16,
@@ -110,6 +115,9 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#333',
         fontWeight: '500',
+    },
+    actionButtonPlaceholder: {
+        width: 60, // 버튼과 같은 너비를 유지하여 레이아웃 균형 맞춤
     },
 });
 
