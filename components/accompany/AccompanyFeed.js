@@ -16,7 +16,6 @@ export default function AccompanyFeed({
     onPressLike,
     onPress,
 }) {
-    console.log('AccompanyFeed liked 값:', liked);
     
     return (
         <TouchableOpacity onPress={onPress} style={styles.card}>

@@ -20,7 +20,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://192.168.35.74:8080'; // 본인 IP로 변경
+      return 'http://172.30.1.11:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -79,7 +79,7 @@ const AccompanyList = () => {
       meetingPoint: item.meetPlace || '',
       participants: item.participants?.length || 1,
       maxParticipants: item.maxRecruit || 0,
-      imageUrl: item.imageUrl?.[0] || '',
+      imageUrl: item.images?.length > 0 ? item.images[0] : '',
       tags: [
         ...(item.category || []),
         ...(item.tag || []),
@@ -115,6 +115,9 @@ const fetchAccompanyData = async () => {
     if (response.ok) {
       const data = await response.json();
       console.log('✅ API 응답 성공:', data);
+
+      console.log('🔍 API 응답:', data);
+      console.log('🔍 images 필드:', data.feed[0]?.images);
       
       // 백엔드 데이터를 프론트엔드 형식으로 변환
       const transformedMyAccompany = transformAccompanyData(data.myAccompany);
@@ -329,7 +332,7 @@ const renderFeedItems = () => {
           location={post.location}
           participants={post.participants}
           maxParticipants={post.maxParticipants}
-          imageUrl={post.imageUrl}
+          imageUrl={post.imageUrl || null}
           liked={!!likedPosts[post.id]}
           onPressLike={() => handlePressLike(post.id)}
           onPress={() => navigateToPost(post.id)}

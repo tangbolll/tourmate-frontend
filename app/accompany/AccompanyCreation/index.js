@@ -21,7 +21,7 @@ import { useRouter } from 'expo-router';
         if (Platform.OS === 'android') {
         return 'http://10.0.2.2:8080';
         } else {
-        return 'http://192.168.35.74:8080'; // 본인 IP로 변경
+        return 'http://172.30.1.11:8080'; // 본인 IP로 변경
         }
     } else {
         return 'https://your-production-api.com';
@@ -173,37 +173,60 @@ const AccompanyCreation = () => {
     setIsLoading(true);
 
     try {
-        const requestData = {
-            userId: 2, // TODO: 나중에 로그인 사용자 ID로 변경
-            title: title.trim(),
-            location: location.trim(),
-            meetPlace: meetLocation.trim(),          // meetingPoint → meetPlace
-            intro: description.trim(),               // description → intro
-            maxRecruit: parseInt(maxPeople),         // maxParticipants → maxRecruit
-            travelStartDate: formatDateForBackend(dateRange.startDate || dateRange.startDay),
-            travelEndDate: formatDateForBackend(dateRange.endDate || dateRange.endDay),
-            recStartDate: formatDateForBackend(recruitDateRange.startDate), // recruitmentStartDate → recStartDate
-            recEndDate: formatDateForBackend(recruitDateRange.endDate),     // recruitmentEndDate → recEndDate
-            imageUrl: images || [],
-            gender: selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'),
-            ageGroup: selectedAges.includes('누구나') ? ['ALL'] : selectedAges,
-            category: selectedCategories,
-            tag: tags || [],
-            createdAt: null // 서버에서 처리해도 괜찮음
-        };
+        // FormData 생성 (JSON 대신 사용)
+        const formData = new FormData();
+        
+        // 일반 데이터 추가
+        formData.append('userId', '2');
+        formData.append('title', title.trim());
+        formData.append('location', location.trim());
+        formData.append('meetPlace', meetLocation.trim());
+        formData.append('intro', description.trim());
+        formData.append('maxRecruit', maxPeople.toString());
+        formData.append('travelStartDate', formatDateForBackend(dateRange.startDate || dateRange.startDay));
+        formData.append('travelEndDate', formatDateForBackend(dateRange.endDate || dateRange.endDay));
+        formData.append('recStartDate', formatDateForBackend(recruitDateRange.startDate));
+        formData.append('recEndDate', formatDateForBackend(recruitDateRange.endDate));
+        formData.append('gender', selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'));
+        
+        // 배열 데이터 처리
+        const ageGroups = selectedAges.includes('누구나') ? ['ALL'] : selectedAges;
+        ageGroups.forEach(age => {
+            formData.append('ageGroup', age);
+        });
+        
+        selectedCategories.forEach(category => {
+            formData.append('category', category);
+        });
+        
+        tags.forEach(tag => {
+            formData.append('tag', tag);
+        });
+        
+        // 이미지 파일들 추가
+        if (images && images.length > 0) {
+            console.log('📤 이미지 개수:', images.length);
+            images.forEach((image, index) => {
+                formData.append('images', {
+                    uri: image.uri,
+                    type: image.type || 'image/jpeg',
+                    name: image.name || `image_${index}.jpg`,
+                });
+            });
+        }
 
-        console.log('📤 요청 데이터:', JSON.stringify(requestData, null, 2));
+        console.log('📤 FormData 생성 완료');
 
         const url = `${getBaseURL()}/api/accompany/create`;
         console.log('🌐 API URL:', url);
 
         const response = await fetch(url, {
             method: 'POST',
+            body: formData, // JSON.stringify 제거!
             headers: {
-                'Content-Type': 'application/json',
+                // Content-Type 헤더 제거! React Native가 자동으로 설정
                 'Accept': 'application/json',
             },
-            body: JSON.stringify(requestData)
         });
 
         console.log('📡 응답 받음:', response.status);
@@ -236,7 +259,8 @@ const AccompanyCreation = () => {
                 errorText = '응답 파싱 실패';
             }
 
-            Alert.alert("동행 생성 실패", `서버 오류 발생\n\n${errorText}`);
+            console.log('❌ 에러 응답:', errorText);
+            Alert.alert("동행 생성 실패", `서버 오류 발생 (${response.status})\n\n${errorText}`);
         }
 
     } catch (error) {

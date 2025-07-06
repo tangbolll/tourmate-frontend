@@ -3,7 +3,47 @@ import { View, Text, StyleSheet, Image } from 'react-native';
 
 const defaultPhoto = require('../../assets/defaultPhoto.jpg');
 
-const Intro = ({ message, photos = [defaultPhoto, defaultPhoto] }) => {
+const Intro = ({ message, photos }) => {
+    // photos 처리 로직
+    const getDisplayPhotos = () => {
+        // photos가 없거나 undefined인 경우
+        if (!photos) {
+            return [defaultPhoto, defaultPhoto];
+        }
+        
+        // photos가 빈 배열인 경우
+        if (Array.isArray(photos) && photos.length === 0) {
+            return [defaultPhoto, defaultPhoto];
+        }
+        
+        // photos가 배열인 경우
+        if (Array.isArray(photos)) {
+            // 유효한 이미지가 있는지 확인
+            const validPhotos = photos.filter(photo => 
+                photo && 
+                photo.trim() !== '' && 
+                photo !== 'undefined' && 
+                photo !== 'null'
+            );
+            
+            if (validPhotos.length === 0) {
+                return [defaultPhoto, defaultPhoto];
+            }
+            
+            return validPhotos;
+        }
+        
+        // photos가 문자열인 경우 (단일 이미지)
+        if (typeof photos === 'string' && photos.trim() !== '') {
+            return [photos, defaultPhoto];
+        }
+        
+        // 그 외의 경우 기본 이미지 사용
+        return [defaultPhoto, defaultPhoto];
+    };
+
+    const displayPhotos = getDisplayPhotos();
+
     return (
         <View>
             {/* 제목 */}
@@ -16,9 +56,16 @@ const Intro = ({ message, photos = [defaultPhoto, defaultPhoto] }) => {
 
             {/* 이미지 */}
             <View style={styles.imageContainer}>
-                {photos.map((photo, index) => (
+                {displayPhotos.map((photo, index) => (
                     <View style={styles.imageBox} key={index}>
-                        <Image source={photo} style={styles.image} resizeMode="cover" />
+                        <Image 
+                            source={typeof photo === 'string' ? { uri: photo } : photo} 
+                            style={styles.image} 
+                            resizeMode="cover" 
+                            onError={(error) => {
+                                console.log('Image load error:', error);
+                            }}
+                        />
                     </View>
                 ))}
             </View>
