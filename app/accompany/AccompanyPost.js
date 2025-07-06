@@ -91,17 +91,17 @@ export default function AccompanyPost() {
             createdAt: backendData.postDate ? 
                 dayjs(backendData.postDate).locale('ko').format('M월 D일(ddd)') : 
                 dayjs().locale('ko').format('M월 D일(ddd)'),
-            imageUrl: getImageUrl(backendData),
+            imageUrl: getImageUrl(backendData), 
             views: backendData.views || 0,
             travelStartDate: backendData.tripStartDate ? 
                 dayjs(backendData.tripStartDate).locale('ko').format('M월 D일(ddd)') : 
-                '호스트에게 직접 문의해주세요.',
+                '기간미정',
             travelEndDate: backendData.tripEndDate ? 
                 dayjs(backendData.tripEndDate).locale('ko').format('M월 D일(ddd)') : 
                 '',
             recruitStartDate: backendData.recStartDate ? 
                 dayjs(backendData.recStartDate).locale('ko').format('M월 D일(ddd)') : 
-                '호스트에게 직접 문의해주세요.',
+                '기간미정',
             recruitEndDate: backendData.recEndDate ? 
                 dayjs(backendData.recEndDate).locale('ko').format('M월 D일(ddd)') : 
                 '',
@@ -507,7 +507,7 @@ export default function AccompanyPost() {
                     />
                     <Intro
                     message={postData.description}
-                    photos={[`${API_URL}${postData.imageUrl}`]} // ← 이미지 URL 전달!
+                    photos={postData.imageUrl ? [`${API_URL}${postData.imageUrl}`] : []}
                     />
 
                     <GatheringPlace

@@ -40,15 +40,15 @@ const styles = StyleSheet.create({
         alignItems: 'center'
     },
     iconContainer: {
-        width: 24,           // 고정 너비 설정
-        height: 16,          // 아이콘 크기와 동일하게
-        justifyContent: 'center',  // 세로 중앙 정렬
-        alignItems: 'center',      // 가로 중앙 정렬
+        width: 16,          
+        height: 16,        
+        justifyContent: 'center', 
+        alignItems: 'center',    
         marginRight: 8,
     },
     text: {
         fontSize: 14,
-        flex: 1,  // 텍스트가 남은 공간을 모두 차지
+        flex: 1,
     },
     bold: {
         fontWeight: 'bold',
