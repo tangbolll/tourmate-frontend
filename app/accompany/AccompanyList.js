@@ -20,7 +20,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://192.168.35.74:8080'; // 본인 IP로 변경
+      return 'http://172.30.1.11:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -290,7 +290,7 @@ const onRefresh = async () => {
     tags.push(...filters.categories);
     return tags;
   };
-  
+
   const navigateToPost = (postId) => {
     console.log('이동할 주소:', `/accompany/AccompanyPost?postId=${postId}`);
     router.push(`/accompany/AccompanyPost?postId=${postId}`);
@@ -332,7 +332,7 @@ const renderFeedItems = () => {
           location={post.location}
           participants={post.participants}
           maxParticipants={post.maxParticipants}
-          imageUrl={post.imageUrl}
+          imageUrl={post.imageUrl || null}
           liked={!!likedPosts[post.id]}
           onPressLike={() => handlePressLike(post.id)}
           onPress={() => navigateToPost(post.id)}

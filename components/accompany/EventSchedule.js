@@ -8,18 +8,25 @@ const EventSchedule = ({ travelStartDate, travelEndDate, recruitStartDate, recru
         <View style={{ gap: 8 }}>
             <Wrapper>
                 <View style={styles.row}>
-                    <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
+                    <View style={styles.iconContainer}>
+                        <FontAwesome6 name="calendar-check" size={16} color="black" />
+                    </View>
                     <Text style={styles.text}>
-                        <Text style={styles.bold}>여행기간  </Text> {travelStartDate} - {travelEndDate}
+                        <Text style={styles.bold}>여행기간 </Text> {travelStartDate} - {travelEndDate}
                     </Text>
                 </View>
             </Wrapper>
 
             <Wrapper>
                 <View style={styles.row}>
-                    <FontAwesome6 name="hourglass-2" size={16} color="black" style={styles.icon} />
+                    <View style={styles.iconContainer}>
+                        <FontAwesome6 name="hourglass-2" size={16} color="black" />
+                    </View>
                     <Text style={styles.text}>
-                        <Text style={styles.bold}>모집기간  </Text> {recruitStartDate} - {recruitEndDate}
+                        <Text style={styles.bold}>모집기간  </Text> 
+                        {(recruitStartDate === '기간미정' || !recruitEndDate) 
+                            ? '호스트에게 직접 문의해주세요.' 
+                            : `${recruitStartDate} - ${recruitEndDate}`}
                     </Text>
                 </View>
             </Wrapper>
@@ -32,11 +39,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center'
     },
-    icon: {
+    iconContainer: {
+        width: 24,           // 고정 너비 설정
+        height: 16,          // 아이콘 크기와 동일하게
+        justifyContent: 'center',  // 세로 중앙 정렬
+        alignItems: 'center',      // 가로 중앙 정렬
         marginRight: 8,
     },
     text: {
         fontSize: 14,
+        flex: 1,  // 텍스트가 남은 공간을 모두 차지
     },
     bold: {
         fontWeight: 'bold',
