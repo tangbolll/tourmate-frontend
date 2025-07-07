@@ -106,7 +106,7 @@ const AddPostFloatingButton = ({ onOptionSelect }) => {
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
-        bottom: 30,
+        bottom: 100,
         right: 20,
         alignItems: 'flex-end',
     },
@@ -158,7 +158,7 @@ const styles = StyleSheet.create({
     buttonText: {
         color: 'white',
         fontSize: 24,
-        fontWeight: 'bold',
+        fontWeight: '666',
         lineHeight: 24,
     },
 });

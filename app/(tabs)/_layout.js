@@ -12,7 +12,11 @@ export default function AppLayout() {
             screenOptions={{
                 tabBarShowLabel: true,
                 tabBarStyle: {
-                    height: 60,
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 80,
                     paddingBottom: 10,
                     borderTopWidth: 0,
                     borderTopLeftRadius: 20,

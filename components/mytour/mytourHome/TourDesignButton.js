@@ -19,13 +19,21 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         paddingVertical: 12,
         borderRadius: 20,
-        alignSelf: 'flex-end',
-        marginTop: 12,
-        marginRight: 24,
+        alignSelf: 'center',
+        marginBottom: 80,
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowColor: '#000',
+        shadowOpacity: 0.7,
+        shadowRadius: 3,
+        elevation: 8,
     },
     text: {
         color: '#fff',
         fontSize: 16,
-        marginLeft: 6,
+        marginLeft: 8,
     },
 });
+

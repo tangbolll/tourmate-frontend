@@ -4,8 +4,10 @@ import {
     StyleSheet,
     SafeAreaView
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import BookmarkedTab from '../../components/mytour/mytourHome/BookMarkedTab';
 import MyTourTab from '../../components/mytour/mytourHome/MyTourTab';
+import TourDesignButton from '../../components/mytour/mytourHome/TourDesignButton';
 
 // 목 데이터 - 모든 여행 데이터
 const mockMyTours = [
@@ -77,6 +79,7 @@ const mockMyTours = [
 export default function MyTourHome({
     mytours = mockMyTours
 }) {
+    const router = useRouter();
     const [tours, setTours] = useState(mytours);
     
     const bookmarkedEvents = tours.filter(tour => tour.isBookmarked);
@@ -94,6 +97,16 @@ export default function MyTourHome({
         setTours(updatedTours);
     };
 
+    const handleTourDesignPress = () => {
+        console.log('여행 디자인 페이지로 이동');
+        try {
+            // Expo Router를 사용한 네비게이션
+            router.push('/mytour/tourDesign');
+        } catch (error) {
+            console.error('Navigation error:', error);
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             {/* 즐겨찾기 섹션 - 고정 */}
@@ -108,7 +121,12 @@ export default function MyTourHome({
                     mytours={tours}
                     onBookmarkUpdate={handleBookmarkUpdate}
                 />
+
             </View>
+            {/* 플로팅 여행 디자인 버튼 */}
+                <View style={styles.floatingButton}>
+                    <TourDesignButton onPress={handleTourDesignPress} />
+                </View>
         </SafeAreaView>
     );
 }
@@ -120,5 +138,11 @@ const styles = StyleSheet.create({
     },
     myTourSection: {
         flex: 1,
+    },
+    floatingButton: { 
+        position: 'absolute', 
+        bottom: 25, 
+        right: 20, 
+        zIndex: 10 
     },
 });

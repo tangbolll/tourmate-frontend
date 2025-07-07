@@ -99,11 +99,6 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
 
                 {/* Navigation Buttons */}
                 <View style={styles.monthNav}>
-                <Text style={styles.monthTitle}>
-                    {currentMonth.format('YYYY년 M월')}
-                </Text>
-                
-                <View style={styles.arrowContainer}>
                     <TouchableOpacity 
                         onPress={goToPrevMonth}
                         style={styles.arrowButton}
@@ -112,6 +107,10 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     <Text style={styles.arrow}>{'<'}</Text>
                     </TouchableOpacity>
 
+                    <Text style={styles.monthTitle}>
+                        {currentMonth.format('YYYY년 M월')}
+                    </Text>
+
                     <TouchableOpacity 
                         onPress={goToNextMonth}
                         style={styles.arrowButton}
@@ -119,7 +118,6 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     >
                     <Text style={styles.arrow}>{'>'}</Text>
                     </TouchableOpacity>
-                </View>
                 </View>
 
                 {/* Calendar */}
@@ -214,10 +212,6 @@ const styles = StyleSheet.create({
     monthTitle: {
         fontSize: 16,
         fontWeight: 'bold',
-    },
-    arrowContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
     },
     arrowButton: {
         paddingHorizontal: 15,

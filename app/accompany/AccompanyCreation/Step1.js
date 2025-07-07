@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
     View, 
     Text, 
@@ -6,14 +6,11 @@ import {
     TouchableOpacity,
     StyleSheet,
     ScrollView,
-    // FlatList,
-    // ActivityIndicator  => api에서 가져올 때 사용
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import Calendar from '../../../components/accompany/Calendar';
+import DayPicker from '../../../components/accompany/DayPicker';
 import ImageSelector from '../../../components/accompany/ImageSelector';
-import { formatDate, getDayOfWeek } from '../../../utils/dateUtils';
 
 const Step1 = ({ 
     title, setTitle, 
@@ -24,105 +21,88 @@ const Step1 = ({
     images, setImages, 
     thumbnailIndex, setThumbnailIndex
 }) => {
-    const [dateVisible, setDateVisible] = useState(false);
     const [locationInput, setLocationInput] = useState('');
-    // const [suggestions, setSuggestions] = useState([]);
-    // const [isOpen, setIsOpen] = useState(false);
-    // const [isLoading, setIsLoading] = useState(false);
-    
-    // const mockTravelData = [
-    //     { contentid: "2871024", title: "가나돈까스의집", addr1: "서울특별시 강남구 언주로 608" },
-    //     { contentid: "2899721", title: "가나안약국", addr1: "서울특별시 강남구 도산대로 113(신사동)" },
-    //     { contentid: "2869760", title: "가담", addr1: "서울특별시 강남구 언주로167길 35" },
-    //     { contentid: "2871443", title: "가람국시", addr1: "서울특별시 강남구 언주로135길 13" },
-    //     { contentid: "1001", title: "부산해운대", addr1: "부산광역시 해운대구 해운대해변로 264" },
-    //     { contentid: "1002", title: "부산광안리", addr1: "부산광역시 수영구 광안해변로 219" },
-    //     { contentid: "1003", title: "부천중앙공원", addr1: "경기도 부천시 원미구 중동로 160" },
-    //     { contentid: "1004", title: "부여백제문화단지", addr1: "충청남도 부여군 규암면 백제문로 455" },
-    //     { contentid: "1005", title: "부안변산반도", addr1: "전라북도 부안군 변산면 변산해변로 42" },
-    //     { contentid: "1006", title: "부암동", addr1: "서울특별시 종로구 부암동" },
-    //     { contentid: "1007", title: "부평구청", addr1: "인천광역시 부평구 부평대로 168" }
-    // ];
+    const [startDate, setStartDate] = useState(null);
+    const [endDate, setEndDate] = useState(null);
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [selectingDateType, setSelectingDateType] = useState('start');
+    const [currentMonth, setCurrentMonth] = useState(new Date());
 
-    // // 입력값 변경 시 검색 실행
-    // useEffect(() => {
-    //     if (inputValue.length > 0) {
-    //         setIsLoading(true);
-    //         // 디바운싱을 위한 타이머
-    //         const timer = setTimeout(() => {
-    //             searchTravelLocations(inputValue);
-    //         }, 300);
+    // 날짜가 변경될 때마다 dateRange 업데이트
+    useEffect(() => {
+        if (startDate && endDate) {
+            const formattedStartDate = formatDateToString(startDate);
+            const formattedEndDate = formatDateToString(endDate);
+            setDateRange({
+                startDate: formattedStartDate,
+                endDate: formattedEndDate,
+                startDay: getDayOfWeek(startDate),
+                endDay: getDayOfWeek(endDate)
+            });
+        }
+    }, [startDate, endDate]);
 
-    //         return () => clearTimeout(timer);
-    //     } else {
-    //         setSuggestions([]);
-    //         setIsOpen(false);
-    //     }
-    // }, [inputValue]);
+    const formatDateToString = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
-    const handleDateSelect = (startDate, endDate) => {
-        setDateRange({ 
-            startDate, 
-            endDate,
-            startDay: getDayOfWeek(startDate),
-            endDay: getDayOfWeek(endDate)
-        });
-        setDateVisible(false);
+    const getDayOfWeek = (date) => {
+        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        return weekdays[date.getDay()];
+    };
+
+    const formatDateForDisplay = (date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        const weekday = weekdays[date.getDay()];
+        return `${year}년 ${month}월 ${day}일 (${weekday})`;
+    };
+
+    const handleDateSelect = (day) => {
+        const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+        
+        if (selectingDateType === 'start') {
+            setStartDate(selectedDate);
+            // 시작일이 끝일보다 늦으면 끝일을 시작일과 같게 설정
+            if (endDate && selectedDate > endDate) {
+                setEndDate(selectedDate);
+            }
+            // 시작일 선택 후 자동으로 종료일 선택 모드로 전환
+            setSelectingDateType('end');
+        } else {
+            // 끝일 선택 시 시작일보다 이른 날짜는 선택 불가
+            if (startDate && selectedDate < startDate) {
+                return; // 선택 불가
+            }
+            setEndDate(selectedDate);
+            setShowCalendar(false);
+        }
+    };
+
+    const openCalendar = () => {
+        setSelectingDateType('start');
+        setShowCalendar(true);
     };
 
     const handleLocationChange = (text) => {
         setLocationInput(text);
-        setLocation(text); // 간단하게 텍스트만 저장
+        setLocation(text);
     };
 
-    // // 실제 API 호출 함수 (모의 검색으로 구현)
-    // const searchTravelLocations = async (keyword) => {
-    //     try {
-    //         // 실제 API 호출 시 주석을 해제하고 사용
-    //         // const response = await fetch(`http://your-api-url/api/myTour/search?keyword=${encodeURIComponent(keyword)}`);
-    //         // const data = await response.json();
-    //         // setSuggestions(data.response.body.items.item || []);
-            
-    //         // 모의 검색 (실제 구현시 위 코드로 교체)
-    //         const filtered = mockTravelData.filter(item => 
-    //             item.title.includes(keyword) || 
-    //             item.addr1.includes(keyword)
-    //         );
-    //         setSuggestions(filtered);
-    //         setIsOpen(true);
-    //         setIsLoading(false);
-    //     } catch (error) {
-    //         console.error('검색 실패:', error);
-    //         setIsLoading(false);
-    //     }
-    // };
-
-    // const handleInputChange = (text) => {
-    //     setInputValue(text);
-    // };
-
-    // const handleSuggestionPress = (suggestion) => {
-    //     setInputValue(suggestion.title);
-    //     setLocation(suggestion); // 선택된 위치 저장
-    //     setIsOpen(false);
-    //     console.log('선택된 여행지:', suggestion);
-    // };
-
-    // const clearInput = () => {
-    //     setInputValue('');
-    //     setSuggestions([]);
-    //     setIsOpen(false);
-    // };
-
-    // const renderSuggestionItem = ({ item }) => (
-    //     <TouchableOpacity 
-    //         style={styles.suggestionItem}
-    //         onPress={() => handleSuggestionPress(item)}
-    //     >
-    //         <Text style={styles.suggestionTitle}>{item.title}</Text>
-    //         <Text style={styles.suggestionAddress}>{item.addr1}</Text>
-    //     </TouchableOpacity>
-    // );
+    const getDateRangeText = () => {
+        if (startDate && endDate) {
+            return `${formatDateForDisplay(startDate)}   -   ${formatDateForDisplay(endDate)}`;
+        } else if (startDate) {
+            return `${formatDateForDisplay(startDate)} - 종료일 선택`;
+        } else {
+            return '여행기간을 선택해주세요.';
+        }
+    };
 
     return (
         <ScrollView style={styles.form}>
@@ -137,67 +117,40 @@ const Step1 = ({
             />
 
             <Text style={styles.label}>여행장소</Text>
-            {/* <View style={styles.autocompleteContainer}> */}
-                <View style={styles.inputWrapper}>
-                    <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
-                    <TextInput
-                        style={styles.inputWithIcon}
-                        placeholder="여행장소를 입력해주세요."
-                        placeholderTextColor="#888"
-                        value={locationInput} 
-                        onChangeText={handleLocationChange} // 연동 후에는 handleInputChange로 바꾸기
-                    />
-                </View>
-                    {/* {inputValue.length > 0 && (
-                        <TouchableOpacity onPress={clearInput} style={styles.clearButton}>
-                            <MaterialIcons name="close" size={16} color="#888" />
-                        </TouchableOpacity>
-                    )}
-                </View> */}
-
-                {/* 드롭다운 리스트
-                {isOpen && (
-                    <View style={styles.dropdown}>
-                        {isLoading ? (
-                            <View style={styles.loadingContainer}>
-                                <ActivityIndicator size="small" color="#0066cc" />
-                                <Text style={styles.loadingText}>검색 중...</Text>
-                            </View>
-                        ) : suggestions.length > 0 ? (
-                            <FlatList
-                                data={suggestions}
-                                renderItem={renderSuggestionItem}
-                                keyExtractor={(item) => item.contentid}
-                                style={styles.suggestionList}
-                                showsVerticalScrollIndicator={false}
-                            />
-                        ) : inputValue ? (
-                            <View style={styles.noResultContainer}>
-                                <Text style={styles.noResultText}>검색 결과가 없습니다.</Text>
-                            </View>
-                        ) : null}
-                    </View>
-                )}
-            </View> */}
+            <View style={styles.inputWrapper}>
+                <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
+                <TextInput
+                    style={styles.inputWithIcon}
+                    placeholder="여행장소를 입력해주세요."
+                    placeholderTextColor="#888"
+                    value={locationInput} 
+                    onChangeText={handleLocationChange}
+                />
+            </View>
             
             <Text style={styles.label}>여행기간</Text>
-            <TouchableOpacity onPress={() => setDateVisible(true)} style={styles.inputWrapper}>
+            <TouchableOpacity onPress={openCalendar} style={styles.inputWrapper}>
                 <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
-                <Text style={[styles.inputWithIcon, { color: dateRange.startDate ? '#000' : '#888' }]}>
-                    {dateRange.startDate 
-                        ? `${dateRange.startDate} (${dateRange.startDay}) ~ ${dateRange.endDate} (${dateRange.endDay})` 
-                        : '여행기간을 선택해주세요.'}
+                <Text style={[styles.inputWithIcon, { 
+                    color: startDate && endDate ? '#000' : '#888',
+                    lineHeight: 16 
+                }]}>
+                    {getDateRangeText()}
                 </Text>
             </TouchableOpacity>
-            
-            {dateVisible && (
-                <Calendar 
-                    visible={dateVisible}
-                    onSelect={handleDateSelect}
-                    startDate={dateRange.startDate ? new Date(dateRange.startDate) : null}
-                    endDate={dateRange.endDate ? new Date(dateRange.endDate) : null}
-                />
-            )}
+
+            {/* DayPicker 컴포넌트 */}
+            <DayPicker
+                visible={showCalendar}
+                onClose={() => setShowCalendar(false)}
+                onDateSelect={handleDateSelect}
+                selectedStartDate={startDate}
+                selectedEndDate={endDate}
+                selectingDateType={selectingDateType}
+                currentMonth={currentMonth}
+                setCurrentMonth={setCurrentMonth}
+                title={selectingDateType === 'start' ? '여행 시작일 선택' : '여행 종료일 선택'}
+            />
 
             <Text style={styles.label}>동행소개</Text>
             <TextInput
@@ -244,10 +197,6 @@ const styles = StyleSheet.create({
         marginTop: 5,
         marginBottom: 8
     },
-    autocompleteContainer: {
-        position: 'relative',
-        marginBottom: 12,
-    },
     inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -274,70 +223,9 @@ const styles = StyleSheet.create({
     },
     inputWithIcon: {
         flex: 1,
-        height: 16,
         fontSize: 14,
         marginLeft: 8,
         color: '#000',
-    },
-    clearButton: {
-        padding: 4,
-    },
-    dropdown: {
-        position: 'absolute',
-        top: 50,
-        left: 0,
-        right: 0,
-        backgroundColor: 'white',
-        borderWidth: 1,
-        borderColor: '#ccc',
-        borderRadius: 8,
-        maxHeight: 200,
-        zIndex: 1000,
-        elevation: 5, // Android shadow
-        shadowColor: '#000', // iOS shadow
-        shadowOffset: {
-            width: 0,
-            height: 2,
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 3.84,
-    },
-    suggestionList: {
-        maxHeight: 180,
-    },
-    suggestionItem: {
-        padding: 12,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    suggestionTitle: {
-        fontSize: 14,
-        fontWeight: '500',
-        color: '#333',
-        marginBottom: 4,
-    },
-    suggestionAddress: {
-        fontSize: 12,
-        color: '#666',
-    },
-    loadingContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        padding: 20,
-    },
-    loadingText: {
-        marginLeft: 8,
-        color: '#666',
-        fontSize: 14,
-    },
-    noResultContainer: {
-        padding: 20,
-        alignItems: 'center',
-    },
-    noResultText: {
-        color: '#666',
-        fontSize: 14,
     },
     textArea: {
         height: 100,
