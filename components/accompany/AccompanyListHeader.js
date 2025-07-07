@@ -7,30 +7,22 @@ export default function AccompanyListHeader({ onPressAlarm, onPressDM, onPressFi
         <View style={styles.container}>
         {/* Top Row */}
         <View style={styles.topRow}>
-            <Text style={styles.logo}>TOURMATE</Text>
-            <View style={styles.iconRow}>
-            <TouchableOpacity onPress={onPressAlarm} style={styles.iconButton}>
-                <Icon name="bell-outline" size={24} color="#000" />
-            </TouchableOpacity>
+            <View style={styles.searchContainer}>
+                <TextInput
+                    style={styles.searchInput}
+                    placeholder="관심 여행지, 카테고리를 검색해보세요"
+                    placeholderTextColor="#999"
+                    value={searchText}
+                    onChangeText={setSearchText}
+                />
+                <TouchableOpacity onPress={onPressFilter}>
+                <Icon name="tune" size={20} color="#666" />
+                </TouchableOpacity>
+            </View>
             <TouchableOpacity onPress={onPressDM} style={styles.iconButton}>
                 <Icon name="send" size={24} color="#000" />
             </TouchableOpacity>
             </View>
-        </View>
-
-        {/* Search Bar */}
-        <View style={styles.searchContainer}>
-            <TextInput
-                style={styles.searchInput}
-                placeholder="관심 여행지, 카테고리를 검색해보세요"
-                placeholderTextColor="#999"
-                value={searchText}
-                onChangeText={setSearchText}
-            />
-            <TouchableOpacity onPress={onPressFilter}>
-            <Icon name="tune" size={20} color="#666" />
-            </TouchableOpacity>
-        </View>
         </View>
     );
 }
@@ -46,11 +38,6 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
     },
-    logo: {
-        fontSize: 20,
-        fontWeight: 'bold',
-        fontStyle: 'italic',
-    },
     iconRow: {
         flexDirection: 'row',
     },
@@ -59,15 +46,15 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     searchContainer: {
+        width: '90%',
         flexDirection: 'row',
         alignItems: 'center',
-        marginTop: 12,
         paddingHorizontal: 12,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 12,
         height: 40,
-        backgroundColor: '#fafafa',
+        backgroundColor: '#fff',
     },
     searchInput: {
         flex: 1,

@@ -9,7 +9,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import Calendar from '../../../components/accompany/Calendar';
+import DayPicker from '../../../components/accompany/DayPicker';
 import { formatDate, getDayOfWeek } from '../../../utils/dateUtils';
 
 const Step2 = ({ 
@@ -21,21 +21,88 @@ const Step2 = ({
     tagInput, setTagInput,
     tags, setTags
 }) => {
-    const [recruitDateVisible, setRecruitDateVisible] = useState(false);
     const [isTagButtonEnabled, setIsTagButtonEnabled] = useState(false);
+    
+    // 모집 기간 관련 상태
+    const [recruitStartDate, setRecruitStartDate] = useState(null);
+    const [recruitEndDate, setRecruitEndDate] = useState(null);
+    const [showRecruitCalendar, setShowRecruitCalendar] = useState(false);
+    const [selectingRecruitDateType, setSelectingRecruitDateType] = useState('start');
+    const [recruitCurrentMonth, setRecruitCurrentMonth] = useState(new Date());
     
     useEffect(() => {
         setIsTagButtonEnabled(tagInput.trim().length > 0);
     }, [tagInput]);
 
-    const handleRecruitDateSelect = (startDate, endDate) => {
-        setRecruitDateRange({ 
-            startDate, 
-            endDate,
-            startDay: getDayOfWeek(startDate),
-            endDay: getDayOfWeek(endDate)
-        });
-        setRecruitDateVisible(false);
+    // 모집 기간 날짜가 변경될 때마다 recruitDateRange 업데이트
+    useEffect(() => {
+        if (recruitStartDate && recruitEndDate) {
+            const formattedStartDate = formatDateToString(recruitStartDate);
+            const formattedEndDate = formatDateToString(recruitEndDate);
+            setRecruitDateRange({
+                startDate: formattedStartDate,
+                endDate: formattedEndDate,
+                startDay: getDayOfWeek(recruitStartDate),
+                endDay: getDayOfWeek(recruitEndDate)
+            });
+        }
+    }, [recruitStartDate, recruitEndDate]);
+
+    const formatDateToString = (date) => {
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    const getDayOfWeek = (date) => {
+        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        return weekdays[date.getDay()];
+    };
+
+    const formatDateForDisplay = (date) => {
+        const year = date.getFullYear();
+        const month = date.getMonth() + 1;
+        const day = date.getDate();
+        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
+        const weekday = weekdays[date.getDay()];
+        return `${year}년 ${month}월 ${day}일 (${weekday})`;
+    };
+
+    const handleRecruitDateSelect = (day) => {
+        const selectedDate = new Date(recruitCurrentMonth.getFullYear(), recruitCurrentMonth.getMonth(), day);
+        
+        if (selectingRecruitDateType === 'start') {
+            setRecruitStartDate(selectedDate);
+            // 시작일이 끝일보다 늦으면 끝일을 시작일과 같게 설정
+            if (recruitEndDate && selectedDate > recruitEndDate) {
+                setRecruitEndDate(selectedDate);
+            }
+            // 시작일 선택 후 자동으로 종료일 선택 모드로 전환
+            setSelectingRecruitDateType('end');
+        } else {
+            // 끝일 선택 시 시작일보다 이른 날짜는 선택 불가
+            if (recruitStartDate && selectedDate < recruitStartDate) {
+                return; // 선택 불가
+            }
+            setRecruitEndDate(selectedDate);
+            setShowRecruitCalendar(false);
+        }
+    };
+
+    const openRecruitCalendar = () => {
+        setSelectingRecruitDateType('start');
+        setShowRecruitCalendar(true);
+    };
+
+    const getRecruitDateRangeText = () => {
+        if (recruitStartDate && recruitEndDate) {
+            return `${formatDateForDisplay(recruitStartDate)}   -   ${formatDateForDisplay(recruitEndDate)}`;
+        } else if (recruitStartDate) {
+            return `${formatDateForDisplay(recruitStartDate)} - 종료일 선택`;
+        } else {
+            return '모집기간을 선택해주세요.';
+        }
     };
     
     // 성별 옵션
@@ -121,37 +188,34 @@ const Step2 = ({
                     keyboardType="numeric"
                     value={maxPeople}
                     onChangeText={setMaxPeople}
+                    textAlign={maxPeople ? "right" : "left"}
                 />
                 <Text style={styles.unitText}>명</Text>
             </View>
             
             <Text style={styles.label}>모집 기간</Text>
-            <TouchableOpacity 
-                onPress={() => setRecruitDateVisible(true)} 
-                style={styles.dateInputRow}
-            >
-                <View style={styles.iconContainer}>
-                    <FontAwesome6 name="calendar-check" size={14} color="black" />
-                </View>
-                <View style={styles.dateRangeContainer}>
-                    <Text style={styles.dateText}>
-                        {recruitDateRange.startDate ? `${recruitDateRange.startDate} (${recruitDateRange.startDay || getDayOfWeek(recruitDateRange.startDate)})` : '시작일'}
-                    </Text>
-                    <Text style={styles.dateSeparator}>~</Text>
-                    <Text style={styles.dateText}>
-                        {recruitDateRange.endDate ? `${recruitDateRange.endDate} (${recruitDateRange.endDay || getDayOfWeek(recruitDateRange.endDate)})` : '종료일'}
-                    </Text>
-                </View>
+            <TouchableOpacity onPress={openRecruitCalendar} style={styles.inputWrapper}>
+                <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
+                <Text style={[styles.inputWithIcon, { 
+                    color: recruitStartDate && recruitEndDate ? '#000' : '#888',
+                    lineHeight: 16 
+                }]}>
+                    {getRecruitDateRangeText()}
+                </Text>
             </TouchableOpacity>
-            
-            {recruitDateVisible && (
-                <Calendar 
-                    visible={recruitDateVisible}
-                    onSelect={handleRecruitDateSelect}
-                    startDate={recruitDateRange.startDate ? new Date(recruitDateRange.startDate) : new Date()}
-                    endDate={recruitDateRange.endDate ? new Date(recruitDateRange.endDate) : new Date()}
-                />
-            )}
+
+            {/* DayPicker 컴포넌트 */}
+            <DayPicker
+                visible={showRecruitCalendar}
+                onClose={() => setShowRecruitCalendar(false)}
+                onDateSelect={handleRecruitDateSelect}
+                selectedStartDate={recruitStartDate}
+                selectedEndDate={recruitEndDate}
+                selectingDateType={selectingRecruitDateType}
+                currentMonth={recruitCurrentMonth}
+                setCurrentMonth={setRecruitCurrentMonth}
+                title={selectingRecruitDateType === 'start' ? '모집 시작일 선택' : '모집 종료일 선택'}
+            />
             
             <Text style={styles.label}>동행 조건</Text>
             
@@ -300,29 +364,24 @@ const styles = StyleSheet.create({
         color: '#000',
         marginLeft: 5,
     },
-    dateInputRow: {
+    inputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
         paddingHorizontal: 10,
-        marginBottom: 15,
-        width: '100%',
+        paddingVertical: 12,
+        marginBottom: 12,
     },
-    dateRangeContainer: {
+    icon: {
+        marginRight: 8,
+    },
+    inputWithIcon: {
         flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    dateText: {
         fontSize: 14,
+        marginLeft: 8,
         color: '#000',
-    },
-    dateSeparator: {
-        fontSize: 14,
-        color: '#000',
-        marginHorizontal: 8,
     },
     conditionRow: {
         flexDirection: 'row',

@@ -100,16 +100,6 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
         }
     };
 
-    const handleTourDesignPress = () => {
-        console.log('여행 디자인 페이지로 이동');
-        try {
-            // Expo Router를 사용한 네비게이션
-            router.push('/mytour/tourDesign');
-        } catch (error) {
-            console.error('Navigation error:', error);
-        }
-    };
-
     return (
         <View style={styles.container}>
             {/* 헤더 고정 */}
@@ -143,11 +133,6 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
                         ))}
                     </View>
                 </ScrollView>
-                
-                {/* 플로팅 여행 디자인 버튼 */}
-                <View style={styles.floatingButtonContainer}>
-                    <TourDesignButton onPress={handleTourDesignPress} />
-                </View>
             </View>
         </View>
     );
@@ -176,13 +161,5 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingTop: 16,
         backgroundColor: '#fff',
-    },
-    floatingButtonContainer: {
-        position: 'absolute',
-        bottom: 20,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-        zIndex: 1,
     },
 });

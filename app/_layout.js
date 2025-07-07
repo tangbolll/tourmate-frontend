@@ -7,7 +7,6 @@ export default function RootLayout() {
         <GestureHandlerRootView style={styles.container}>
             <Stack screenOptions={{ headerShown: false }}>
                 <Stack.Screen name="(tabs)" />
-                <Stack.Screen name="mytour" />
             </Stack>
         </GestureHandlerRootView>
     );
