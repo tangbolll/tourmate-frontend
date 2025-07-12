@@ -23,7 +23,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://172.30.1.55:8081'; // 본인 IP로 변경
+      return 'http://192.168.35.218:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -51,11 +51,11 @@ const Chat = ({ postId: propPostId }) => {
     // 현재 사용자 ID (실제로는 인증 시스템에서 가져올 값)
     const currentUserId = 2; // Long 타입으로 맞춤
 
-    // 🌐 채팅방 정보 가져오기 (백엔드 API와 정확히 일치)
-    const fetchChatRoom = async (accompanyId) => {
+    // 🌐 채팅방 정보 가져오기 또는 생성 (ToChatroom과 동일한 로직)
+    const fetchOrCreateChatRoom = async (accompanyId) => {
         try {
             const url = `${API_URL}/api/accompany/${accompanyId}/chatroom`;
-            console.log('🌐 채팅방 조회 API 호출:', url);
+            console.log('🌐 채팅방 조회/생성 API 호출:', url);
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -67,17 +67,27 @@ const Chat = ({ postId: propPostId }) => {
             
             if (response.ok) {
                 const roomData = await response.json();
-                console.log('✅ 채팅방 데이터:', roomData);
+                console.log('✅ 채팅방 데이터 (기존/새로생성):', roomData);
                 setChatRoom(roomData);
                 return roomData;
             } else if (response.status === 404) {
-                setError('채팅방을 찾을 수 없습니다.');
-                return null;
+                // 404면 채팅방이 없다는 뜻이므로, 다시 요청하면 백엔드에서 자동 생성
+                console.log('📝 채팅방이 없음, 자동 생성 요청');
+                const createResponse = await fetch(url);
+                
+                if (createResponse.ok) {
+                    const newRoomData = await createResponse.json();
+                    console.log('✅ 새 채팅방 자동 생성:', newRoomData);
+                    setChatRoom(newRoomData);
+                    return newRoomData;
+                } else {
+                    throw new Error(`채팅방 생성 실패: ${createResponse.status}`);
+                }
             } else {
                 throw new Error(`채팅방 조회 실패: ${response.status}`);
             }
         } catch (error) {
-            console.error('❌ 채팅방 조회 오류:', error);
+            console.error('❌ 채팅방 조회/생성 오류:', error);
             throw error;
         }
     };
@@ -205,7 +215,7 @@ const Chat = ({ postId: propPostId }) => {
         });
     };
 
-    // 🎯 초기 데이터 로드
+    // 🎯 초기 데이터 로드 (채팅방 자동 생성 포함)
     useEffect(() => {
         const loadChatData = async () => {
             if (!postId) {
@@ -218,16 +228,20 @@ const Chat = ({ postId: propPostId }) => {
                 setLoading(true);
                 setError(null);
                 
-                // 1. 채팅방 정보 가져오기
-                const roomData = await fetchChatRoom(postId);
+                console.log('🚀 채팅방 초기화 시작: postId =', postId);
+                
+                // 1. 채팅방 정보 가져오기 (없으면 자동 생성)
+                const roomData = await fetchOrCreateChatRoom(postId);
                 
                 if (!roomData) {
-                    setError('채팅방을 찾을 수 없습니다.');
+                    setError('채팅방을 생성할 수 없습니다.');
                     return;
                 }
                 
                 // 2. 메시지 목록 가져오기
                 await fetchMessages(roomData.id);
+                
+                console.log('✅ 채팅방 초기화 완료');
                 
             } catch (error) {
                 console.error('❌ 채팅 데이터 로드 실패:', error);
@@ -254,7 +268,7 @@ const Chat = ({ postId: propPostId }) => {
 
     // 게시물 보기 버튼
     const handleViewPost = () => {
-        router.push(`/accompany/${postId}`);
+        router.push(`/accompany/AccompanyPost?postId=${postId}`);
     };
 
     // 🔄 로딩 상태
@@ -263,7 +277,7 @@ const Chat = ({ postId: propPostId }) => {
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
                     <ActivityIndicator size="large" color="#007AFF" />
-                    <Text style={styles.loadingText}>채팅방을 불러오는 중...</Text>
+                    <Text style={styles.loadingText}>채팅방을 준비하는 중...</Text>
                 </View>
             </SafeAreaView>
         );
@@ -307,7 +321,7 @@ const Chat = ({ postId: propPostId }) => {
                     </View>
                     <View style={styles.headerTitleRow}>
                         <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-                            {chatRoom?.roomName || "채팅방"}
+                            {chatRoom?.roomName || `동행 ${postId} 채팅방`}
                         </Text>
                         <View style={styles.headerButtons}>
                             <TouchableOpacity style={styles.detailButton} onPress={handleViewPost}>
@@ -321,13 +335,13 @@ const Chat = ({ postId: propPostId }) => {
                 </View>
             </View>
 
-            {/* 공지사항 (기본 메시지로 대체) */}
+            {/* 공지사항 */}
             <View style={styles.announcementWrapper}>
                 <View style={styles.announcementContainer}>
                     <Feather name="volume-2" size={20} color="black" />
                     <Text style={styles.announcementLabel}>안내</Text>
                     <Text style={styles.announcementText}>
-                        서로를 존중하며 즐거운 대화를 나눠주세요!
+                        동행 {postId}번의 채팅방입니다. 서로를 존중하며 즐거운 대화를 나눠주세요!
                     </Text>
                 </View>
             </View>
@@ -340,7 +354,7 @@ const Chat = ({ postId: propPostId }) => {
             >
                 {messages.length === 0 ? (
                     <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>아직 메시지가 없습니다.</Text>
+                        <Text style={styles.emptyText}>동행 {postId}번 채팅방이 생성되었습니다!</Text>
                         <Text style={styles.emptySubText}>첫 번째 메시지를 보내보세요!</Text>
                     </View>
                 ) : (

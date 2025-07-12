@@ -24,7 +24,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://172.30.1.55:8081'; // 본인 IP로 변경
+      return 'http://192.168.35.218:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -480,6 +480,7 @@ export default function AccompanyPost() {
                         maxParticipants={postData.maxParticipants}
                         onParticipantsClick={handleParticipantsClick}
                         postId={postId}
+                        currentUserId={currentUserId}
                     />
                     
                     {/* More button outside header */}
@@ -506,8 +507,8 @@ export default function AccompanyPost() {
                         recruitEndDate={postData.recruitEndDate}
                     />
                     <Intro
-                    message={postData.description}
-                    photos={postData.imageUrl ? [`${API_URL}${postData.imageUrl}`] : []}
+                        message={postData.description}
+                        photos={postData.imageUrl ? [postData.imageUrl] : []}  // API_URL 제거!
                     />
 
                     <GatheringPlace
@@ -578,8 +579,11 @@ export default function AccompanyPost() {
                     <ApplicationButton
                         title={applied ? "동행 취소" : "동행 신청"}
                         onPress={handleApplicationPress}
-                        likes={postData.likes}
-                        closed={false}
+                        initialLikes={postData.likes || 0}
+                        isLiked={postData.isLiked || false}  
+                        postId={postId}
+                        currentUserId={currentUserId}
+                        closed={closed}
                     />
                 )}
                 
