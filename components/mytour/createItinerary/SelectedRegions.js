@@ -36,8 +36,8 @@ const SelectedRegions = ({ selectedRegions, onRemoveRegion }) => {
                             </TouchableOpacity>
                         </View>
                         <Text style={styles.regionText} numberOfLines={1}>
-                        <Text style={{ fontWeight: 'bold' }}>{item.country}</Text>
-                        {' '}{item.region}
+                        {/* <Text style={{ fontWeight: 'bold' }}>{item.country}</Text> */}
+                        {item.region}
                         </Text>
                     </View>
                 ))}
@@ -94,6 +94,7 @@ const styles = StyleSheet.create({
         textAlign: 'center',
         lineHeight: 14,
         width: '100%',
+        fontWeight: 'bold'
     },
 });
 

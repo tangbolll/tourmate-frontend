@@ -114,7 +114,7 @@ const DateSelectButtons = ({
                     { backgroundColor: getIconBackgroundColor() }
                 ]}
                 onPress={handleGridPress}
-                activeOpacity={0.7}
+                activeOpacity={1}
             >
                 <Ionicons name="grid-outline" size={20} color="#fff" />
             </TouchableOpacity>

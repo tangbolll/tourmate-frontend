@@ -20,7 +20,7 @@ const getApiUrl = () => {
     if (Platform.OS === 'android') {
       return 'http://10.0.2.2:8080';
     } else {
-      return 'http://172.30.1.55:8081'; // 본인 IP로 변경
+      return 'http://172.30.1.55:8080'; // 본인 IP로 변경
     }
   } else {
     return 'https://your-production-api.com';
@@ -101,6 +101,7 @@ const fetchAccompanyData = async () => {
     setLoading(true);
     const url = `${API_URL}/api/accompany/home?userId=${currentUserId}`;
     
+    console.time("⏱ fetch");
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -109,7 +110,7 @@ const fetchAccompanyData = async () => {
       },
       timeout: 10000, // 10초 타임아웃
     });
-    
+    console.timeEnd("⏱ fetch");
 
     
     if (response.ok) {

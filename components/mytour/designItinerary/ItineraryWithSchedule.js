@@ -1,72 +1,59 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
     View,
-    Text,
-    TouchableOpacity,
     StyleSheet,
     SafeAreaView,
     StatusBar,
 } from 'react-native';
 import ItineraryBlock from './ItineraryBlock';
-import AddSchedule from './AddSchedule';
 
 const ItineraryWithSchedule = ({ 
     periodType, 
     startDate, 
     endDate, 
     nights, 
-    days 
+    days,
+    scheduleData = {},
+    onAddSchedule,
+    onScheduleDelete,
+    onTimeBlockClick,
+    showAddButtons = false
 }) => {
-    const [schedules, setSchedules] = useState([]);
-    const [modalVisible, setModalVisible] = useState(false);
-    const [selectedDate, setSelectedDate] = useState('');
-    const [selectedTime, setSelectedTime] = useState(7);
-    const [existingSchedule, setExistingSchedule] = useState(null);
-
     // 시간 블록 클릭 핸들러
-    const handleTimeBlockClick = (date, hour, schedule) => {
-        setSelectedDate(date);
-        setSelectedTime(hour);
-        setExistingSchedule(schedule);
-        setModalVisible(true);
+    const handleTimeBlockClick = (blockData) => {
+        console.log('Time block clicked with data:', blockData);
+        
+        // 부모 컴포넌트의 핸들러 호출
+        if (onTimeBlockClick) {
+            onTimeBlockClick(blockData);
+        }
     };
-    console.log('date: ', selectedDate);
 
-    // 일정 저장 핸들러
-    const handleSaveSchedule = (scheduleData) => {
-        setSchedules(prevSchedules => {
-            const existingIndex = prevSchedules.findIndex(s => s.id === scheduleData.id);
-            
-            if (existingIndex >= 0) {
-                // 기존 일정 수정
-                const updatedSchedules = [...prevSchedules];
-                updatedSchedules[existingIndex] = scheduleData;
-                return updatedSchedules;
-            } else {
-                // 새 일정 추가
-                return [...prevSchedules, scheduleData];
-            }
-        });
+    // 일정 추가 핸들러
+    const handleAddSchedule = (selectedDay, selectedDate = null, selectedHour = null) => {
+        console.log('Add schedule clicked:', selectedDay, selectedDate, selectedHour);
+        
+        // 부모 컴포넌트의 핸들러 호출
+        if (onAddSchedule) {
+            onAddSchedule(selectedDay, selectedDate, selectedHour);
+        }
     };
 
     // 일정 삭제 핸들러
-    const handleDeleteSchedule = (scheduleId) => {
-        setSchedules(prevSchedules => 
-            prevSchedules.filter(schedule => schedule.id !== scheduleId)
-        );
-    };
-
-    // 모달 닫기 핸들러
-    const handleCloseModal = () => {
-        setModalVisible(false);
-        setExistingSchedule(null);
+    const handleDeleteSchedule = (scheduleId, day) => {
+        console.log('Schedule delete requested:', scheduleId, day);
+        
+        // 부모 컴포넌트의 삭제 핸들러 호출
+        if (onScheduleDelete) {
+            onScheduleDelete(scheduleId, day);
+        }
     };
 
     return (
         <SafeAreaView style={styles.container}>
             <StatusBar barStyle="dark-content" backgroundColor="#f9fafb" />
             
-            {/* 메인 콘텐츠 - 스크롤 불가 */}
+            {/* 메인 콘텐츠 */}
             <View style={styles.mainContent}>
                 <ItineraryBlock
                     periodType={periodType}
@@ -74,20 +61,13 @@ const ItineraryWithSchedule = ({
                     endDate={endDate}
                     nights={nights}
                     days={days}
-                    schedules={schedules}
+                    scheduleData={scheduleData}
                     onTimeBlockClick={handleTimeBlockClick}
+                    onAddSchedule={handleAddSchedule}
+                    onScheduleDelete={handleDeleteSchedule}
+                    showAddButtons={showAddButtons}
                 />
             </View>
-
-            <AddSchedule
-                visible={modalVisible}
-                onClose={handleCloseModal}
-                onSave={handleSaveSchedule}
-                onDelete={handleDeleteSchedule}
-                selectedDate={selectedDate}
-                selectedTime={selectedTime}
-                existingSchedule={existingSchedule}
-            />
         </SafeAreaView>
     );
 };

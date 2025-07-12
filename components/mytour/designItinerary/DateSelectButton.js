@@ -41,9 +41,9 @@ const styles = StyleSheet.create({
         paddingVertical: 6,
         borderRadius: 10,
         borderWidth: 1,
-        borderColor: '#d1d5db',
+        borderColor: '#ccc',
         marginRight: 8,
-        minWidth: 80,
+        minWidth: 70,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -52,7 +52,7 @@ const styles = StyleSheet.create({
         borderWidth: 0,
     },
     dayText: {
-        fontSize: 16,
+        fontSize: 14,
         fontWeight: '600',
         color: '#374151',
         marginBottom: 1,
@@ -61,7 +61,7 @@ const styles = StyleSheet.create({
         color: '#fff',
     },
     dateText: {
-        fontSize: 12,
+        fontSize: 10,
         color: '#6b7280',
     },
     selectedDateText: {

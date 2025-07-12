@@ -28,9 +28,9 @@ export default function DesignItinerary() {
     // 그리드 모드 상태 관리
     const [isGridMode, setIsGridMode] = useState(false);
     
-    // AddSchedule 팝업 상태
+    // AddSchedule 팝업 상태 - 중앙 집중식으로 관리
     const [showAddSchedulePopup, setShowAddSchedulePopup] = useState(false);
-    const [scheduleDay, setScheduleDay] = useState(null);
+    const [schedulePopupData, setSchedulePopupData] = useState(null);
     
     // AI 일정 디자인 팝업 상태
     const [showAiPopup, setShowAiPopup] = useState(false);
@@ -38,7 +38,7 @@ export default function DesignItinerary() {
     // 멤버 팝업 상태
     const [showMemberPopup, setShowMemberPopup] = useState(false);
     
-    // 일정 데이터 상태 추가 (핵심 수정 부분)
+    // 일정 데이터 상태
     const [scheduleData, setScheduleData] = useState({});
     
     // 임시 멤버 데이터
@@ -161,34 +161,66 @@ export default function DesignItinerary() {
         setMembers(prev => [...prev, newMember]);
     };
 
-    // 일정 추가 핸들러
-    const handleAddSchedule = (selectedDay) => {
-        console.log('일정 추가 요청 - 선택된 날짜:', selectedDay);
-        setScheduleDay(selectedDay);
+    // 일정 추가 핸들러 - 통합 관리
+    const handleAddSchedule = (selectedDay, selectedDate = null, selectedHour = null) => {
+        console.log('일정 추가 요청 - 선택된 날짜:', selectedDay, '선택된 시간:', selectedHour);
+        
+        setSchedulePopupData({
+            selectedDay: selectedDay,
+            selectedDate: selectedDate,
+            selectedHour: selectedHour,
+            existingSchedule: null
+        });
+        setShowAddSchedulePopup(true);
+    };
+
+    // 블록 클릭 핸들러 - 통합 관리
+    const handleTimeBlockClick = (blockData) => {
+        console.log('블록 클릭:', blockData);
+        
+        setSchedulePopupData({
+            selectedDay: blockData.day || null,
+            selectedDate: blockData.date || null,
+            selectedHour: blockData.hour || null,
+            existingSchedule: blockData.existingSchedule || null
+        });
         setShowAddSchedulePopup(true);
     };
 
     // AddSchedule 팝업 닫기 핸들러
     const handleCloseAddSchedulePopup = () => {
+        console.log('AddSchedule 팝업 닫기');
         setShowAddSchedulePopup(false);
-        setScheduleDay(null);
+        setSchedulePopupData(null);
     };
 
-    // AddSchedule 팝업에서 일정 추가 완료 핸들러 (수정됨)
+    // 일정 추가 완료 핸들러
     const handleScheduleAdded = (newScheduleData) => {
         console.log('새 일정 추가:', newScheduleData);
         
         // 일정 데이터를 상태에 저장
         setScheduleData(prev => {
-            const dayKey = `day${scheduleDay}`;
+            // 날짜 또는 day 기반으로 키 생성
+            let dayKey;
+            if (newScheduleData.day) {
+                dayKey = `day${newScheduleData.day}`;
+            } else if (schedulePopupData?.selectedDay) {
+                dayKey = `day${schedulePopupData.selectedDay}`;
+            } else {
+                // 날짜 기반으로 day 계산
+                dayKey = `day1`; // 기본값
+            }
+            
             const existingSchedules = prev[dayKey] || [];
             
             // 새 일정에 고유 ID 추가
             const scheduleWithId = {
                 ...newScheduleData,
-                id: Date.now().toString(), // 임시 ID 생성
-                day: scheduleDay
+                id: newScheduleData.id || Date.now().toString(),
+                day: schedulePopupData?.selectedDay || 1
             };
+            
+            console.log('일정 저장 완료:', scheduleWithId);
             
             return {
                 ...prev,
@@ -196,21 +228,24 @@ export default function DesignItinerary() {
             };
         });
         
-        setShowAddSchedulePopup(false);
-        setScheduleDay(null);
+        // 팝업 닫기
+        handleCloseAddSchedulePopup();
     };
 
-    // 일정 삭제 핸들러 (새로 추가)
+    // 일정 삭제 핸들러
     const handleScheduleDelete = (scheduleId, day) => {
-        console.log('일정 삭제:', scheduleId, day);
+        console.log('일정 삭제 요청:', scheduleId, day);
         
         setScheduleData(prev => {
             const dayKey = `day${day}`;
             const existingSchedules = prev[dayKey] || [];
             
+            const updatedSchedules = existingSchedules.filter(schedule => schedule.id !== scheduleId);
+            console.log('삭제 후 남은 일정들:', updatedSchedules);
+            
             return {
                 ...prev,
-                [dayKey]: existingSchedules.filter(schedule => schedule.id !== scheduleId)
+                [dayKey]: updatedSchedules
             };
         });
     };
@@ -226,9 +261,9 @@ export default function DesignItinerary() {
             return (
                 <Schedule 
                     selectedDay={selectedDay}
-                    schedules={daySchedules} // 일정 데이터 전달
-                    onAddSchedule={handleAddSchedule}
-                    onScheduleDelete={handleScheduleDelete} // 삭제 핸들러 전달
+                    schedules={daySchedules}
+                    onAddSchedule={(day) => handleAddSchedule(day)}
+                    onScheduleDelete={handleScheduleDelete}
                 />
             );
         } else if (isGridMode) {
@@ -240,9 +275,10 @@ export default function DesignItinerary() {
                     endDate={period.endDate}
                     nights={period.nights}
                     days={period.days}
-                    scheduleData={scheduleData} // 일정 데이터 전달
+                    scheduleData={scheduleData}
                     onAddSchedule={handleAddSchedule}
-                    onScheduleDelete={handleScheduleDelete} // 삭제 핸들러 전달
+                    onScheduleDelete={handleScheduleDelete}
+                    onTimeBlockClick={handleTimeBlockClick}
                     showAddButtons={true}
                 />
             );
@@ -255,8 +291,10 @@ export default function DesignItinerary() {
                     endDate={period.endDate}
                     nights={period.nights}
                     days={period.days}
-                    scheduleData={scheduleData} // 일정 데이터 전달
-                    onScheduleDelete={handleScheduleDelete} // 삭제 핸들러 전달
+                    scheduleData={scheduleData}
+                    onScheduleDelete={handleScheduleDelete}
+                    onTimeBlockClick={handleTimeBlockClick}
+                    showAddButtons={false}
                 />
             );
         }
@@ -316,15 +354,22 @@ export default function DesignItinerary() {
                 />
             )}
 
-            {showAddSchedulePopup && (
+            {/* 중앙 집중식 AddSchedule 팝업 관리 */}
+            {showAddSchedulePopup && schedulePopupData && (
                 <AddSchedule
                     visible={showAddSchedulePopup}
-                    selectedDay={scheduleDay}
+                    selectedDay={schedulePopupData.selectedDay}
+                    selectedDate={schedulePopupData.selectedDate}
+                    selectedHour={schedulePopupData.selectedHour}
+                    existingSchedule={schedulePopupData.existingSchedule}
                     onClose={handleCloseAddSchedulePopup}
                     onScheduleAdded={handleScheduleAdded}
+                    onScheduleDelete={handleScheduleDelete}
                     periodType={period.type}
                     startDate={period.startDate}
                     endDate={period.endDate}
+                    nights={period.nights}
+                    days={period.days}
                 />
             )}
         </SafeAreaView>

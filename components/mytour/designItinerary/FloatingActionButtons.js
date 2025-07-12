@@ -61,8 +61,9 @@ const styles = StyleSheet.create({
     },
     allButtonsRow: {
         flexDirection: 'row',
+        justifyContent: 'center',
         alignItems: 'center',
-        gap: 8,
+        gap: 24,
     },
     floatingBackButton: {
         width: 40,
@@ -81,8 +82,7 @@ const styles = StyleSheet.create({
         elevation: 5,
     },
     floatingActionButton: {
-        flex: 1,
-        paddingHorizontal: 12,
+        paddingHorizontal: 16,
         paddingVertical: 10,
         borderRadius: 20, 
         alignItems: 'center',
