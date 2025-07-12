@@ -283,6 +283,7 @@ const styles = StyleSheet.create({
         color: '#FFF',
     },
     categoriesContainer: {
+        marginTop: 2,
         flexDirection: 'row',
         flexWrap: 'wrap',
     },

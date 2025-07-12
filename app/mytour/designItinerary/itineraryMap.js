@@ -89,7 +89,7 @@ export default function ItineraryMap() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff',
+        backgroundColor: 'transparent',
     },
     mapContainer: {
         flex: 1,

@@ -173,7 +173,7 @@ const Step1 = ({
 
             <Text style={styles.label}>모이는 장소</Text>
             <View style={styles.inputWrapper}>
-                <MaterialIcons name="location-pin" size={14} color="#555" />
+                <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
                 <TextInput
                     style={styles.inputWithIcon}
                     placeholder="위치 추가"

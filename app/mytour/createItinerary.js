@@ -6,6 +6,7 @@ import CompleteButton from '../../components/mytour/createItinerary/CompleteButt
 import ItineraryTitleInput from '../../components/mytour/createItinerary/ItineraryTitleInput';
 import TourPlace from '../../components/mytour/createItinerary/TourPlace';
 import TourPeriod from '../../components/mytour/createItinerary/TourPeriod';
+import DayPicker from '../../components/mytour/createItinerary/DayPicker';
 
 export default function CreateItinerary() {
     const router = useRouter();

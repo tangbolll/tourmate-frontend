@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         marginRight: 12,
-        marginTop: 16,
+        marginTop: 8,
     },
     selectedAddButton: {
         backgroundColor: '#f0f0f0',
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     attractionCard: {
         flex: 1,
         backgroundColor: '#fff',
-        borderRadius: 12,
+        borderRadius: 8,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -119,7 +119,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingVertical: 8,
         paddingHorizontal: 16,
-        // 아래에 선추가
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
     },
@@ -161,7 +160,7 @@ const styles = StyleSheet.create({
         gap: 6,
     },
     infoText: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#666',
         flex: 1,
     },
