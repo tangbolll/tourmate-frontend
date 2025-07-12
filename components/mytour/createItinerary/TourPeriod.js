@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { FontAwesome6 } from '@expo/vector-icons';
+import DayPicker from './DayPicker';
 
 const TourPeriod = ({ onPeriodChange }) => {
     const [selectedType, setSelectedType] = useState('date');
@@ -8,6 +9,28 @@ const TourPeriod = ({ onPeriodChange }) => {
     const [endDate, setEndDate] = useState('');
     const [nights, setNights] = useState('');
     const [days, setDays] = useState('');
+    
+    // 달력 모달 상태
+    const [showCalendar, setShowCalendar] = useState(false);
+    const [selectingDateType, setSelectingDateType] = useState('start'); // 'start' or 'end'
+    const [selectedStartDate, setSelectedStartDate] = useState(null);
+    const [selectedEndDate, setSelectedEndDate] = useState(null);
+
+    // 날짜 형식 변환 함수
+    const formatDateToString = (date) => {
+        if (!date) return '';
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+
+    // 문자열을 Date 객체로 변환
+    const parseStringToDate = (dateString) => {
+        if (!dateString) return null;
+        const [year, month, day] = dateString.split('-');
+        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+    };
 
     const handleTypeChange = (type) => {
         setSelectedType(type);
@@ -21,6 +44,13 @@ const TourPeriod = ({ onPeriodChange }) => {
         });
     };
 
+    const handleDateInputPress = (field) => {
+        if (selectedType === 'date') {
+            setSelectingDateType(field);
+            setShowCalendar(true);
+        }
+    };
+
     const handleDateChange = (field, value) => {
         const newData = {
             type: selectedType,
@@ -30,8 +60,20 @@ const TourPeriod = ({ onPeriodChange }) => {
             days: ''
         };
         
-        if (field === 'start') setStartDate(value);
-        if (field === 'end') setEndDate(value);
+        if (field === 'start') {
+            setStartDate(value);
+            setSelectedStartDate(parseStringToDate(value));
+            // 시작일이 종료일보다 늦으면 종료일 초기화
+            if (endDate && value > endDate) {
+                setEndDate('');
+                setSelectedEndDate(null);
+                newData.endDate = '';
+            }
+        }
+        if (field === 'end') {
+            setEndDate(value);
+            setSelectedEndDate(parseStringToDate(value));
+        }
         
         onPeriodChange(newData);
     };
@@ -51,29 +93,53 @@ const TourPeriod = ({ onPeriodChange }) => {
         onPeriodChange(newData);
     };
 
+    // 달력에서 날짜 선택 핸들러
+    const handleDateSelect = (selectedDay) => {
+        // 현재 달력의 연도와 월을 가져와서 Date 객체 생성
+        const currentDate = new Date();
+        const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay);
+        const formattedDate = formatDateToString(selectedDate);
+
+        if (selectingDateType === 'start') {
+            handleDateChange('start', formattedDate);
+        } else {
+            handleDateChange('end', formattedDate);
+        }
+        
+        setShowCalendar(false);
+    };
+
     const renderDateInputs = () => (
         <View style={styles.dateInputsContainer}>
-            <View style={styles.dateInputWrapper}>
+            <TouchableOpacity 
+                style={styles.dateInputWrapper}
+                onPress={() => handleDateInputPress('start')}
+            >
                 <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
                 <TextInput
                     placeholder="여행시작일"
                     style={styles.dateInput}
                     placeholderTextColor="#9ca3af"
                     value={startDate}
-                    onChangeText={(value) => handleDateChange('start', value)}
+                    editable={false}
+                    pointerEvents="none"
                 />
-            </View>
+            </TouchableOpacity>
             <Text style={styles.separator}>-</Text>
-            <View style={styles.dateInputWrapper}>
+            <TouchableOpacity 
+                style={styles.dateInputWrapper}
+                onPress={() => handleDateInputPress('end')}
+            >
                 <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
                 <TextInput
                     placeholder="여행종료일"
                     style={styles.dateInput}
                     placeholderTextColor="#9ca3af"
                     value={endDate}
-                    onChangeText={(value) => handleDateChange('end', value)}
+                    editable={false}
+                    pointerEvents="none"
                 />
-            </View>
+            </TouchableOpacity>
         </View>
     );
 
@@ -119,6 +185,17 @@ const TourPeriod = ({ onPeriodChange }) => {
             </View>
 
             {selectedType === 'date' ? renderDateInputs() : renderDurationInputs()}
+
+            {/* 달력 모달 */}
+            <DayPicker
+                visible={showCalendar}
+                onClose={() => setShowCalendar(false)}
+                onDateSelect={handleDateSelect}
+                selectedStartDate={selectedStartDate}
+                selectedEndDate={selectedEndDate}
+                selectingDateType={selectingDateType}
+                title={selectingDateType === 'start' ? '시작일 선택' : '종료일 선택'}
+            />
         </View>
     );
 };

@@ -75,14 +75,6 @@ const Country = ({ selectedContinent, onRegionSelect, selectedRegions = [] }) =>
                                                 style={styles.countryImage}
                                                 resizeMode="cover"
                                             />
-                                            {!isExpanded && (
-                                                <View style={styles.plusIconContainer}>
-                                                    <AntDesign 
-                                                        name="plus" 
-                                                        style={styles.plusIcon} 
-                                                    />
-                                                </View>
-                                            )}
                                         </View>
                                         <View style={styles.countryDetails}>
                                             {!isExpanded ? (
@@ -100,12 +92,10 @@ const Country = ({ selectedContinent, onRegionSelect, selectedRegions = [] }) =>
                                         </View>
                                     </View>
                                     
-                                    {!isExpanded ? null : (
-                                        <AntDesign 
-                                            name="up" 
-                                            style={styles.chevronIcon} 
-                                        />
-                                    )}
+                                    <AntDesign 
+                                        name={isExpanded ? "up" : "down"} 
+                                        style={styles.chevronIcon} 
+                                    />
                                 </TouchableOpacity>
                                 
                                 {isExpanded && (
@@ -179,7 +169,6 @@ const styles = StyleSheet.create({
         marginRight: 12,
     },
     imageContainer: {
-        position: 'relative',
         marginRight: 12,
     },
     countryImage: {
@@ -224,22 +213,6 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#6b7280',
         flex: 1,
-    },
-    plusIconContainer: {
-        position: 'absolute',
-        top: -2,
-        right: -2,
-        width: 18,
-        height: 18,
-        borderRadius: 9,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    plusIcon: {
-        fontSize: 12,
-        color: '#ffffff',
-        fontWeight: 'bold',
     },
     chevronIcon: {
         fontSize: 16,

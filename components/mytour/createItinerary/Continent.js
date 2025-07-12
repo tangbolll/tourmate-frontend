@@ -43,7 +43,7 @@ const Continent = ({ selectedContinent, onContinentSelect }) => {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: 'white',
-        paddingTop: 12,
+        paddingVertical: 12,
         paddingHorizontal: 8,
     },
     scrollContainer: {

@@ -429,6 +429,7 @@ const styles = StyleSheet.create({
         height: 80, // 스크롤 콘텐츠와 하단 고정 버튼 사이의 여백
     },
     fixedButtonContainer: {
+        height: 90,
         position: 'absolute',
         bottom: 0,
         left: 0,

@@ -101,6 +101,7 @@ const fetchAccompanyData = async () => {
     setLoading(true);
     const url = `${API_URL}/api/accompany/home?userId=${currentUserId}`;
     
+    console.time("⏱ fetch");
     const response = await fetch(url, {
       method: 'GET',
       headers: {
@@ -109,7 +110,7 @@ const fetchAccompanyData = async () => {
       },
       timeout: 10000, // 10초 타임아웃
     });
-    
+    console.timeEnd("⏱ fetch");
 
     
     if (response.ok) {

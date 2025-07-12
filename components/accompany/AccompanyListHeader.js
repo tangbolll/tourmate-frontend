@@ -1,6 +1,6 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
-import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function AccompanyListHeader({ onPressAlarm, onPressDM, onPressFilter, searchText, setSearchText }) {
     return (
@@ -16,11 +16,11 @@ export default function AccompanyListHeader({ onPressAlarm, onPressDM, onPressFi
                     onChangeText={setSearchText}
                 />
                 <TouchableOpacity onPress={onPressFilter}>
-                <Icon name="tune" size={20} color="#666" />
+                <Ionicons name="options-outline" size={20} color="#666" />
                 </TouchableOpacity>
             </View>
             <TouchableOpacity onPress={onPressDM} style={styles.iconButton}>
-                <Icon name="send" size={24} color="#000" />
+                <Ionicons name="paper-plane-outline" size={24}/> 
             </TouchableOpacity>
             </View>
         </View>
