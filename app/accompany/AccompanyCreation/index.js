@@ -21,7 +21,7 @@ import { useRouter } from 'expo-router';
         if (Platform.OS === 'android') {
         return 'http://10.0.2.2:8080';
         } else {
-        return 'http://172.30.1.55:8081'; // 본인 IP로 변경
+        return 'http://172.30.1.55:8080'; // 본인 IP로 변경
         }
     } else {
         return 'https://your-production-api.com';
@@ -429,6 +429,7 @@ const styles = StyleSheet.create({
         height: 80, // 스크롤 콘텐츠와 하단 고정 버튼 사이의 여백
     },
     fixedButtonContainer: {
+        height: 90,
         position: 'absolute',
         bottom: 0,
         left: 0,

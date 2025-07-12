@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 const WriteComment = ({ 
     onSend, 
     onFocus, 
-    placeholder = "코멘트를 작성해주세요.",
+    placeholder,
     isReplyMode = false,
     replyToNickname = "",
     onCancel

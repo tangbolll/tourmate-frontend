@@ -2,17 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
 import { useRouter } from 'expo-router';
 import SearchRegionHeader from '../../components/mytour/createItinerary/SearchRegionHeader';
-import Continent from '../../components/mytour/createItinerary/Continent';
-import Country from '../../components/mytour/createItinerary/Country';
 import SelectedRegions from '../../components/mytour/createItinerary/SelectedRegions';
-import { BottomSheet } from '../../components/mytour/createItinerary/BottomSheet';
-import CreateItineraryButton from '../../components/mytour/createItinerary/CreateItineraryButton';
+import BottomSheet from '../../components/mytour/createItinerary/BottomSheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const TourDesign = () => {
     const router = useRouter();
     const [searchText, setSearchText] = useState('');
-    const [selectedContinent, setSelectedContinent] = useState('국내');
     const [selectedRegions, setSelectedRegions] = useState([]);
     const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(true);
     const [sheetHeight, setSheetHeight] = useState(0.6); // 0.6 = 60%
@@ -25,10 +21,6 @@ const TourDesign = () => {
         console.log('뒤로 가기');
         // Expo Router 뒤로가기
         router.back();
-    };
-
-    const handleContinentSelect = (continent) => {
-        setSelectedContinent(continent);
     };
 
     const handleRegionSelect = (regionKey, country, region) => {
@@ -81,31 +73,12 @@ const TourDesign = () => {
                 isOpen={isBottomSheetOpen}
                 onClose={() => setIsBottomSheetOpen(false)}
                 onHeightChange={setSheetHeight}
-            >
-                {/* 바텀 시트 내부 선택된 지역 표시 */}
-                <SelectedRegions 
-                    selectedRegions={selectedRegions}
-                    onRemoveRegion={handleRemoveRegion}
-                />
-                
-                <Continent 
-                    selectedContinent={selectedContinent}
-                    onContinentSelect={handleContinentSelect}
-                />
-                <Country 
-                    selectedContinent={selectedContinent}
-                    onRegionSelect={handleRegionSelect}
-                    selectedRegions={selectedRegions}
-                />
-            </BottomSheet>
-
-            {/* 플로팅 여행일정 생성 버튼 */}
-            <View style={styles.floatingButtonContainer}>
-                <CreateItineraryButton 
-                    isActive={isCreateButtonActive}
-                    onPress={handleCreateTrip}
-                />
-            </View>
+                selectedRegions={selectedRegions}
+                onRegionSelect={handleRegionSelect}
+                onRemoveRegion={handleRemoveRegion}
+                isCreateButtonActive={isCreateButtonActive}
+                handleCreateTrip={handleCreateTrip}
+            />
         </SafeAreaView>
         </GestureHandlerRootView>
     );
@@ -136,14 +109,6 @@ const styles = StyleSheet.create({
         left: 0,
         right: 0,
         zIndex: 50,
-    },
-    floatingButtonContainer: {
-        position: 'absolute',
-        bottom: 20,
-        left: 0,
-        right: 0,
-        alignItems: 'center',
-        zIndex: 1000,
     },
 });
 
