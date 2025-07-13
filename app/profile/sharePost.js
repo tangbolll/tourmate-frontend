@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { View, StyleSheet, Text, TouchableOpacity, ScrollView, Image, Alert, Modal, TextInput } from "react-native";
-import { Feather } from '@expo/vector-icons';
+import { View, StyleSheet, ScrollView, Alert } from "react-native";
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import PostDirectoryHeader from "../../components/profile/PostDirectoryHeader";
-import SaveButton from "../../components/profile/SaveButton";
+import PostcardSlider from "../../components/profile/sharePost/PostcardSlider";
+import PostcardInfoForm from "../../components/profile/sharePost/PostcardInfoForm";
+import PhotoSection from "../../components/profile/sharePost/PhotoSection";
+import PostcardTemplate from "../../components/profile/PostcardTemplate";
+import UploadSection from "../../components/profile/sharePost/UploadSection";
+import DateSelectorModal from "../../components/profile/sharePost/DateSelectorModal";
 
 const sharePost = () => {
     const router = useRouter();
@@ -28,15 +32,13 @@ const sharePost = () => {
     const [isDateModalVisible, setIsDateModalVisible] = useState(false);
     const [availableDates, setAvailableDates] = useState([]);
 
-    // 전달받은 디렉토리 정보 및 선택된 엽서들 설정 - 의존성 배열 수정
+    // 전달받은 디렉토리 정보 및 선택된 엽서들 설정
     useEffect(() => {
-        // params가 존재하고 필요한 값들이 있을 때만 업데이트
         if (params?.directoryId || params?.directoryTitle || params?.startDate || params?.endDate) {
             const startDate = params.startDate ? new Date(params.startDate) : null;
             const endDate = params.endDate ? new Date(params.endDate) : null;
             
             setDirectoryInfo(prev => {
-                // 이미 같은 데이터가 설정되어 있으면 업데이트하지 않음
                 if (prev.id === params.directoryId && 
                     prev.name === (params.directoryTitle || '새 폴더') &&
                     prev.startDate?.getTime() === startDate?.getTime() &&
@@ -65,10 +67,8 @@ const sharePost = () => {
         }
     }, [params?.directoryId, params?.directoryTitle, params?.startDate, params?.endDate]);
 
-    // 선택된 엽서들 초기화 - 별도 useEffect로 분리
+    // 선택된 엽서들 초기화
     useEffect(() => {
-        // 실제로는 props나 navigation params로 받아올 선택된 엽서들
-        // 임시로 더미 데이터 설정
         const dummyPostcards = [
             { id: 1, image: 'https://picsum.photos/400/300?random=1', postcardTemplate: { color: '#E3F2FD', tab: 'Line' }},
             { id: 2, image: 'https://picsum.photos/400/300?random=2', postcardTemplate: { color: '#F3E5F5', tab: 'Plain' }},
@@ -87,7 +87,7 @@ const sharePost = () => {
             };
         });
         setPostcardDetails(initialDetails);
-    }, []); // 빈 의존성 배열로 한 번만 실행
+    }, []);
 
     // 날짜 포맷팅 함수
     const formatDate = useCallback((date) => {
@@ -102,43 +102,10 @@ const sharePost = () => {
         setCurrentIndex(index);
     }, []);
 
-    // 더 많은 엽서 추가하기 (뒤로가기)
+    // 더 많은 엽서 추가하기
     const addMorePostcards = useCallback(() => {
         router.back();
     }, [router]);
-
-    // 엽서 템플릿 렌더링 함수
-    const renderPostcardTemplate = useCallback((template) => {
-        if (!template) return null;
-
-        return (
-            <View style={[styles.postcardTemplate, { backgroundColor: template.color }]}>
-                <Text style={styles.postcardTitle}>Postcard</Text>
-                <View style={styles.postcardContent}>
-                    <View style={styles.postcardLeft} />
-                    <View style={styles.postcardRight}>
-                        {template.tab === 'Line' && (
-                            <>
-                                <View style={styles.templateLine} />
-                                <View style={styles.templateLine} />
-                                <View style={styles.templateLine} />
-                                <View style={styles.templateLine} />
-                            </>
-                        )}
-                        {template.tab === 'Plain' && (
-                            <View style={styles.templatePlainArea} />
-                        )}
-                        {template.tab === 'Image' && (
-                            <View style={styles.templateImageArea}>
-                                <Text style={styles.templateImageText}>Image</Text>
-                            </View>
-                        )}
-                    </View>
-                </View>
-                <Text style={styles.postcardBottom}>This side for message</Text>
-            </View>
-        );
-    }, []);
 
     // 엽서 정보 업데이트
     const updatePostcardDetail = useCallback((field, value) => {
@@ -162,7 +129,6 @@ const sharePost = () => {
     // 날짜 선택
     const selectDate = useCallback((date) => {
         updatePostcardDetail('date', date);
-        setIsDateModalVisible(false);
     }, [updatePostcardDetail]);
 
     // 업로드 기능
@@ -216,175 +182,45 @@ const sharePost = () => {
                 showActionButton={false}
             />
 
-            {/* 엽서 슬라이드 영역 - 엽서가 2개 이상일 때만 표시 */}
-            {selectedPostcards.length > 1 && (
-                <View style={styles.slideContainer}>
-                    <ScrollView
-                        horizontal
-                        showsHorizontalScrollIndicator={false}
-                        contentContainerStyle={styles.slideContent}
-                    >
-                        {selectedPostcards.map((postcard, index) => (
-                            <TouchableOpacity
-                                key={postcard.id}
-                                style={[
-                                    styles.slideItem,
-                                    currentIndex === index && styles.slideItemActive
-                                ]}
-                                onPress={() => selectPostcard(index)}
-                            >
-                                {postcard.image ? (
-                                    <View style={styles.slideImageContainer}>
-                                        <Image source={{ uri: postcard.image }} style={styles.slideImage} />
-                                        {currentIndex === index && (
-                                            <View style={styles.checkmark}>
-                                                <Feather name="check" size={16} color="#fff" />
-                                            </View>
-                                        )}
-                                    </View>
-                                ) : (
-                                    <View style={styles.slideEmpty}>
-                                        {currentIndex === index && (
-                                            <View style={styles.checkmark}>
-                                                <Feather name="check" size={16} color="#fff" />
-                                            </View>
-                                        )}
-                                    </View>
-                                )}
-                            </TouchableOpacity>
-                        ))}
-                        
-                        {/* 더 추가하기 버튼 */}
-                        <TouchableOpacity 
-                            style={styles.addButton} 
-                            onPress={addMorePostcards}
-                        >
-                            <Feather name="plus" size={24} color="#999" />
-                        </TouchableOpacity>
-                    </ScrollView>
-                </View>
-            )}
+            {/* 엽서 슬라이더 */}
+            <PostcardSlider
+                postcards={selectedPostcards}
+                currentIndex={currentIndex}
+                onSelectPostcard={selectPostcard}
+                onAddMorePostcards={addMorePostcards}
+            />
 
             {/* 메인 컨텐츠 영역 */}
             <ScrollView style={styles.contentContainer} showsVerticalScrollIndicator={false}>
-                {/* 엽서 정보 입력 섹션 */}
-                <View style={styles.inputSection}>
-                    {/* 엽서 제목 */}
-                    <View style={styles.inputGroup}>
-                        <TextInput
-                            style={styles.titleInput}
-                            placeholder="엽서 제목 (최대 10자)"
-                            placeholderTextColor="#999"
-                            value={currentDetails.title || ''}
-                            onChangeText={(text) => updatePostcardDetail('title', text)}
-                            maxLength={10}
-                        />
-                    </View>
-
-                    {/* 여행 장소와 날짜 */}
-                    <View style={styles.inputRow}>
-                        <View style={styles.inputHalf}>
-                            <View style={styles.inputWithIcon}>
-                                <Feather name="map-pin" size={16} color="#000" style={styles.inputIcon} />
-                                <TextInput
-                                    style={styles.textInputWithIcon}
-                                    placeholder="여행장소"
-                                    placeholderTextColor="#999"
-                                    value={currentDetails.location || ''}
-                                    onChangeText={(text) => updatePostcardDetail('location', text)}
-                                />
-                            </View>
-                        </View>
-                        
-                        <View style={styles.inputHalf}>
-                            <TouchableOpacity
-                                style={styles.dateSelector}
-                                onPress={openDateModal}
-                            >
-                                <View style={styles.dateSelectorContent}>
-                                    <Feather name="calendar" size={16} color="#000" style={styles.inputIcon} />
-                                    <Text style={[
-                                        styles.dateText,
-                                        !currentDetails.date && styles.placeholder
-                                    ]}>
-                                        {currentDetails.date ? formatDate(currentDetails.date) : '여행날짜'}
-                                    </Text>
-                                </View>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
+                {/* 엽서 정보 입력 폼 */}
+                <PostcardInfoForm
+                    postcardDetails={currentDetails}
+                    onUpdateDetail={updatePostcardDetail}
+                    onOpenDateModal={openDateModal}
+                />
 
                 {/* 사진 영역 */}
-                <View style={styles.photoSection}>
-                    {currentPostcard && currentPostcard.image ? (
-                        <Image 
-                            source={{ uri: currentPostcard.image }} 
-                            style={styles.photoImage} 
-                        />
-                    ) : (
-                        <View style={styles.photoPlaceholder}>
-                            <Feather name="image" size={48} color="#ccc" />
-                        </View>
-                    )}
-                </View>
+                <PhotoSection imageUri={currentPostcard?.image} />
 
                 {/* 엽서 템플릿 영역 */}
                 <View style={styles.postcardSection}>
-                    {currentPostcard && currentPostcard.postcardTemplate ? (
-                        renderPostcardTemplate(currentPostcard.postcardTemplate)
-                    ) : (
-                        <View style={styles.postcardPlaceholder}>
-                            <Feather name="file-text" size={48} color="#ccc" />
-                        </View>
-                    )}
+                    <PostcardTemplate template={currentPostcard?.postcardTemplate} />
                 </View>
             </ScrollView>
 
             {/* 하단 업로드 버튼 영역 */}
-            <View style={styles.uploadSection}>
-                <Text style={styles.uploadNotice}>
-                    업로드 클릭 시 내 엽서가 다른 유저의 홈화면에 표시됩니다.
-                </Text>
-                <SaveButton
-                    title="업로드"
-                    onPress={handleUpload}
-                    disabled={!isUploadEnabled}
-                />
-            </View>
+            <UploadSection 
+                onUpload={handleUpload} 
+                isEnabled={isUploadEnabled} 
+            />
 
             {/* 날짜 선택 모달 */}
-            <Modal
-                visible={isDateModalVisible}
-                animationType="slide"
-                transparent={true}
-                onRequestClose={() => setIsDateModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.dateModal}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>여행 날짜 선택</Text>
-                            <TouchableOpacity onPress={() => setIsDateModalVisible(false)}>
-                                <Feather name="x" size={24} color="#333" />
-                            </TouchableOpacity>
-                        </View>
-                        
-                        <ScrollView style={styles.dateList}>
-                            {availableDates.map((date, index) => (
-                                <TouchableOpacity
-                                    key={index}
-                                    style={styles.dateItem}
-                                    onPress={() => selectDate(date)}
-                                >
-                                    <Text style={styles.dateItemText}>
-                                        {formatDate(date)}
-                                    </Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-                    </View>
-                </View>
-            </Modal>
+            <DateSelectorModal
+                isVisible={isDateModalVisible}
+                onClose={() => setIsDateModalVisible(false)}
+                availableDates={availableDates}
+                onSelectDate={selectDate}
+            />
         </View>
     );
 };
@@ -394,144 +230,9 @@ const styles = StyleSheet.create({
         flex: 1,
         backgroundColor: '#fff',
     },
-    slideContainer: {
-        paddingTop: 16,
-        backgroundColor: '#fff',
-    },
-    slideContent: {
-        paddingHorizontal: 16,
-        gap: 12,
-    },
-    slideItem: {
-        width: 100,
-        height: 80,
-        backgroundColor: '#f5f5f5',
-        borderWidth: 2,
-        borderColor: 'transparent',
-        borderRadius: 0,
-        overflow: 'hidden',
-    },
-    slideItemActive: {
-        borderColor: '#007AFF',
-    },
-    slideImageContainer: {
-        flex: 1,
-        position: 'relative',
-    },
-    slideImage: {
-        width: '100%',
-        height: '100%',
-    },
-    slideEmpty: {
-        flex: 1,
-        backgroundColor: '#f5f5f5',
-        position: 'relative',
-    },
-    checkmark: {
-        position: 'absolute',
-        top: 4,
-        right: 4,
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        backgroundColor: '#007AFF',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    addButton: {
-        width: 100,
-        height: 80,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 0,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
     contentContainer: {
         flex: 1,
         padding: 16,
-    },
-    inputSection: {
-        marginBottom: 16,
-    },
-    inputGroup: {
-        marginBottom: 12,
-    },
-    inputRow: {
-        flexDirection: 'row',
-        gap: 12,
-    },
-    inputHalf: {
-        flex: 1,
-    },
-    titleInput:{
-        marginHorizontal: 20,
-        borderBottomWidth: 1,
-        borderColor: '#000',
-        padding: 12,
-        fontSize: 18,
-        backgroundColor: '#fff',
-        textAlign: 'center'
-    },
-    textInput: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        padding: 12,
-        fontSize: 16,
-        backgroundColor: '#fff',
-    },
-    inputWithIcon: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        backgroundColor: '#fff',
-        paddingHorizontal: 12,
-    },
-    textInputWithIcon: {
-        flex: 1,
-        fontSize: 16,
-        padding: 12,
-        paddingLeft: 8,
-    },
-    inputIcon: {
-        marginRight: 0,
-    },
-    dateSelector: {
-        borderWidth: 1,
-        borderColor: '#ddd',
-        borderRadius: 8,
-        backgroundColor: '#fff',
-        padding: 12,
-    },
-    dateSelectorContent: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    dateText: {
-        fontSize: 16,
-        color: '#333',
-        marginLeft: 8,
-    },
-    placeholder: {
-        color: '#999',
-    },
-    photoSection: {
-        height: 250,
-        backgroundColor: '#f5f5f5',
-        borderRadius: 0,
-        marginBottom: 16,
-        overflow: 'hidden',
-    },
-    photoImage: {
-        width: '100%',
-        height: '100%',
-    },
-    photoPlaceholder: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
     },
     postcardSection: {
         height: 250,
@@ -539,119 +240,6 @@ const styles = StyleSheet.create({
         borderRadius: 0,
         marginBottom: 16,
         overflow: 'hidden',
-    },
-    postcardPlaceholder: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    uploadSection: {
-        padding: 16,
-        paddingBottom: 32,
-    },
-    uploadNotice: {
-        fontSize: 12,
-        color: '#666',
-        textAlign: 'center',
-        marginBottom: 12,
-        lineHeight: 12,
-    },
-    // 엽서 템플릿 스타일
-    postcardTemplate: {
-        width: '100%',
-        height: '100%',
-        padding: 12,
-        justifyContent: 'space-between',
-    },
-    postcardTitle: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#333',
-        textAlign: 'center',
-    },
-    postcardContent: {
-        flex: 1,
-        flexDirection: 'row',
-        marginVertical: 8,
-        gap: 8,
-    },
-    postcardLeft: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        borderRadius: 4,
-    },
-    postcardRight: {
-        flex: 1,
-        justifyContent: 'center',
-        gap: 4,
-    },
-    templateLine: {
-        height: 1,
-        backgroundColor: '#666',
-        marginVertical: 2,
-    },
-    templatePlainArea: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        borderRadius: 4,
-    },
-    templateImageArea: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        borderRadius: 4,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    templateImageText: {
-        fontSize: 10,
-        color: '#666',
-        fontWeight: '500',
-    },
-    postcardBottom: {
-        fontSize: 8,
-        color: '#666',
-        textAlign: 'center',
-    },
-    // 모달 스타일
-    modalOverlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        justifyContent: 'center',
-        alignItems: 'center',
-    },
-    dateModal: {
-        backgroundColor: '#fff',
-        borderRadius: 12,
-        padding: 16,
-        width: '80%',
-        maxHeight: '60%',
-    },
-    modalHeader: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 16,
-        paddingBottom: 8,
-        borderBottomWidth: 1,
-        borderBottomColor: '#eee',
-    },
-    modalTitle: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: '#333',
-    },
-    dateList: {
-        maxHeight: 200,
-    },
-    dateItem: {
-        paddingVertical: 12,
-        paddingHorizontal: 16,
-        borderBottomWidth: 1,
-        borderBottomColor: '#f0f0f0',
-    },
-    dateItemText: {
-        fontSize: 16,
-        color: '#333',
     },
 });
 

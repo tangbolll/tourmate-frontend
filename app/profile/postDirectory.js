@@ -301,12 +301,12 @@ const styles = StyleSheet.create({
     },
     postcardContainer: {
         width: '31%',
-        marginBottom: 4,
+        marginBottom: 12,
         aspectRatio: 1,
     },
     imageContainer: {
-        width: '100%',
-        height: '90%',
+        width: 148 * 0.75,
+        height: 100 * 0.75,
         position: 'relative',
         overflow: 'hidden',
         backgroundColor: '#f0f0f0',
@@ -332,8 +332,8 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     checkBoxSelected: {
-        backgroundColor: '#007AFF',
-        borderColor: '#007AFF',
+        backgroundColor: '#555',
+        borderColor: '#555',
     },
     // 엽서 추가 버튼 스타일
     // addPostcardContainer: {

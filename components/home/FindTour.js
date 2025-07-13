@@ -37,7 +37,7 @@ const FindTour = () => {
 const styles = StyleSheet.create({
     container: {
         paddingHorizontal: 20,
-        paddingVertical: 10,
+        paddingVertical: 8,
     },
     card: {
         backgroundColor: '#fff',

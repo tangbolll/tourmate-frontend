@@ -155,7 +155,7 @@ const styles = StyleSheet.create({
     modalContent: {
         backgroundColor: '#fff',
         borderRadius: 16,
-        width: '90%',
+        width: '85%',
         maxHeight: '80%',
         paddingBottom: 20,
     },
@@ -175,7 +175,7 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     reporterInfo: {
-        padding: 30,
+        padding: 20,
         paddingTop: 0,
         paddingBottom: 16,
     },
@@ -189,7 +189,7 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     reasonSection: {
-        padding: 30,
+        padding: 20,
         paddingTop: 0,
         paddingBottom: 16,
     },

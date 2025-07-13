@@ -23,8 +23,8 @@ const TourSection = () => {
     const getTravelStatus = () => {
         // 테스트용 - 실제로는 여행 시작/종료 날짜를 파싱해서 비교
         const today = new Date();
-        const travelStartDate = new Date('2025-07-06'); // 여행 시작일
-        const travelEndDate = new Date('2025-07-10'); // 여행 종료일
+        const travelStartDate = new Date('2025-07-13'); // 여행 시작일
+        const travelEndDate = new Date('2025-07-20'); // 여행 종료일
         
         const timeDiff = travelStartDate.getTime() - today.getTime();
         const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
@@ -44,7 +44,7 @@ const TourSection = () => {
         switch (travelStatus.status) {
             case 'ongoing':
                 return (
-                    <View>
+                    <View style={styles.ongoingContainer}>
                         <TourInfo tourData={tourData} />
                         <TourItinerary />
                     </View>
@@ -93,6 +93,9 @@ const styles = StyleSheet.create({
         color: '#333',
         paddingHorizontal: 20,
         marginBottom: 16,
+    },
+    ongoingContainer: {
+        marginTop: -8, // 제목과 TourInfo 사이의 간격을 줄임
     },
     upcomingNotice: {
         paddingHorizontal: 20,
