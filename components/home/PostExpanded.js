@@ -75,9 +75,6 @@ const PostExpanded = ({ visible, postData, onClose }) => {
                         <Text style={styles.userText}>
                             {mockData.userName} · {mockData.location} · {mockData.date}
                         </Text>
-                        <TouchableOpacity style={styles.menuButton}>
-                            <Ionicons name="ellipsis-vertical" size={20} color="#fff" />
-                        </TouchableOpacity>
                     </View>
 
                     {/* 엽서 이미지 */}
@@ -144,7 +141,7 @@ const styles = StyleSheet.create({
     },
     header: {
         position: 'absolute',
-        top: 80,
+        top: 100,
         left: 0,
         right: 0,
         flexDirection: 'row',
@@ -155,7 +152,7 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         position: 'absolute',
-        right: 20,
+        right: 30,
         padding: 5,
     },
     contentContainer: {
@@ -166,7 +163,7 @@ const styles = StyleSheet.create({
         marginTop: 60,
     },
     postcardTitle: {
-        fontSize: 20,
+        fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
         paddingVertical: 15,
@@ -189,27 +186,24 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#fff',
     },
-    menuButton: {
-        padding: 5,
-    },
     imageSection: {
         paddingHorizontal: 15,
-        paddingVertical: 10,
-        marginBottom: 20,
+        paddingTop: 12,
+        marginBottom: 12,
     },
     postcardImage: {
-        width: width * 0.8,
-        height: 200,
+        width: width * 0.85,
+        height: width / 1.48 * 0.85,
         resizeMode: 'cover',
     },
     postcardSection: {
         paddingHorizontal: 15,
         paddingBottom: 15,
-        marginBottom: 20,
+        marginBottom: 8,
     },
     postcardContainer: {
-        width: width * 0.8,
-        height: 200,
+        width: width * 0.85,
+        height: width / 1.48 * 0.85,
         backgroundColor: '#f8f9fa',
         overflow: 'hidden',
     },

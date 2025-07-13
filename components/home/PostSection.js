@@ -125,7 +125,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        marginTop: 8,
+        marginTop: 3,
     },
     titleContainer: {
         backgroundColor: '#fff',
