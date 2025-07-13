@@ -239,7 +239,7 @@ const styles = StyleSheet.create({
     actionButton: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginLeft: 16,
+        marginLeft: 8,
     },
     actionText: {
         marginLeft: 4,
