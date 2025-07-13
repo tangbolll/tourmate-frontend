@@ -49,7 +49,7 @@ const PostDirectoryFooter = ({
                 disabled={selectedCount === 0}
             >
                 <Icon
-                name="file-download"
+                name="download"
                 size={26}
                 color={selectedCount > 0 ? '#000' : '#ccc'}
                 />
@@ -62,7 +62,7 @@ const PostDirectoryFooter = ({
                 disabled={selectedCount === 0}
             >
                 <Icon
-                name="share"
+                name="upload"
                 size={26}
                 color={selectedCount > 0 ? '#000' : '#ccc'}
                 />

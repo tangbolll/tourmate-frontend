@@ -169,7 +169,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: 4,
     },
     title: {
         fontSize: 18,
@@ -187,7 +187,7 @@ const styles = StyleSheet.create({
     description: {
         fontSize: 14,
         color: '#666',
-        marginBottom: 25,
+        marginBottom: 20,
         lineHeight: 20,
     },
     inputContainer: {
@@ -264,11 +264,11 @@ const styles = StyleSheet.create({
         color: '#333',
     },
     selectedItem: {
-        backgroundColor: '#f0f8ff',
+        backgroundColor: '#eee',
     },
     selectedItemText: {
-        color: '#007AFF',
-        fontWeight: '500',
+        color: '#000',
+        fontWeight: '600',
     },
     buttonContainer: {
         flexDirection: 'row',
