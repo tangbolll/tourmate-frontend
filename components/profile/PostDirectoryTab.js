@@ -145,7 +145,7 @@ const styles = StyleSheet.create({
     },
     directoryCard: {
         width: '31%',
-        marginBottom: 20,
+        marginBottom: 12,
         marginRight: 5,
         backgroundColor: '#fff',
         overflow: 'hidden',
@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: '100%',
-        aspectRatio: 1.2,
+        aspectRatio: 1.48,
         backgroundColor: '#f0f0f0',
         shadowColor: '#000',
         shadowOffset: {
@@ -173,7 +173,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
     },
     period: {
-        fontSize: 11,
+        fontSize: 10,
         color: '#666',
         marginBottom: 2,
         fontWeight: '400',
@@ -182,7 +182,7 @@ const styles = StyleSheet.create({
     title: {
         fontSize: 12,
         color: '#333',
-        fontWeight: '500',
+        fontWeight: '600',
         lineHeight: 14,
         textAlign: 'center',
     },

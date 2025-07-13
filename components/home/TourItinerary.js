@@ -165,9 +165,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     leftSection: {
-        width: 40,
-        marginLeft: 12,
-        alignItems: 'center',
+        width: 56,
+        marginLeft: 8,
+        alignItems: 'flex-start',
         justifyContent: 'flex-start',
         paddingTop: 8,
     },
@@ -183,7 +183,7 @@ const styles = StyleSheet.create({
     },
     rightSection: {
         flex: 1,
-        marginLeft: 20,
+        marginLeft: 8,
     },
     scheduleContainer: {
         flex: 1,
@@ -213,9 +213,10 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     expandButton: {
-        alignItems: 'center',
+        alignItems: 'flex-end',
         justifyContent: 'center',
         paddingVertical: 4,
+        marginRight: 8,
     },
 });
 
