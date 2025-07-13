@@ -4,35 +4,25 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 const PostTabHeader = ({ activeTab, onTabPress }) => {
     return (
         <View style={styles.container}>
-        <TouchableOpacity 
-            style={[
-            styles.tabButton, 
-            activeTab === 'board' && styles.activeTab
-            ]}
-            onPress={() => onTabPress('board')}
-        >
-            <Text style={[
-            styles.tabText, 
-            activeTab === 'board' && styles.activeTabText
-            ]}>
-            엽서 보드
-            </Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-            style={[
-            styles.tabButton, 
-            activeTab === 'directory' && styles.activeTab
-            ]}
-            onPress={() => onTabPress('directory')}
-        >
-            <Text style={[
-            styles.tabText, 
-            activeTab === 'directory' && styles.activeTabText
-            ]}>
-            모든 엽서
-            </Text>
-        </TouchableOpacity>
+            <TouchableOpacity
+                style={styles.tab}
+                onPress={() => onTabPress('board')}
+            >
+                <Text style={[styles.text, activeTab === 'board' && styles.selectedText]}>
+                    엽서 보드
+                </Text>
+                {activeTab === 'board' && <View style={styles.underline} />}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+                style={styles.tab}
+                onPress={() => onTabPress('directory')}
+            >
+                <Text style={[styles.text, activeTab === 'directory' && styles.selectedText]}>
+                    모든 엽서
+                </Text>
+                {activeTab === 'directory' && <View style={styles.underline} />}
+            </TouchableOpacity>
         </View>
     );
 };
@@ -40,28 +30,29 @@ const PostTabHeader = ({ activeTab, onTabPress }) => {
 const styles = StyleSheet.create({
     container: {
         flexDirection: 'row',
-        backgroundColor: '#fff',
         borderBottomWidth: 1,
-        borderBottomColor: '#e0e0e0',
+        borderColor: '#ccc',
+        marginBottom: 8,
     },
-    tabButton: {
+    tab: {
         flex: 1,
-        paddingBottom: 16,
         alignItems: 'center',
-        borderBottomWidth: 2,
-        borderBottomColor: 'transparent',
+        paddingBottom: 12,
     },
-    activeTab: {
-        borderBottomColor: '#333',
+    text: {
+        fontSize: 18,
+        color: '#aaa',
+        fontWeight: 'bold',
     },
-    tabText: {
-        fontSize: 16,
-        fontWeight: '400',
-        color: '#999',
+    selectedText: {
+        color: '#000',
     },
-    activeTabText: {
-        color: '#333',
-        fontWeight: '600',
+    underline: {
+        position: 'absolute',
+        bottom: -1,
+        width: '80%',
+        height: 3,
+        backgroundColor: '#000',
     },
 });
 
