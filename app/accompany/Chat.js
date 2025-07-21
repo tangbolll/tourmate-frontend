@@ -30,7 +30,7 @@ const getBaseURL = () => {
     }
 };
 
-const API_URL = getApiUrl();
+const API_URL = getBaseURL();
 
 const Chat = ({ postId: propPostId }) => {
     const params = useLocalSearchParams();

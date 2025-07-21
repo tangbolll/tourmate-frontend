@@ -31,7 +31,7 @@ const getBaseURL = () => {
     }
 };
 
-const API_URL = getApiUrl();
+const API_URL = getBaseURL();
 
 export default function AccompanyPost() {
     const params = useLocalSearchParams();

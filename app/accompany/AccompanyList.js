@@ -1,480 +1,369 @@
 import { Alert, Platform } from 'react-native';
-import React, { useState, useEffect } from 'react';
-import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, RefreshControl } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
 import Constants from 'expo-constants';
-import { useRouter } from 'expo-router';
-import AccompanyListHeader from '../../components/accompany/AccompanyListHeader';
-import CalendarPopup from '../../components/accompany/CalendarPopup';
-import FilterPopup from '../../components/accompany/FilterPopup';
-import FilterTag from '../../components/accompany/FilterTag';
-import AccompanyToggle from '../../components/accompany/AccompanyToggle';
-import AccompanyCard from '../../components/accompany/AccompanyCard';
-import AccompanyTabToggle from '../../components/accompany/AccompanyTabToggle';
-import AccompanyFeed from '../../components/accompany/AccompanyFeed';
-import CreateAccompanyButton from '../../components/accompany/CreateAccompanyButton';
+import { useRouter, useFocusEffect } from 'expo-router';
 import dayjs from 'dayjs';
-import 'dayjs/locale/ko'; // 한국어로 요일 띄우기
+import 'dayjs/locale/ko';
+import AccompanyListView from '../../components/accompany/AccompanyListView'; 
 
+// 기본 API URL을 가져오는 함수 (환경 설정에 따라)
 const getBaseURL = () => {
     if (__DEV__) { // 개발 환경
         if (Platform.OS === 'android') {
             return 'http://10.0.2.2:8080'; // 안드로이드 에뮬레이터는 '10.0.2.2'를 로컬호스트로 사용
         }
-        // iOS 시뮬레이터, 웹, 또는 안드로이드 실기기 개발 시 app.json의 DEV URL 사용
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+        return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
     } else { // 운영(배포) 환경
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+        return Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL'; // 배포 시 실제 URL로 변경 필요
     }
 };
 
-const API_URL = getApiUrl();
-
-// 동행 카드 데이터 (기존 유지)
-const cardData = [
-  { id: "1", date: "03.01 ~ 03.05", title: "홍천 산천어 축제에서 놀아요", location: "홍천", imageUrl: "", buttonLabel: "승인" },
-  { id: "2", date: "04.01 ~ 04.03", title: "부산 벚꽃축제 가실 분~", location: "부산", imageUrl: "", buttonLabel: "승인" },
-  { id: "3", date: "01.05 ~ 03.01", title: "행궁뎅이 가서 브뤼셀 프라이 드실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
-  { id: "4", date: "01.04 ~ 03.01", title: "동탄가서 단백쿠키 드실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
-  { id: "5", date: "01.08 ~ 03.01", title: "수원에서 폰센트럴파크 러닝하실 분~", location: "수원", imageUrl: "", buttonLabel: "승인" },
-  { id: "6", date: "01.02 ~ 03.01", title: "목동에서 국내최고 에그타르트 먹으면서 따릉이 타실 분~", location: "서울", imageUrl: "", buttonLabel: "승인" },
-];
+const API_URL = getBaseURL();
 
 const AccompanyList = () => {
-  const [showFilterPopup, setShowFilterPopup] = useState(false);
-  const [searchText, setSearchText] = useState('');
-  const [selectedTab, setSelectedTab] = useState('feed');
-  const [showCards, setShowCards] = useState(true);
-  const [filteredPosts, setFilteredPosts] = useState([]);
-  const [likedPosts, setLikedPosts] = useState({});
-  const [calendarVisible, setCalendarVisible] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
+    const [showFilterPopup, setShowFilterPopup] = useState(false);
+    const [searchText, setSearchText] = useState('');
+    const [selectedTab, setSelectedTab] = useState('feed');
+    const [showCards, setShowCards] = useState(true);
+    const [filteredPosts, setFilteredPosts] = useState([]);
+    const [likedPosts, setLikedPosts] = useState({});
+    const [calendarVisible, setCalendarVisible] = useState(false);
+    const [refreshing, setRefreshing] = useState(false);
 
-  // 실제 API 데이터 상태
-  const [myAccompanyList, setMyAccompanyList] = useState([]);
-  const [feedList, setFeedList] = useState([]);
-  const [loading, setLoading] = useState(true);
+    const [myJoinedAccompanyList, setMyJoinedAccompanyList] = useState([]);
+    const [myCreatedAccompanyList, setMyCreatedAccompanyList] = useState([]);
+    const [feedList, setFeedList] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-  const [filters, setFilters] = useState({
-    gender: '',
-    age: '',
-    categories: [],
-    travelPeriod: '',
-    travelLocation: '',
-  });
+    // ✅ 새로 추가된 상태 변수: 각 탭의 데이터 로드 여부를 추적합니다.
+    const [feedLoaded, setFeedLoaded] = useState(false); 
+    const [mineLoaded, setMineLoaded] = useState(false); 
 
-  const router = useRouter();
-  
-  // 현재 사용자 ID
-  const currentUserId = 2;
-
-  // 백엔드 데이터를 프론트엔드 형식으로 변환
-  const transformAccompanyData = (accompanyData) => {
-    if (!accompanyData) return [];
-    
-    return accompanyData.map(item => ({
-      id: item.id?.toString() || Math.random().toString(),
-      title: item.title || '제목 없음',
-      location: item.location || '위치 미정',
-      description: item.intro || '',
-      meetingPoint: item.meetPlace || '',
-      participants: item.participants?.length || 1,
-      maxParticipants: item.maxRecruit || 0,
-      imageUrl: item.images?.length > 0 ? item.images[0] : '',
-      tags: [
-        ...(item.category || []),
-        ...(item.tag || []),
-        ...(item.ageGroup.map(age => age === "ALL" ? "나이무관" : age)),
-        item.gender === 'ALL' ? '성별무관' : item.gender
-      ].filter(Boolean),
-      date: item.tripStartDate ? 
-        dayjs(item.tripStartDate).locale('ko').format('M월 D일(ddd)') : 
-        dayjs().locale('ko').format('M월 D일(ddd)'),
-      hostId: item.host?.id || null,
-      liked: false, 
-    }));
-  };
-
-
-  // API에서 동행 데이터 가져오기
-const fetchAccompanyData = async () => {
-  try {
-    setLoading(true);
-    const url = `${API_URL}/api/accompany/home?userId=${currentUserId}`;
-    
-    console.time("⏱ fetch");
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-      },
-      timeout: 10000, // 10초 타임아웃
+    const [filters, setFilters] = useState({
+        gender: '',
+        age: '',
+        categories: [],
+        travelPeriod: '',
+        travelLocation: '',
     });
-    console.timeEnd("⏱ fetch");
 
+    const router = useRouter();
     
-    if (response.ok) {
-      const data = await response.json();
-      console.log('✅ API 응답 성공:', data);
+    // TODO: 실제 사용자 ID를 가져오는 로직으로 변경 필요 (예: 인증 컨텍스트에서)
+    const currentUserId = 2; 
 
-      console.log('🔍 API 응답:', data);
-      console.log('🔍 images 필드:', data.feed[0]?.images);
-      
-      // 백엔드 데이터를 프론트엔드 형식으로 변환
-      const transformedMyAccompany = transformAccompanyData(data.myAccompany);
-      const transformedFeed = transformAccompanyData(data.feed);
-      
-      setMyAccompanyList(transformedMyAccompany);
-      setFeedList(transformedFeed);
-      
+    // 백엔드 데이터를 프론트엔드 형식으로 변환하는 함수
+    const transformAccompanyData = useCallback((accompanyData) => {
+        if (!accompanyData) return [];
 
-    } else {
-      const errorText = await response.text();
-      console.error('❌ API 호출 실패');
-      console.error('❌ 상태 코드:', response.status);
-      console.error('❌ 상태 텍스트:', response.statusText);
-      console.error('❌ 에러 내용:', errorText);
-      
-      // 사용자에게 알림
-      Alert.alert(
-        '네트워크 오류', 
-        `서버 응답 오류 (${response.status}): ${response.statusText}`
-      );
-    }
-  } catch (error) {
+        return accompanyData.map(item => ({
+            id: item.id?.toString() || Math.random().toString(),
+            title: item.title || '제목 없음',
+            location: item.location || '위치 미정',
+            description: item.intro || '',
+            meetingPoint: item.meetPlace || '',
+            participants: item.currentParticipants || 0,
+            maxParticipants: item.maxRecruit || 0,
+            imageUrl: item.images?.length > 0 ? item.images[0] : null,
+            tags: [
+                ...(item.category || []),
+                ...(item.tag || []),
+                ...(Array.isArray(item.ageGroup) ? item.ageGroup.map(age => age === "ALL" ? "나이무관" : age) : []), 
+                item.gender === 'ALL' ? '성별무관' : item.gender
+            ].filter(Boolean),
+            date: item.tripStartDate && item.tripEndDate ? 
+                `${dayjs(item.tripStartDate).locale('ko').format('MM.DD')} ~ ${dayjs(item.tripEndDate).locale('ko').format('MM.DD')}` : 
+                '날짜 미정',
+            hostId: item.userId || null,
+            status: item.status || '상태 미정', 
+            liked: false,
+        }));
+    }, []); 
 
-    
-    // 에러 타입별 처리
-    if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
-      Alert.alert(
-        '네트워크 연결 오류',
-        '서버에 연결할 수 없습니다.\n\n확인사항:\n1. 서버가 실행 중인지 확인\n2. IP 주소가 올바른지 확인\n3. 포트 번호가 맞는지 확인'
-      );
-    } else if (error.name === 'AbortError') {
-      Alert.alert('타임아웃', '서버 응답 시간이 초과되었습니다.');
-    } else {
-      Alert.alert('오류', `예상치 못한 오류가 발생했습니다: ${error.message}`);
-    }
-  } finally {
-    setLoading(false);
-  }
-};
-
-
-// 개선된 새로고침 함수
-const onRefresh = async () => {
-  console.log('🔄 새로고침 시작');
-  setRefreshing(true);
-  
-  try {
-    await fetchAccompanyData();
-    console.log('✅ 새로고침 완료');
-  } catch (error) {
-    console.error('❌ 새로고침 중 오류:', error);
-    // fetchAccompanyData 내부에서 이미 에러 처리를 하므로 여기서는 로그만
-  } finally {
-    setRefreshing(false);
-    console.log('🔄 새로고침 상태 해제');
-  }
-};
-
-  // 컴포넌트 마운트 시 데이터 로드
-  useEffect(() => {
-    fetchAccompanyData();
-  }, []);
-
-  // 화면 포커스 시 데이터 새로고침
-  useEffect(() => {
-    if (router.addListener) {
-      const unsubscribe = router.addListener('focus', () => {
-        fetchAccompanyData();
-      });
-      
-      return unsubscribe; 
-    }
-  }, [router]);
-
-  // 필터링된 포스트 업데이트
-  useEffect(() => {
-    let allPosts = [];
-    
-    // 선택된 탭에 따라 데이터 소스 결정
-    if (selectedTab === 'mine') {
-      allPosts = [...myAccompanyList];
-    } else if (selectedTab === 'feed') {
-      allPosts = [...feedList];
-    }
-
-    let filtered = [...allPosts];
-
-    // 검색어로 필터링
-    if (searchText) {
-      const searchLower = searchText.toLowerCase();
-      filtered = filtered.filter(post =>
-        post.title.toLowerCase().includes(searchLower) ||
-        post.location.toLowerCase().includes(searchLower) ||
-        post.tags.some(tag => tag.toLowerCase().includes(searchLower))
-      );
-    }
-
-    // 성별 필터링
-    if (filters.gender) {
-      filtered = filtered.filter(post =>
-        post.tags.includes(filters.gender) || post.tags.includes('남녀무관')
-      );
-    }
-
-    // 나이 필터링
-    if (filters.age) {
-      filtered = filtered.filter(post =>
-        post.tags.includes(filters.age) || post.tags.includes('누구나')
-      );
-    }
-
-    // 카테고리 필터링
-    if (filters.categories.length > 0) {
-      filtered = filtered.filter(post =>
-        filters.categories.some(category => post.tags.includes(category))
-      );
-    }
-    
-    setFilteredPosts(filtered);
-  }, [searchText, filters, selectedTab, myAccompanyList, feedList]);
-
-  const handleFilterPopup = () => {
-    setShowFilterPopup(false);
-    setTimeout(() => {
-      setShowFilterPopup(true);
-    }, 50);
-  };
-
-  const handleCalendarSelect = (range) => {
-    const { startDate, endDate } = range;
-    const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
-    
-    setFilters(prev => ({ ...prev, travelPeriod: formatted }));
-    setCalendarVisible(false);
-    setTimeout(() => {
-      setShowFilterPopup(true);
-    }, 300);
-  };
-  
-  const handleCloseFilterPopup = () => setShowFilterPopup(false);
-
-  const handleApplyFilters = (newFilters) => {
-    setFilters(newFilters);
-    console.log('Applied filters:', newFilters);
-  };
-
-  const handlePressLike = (postId) => {
-    setLikedPosts(prev => ({
-      ...prev,
-      [postId]: !prev[postId]
-    }));
-    console.log(`찜 ${likedPosts[postId] ? '취소' : '추가'}: ${postId}`);
-  };
-
-  const handleRemoveTag = (tagToRemove) => {
-    setFilters(prev => {
-      const updated = { ...prev };
-      if (updated.gender === tagToRemove) updated.gender = '';
-      if (updated.age === tagToRemove) updated.age = '';
-      updated.categories = updated.categories.filter(tag => tag !== tagToRemove);
-      return updated;
-    });
-  };
-
-  const getAllTags = () => {
-    const tags = [];
-    if (filters.gender) tags.push(filters.gender);
-    if (filters.age) tags.push(filters.age);
-    tags.push(...filters.categories);
-    return tags;
-  };
-
-  const navigateToPost = (postId) => {
-    console.log('이동할 주소:', `/accompany/AccompanyPost?postId=${postId}`);
-    router.push(`/accompany/AccompanyPost?postId=${postId}`);
-  };
-
-  // 피드 아이템 렌더링
-const renderFeedItems = () => {
-
-    if (loading) {
-      return (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>로딩 중...</Text>
-        </View>
-      );
-    }
-
-    if (filteredPosts.length === 0) {
-      return (
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyStateText}>
-            {selectedTab === 'mine' 
-              ? '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!'
-              : '표시할 동행이 없습니다.\n필터를 조정해보세요.'}
-          </Text>
-        </View>
-      );
-    }
-    
-    return filteredPosts.map((post) => {
-      
-      return (
-        <AccompanyFeed
-          key={post.id}
-          {...post}
-          id={post.id}
-          date={post.date}
-          title={post.title}
-          tags={post.tags}
-          location={post.location}
-          participants={post.participants}
-          maxParticipants={post.maxParticipants}
-          imageUrl={post.imageUrl || null}
-          liked={!!likedPosts[post.id]}
-          onPressLike={() => handlePressLike(post.id)}
-          onPress={() => navigateToPost(post.id)}
-        />
-      );
-    });
-  };
-
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#000']} // Android
-            tintColor={'#000'} // iOS
-          />
+    // API 에러 처리 공통 함수
+    const handleApiError = useCallback((error) => {
+        if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
+            Alert.alert(
+                '네트워크 연결 오류',
+                '서버에 연결할 수 없습니다.\n\n확인사항:\n1. 서버가 실행 중인지 확인\n2. IP 주소가 올바른지 확인\n3. 포트 번호가 맞는지 확인'
+            );
+        } else if (error.name === 'AbortError') {
+            Alert.alert('타임아웃', '서버 응답 시간이 초과되었습니다.');
+        } else {
+            Alert.alert('오류', `예상치 못한 오류가 발생했습니다: ${error.message}`);
         }
-      >
-        <AccompanyListHeader
-          onPressAlarm={() => console.log('알림')}
-          onPressDM={() => console.log('DM')}
-          onPressFilter={handleFilterPopup}
-          searchText={searchText}
-          setSearchText={setSearchText}
-        />
+    }, []); 
 
-        <FilterPopup
-          visible={showFilterPopup}
-          onClose={() => setShowFilterPopup(false)}
-          onApply={(filters) => {
-            setFilters(filters);
-            setShowFilterPopup(false);
-          }}
-          filters={filters}
-          setFilters={setFilters}
-          onOpenCalendar={() => {
-            setShowFilterPopup(false);
-            setTimeout(() => setCalendarVisible(true), 300);
-          }}
-        />
+    // 동행 홈 데이터 가져오기 (사용자가 신청한 동행 + 전체 피드)
+    const fetchAccompanyData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const url = `${API_URL}/api/accompany/home?userId=${currentUserId}`;
+            
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
 
-        <CalendarPopup
-          visible={calendarVisible}
-          onClose={() => setCalendarVisible(false)}
-          onSelectDates={(range) => {
-            const { startDate, endDate } = range;
-            const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
-            setFilters(prev => ({ ...prev, travelPeriod: formatted }));
-            setCalendarVisible(false);
-            setTimeout(() => setShowFilterPopup(true), 300);
-          }}
-        />  
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                signal: controller.signal,
+            });
+            clearTimeout(id); // 타임아웃 타이머 클리어
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ /api/accompany/home API 응답 성공:', data);
+
+                const transformedMyJoinedAccompany = transformAccompanyData(data.myAccompanies);
+                const transformedFeed = transformAccompanyData(data.feed);
+                
+                setMyJoinedAccompanyList(transformedMyJoinedAccompany);
+                setFeedList(transformedFeed);
+                setFeedLoaded(true); // ✅ 피드 데이터 로드 성공 시 `feedLoaded`를 true로 설정
+            } else {
+                const errorText = await response.text();
+                console.error('❌ /api/accompany/home API 호출 실패');
+                console.error('❌ 상태 코드:', response.status);
+                console.error('❌ 상태 텍스트:', response.statusText);
+                console.error('❌ 에러 내용:', errorText);
+                
+                Alert.alert(
+                    '네트워크 오류', 
+                    `서버 응답 오류 (${response.status}): ${response.statusText}`
+                );
+            }
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUserId, handleApiError, transformAccompanyData]); 
+
+    // 내가 만든 동행 데이터 가져오기
+    const fetchMyCreatedAccompanyData = useCallback(async () => {
+        try {
+            setLoading(true);
+            const url = `${API_URL}/api/accompany/my/${currentUserId}`;
+            
+            const controller = new AbortController();
+            const id = setTimeout(() => controller.abort(), 10000); // 10초 타임아웃
+
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+                signal: controller.signal,
+            });
+            clearTimeout(id);
+
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ /api/accompany/my/{userId} API 응답 성공:', data);
+                const transformedMyCreatedAccompany = transformAccompanyData(data);
+                setMyCreatedAccompanyList(transformedMyCreatedAccompany);
+                setMineLoaded(true); // ✅ 내가 만든 동행 데이터 로드 성공 시 `mineLoaded`를 true로 설정
+            } else {
+                const errorText = await response.text();
+                console.error('❌ /api/accompany/my/{userId} API 호출 실패');
+                console.error('❌ 상태 코드:', response.status);
+                console.error('❌ 상태 텍스트:', response.statusText);
+                console.error('❌ 에러 내용:', errorText);
+                Alert.alert(
+                    '네트워크 오류', 
+                    `서버 응답 오류 (${response.status}): ${response.statusText}`
+                );
+            }
+        } catch (error) {
+            handleApiError(error);
+        } finally {
+            setLoading(false);
+        }
+    }, [currentUserId, handleApiError, transformAccompanyData]); 
+
+    // 컴포넌트 마운트 시 동행 홈 데이터 로드 (첫 로딩만)
+    // 앱이 처음 시작될 때 `feed` 탭의 데이터를 한 번만 로드합니다.
+    useEffect(() => {
+        if (!feedLoaded) { 
+            fetchAccompanyData();
+        }
+    }, []); // 의존성 배열에 `feedLoaded`를 넣지 않아 한 번만 실행되도록 합니다.
+
+    // 화면 포커스 시 데이터 새로고침 (useFocusEffect 사용)
+    useFocusEffect(
+        useCallback(() => {
+            console.log(`💡 화면 포커스됨. 현재 탭: ${selectedTab}`);
+            // ✅ 수정: `feedLoaded`가 false일 때만 `fetchAccompanyData` 호출
+            if (selectedTab === 'feed' && !feedLoaded) { 
+                fetchAccompanyData();
+            } 
+            // ✅ 수정: `mineLoaded`가 false일 때만 `fetchMyCreatedAccompanyData` 호출
+            else if (selectedTab === 'mine' && !mineLoaded) { 
+                fetchMyCreatedAccompanyData();
+            }
+            return () => {
+                console.log('💡 화면 블러됨');
+            };
+        }, [selectedTab, feedLoaded, mineLoaded, fetchAccompanyData, fetchMyCreatedAccompanyData]) // ✅ 의존성 배열에 `feedLoaded`와 `mineLoaded` 추가
+    );
+
+    // 개선된 새로고침 함수: 수동으로 새로고침 할 때만 데이터를 다시 불러옵니다.
+    const onRefresh = useCallback(async () => {
+        console.log('🔄 새로고침 시작');
+        setRefreshing(true);
+        try {
+            if (selectedTab === 'feed') {
+                setFeedLoaded(false); // ✅ 수동 새로고침 시 `feedLoaded` 상태를 false로 리셋
+                await fetchAccompanyData();
+            } else if (selectedTab === 'mine') {
+                setMineLoaded(false); // ✅ 수동 새로고침 시 `mineLoaded` 상태를 false로 리셋
+                await fetchMyCreatedAccompanyData();
+            }
+            console.log('✅ 새로고침 완료');
+        } catch (error) {
+            console.error('❌ 새로고침 중 오류:', error);
+        } finally {
+            setRefreshing(false);
+            console.log('🔄 새로고침 상태 해제');
+        }
+    }, [selectedTab, fetchAccompanyData, fetchMyCreatedAccompanyData]);
+
+    // 필터링된 포스트 업데이트 로직
+    useEffect(() => {
+        let allPosts = [];
         
-        <View style={styles.filterTagsContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTagsScroll}>
-            {getAllTags().map((tag) => (
-              <FilterTag key={tag} tag={tag} onPress={() => handleRemoveTag(tag)} />
-            ))}
-          </ScrollView>
-        </View>
+        if (selectedTab === 'mine') {
+            allPosts = [...myCreatedAccompanyList];
+        } else if (selectedTab === 'feed') {
+            allPosts = [...feedList];
+        }
 
-        <AccompanyToggle 
-          isExpanded={showCards} 
-          onToggle={() => setShowCards(!showCards)} 
-        />
+        let filtered = [...allPosts];
 
-        {showCards && (
-          <View style={styles.cardsContainer}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsScroll}>
-              {cardData.map((item) => (
-                <AccompanyCard 
-                  key={item.id} 
-                  {...item} 
-                  onPress={() => navigateToPost(item.id)} 
-                />
-              ))}
-            </ScrollView>
-          </View>
-        )}
+        if (searchText) {
+            const searchLower = searchText.toLowerCase();
+            filtered = filtered.filter(post =>
+                post.title.toLowerCase().includes(searchLower) ||
+                post.location.toLowerCase().includes(searchLower) ||
+                post.tags.some(tag => tag.toLowerCase().includes(searchLower))
+            );
+        }
 
-        <AccompanyTabToggle 
-          selectedTab={selectedTab} 
-          onSelectTab={(tab) => {
-            setSelectedTab(tab);
+        if (filters.gender) {
+            filtered = filtered.filter(post =>
+                post.tags.includes(filters.gender) || post.tags.includes('성별무관') 
+            );
+        }
 
-          }} 
-        />
+        if (filters.age) {
+            filtered = filtered.filter(post =>
+                post.tags.includes(filters.age) || post.tags.includes('나이무관') 
+            );
+        }
 
-        {renderFeedItems()}
-      </ScrollView>
+        if (filters.categories.length > 0) {
+            filtered = filtered.filter(post =>
+                filters.categories.some(category => post.tags.includes(category))
+            );
+        }
+        
+        setFilteredPosts(filtered);
+    }, [searchText, filters, selectedTab, myJoinedAccompanyList, myCreatedAccompanyList, feedList]);
 
-      <TouchableOpacity style={styles.floatingButton}>
-        <CreateAccompanyButton 
-          onPress={() => {
+    // 핸들러 함수들 (이전과 동일)
+    const handleFilterPopup = useCallback(() => {
+        setShowFilterPopup(false);
+        setTimeout(() => {
+            setShowFilterPopup(true);
+        }, 50);
+    }, []);
 
-            router.push('/accompany/AccompanyCreation');
-          }}
-        />
-      </TouchableOpacity>
-    </SafeAreaView>
-  );
+    const handleCalendarSelect = useCallback((range) => {
+        const { startDate, endDate } = range;
+        const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
+        
+        setFilters(prev => ({ ...prev, travelPeriod: formatted }));
+        setCalendarVisible(false);
+        setTimeout(() => {
+            setShowFilterPopup(true);
+        }, 300);
+    }, []);
+
+    const handleCloseFilterPopup = useCallback(() => setShowFilterPopup(false), []);
+
+    const handleApplyFilters = useCallback((newFilters) => {
+        setFilters(newFilters);
+        console.log('Applied filters:', newFilters);
+    }, []);
+
+    const handlePressLike = useCallback((postId) => {
+        setLikedPosts(prev => ({
+            ...prev,
+            [postId]: !prev[postId]
+        }));
+        console.log(`찜 ${prev[postId] ? '취소' : '추가'}: ${postId}`);
+    }, []); 
+
+    const handleRemoveTag = useCallback((tagToRemove) => {
+        setFilters(prev => {
+            const updated = { ...prev };
+            if (updated.gender === tagToRemove) updated.gender = '';
+            if (updated.age === tagToRemove) updated.age = '';
+            updated.categories = updated.categories.filter(tag => tag !== tagToRemove);
+            return updated;
+        });
+    }, []);
+
+    const getAllTags = useCallback(() => {
+        const tags = [];
+        if (filters.gender) tags.push(filters.gender);
+        if (filters.age) tags.push(filters.age);
+        tags.push(...filters.categories);
+        return tags;
+    }, [filters]);
+
+    const navigateToPost = useCallback((postId) => {
+        console.log('이동할 주소:', `/accompany/AccompanyPost?postId=${postId}`);
+        router.push(`/accompany/AccompanyPost?postId=${postId}`);
+    }, [router]);
+
+    // AccompanyListView에 전달할 props들을 객체로 만듭니다.
+    const viewProps = {
+        refreshing,
+        onRefresh,
+        searchText,
+        setSearchText,
+        showFilterPopup,
+        handleFilterPopup,
+        handleCloseFilterPopup,
+        handleApplyFilters,
+        filters,
+        setFilters,
+        calendarVisible,
+        setCalendarVisible,
+        handleCalendarSelect,
+        getAllTags,
+        handleRemoveTag,
+        showCards,
+        setShowCards,
+        myJoinedAccompanyList,
+        selectedTab,
+        setSelectedTab,
+        fetchMyCreatedAccompanyData, // 이 함수들은 필요에 따라 AccompanyListView 내에서 호출되지 않고,
+        fetchAccompanyData,         // AccompanyList 컴포넌트 내부에서 상태 변화에 따라 호출됩니다.
+        loading,
+        filteredPosts,
+        likedPosts,
+        handlePressLike,
+        navigateToPost,
+        router, 
+    };
+
+    return <AccompanyListView {...viewProps} />;
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    position: 'relative', 
-  },
-  floatingButton: { 
-    position: 'absolute', 
-    bottom: 25, 
-    right: 20, 
-    zIndex: 10 
-  },
-  filterTagsContainer: { 
-    marginVertical: 8 
-  },
-  filterTagsScroll: { 
-    paddingHorizontal: 16 
-  },
-  cardsContainer: { 
-    marginTop: 16,
-  },
-  cardsScroll: { 
-    paddingHorizontal: 16 
-  },
-  emptyState: {
-    padding: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emptyStateText: {
-    textAlign: 'center',
-    fontSize: 16,
-    color: '#888',
-    lineHeight: 24,
-    marginTop: 100,
-  },
-});
 
 export default AccompanyList;

@@ -16,7 +16,7 @@ const getBaseURL = () => {
     }
 };
 
-const API_URL = getApiUrl();
+const API_URL = getBaseURL();
 
 const ApplicationButton = ({ 
     title, 
