@@ -16,7 +16,7 @@ const getBaseURL = () => {
     }
 };
 
-const API_URL = getApiUrl();
+const API_URL = getBaseURL();
 
 const ToChatroom = ({ postId, currentUserId = 2, style }) => {
     const router = useRouter();
