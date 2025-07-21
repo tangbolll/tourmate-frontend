@@ -1,19 +1,19 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
+import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
-// API 설정
-const getApiUrl = () => {
-  if (__DEV__) {
-    if (Platform.OS === 'android') {
-      return 'http://10.0.2.2:8080';
-    } else {
-      return 'http://192.168.35.218:8080';
+const getBaseURL = () => {
+    if (__DEV__) { // 개발 환경
+        if (Platform.OS === 'android') {
+            return 'http://10.0.2.2:8080'; // 안드로이드 에뮬레이터는 '10.0.2.2'를 로컬호스트로 사용
+        }
+        // iOS 시뮬레이터, 웹, 또는 안드로이드 실기기 개발 시 app.json의 DEV URL 사용
+        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+    } else { // 운영(배포) 환경
+        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
-  } else {
-    return 'https://your-production-api.com';
-  }
 };
 
 const API_URL = getApiUrl();

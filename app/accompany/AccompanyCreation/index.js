@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
+import Constants from 'expo-constants';
 import { 
     View, 
     Text, 
@@ -16,19 +16,17 @@ import Step1 from './Step1';
 import Step2 from './Step2';
 import { useRouter } from 'expo-router';
 
-    const getBaseURL = () => {
-    if (__DEV__) {
+const getBaseURL = () => {
+    if (__DEV__) { // 개발 환경
         if (Platform.OS === 'android') {
-        return 'http://10.0.2.2:8080';
-        } else {
-        return 'http://192.168.35.218:8080'; // 본인 IP로 변경
+            return 'http://10.0.2.2:8080'; // 안드로이드 에뮬레이터는 '10.0.2.2'를 로컬호스트로 사용
         }
-    } else {
-        return 'https://your-production-api.com';
+        // iOS 시뮬레이터, 웹, 또는 안드로이드 실기기 개발 시 app.json의 DEV URL 사용
+        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+    } else { // 운영(배포) 환경
+        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
-    };
-
-
+};
 
 const AccompanyCreation = () => {
 
@@ -115,7 +113,7 @@ const AccompanyCreation = () => {
     // 작성 중인 내용이 있는지 확인
     const hasContent = () => {
         return title || location || description || meetLocation || images.length > 0 || 
-               maxPeople || selectedCategories.length > 0 || tags.length > 0;
+            maxPeople || selectedCategories.length > 0 || tags.length > 0;
     };
     
     // 작성 중 나가기 확인 알림
@@ -168,7 +166,7 @@ const AccompanyCreation = () => {
 
 
 
-   const handleSubmit = async () => {
+    const handleSubmit = async () => {
     console.log('🚀 동행 생성 시작');
     setIsLoading(true);
 
