@@ -122,7 +122,7 @@ const AccompanyList = () => {
                 
                 setMyJoinedAccompanyList(transformedMyJoinedAccompany);
                 setFeedList(transformedFeed);
-                setFeedLoaded(true); // ✅ 피드 데이터 로드 성공 시 `feedLoaded`를 true로 설정
+                setFeedLoaded(true); 
             } else {
                 const errorText = await response.text();
                 console.error('❌ /api/accompany/home API 호출 실패');

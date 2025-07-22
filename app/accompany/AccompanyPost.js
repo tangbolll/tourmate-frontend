@@ -80,7 +80,7 @@ export default function AccompanyPost() {
     // 현재 답글을 달고 있는 댓글 ID (null이면 일반 댓글 모드)
     const [replyingTo, setReplyingTo] = useState(null);
 
-    // 🎯 백엔드 데이터를 프론트엔드 형식으로 변환
+    //  backedend 데이터 변환 함수
     const transformAccompanyDetail = (backendData) => {
         if (!backendData) return null;
 
@@ -117,11 +117,73 @@ export default function AccompanyPost() {
             maxParticipants: backendData.maxRecruit || 0,
             createdBy: backendData.host?.userId?.toString() || 'unknown',
             createdByName: backendData.host?.nickname || '알 수 없음',
-            likes: 0 // 추후 구현
+            likes: backendData.likeCount || 0
         };
     };
 
-    // 🌐 API에서 동행 상세 정보 가져오기
+        // 1. 페이지 로딩 시 댓글 불러오기 함수 추가
+    const fetchComments = async (accompanyId) => {
+        try {
+            const url = `${API_URL}/api/accompany/${accompanyId}/comments`;
+            console.log('🌐 댓글 조회 API 호출:', url);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+            
+            if (response.ok) {
+                const commentsData = await response.json();
+                console.log('✅ 댓글 조회 성공:', commentsData);
+                
+                // 백엔드 댓글 데이터를 프론트엔드 형식으로 변환
+                const transformedComments = commentsData.map(comment => ({
+                    id: comment.id?.toString() || `comment_${Date.now()}`,
+                    nickname: comment.authorName || '익명',
+                    time: comment.createdAt ? formatTimeAgo(comment.createdAt) : '방금 전',
+                    content: comment.content || '',
+                    profileImage: comment.authorProfileImage || null,
+                    isHost: comment.isAuthor || false, // 백엔드에서 호스트 여부 확인
+                    replies: comment.replies?.map(reply => ({
+                        id: reply.id?.toString() || `reply_${Date.now()}`,
+                        nickname: reply.authorName || '익명',
+                        time: reply.createdAt ? formatTimeAgo(reply.createdAt) : '방금 전',
+                        content: reply.content || '',
+                        profileImage: reply.authorProfileImage || null,
+                        isHost: reply.isAuthor || false,
+                        isTemporary: false
+                    })) || [],
+                    isTemporary: false
+                }));
+                
+                setComments(transformedComments);
+            } else {
+                console.error('❌ 댓글 조회 실패:', response.status);
+            }
+        } catch (error) {
+            console.error('❌ 댓글 조회 오류:', error);
+        }
+    };
+
+    // 2. 시간 포맷팅 함수 추가
+    const formatTimeAgo = (dateString) => {
+        const now = dayjs();
+        const commentTime = dayjs(dateString);
+        const diffMinutes = now.diff(commentTime, 'minute');
+        const diffHours = now.diff(commentTime, 'hour');
+        const diffDays = now.diff(commentTime, 'day');
+        
+        if (diffMinutes < 1) return '방금 전';
+        if (diffMinutes < 60) return `${diffMinutes}분 전`;
+        if (diffHours < 24) return `${diffHours}시간 전`;
+        if (diffDays < 7) return `${diffDays}일 전`;
+        
+        return commentTime.format('M월 D일');
+    };
+    // API에서 동행 상세 정보 가져오기
     const fetchAccompanyDetail = async (id) => {
         try {
             setLoading(true);
@@ -185,138 +247,203 @@ export default function AccompanyPost() {
         }
     };
 
-    // 서버에 댓글/답글 저장하는 함수 (기존 유지)
-    const saveToServer = async (data, isReply = false) => {
-        try {
+    // 3. 서버에 댓글 저장하는 함수 수정
+    // 디버깅을 위한 수정된 saveToServer 함수
+const saveToServer = async (data, isReply = false) => {
+    try {
+        const url = `${API_URL}/api/accompany/${postId}/comments`;
+        console.log('🌐 댓글 작성 API 호출:', url);
+        
+        // 🔍 currentUserId 타입 확인
+        console.log('🧑 currentUserId 원본:', currentUserId, '타입:', typeof currentUserId);
+        const userIdNumber = parseInt(currentUserId);
+        console.log('🧑 parseInt 결과:', userIdNumber, '타입:', typeof userIdNumber, 'isNaN:', isNaN(userIdNumber));
+        
+        const requestBody = {
+            content: data.content,
+            userId: userIdNumber, // parseInt 결과 사용
+            ...(isReply && data.parentCommentId && { parentCommentId: parseInt(data.parentCommentId) })
+        };
+        
+
+        // 요청 전 유효성 검사
+        if (!requestBody.content || requestBody.content.trim() === '') {
+            throw new Error('댓글 내용이 비어있습니다');
+        }
+        
+        if (isNaN(requestBody.userId)) {
+            throw new Error('유효하지 않은 사용자 ID입니다');
+        }
+        
+        if (!postId || isNaN(parseInt(postId))) {
+            throw new Error('유효하지 않은 게시글 ID입니다');
+        }
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+            },
+            body: JSON.stringify(requestBody),
+        });
+        
+        console.log('📡 응답 상태:', response.status);
+        console.log('📡 응답 헤더 Content-Type:', response.headers.get('content-type'));
+        
+        // 응답 내용을 먼저 텍스트로 읽어보기
+        const responseText = await response.text();
+
+        
+        if (response.ok) {
+            let result;
+            try {
+                result = JSON.parse(responseText);
+                console.log('✅ 댓글 작성 성공:', result);
+            } catch (parseError) {
+                console.error('❌ JSON 파싱 오류:', parseError);
+                console.log('응답이 JSON이 아님:', responseText);
+                throw new Error('서버 응답이 올바른 JSON 형식이 아닙니다');
+            }
             
-            // Mock 응답 데이터
-            const mockResponse = {
-                id: Date.now() + Math.random(),
-                ...data,
-                time: "방금 전",
-                profileImage: null,
-                isHost: currentUserId === postData?.createdBy // 현재 사용자가 호스트인지
+            // 백엔드 응답을 프론트엔드 형식으로 변환 
+            return {
+                id: result.id?.toString() || `comment_${Date.now()}`,
+                nickname: result.userNickname || '내닉네임', // authorName -> userNickname
+                time: result.createdAt ? formatTimeAgo(result.createdAt) : '방금 전',
+                content: result.content || '',
+                profileImage: null, // 프로필 이미지는 별도 처리 필요
+                isHost: result.isHostComment || false, // isAuthor -> isHostComment
+                replies: [],
+                isTemporary: false
             };
+        } else {
+            console.error('❌ 댓글 작성 실패:', response.status);
+            console.error('❌ 오류 응답:', responseText);
             
-            return mockResponse;
-        } catch (error) {
-            console.error('서버 저장 실패:', error);
-            throw error;
+            throw new Error(`댓글 작성 실패: ${response.status} - ${responseText}`);
         }
+    } catch (error) {
+        console.error('❌ 댓글 작성 오류:', error);
+        
+        throw error;
+    }
+};
+
+
+   // 5. 일반 댓글 추가 함수 수정
+const handleAddComment = async (content) => {
+    if (!content.trim()) return;
+
+    const tempComment = {
+        id: `temp_${Date.now()}`,
+        nickname: "내닉네임", 
+        time: "방금 전",
+        content: content.trim(),
+        profileImage: null,
+        isHost: currentUserId === postData?.createdBy,
+        replies: [],
+        isTemporary: true
     };
 
-    // 일반 댓글 추가 (기존 로직 유지)
-    const handleAddComment = async (content) => {
-        if (!content.trim()) return;
+    setComments(prev => [...prev, tempComment]);
 
-        const tempComment = {
-            id: `temp_${Date.now()}`,
-            nickname: "내닉네임", 
-            time: "방금 전",
+    setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    try {
+        const savedComment = await saveToServer({
             content: content.trim(),
-            profileImage: null,
-            isHost: currentUserId === postData?.createdBy,
-            replies: [],
-            isTemporary: true
-        };
-
-        setComments(prev => [...prev, tempComment]);
-
-        setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-
-        try {
-            const savedComment = await saveToServer({
-                content: content.trim(),
-                postId: postId
-            });
-
-            setComments(prev => 
-                prev.map(comment => 
-                    comment.id === tempComment.id 
-                        ? { ...savedComment, replies: [], isTemporary: false }
-                        : comment
-                )
-            );
-
-        } catch (error) {
-            setComments(prev => 
-                prev.filter(comment => comment.id !== tempComment.id)
-            );
-            
-            Alert.alert("댓글 등록 실패", "댓글 등록에 실패했습니다. 다시 시도해주세요.");
-        }
-    };
-
-    // 답글 추가
-    const handleAddReply = async (content) => {
-        if (!content.trim() || !replyingTo) return;
-
-        const tempReply = {
-            id: `temp_reply_${Date.now()}`,
-            nickname: "내닉네임",
-            time: "방금 전", 
-            content: content.trim(),
-            profileImage: null,
-            isHost: currentUserId === postData?.createdBy,
-            isTemporary: true
-        };
+            postId: postId
+        });
 
         setComments(prev => 
             prev.map(comment => 
-                comment.id === replyingTo 
-                    ? { 
-                        ...comment, 
-                        replies: [...comment.replies, tempReply]
+                comment.id === tempComment.id 
+                    ? { ...savedComment, replies: [], isTemporary: false }
+                    : comment
+            )
+        );
+
+    } catch (error) {
+        setComments(prev => 
+            prev.filter(comment => comment.id !== tempComment.id)
+        );
+        
+        Alert.alert("댓글 등록 실패", "댓글 등록에 실패했습니다. 다시 시도해주세요.");
+    }
+};
+
+// 6. 답글 추가 함수 수정 (같은 API 사용)
+const handleAddReply = async (content) => {
+    if (!content.trim() || !replyingTo) return;
+
+    const tempReply = {
+        id: `temp_reply_${Date.now()}`,
+        nickname: "내닉네임",
+        time: "방금 전", 
+        content: content.trim(),
+        profileImage: null,
+        isHost: currentUserId === postData?.createdBy,
+        isTemporary: true
+    };
+
+    setComments(prev => 
+        prev.map(comment => 
+            comment.id === replyingTo 
+                ? { 
+                    ...comment, 
+                    replies: [...comment.replies, tempReply]
+                  }
+                : comment
+        )
+    );
+
+    setReplyingTo(null);
+
+    setTimeout(() => {
+        scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 100);
+
+    try {
+        // 답글도 같은 API 사용, parentCommentId만 추가
+        const savedReply = await saveToServer({
+            content: content.trim(),
+            parentCommentId: parseInt(replyingTo), // 부모 댓글 ID 추가
+            postId: postId
+        }, true);
+
+        setComments(prev => 
+            prev.map(comment => 
+                comment.id === replyingTo
+                    ? {
+                        ...comment,
+                        replies: comment.replies.map(reply =>
+                            reply.id === tempReply.id
+                                ? { ...savedReply, isTemporary: false }
+                                : reply
+                        )
                       }
                     : comment
             )
         );
 
-        setReplyingTo(null);
-
-        setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-
-        try {
-            const savedReply = await saveToServer({
-                content: content.trim(),
-                parentCommentId: replyingTo,
-                postId: postId
-            }, true);
-
-            setComments(prev => 
-                prev.map(comment => 
-                    comment.id === replyingTo
-                        ? {
-                            ...comment,
-                            replies: comment.replies.map(reply =>
-                                reply.id === tempReply.id
-                                    ? { ...savedReply, isTemporary: false }
-                                    : reply
-                            )
-                          }
-                        : comment
-                )
-            );
-
-        } catch (error) {
-            setComments(prev => 
-                prev.map(comment => 
-                    comment.id === replyingTo
-                        ? {
-                            ...comment,
-                            replies: comment.replies.filter(reply => reply.id !== tempReply.id)
-                          }
-                        : comment
-                )
-            );
-            
-            Alert.alert("답글 등록 실패", "답글 등록에 실패했습니다. 다시 시도해주세요.");
-        }
-    };
+    } catch (error) {
+        setComments(prev => 
+            prev.map(comment => 
+                comment.id === replyingTo
+                    ? {
+                        ...comment,
+                        replies: comment.replies.filter(reply => reply.id !== tempReply.id)
+                      }
+                    : comment
+            )
+        );
+        
+        Alert.alert("답글 등록 실패", "답글 등록에 실패했습니다. 다시 시도해주세요.");
+    }
+};
 
     // 댓글 작성 핸들러 (댓글 vs 답글 구분)
     const handleSend = (content) => {
@@ -343,6 +470,7 @@ export default function AccompanyPost() {
         if (postId) {
             console.log('📍 postId로 데이터 로드:', postId);
             fetchAccompanyDetail(postId);
+            fetchComments(postId); // 댓글도 함께 로딩
         } else {
             setError('잘못된 동행 ID입니다.');
             setLoading(false);
