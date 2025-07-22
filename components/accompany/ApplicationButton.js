@@ -45,7 +45,8 @@ const ApplicationButton = ({
         setLikes(prevLikes => newLikeStatus ? prevLikes + 1 : prevLikes - 1);
         
         try {
-            const url = `${API_URL}/api/accompany/${postId}/like`;
+            // 쿼리 파라미터로 userId 전송하도록 수정
+            const url = `${API_URL}/api/accompany/${postId}/like?userId=${currentUserId}`;
             console.log('🌐 좋아요 API 호출:', url);
             
             const response = await fetch(url, {
@@ -53,10 +54,7 @@ const ApplicationButton = ({
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({
-                    userId: currentUserId,
-                    isLiked: newLikeStatus
-                }),
+                // body 제거 (백엔드에서 사용하지 않음)
             });
             
             if (response.ok) {
@@ -64,8 +62,13 @@ const ApplicationButton = ({
                 console.log('✅ 좋아요 성공:', result);
                 
                 // 서버에서 받은 실제 좋아요 수로 업데이트
-                if (result.totalLikes !== undefined) {
-                    setLikes(result.totalLikes);
+                if (result.likeCount !== undefined) {
+                    setLikes(result.likeCount);
+                }
+                
+                // 서버에서 받은 실제 좋아요 상태로 업데이트
+                if (result.isLiked !== undefined) {
+                    setIsLiked(result.isLiked);
                 }
             } else {
                 throw new Error(`좋아요 실패: ${response.status}`);
@@ -74,8 +77,8 @@ const ApplicationButton = ({
             console.error('❌ 좋아요 오류:', error);
             
             // 실패 시 롤백
-            setIsLiked(isLiked);
-            setLikes(likes);
+            setIsLiked(!newLikeStatus);  // 원래 상태로 롤백
+            setLikes(prevLikes => newLikeStatus ? prevLikes - 1 : prevLikes + 1);  // 원래 좋아요 수로 롤백
             
             Alert.alert('오류', '좋아요 처리에 실패했습니다.');
         } finally {
