@@ -8,7 +8,7 @@ import AiItineraryDesignPopup from '../../../components/mytour/designItinerary/A
 import MemberPopup from '../../../components/mytour/designItinerary/MemberPopup';
 import ItineraryWithSchedule from '../../../components/mytour/designItinerary/ItineraryWithSchedule';
 import Schedule from '../../../components/mytour/designItinerary/schedule/Schedule';
-import AddSchedule from '../../../components/mytour/designItinerary/AddSchedule';
+import AddSchedule from '../../../components/mytour/designItinerary/AddSchedule/AddSchedule';
 
 export default function DesignItinerary() {
     const router = useRouter();
