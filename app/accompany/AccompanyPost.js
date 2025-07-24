@@ -89,21 +89,21 @@ export default function AccompanyPost() {
             title: backendData.title || '제목 없음',
             location: backendData.location || '위치 미정',
             createdAt: backendData.postDate ? 
-                dayjs(backendData.postDate).locale('ko').format('M월 D일(ddd)') : 
-                dayjs().locale('ko').format('M월 D일(ddd)'),
+                dayjs(backendData.postDate).locale('ko').format('YYYY.MM.DD') : 
+                dayjs().locale('ko').format('YYYY.MM.DD'),
             imageUrl: getImageUrl(backendData), 
             views: backendData.views || 0,
             travelStartDate: backendData.tripStartDate ? 
-                dayjs(backendData.tripStartDate).locale('ko').format('M월 D일(ddd)') : 
+                dayjs(backendData.tripStartDate).locale('ko').format('YYYY.MM.DD') : 
                 '기간미정',
             travelEndDate: backendData.tripEndDate ? 
-                dayjs(backendData.tripEndDate).locale('ko').format('M월 D일(ddd)') : 
+                dayjs(backendData.tripEndDate).locale('ko').format('YYYY.MM.DD') : 
                 '',
             recruitStartDate: backendData.recStartDate ? 
-                dayjs(backendData.recStartDate).locale('ko').format('M월 D일(ddd)') : 
+                dayjs(backendData.recStartDate).locale('ko').format('YYYY.MM.DD') : 
                 '기간미정',
             recruitEndDate: backendData.recEndDate ? 
-                dayjs(backendData.recEndDate).locale('ko').format('M월 D일(ddd)') : 
+                dayjs(backendData.recEndDate).locale('ko').format('YYYY.MM.DD') : 
                 '',
             description: backendData.intro || '설명이 없습니다.',
             meetingPoint: backendData.meetPlace || '미정',
@@ -624,7 +624,7 @@ const handleAddReply = async (content) => {
                             <Text style={styles.hostInfoLabel}> 게시일 </Text>
                             <Text>{postData.createdAt} </Text>
                             <Text style={styles.hostInfoLabel}> 조회수 </Text>
-                            <Text>{postData.views}회</Text>
+                            <Text>{postData.views}</Text>
                         </Text>
                     </View>
 

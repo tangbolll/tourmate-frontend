@@ -391,19 +391,19 @@ const styles = StyleSheet.create({
     conditionLabelInline: {
         fontSize: 15,
         color: '#555',
-        width: 50,
+        width: 35,
         marginTop: 6,
-        marginLeft: 10
+        marginLeft: 6
     },
     inlineChipContainer: {
-        flex: 1,
+        // flex: 1,
         flexDirection: 'row',
         flexWrap: 'wrap',
     },
     titleWithNoteContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        marginBottom: 8,
+        marginBottom: 4,
     },
     noteText: {
         fontSize: 12,
@@ -424,7 +424,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         borderColor: '#ccc',
         borderWidth: 1,
-        marginRight: 8,
+        marginRight: 5,
         marginBottom: 7,
     },
     chipSelected: {

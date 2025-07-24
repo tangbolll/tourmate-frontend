@@ -1,3 +1,5 @@
+// CalendarPopup.js
+
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
 import dayjs from 'dayjs';
@@ -142,7 +144,9 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     weekdays={CUSTOM_LOCALE.weekdays}
                     months={CUSTOM_LOCALE.months}
                     initialDate={currentMonth.toDate()}
-                    width={Platform.OS === 'ios' ? 320 : 300}
+                    width={Platform.OS === 'ios' ? 360 : 340}
+                    // 💡 여기에 CalendarPicker와 monthNav 사이의 간격을 좁히기 위해 marginTop 추가
+                    containerStyle={styles.calendarContainer} 
                 />
 
                 {/* Apply Button */}
@@ -186,7 +190,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: 25,
         paddingHorizontal: 5,
     },
     resetText: {
@@ -206,8 +210,8 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        marginBottom: 10,
+        paddingHorizontal: 24,
+        marginBottom: -10,
     },
     monthTitle: {
         fontSize: 16,
@@ -215,18 +219,21 @@ const styles = StyleSheet.create({
     },
     arrowButton: {
         paddingHorizontal: 15,
-        paddingVertical: 5,
     },
     arrow: {
         fontSize: 20,
         fontWeight: 'bold',
     },
+    calendarContainer: {
+        marginTop: -20,
+    },
     applyButton: {
         backgroundColor: 'black',
-        borderRadius: 8,
+        borderRadius: 12,
         padding: 15,
         alignItems: 'center',
         marginTop: 20,
+        marginBottom: 10,
     },
     applyButtonText: {
         color: 'white',

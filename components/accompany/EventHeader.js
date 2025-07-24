@@ -10,7 +10,7 @@ const EventHeader = ({ title, location, participants, maxParticipants, newApplic
             <Text style={styles.title}>{title}</Text>
 
             <View style={styles.infoRow}>
-                <MaterialIcons name="location-pin" size={16} color="black" />
+                <MaterialIcons name="location-pin" size={14} color="black" />
                 <Text style={styles.infoText}>{location}</Text>
 
                 <TouchableOpacity 
@@ -18,7 +18,7 @@ const EventHeader = ({ title, location, participants, maxParticipants, newApplic
                     onPress={onParticipantsClick}
                     activeOpacity={0.7}
                 >
-                    <Ionicons name="person" size={15} color="black" style={[styles.icon, { marginLeft: 12 }]} />
+                    <Ionicons name="person" size={14} color="black" style={[styles.icon, { marginLeft: 12 }]} />
                     <Text style={styles.infoText}>
                         {participants}명 / {maxParticipants}명
                     </Text>
@@ -76,9 +76,9 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     infoText: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#000',
-        marginHorizontal: 4,
+        marginHorizontal: 0,
     },
     icon: {
         marginRight: 4,
