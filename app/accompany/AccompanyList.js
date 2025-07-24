@@ -66,11 +66,11 @@ const AccompanyList = () => {
             maxParticipants: item.maxRecruit || 0,
             imageUrl: item.images?.length > 0 ? item.images[0] : null,
             tags: [
-                ...(item.category || []),
-                ...(item.tag || []),
-                ...(Array.isArray(item.ageGroup) ? item.ageGroup.map(age => age === "ALL" ? "나이무관" : age) : []), 
-                item.gender === 'ALL' ? '성별무관' : item.gender
-            ].filter(Boolean),
+                item.gender === 'ALL' ? '성별무관' : item.gender, // 성별 태그를 맨 앞에
+                ...(item.category || []), // 카테고리 태그 포함
+                // item.tag는 이제 포함하지 않습니다. (사용자 입력 태그)
+                // item.ageGroup은 이제 포함하지 않습니다. (나이 태그)
+            ].filter(Boolean), // null, undefined, 빈 문자열 제거
             date: item.tripStartDate && item.tripEndDate ? 
                 `${dayjs(item.tripStartDate).locale('ko').format('MM.DD')} ~ ${dayjs(item.tripEndDate).locale('ko').format('MM.DD')}` : 
                 '날짜 미정',

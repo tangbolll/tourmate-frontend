@@ -91,7 +91,7 @@ const ToChatroom = ({ postId, currentUserId = 2, style }) => {
             <View style={styles.iconContainer}>
                 <MaterialCommunityIcons 
                     name={chatLoading ? "loading" : "chat"} 
-                    size={16} 
+                    size={14} 
                     color={chatLoading ? "#999" : "black"} 
                 />
             </View>
@@ -120,7 +120,7 @@ const styles = StyleSheet.create({
         // 아이콘 컨테이너 스타일 (필요시 추가)
     },
     text: {
-        fontSize: 13,
+        fontSize: 12,
         fontWeight: '500',
         color: '#000000',
         textAlign: 'center',

@@ -427,26 +427,26 @@ const styles = StyleSheet.create({
         height: 80, // 스크롤 콘텐츠와 하단 고정 버튼 사이의 여백
     },
     fixedButtonContainer: {
-        height: 90,
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        paddingBottom: 28,
-        backgroundColor: '#fff',
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        
         shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: -2,
-        },
+        shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.1,
+        shadowRadius: 4,
+        elevation: 5, 
+        
+        backgroundColor: '#fff',
+        paddingHorizontal: 16,
+        paddingTop: 12,
     },
     button: {
+        flex: 1,
         paddingVertical: 12,
-        borderRadius: 8,
+        borderRadius: 12,
         alignItems: 'center',
+        marginRight: 8,
     },
     buttonEnabled: {
         backgroundColor: '#000',

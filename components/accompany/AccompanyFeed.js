@@ -79,7 +79,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 4,
         marginRight: 6,
-        marginBottom: 3,
+        marginBottom: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     tagText: {
         fontSize: 12,

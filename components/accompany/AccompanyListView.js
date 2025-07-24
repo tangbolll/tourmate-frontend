@@ -55,14 +55,14 @@ const AccompanyListView = ({
         return (
             <View style={styles.emptyState}>
             <Text style={styles.emptyStateText}>
-                {selectedTab === 'mine' 
+                {selectedTab === 'mine'
                 ? '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!'
                 : '표시할 동행이 없습니다.\n필터를 조정해보세요.'}
             </Text>
             </View>
         );
         }
-        
+
         return filteredPosts.map((post) => (
         <AccompanyFeed
             key={post.id}
@@ -93,6 +93,7 @@ const AccompanyListView = ({
                 tintColor={'#000'} // iOS
             />
             }
+            contentContainerStyle={styles.scrollViewContent} // <-- Add this style
         >
             <AccompanyListHeader
             onPressAlarm={() => console.log('알림')} // TODO: 실제 알림 기능 연결
@@ -121,8 +122,8 @@ const AccompanyListView = ({
             visible={calendarVisible}
             onClose={() => setCalendarVisible(false)} // 캘린더 닫기
             onSelectDates={handleCalendarSelect}
-            />  
-            
+            />
+
             <View style={styles.filterTagsContainer}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTagsScroll}>
                 {getAllTags().map((tag) => (
@@ -131,27 +132,27 @@ const AccompanyListView = ({
             </ScrollView>
             </View>
 
-            <AccompanyToggle 
-            isExpanded={showCards} 
-            onToggle={() => setShowCards(!showCards)} 
+            <AccompanyToggle
+            isExpanded={showCards}
+            onToggle={() => setShowCards(!showCards)}
             />
 
             {showCards && (
             <View style={styles.cardsContainer}>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsScroll}>
                 {myJoinedAccompanyList.map((item) => (
-                    <AccompanyCard 
-                    key={item.id} 
-                    {...item} 
-                    onPress={() => navigateToPost(item.id)} 
+                    <AccompanyCard
+                    key={item.id}
+                    {...item}
+                    onPress={() => navigateToPost(item.id)}
                     />
                 ))}
                 </ScrollView>
             </View>
             )}
 
-            <AccompanyTabToggle 
-            selectedTab={selectedTab} 
+            <AccompanyTabToggle
+            selectedTab={selectedTab}
             onSelectTab={(tab) => {
                 setSelectedTab(tab);
                 // 탭 변경 시 해당 탭의 데이터 다시 로드
@@ -160,14 +161,14 @@ const AccompanyListView = ({
                 } else {
                 fetchAccompanyData();
                 }
-            }} 
+            }}
             />
 
             {renderFeedItems()}
         </ScrollView>
 
         <TouchableOpacity style={styles.floatingButton}>
-            <CreateAccompanyButton 
+            <CreateAccompanyButton
             onPress={() => {
                 router.push('/accompany/AccompanyCreation');
             }}
@@ -181,25 +182,28 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        position: 'relative', 
+        position: 'relative',
     },
-    floatingButton: { 
-        position: 'absolute', 
-        bottom: 25, 
-        right: 20, 
-        zIndex: 10 
+    scrollViewContent: { // <-- New style for ScrollView content
+        paddingBottom: 50, // Adjust this value based on your tab bar height
     },
-    filterTagsContainer: { 
-        marginVertical: 8 
+    floatingButton: {
+        position: 'absolute',
+        bottom: 25,
+        right: 20,
+        zIndex: 10
     },
-    filterTagsScroll: { 
-        paddingHorizontal: 16 
+    filterTagsContainer: {
+        marginVertical: 8
     },
-    cardsContainer: { 
+    filterTagsScroll: {
+        paddingHorizontal: 16
+    },
+    cardsContainer: {
         marginTop: 16,
     },
-    cardsScroll: { 
-        paddingHorizontal: 16 
+    cardsScroll: {
+        paddingHorizontal: 16
     },
     emptyState: {
         padding: 32,
