@@ -143,9 +143,7 @@ const DibsorScrap = ({ router }) => {
             <SelectDibsOrScrap
                 selectedTab={selectedTab}
                 setSelectedTab={setSelectedTab}
-
             />
-            
             {selectedTab === '찜' && (
                 <DibsScrapListView
                     refreshing={refreshing}
