@@ -35,7 +35,7 @@ const AccompanyList = () => {
     const [feedList, setFeedList] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    // ✅ 새로 추가된 상태 변수: 각 탭의 데이터 로드 여부를 추적합니다.
+    // 새로 추가된 상태 변수: 각 탭의 데이터 로드 여부를 추적합니다.
     const [feedLoaded, setFeedLoaded] = useState(false); 
     const [mineLoaded, setMineLoaded] = useState(false); 
 
@@ -166,7 +166,7 @@ const AccompanyList = () => {
                 console.log('✅ /api/accompany/my/{userId} API 응답 성공:', data);
                 const transformedMyCreatedAccompany = transformAccompanyData(data);
                 setMyCreatedAccompanyList(transformedMyCreatedAccompany);
-                setMineLoaded(true); // ✅ 내가 만든 동행 데이터 로드 성공 시 `mineLoaded`를 true로 설정
+                setMineLoaded(true); // 내가 만든 동행 데이터 로드 성공 시 `mineLoaded`를 true로 설정
             } else {
                 const errorText = await response.text();
                 console.error('❌ /api/accompany/my/{userId} API 호출 실패');
