@@ -6,42 +6,50 @@ import {
     TouchableOpacity,
     Dimensions,
 } from 'react-native';
+import { SortToggle } from './SortToggle';
 
 const { width } = Dimensions.get('window');
 
-const SelectDibsOrScrap = ({ selectedTab, setSelectedTab }) => {
+const SelectDibsOrScrap = ({ selectedTab, setSelectedTab, onSortChange }) => {
 
     return (
         <View style={styles.container}>
             {/* 헤더 */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>동행</Text>
+                <Text style={styles.headerTitle}>
+                    {selectedTab === '찜' ? '동행' : '여행 엽서'}
+                </Text>
             </View>
 
-            {/* 탭 메뉴 */}
-            <View style={styles.tabContainer}>
-                {['찜', '스크랩'].map((tab) => (
-                    <TouchableOpacity
-                        key={tab}
-                        style={[
-                            styles.tabButton,
-                            selectedTab === tab && styles.tabButtonActive
-                        ]}
-                        onPress={() => {
-                            setSelectedTab(tab);
-                        }}
-                    >
-                        <Text style={[
-                            styles.tabText,
-                            selectedTab === tab && styles.tabTextActive
-                        ]}>
-                            {tab}
-                        </Text>
-                    </TouchableOpacity>
-                ))}
+            {/* 탭 메뉴와 정렬 토글을 같은 행에 배치 */}
+            <View style={styles.tabAndSortContainer}>
+                <View style={styles.tabContainer}>
+                    {['찜', '스크랩'].map((tab) => (
+                        <TouchableOpacity
+                            key={tab}
+                            style={[
+                                styles.tabButton,
+                                selectedTab === tab && styles.tabButtonActive
+                            ]}
+                            onPress={() => {
+                                setSelectedTab(tab);
+                            }}
+                        >
+                            <Text style={[
+                                styles.tabText,
+                                selectedTab === tab && styles.tabTextActive
+                            ]}>
+                                {tab}
+                            </Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+                
+                {/* 정렬 토글 */}
+                <SortToggle
+                    onSortChange={onSortChange}
+                />
             </View>
-
-            {/* 찜/스크랩 컨텐츠는 부모 컴포넌트에서 처리 */}
         </View>
     );
 };
@@ -64,10 +72,15 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#333',
     },
-    tabContainer: {
+    tabAndSortContainer: {
         flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
         paddingHorizontal: 16,
         paddingTop: 16,
+    },
+    tabContainer: {
+        flexDirection: 'row',
         gap: 8,
     },
     tabButton: {
