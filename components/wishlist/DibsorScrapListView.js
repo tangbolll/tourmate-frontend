@@ -45,7 +45,7 @@ const DibsScrapListView = ({
                     <Text style={styles.emptyStateText}>
                         {selectedTab === '찜'
                             ? '아직 찜한 동행이 없습니다.\n마음에 드는 동행을 찜해보세요!'
-                            : '아직 스크랩한 동행이 없습니다.\n유용한 동행을 스크랩해보세요!'}
+                            : '아직 스크랩한 엽서가 없습니다.\n유용한 동행을 스크랩해보세요!'}
                     </Text>
                 </View>
             );
