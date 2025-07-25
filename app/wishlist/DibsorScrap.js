@@ -3,7 +3,7 @@ import { View, StyleSheet } from 'react-native';
 import SelectDibsOrScrap from '../../components/wishlist/SelectDibsOrScrap';
 import DibsScrapListView from '../../components/wishlist/DibsorScrapListView';
 
-const DibsScrapPage = ({ router }) => {
+const DibsorScrap = ({ router }) => {
     // 상태 관리
     const [selectedTab, setSelectedTab] = useState('찜');
     const [refreshing, setRefreshing] = useState(false);
@@ -143,12 +143,7 @@ const DibsScrapPage = ({ router }) => {
             <SelectDibsOrScrap
                 selectedTab={selectedTab}
                 setSelectedTab={setSelectedTab}
-                onClose={() => {
-                    // 닫기 버튼 클릭 시 네비게이션 처리
-                    if (router) {
-                        router.back();
-                    }
-                }}
+
             />
             
             {selectedTab === '찜' && (
@@ -187,4 +182,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default DibsScrapPage;
+export default DibsorScrap;

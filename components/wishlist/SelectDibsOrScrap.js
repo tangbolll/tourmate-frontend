@@ -3,34 +3,19 @@ import {
     View,
     Text,
     StyleSheet,
-    SafeAreaView,
     TouchableOpacity,
-    ScrollView,
     Dimensions,
 } from 'react-native';
-import { Feather } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-const SelectDibsOrScrap = ({ onClose, selectedTab, setSelectedTab }) => {
-
-    const handleClose = () => {
-        if (onClose) {
-            onClose();
-        }
-    };
+const SelectDibsOrScrap = ({ selectedTab, setSelectedTab }) => {
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={styles.container}>
             {/* 헤더 */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>동행</Text>
-                <TouchableOpacity 
-                    style={styles.closeButton}
-                    onPress={handleClose}
-                >
-                    <Feather name="x" size={24} color="#333" />
-                </TouchableOpacity>
             </View>
 
             {/* 탭 메뉴 */}
@@ -57,13 +42,12 @@ const SelectDibsOrScrap = ({ onClose, selectedTab, setSelectedTab }) => {
             </View>
 
             {/* 찜/스크랩 컨텐츠는 부모 컴포넌트에서 처리 */}
-        </SafeAreaView>
+        </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         backgroundColor: '#fff',
     },
     header: {
@@ -80,16 +64,9 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         color: '#333',
     },
-    closeButton: {
-        position: 'absolute',
-        right: 16,
-        padding: 8,
-        marginRight: -8,
-    },
     tabContainer: {
         flexDirection: 'row',
         paddingHorizontal: 16,
-        paddingBottom: 0, // 변경: paddingVertical: 16 → paddingBottom: 0
         paddingTop: 16,
         gap: 8,
     },
