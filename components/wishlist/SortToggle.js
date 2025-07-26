@@ -92,7 +92,7 @@ export const SortToggle = ({ onSortChange, defaultSort = 'closestTrip', selected
                             styles.dropdownContainer,
                             {
                                 top: buttonPosition.y,
-                                left: buttonPosition.x,
+                                left: buttonPosition.x -90,
                             }
                         ]}>
                             {sortOptions.map((option) => (
