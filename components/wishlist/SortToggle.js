@@ -12,31 +12,49 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-export const SortToggle = ({ onSortChange, defaultSort = 'closestTrip' }) => {
+export const SortToggle = ({ onSortChange, defaultSort = 'closestTrip', selectedTab = '찜' }) => {
     const [selectedSort, setSelectedSort] = useState(defaultSort);
     const [modalVisible, setModalVisible] = useState(false);
     const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
     const buttonRef = useRef(null);
 
-    const sortOptions = [
-        {
-            key: 'closestTrip',
-            label: '여행일 빠른순'
-        },
-        {
-            key: 'closestRecruitment',
-            label: '모집마감 임박순'
-        },
-        {
-            key: 'saved',
-            label: '저장한 동행순'
+    // 탭에 따라 다른 정렬 옵션 제공
+    const getSortOptions = () => {
+        if (selectedTab === '찜') {
+            return [
+                {
+                    key: 'closestTrip',
+                    label: '여행일 빠른순'
+                },
+                {
+                    key: 'closestRecruitment',
+                    label: '모집마감 임박순'
+                },
+                {
+                    key: 'saved',
+                    label: '저장한 동행순'
+                }
+            ];
+        } else { // 스크랩
+            return [
+                {
+                    key: 'newest',
+                    label: '여행일 빠른 순'
+                },
+                {
+                    key: 'oldest',
+                    label: '저장한 엽서 순'
+                }
+            ];
         }
-    ];
+    };
+
+    const sortOptions = getSortOptions();
 
     const handleSortPress = () => {
         // 버튼 위치 측정
         buttonRef.current?.measure((fx, fy, width, height, px, py) => {
-            setButtonPosition({ x: px, y: py + height }); 
+            setButtonPosition({ x: px, y: py + height + 4 }); // 4px 간격 추가
             setModalVisible(true);
         });
     };
@@ -74,7 +92,7 @@ export const SortToggle = ({ onSortChange, defaultSort = 'closestTrip' }) => {
                             styles.dropdownContainer,
                             {
                                 top: buttonPosition.y,
-                                left: buttonPosition.x - 100,
+                                left: buttonPosition.x,
                             }
                         ]}>
                             {sortOptions.map((option) => (
@@ -119,7 +137,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         backgroundColor: 'white',
         borderRadius: 8,
-        minWidth: 140,
+        minWidth: 120,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
