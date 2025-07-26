@@ -47,6 +47,7 @@ const SelectDibsOrScrap = ({ selectedTab, setSelectedTab, onSortChange }) => {
                 
                 {/* 정렬 토글 */}
                 <SortToggle
+                    selectedTab={selectedTab}
                     onSortChange={onSortChange}
                 />
             </View>
