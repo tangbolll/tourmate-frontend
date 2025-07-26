@@ -8,6 +8,7 @@ import {
     RefreshControl 
 } from 'react-native';
 import AccompanyFeed from '../../components/accompany/AccompanyFeed';
+import PostcardGridView from './PostcardGridView';
 
 const DibsScrapListView = ({
     refreshing,
@@ -20,6 +21,7 @@ const DibsScrapListView = ({
     likedPosts,
     handlePressLike,
     navigateToPost,
+    onPostcardPress
 }) => {
 
     // 현재 탭에 따른 데이터 선택
@@ -45,7 +47,7 @@ const DibsScrapListView = ({
                     <Text style={styles.emptyStateText}>
                         {selectedTab === '찜'
                             ? '아직 찜한 동행이 없습니다.\n마음에 드는 동행을 찜해보세요!'
-                            : '아직 스크랩한 엽서가 없습니다.\n유용한 동행을 스크랩해보세요!'}
+                            : '아직 스크랩한 동행이 없습니다.\n유용한 동행을 스크랩해보세요!'}
                     </Text>
                 </View>
             );
@@ -71,19 +73,33 @@ const DibsScrapListView = ({
     };
 
     return (
-        <ScrollView
-            refreshControl={
-                <RefreshControl
+        <>
+            {selectedTab === '찜' && (
+                <ScrollView
+                    refreshControl={
+                        <RefreshControl
+                            refreshing={refreshing}
+                            onRefresh={onRefresh}
+                            colors={['#000']} // Android
+                            tintColor={'#000'} // iOS
+                        />
+                    }
+                    contentContainerStyle={styles.scrollViewContent}
+                >
+                    {renderFeedItems()}
+                </ScrollView>
+            )}
+            
+            {selectedTab === '스크랩' && (
+                <PostcardGridView
                     refreshing={refreshing}
                     onRefresh={onRefresh}
-                    colors={['#000']} // Android
-                    tintColor={'#000'} // iOS
+                    loading={loading}
+                    postcardList={scrapList}
+                    onPostcardPress={onPostcardPress}
                 />
-            }
-            contentContainerStyle={styles.scrollViewContent}
-        >
-            {renderFeedItems()}
-        </ScrollView>
+            )}
+        </>
     );
 };
 
@@ -92,7 +108,7 @@ const styles = StyleSheet.create({
         paddingBottom: 50,
     },
     emptyState: {
-        padding: 32,
+        padding: 16, // 32 → 16으로 줄임
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -101,7 +117,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#888',
         lineHeight: 24,
-        marginTop: 100,
+        marginTop: 20, // 100 → 20으로 대폭 줄임
     },
 });
 

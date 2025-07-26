@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, SafeAreaView } from 'react-native';
 import SelectDibsOrScrap from '../../components/wishlist/SelectDibsOrScrap';
 import DibsScrapListView from '../../components/wishlist/DibsorScrapListView';
 
-const DibsorScrap = ({ router }) => {
+const DibsScrap = ({ router }) => {
     // 상태 관리
     const [selectedTab, setSelectedTab] = useState('찜');
     const [refreshing, setRefreshing] = useState(false);
@@ -67,17 +67,43 @@ const DibsorScrap = ({ router }) => {
             // const response = await api.getScrapList();
             // setScrapList(response.data);
             
-            // 임시 더미 데이터
+            // 임시 더미 엽서 데이터
             const dummyScrapData = [
                 {
-                    id: 'scrap1',
-                    date: '03.06 수',
-                    title: '대전 엑스포공원 산책',
-                    tags: ['산책', '자연', '아침', '운동'],
-                    location: '대전',
-                    participants: 3,
-                    maxParticipants: 5,
-                    imageUrl: 'https://example.com/image3.jpg'
+                    id: 'postcard1',
+                    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+                    title: '부산 해운대',
+                    date: '2021.03.04',
+                },
+                {
+                    id: 'postcard2',
+                    image: 'https://images.unsplash.com/photo-1534274867514-d5b47ef22043?w=400&h=300&fit=crop',
+                    title: '부산 광안리',
+                    date: '2021.03.05',
+                },
+                {
+                    id: 'postcard3',
+                    image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
+                    title: '부산 자갈치',
+                    date: '2021.03.05',
+                },
+                {
+                    id: 'postcard4',
+                    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop',
+                    title: '부산 송도',
+                    date: '2021.03.06',
+                },
+                {
+                    id: 'postcard5',
+                    image: 'https://images.unsplash.com/photo-1617085222613-49c7a5a8e5cb?w=400&h=300&fit=crop',
+                    title: '부산 태종대',
+                    date: '2021.03.06',
+                },
+                {
+                    id: 'postcard6',
+                    image: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400&h=300&fit=crop',
+                    title: '부산 감천문화마을',
+                    date: '2021.03.06',
                 }
             ];
             
@@ -138,12 +164,25 @@ const DibsorScrap = ({ router }) => {
         }
     }, [router]);
 
+    // 엽서 클릭 핸들러
+    const handlePostcardPress = useCallback((postcardId) => {
+        console.log('엽서 클릭:', postcardId);
+        // TODO: 엽서 상세 페이지로 이동
+        if (router) {
+            router.push(`/postcard/${postcardId}`);
+        }
+    }, [router]);
+
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <SelectDibsOrScrap
                 selectedTab={selectedTab}
                 setSelectedTab={setSelectedTab}
+                onSortChange={(sortKey) => {
+                    console.log('Selected sort key:', sortKey);
+                }}
             />
+            
             {selectedTab === '찜' && (
                 <DibsScrapListView
                     refreshing={refreshing}
@@ -156,15 +195,26 @@ const DibsorScrap = ({ router }) => {
                     likedPosts={likedPosts}
                     handlePressLike={handlePressLike}
                     navigateToPost={navigateToPost}
+                    onPostcardPress={handlePostcardPress}
                 />
             )}
             
             {selectedTab === '스크랩' && (
-                <View style={styles.emptyScrapContainer}>
-                    {/* 엽서 리스트가 여기에 올 예정 */}
-                </View>
+                <DibsScrapListView
+                    refreshing={refreshing}
+                    onRefresh={onRefresh}
+                    selectedTab={selectedTab}
+                    setSelectedTab={setSelectedTab}
+                    loading={loading}
+                    dibsList={dibsList}
+                    scrapList={scrapList}
+                    likedPosts={likedPosts}
+                    handlePressLike={handlePressLike}
+                    navigateToPost={navigateToPost}
+                    onPostcardPress={handlePostcardPress}
+                />
             )}
-        </View>
+        </SafeAreaView>
     );
 };
 
@@ -180,4 +230,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default DibsorScrap;
+export default DibsScrap;

@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Text } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import PostDirectoryHeader from '../../components/profile/PostDirectoryHeader';
-import FooterPostDirectory from '../../components/profile/PostDirectoryFooter';
+import PostDirectoryFooter from '../../components/profile/PostDirectoryFooter';
 import { Feather } from '@expo/vector-icons';
 
 // 목 데이터 - 선택된 디렉토리의 엽서들
