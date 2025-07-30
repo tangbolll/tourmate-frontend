@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
     View, 
     StyleSheet, 
@@ -8,6 +8,7 @@ import {
     Text,
     RefreshControl 
 } from 'react-native';
+import PostcardDetailView from './PostcardDetailView';
 
 const PostcardGridView = ({
     refreshing,
@@ -16,6 +17,35 @@ const PostcardGridView = ({
     postcardList,
     onPostcardPress,
 }) => {
+    const [selectedPostcard, setSelectedPostcard] = useState(null);
+    const [showDetail, setShowDetail] = useState(false);
+
+    const handlePostcardPress = (postcardId) => {
+        // 선택된 엽서 데이터 찾기
+        const postcardData = postcardList.find(p => p.id === postcardId);
+        setSelectedPostcard(postcardData);
+        setShowDetail(true);
+        
+        // 부모 컴포넌트에도 알림
+        if (onPostcardPress) {
+            onPostcardPress(postcardId);
+        }
+    };
+
+    const handleCloseDetail = () => {
+        setShowDetail(false);
+        setSelectedPostcard(null);
+    };
+
+    const handleLike = (postcardId) => {
+        console.log('좋아요:', postcardId);
+        // TODO: 좋아요 API 호출
+    };
+
+    const handleScrap = (postcardId) => {
+        console.log('스크랩:', postcardId);
+        // TODO: 스크랩 API 호출
+    };
 
     // 엽서 아이템 렌더링
     const renderPostcardItems = () => {
@@ -44,7 +74,7 @@ const PostcardGridView = ({
                     <TouchableOpacity
                         key={postcard.id}
                         style={styles.postcardContainer}
-                        onPress={() => onPostcardPress(postcard.id)}
+                        onPress={() => handlePostcardPress(postcard.id)}
                         activeOpacity={0.8}
                     >
                         <View style={styles.imageContainer}>
@@ -61,20 +91,32 @@ const PostcardGridView = ({
     };
 
     return (
-        <ScrollView
-            refreshControl={
-                <RefreshControl
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                    colors={['#000']} // Android
-                    tintColor={'#000'} // iOS
+        <>
+            <ScrollView
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={onRefresh}
+                        colors={['#000']} // Android
+                        tintColor={'#000'} // iOS
+                    />
+                }
+                contentContainerStyle={styles.scrollViewContent}
+                showsVerticalScrollIndicator={false}
+            >
+                {renderPostcardItems()}
+            </ScrollView>
+
+            {/* 엽서 상세 모달 */}
+            {showDetail && selectedPostcard && (
+                <PostcardDetailView
+                    postcardData={selectedPostcard}
+                    onClose={handleCloseDetail}
+                    onLikePress={handleLike}
+                    onScrapPress={handleScrap}
                 />
-            }
-            contentContainerStyle={styles.scrollViewContent}
-            showsVerticalScrollIndicator={false}
-        >
-            {renderPostcardItems()}
-        </ScrollView>
+            )}
+        </>
     );
 };
 
@@ -106,8 +148,8 @@ const styles = StyleSheet.create({
         // aspectRatio: 1,
     },
     imageContainer: {
-        width: 148 * 0.75,
-        height: 100 * 0.75,
+        width: 148 * 0.85,
+        height: 100 * 0.85,
         position: 'relative',
         overflow: 'hidden',
         backgroundColor: '#f0f0f0',
