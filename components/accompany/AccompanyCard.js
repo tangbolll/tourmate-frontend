@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
 const defaultImage = require('../../assets/defaultBackground.png');
 
-export default function AccompanyCard({date, title, location, imageUrl, onPress, buttonLabel}) {
+export default function AccompanyCard({date, title, location, imageUrl, onPress, buttonLabel = "자세히 보기"}) {
     return (
         <TouchableOpacity onPress={onPress} style={styles.card}>
             <ImageBackground
@@ -35,9 +35,11 @@ export default function AccompanyCard({date, title, location, imageUrl, onPress,
                     </View>
 
                     {/* 승인 버튼 */}
-                    <View style={styles.button}>
-                        <Text style={styles.buttonText}>{buttonLabel}</Text>
-                    </View>
+                    {buttonLabel && (
+                        <View style={styles.button}>
+                            <Text style={styles.buttonText}>{buttonLabel}</Text>
+                        </View>
+                    )}
                 </View>
             </ImageBackground>
         </TouchableOpacity>
@@ -62,7 +64,7 @@ const styles = StyleSheet.create({
         flex: 1,
         justifyContent: 'space-between',
         padding: 10,
-		borderRadius: 8,
+        borderRadius: 8,
     },
     overlay: {
         flex: 1,
