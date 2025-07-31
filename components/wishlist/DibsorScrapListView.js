@@ -105,6 +105,7 @@ const DibsScrapListView = ({
 
 const styles = StyleSheet.create({
     scrollViewContent: {
+        paddingTop: 12,
         paddingBottom: 50,
     },
     emptyState: {
