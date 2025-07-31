@@ -113,7 +113,7 @@ export const SortToggle = ({ onSortChange, defaultSort = 'closestTrip', selected
                                         {option.label}
                                     </Text>
                                     {selectedSort === option.key && (
-                                        <MaterialIcons name="check" size={18} color="#007AFF" />
+                                        <MaterialIcons name="check" size={18} color="#007AFF" style={{ marginLeft: 4 }} />
                                     )}
                                 </TouchableOpacity>
                             ))}
