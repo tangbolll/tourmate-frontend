@@ -1,21 +1,40 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons'; 
 
-const ApplicationButton = ({ title, likes, onPress }) => {
+const AccompanyCloseButton = ({ 
+    title, 
+    onPress, 
+    isClosed, 
+    likes, // prop으로 likes를 받음
+    isLiked, // prop으로 isLiked를 받음
+    onLikeToggle // prop으로 onLikeToggle 함수를 받음
+}) => {
     return (
         <View style={styles.container}>
-        <TouchableOpacity style={styles.button} onPress={onPress}>
-            <Text style={styles.buttonText}>{title}</Text>
-        </TouchableOpacity>
-        
-        {/* 좋아요 버튼 */}
-        <View style={styles.likesContainer}>
-            <View style={styles.iconWrapper}>
-            <Ionicons name="heart" size={30} color="black" />
-            <Text style={styles.likeText}>{likes}</Text>
-            </View>
-        </View>
+            {/* 메인 버튼 (모집 마감) */}
+            <TouchableOpacity 
+                style={[styles.button, isClosed && styles.disabledButton]} 
+                onPress={onPress}
+                disabled={isClosed}
+            >
+                <Text style={styles.buttonText}>{title}</Text>
+            </TouchableOpacity>
+            
+            {/* 좋아요 버튼 */}
+            <TouchableOpacity 
+                style={styles.likesContainer} 
+                onPress={onLikeToggle} // onLikeToggle prop을 직접 연결
+            >
+                <View style={styles.iconWrapper}>
+                    <Text style={styles.likeText}>{likes}</Text>
+                    <Ionicons 
+                        name={isLiked ? "heart" : "heart-outline"} 
+                        size={30} 
+                        color={isLiked ? "#FF6B6B" : "black"} 
+                    />
+                </View>
+            </TouchableOpacity>
         </View>
     );
 };
@@ -25,14 +44,16 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
+        
         shadowColor: '#000',
         shadowOffset: { width: 0, height: -4 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
-        elevation: 5,
+        elevation: 5, 
+        
         backgroundColor: '#fff',
         paddingHorizontal: 16,
-        paddingVertical: 12,
+        paddingTop: 12,
     },
     button: {
         flex: 1,
@@ -40,6 +61,10 @@ const styles = StyleSheet.create({
         paddingVertical: 12,
         borderRadius: 12,
         alignItems: 'center',
+        marginRight: 8,
+    },
+    disabledButton: {
+        backgroundColor: '#CCCCCC',
     },
     buttonText: {
         color: 'white',
@@ -47,9 +72,9 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     likesContainer: {
-        marginLeft: 12,
         alignItems: 'center',
         justifyContent: 'center',
+        paddingHorizontal: 4,
     },
     iconWrapper: {
         position: 'relative',
@@ -61,10 +86,10 @@ const styles = StyleSheet.create({
     likeText: {
         position: 'absolute',
         top: -8,
-        fontSize: 8,
+        fontSize: 10,
         color: 'black',
-        fontWeight: 'thin',
+        fontWeight: '500',
     },
 });
 
-export default ApplicationButton;
+export default AccompanyCloseButton;
