@@ -154,6 +154,7 @@ const AccompanyListView = ({
                                         {...item}
                                         onPress={() => navigateToPost(item.id)}
                                         buttonLabel="자세히 보기"
+                                        status={item.status} // 🚨 status prop 추가
                                     />
                                 ))
                             ) : (
