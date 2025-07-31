@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
     View, 
     Text, 
@@ -12,11 +12,29 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 const { width } = Dimensions.get('window');
 
-export const SortToggle = ({ onSortChange, defaultSort = 'closestTrip', selectedTab = '찜' }) => {
-    const [selectedSort, setSelectedSort] = useState(defaultSort);
+export const SortToggle = ({ onSortChange, selectedTab = '찜' }) => {
+    // getDefaultSort 함수를 먼저 정의
+    const getDefaultSort = (tab) => {
+        if (tab === '찜') {
+            return 'closestTrip';
+        } else { // 스크랩
+            return 'newest';
+        }
+    };
+
+    const [selectedSort, setSelectedSort] = useState(getDefaultSort(selectedTab));
     const [modalVisible, setModalVisible] = useState(false);
     const [buttonPosition, setButtonPosition] = useState({ x: 0, y: 0 });
     const buttonRef = useRef(null);
+
+    // 탭 변경 시 정렬 초기화
+    useEffect(() => {
+        const newDefaultSort = getDefaultSort(selectedTab);
+        setSelectedSort(newDefaultSort);
+        if (onSortChange) {
+            onSortChange(newDefaultSort);
+        }
+    }, [selectedTab]);
 
     // 탭에 따라 다른 정렬 옵션 제공
     const getSortOptions = () => {
