@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Octicons } from '@expo/vector-icons';
 
 export default function AccompanyListHeader({ onPressAlarm, onPressDM, onPressFilter, searchText, setSearchText }) {
     return (
@@ -20,7 +21,7 @@ export default function AccompanyListHeader({ onPressAlarm, onPressDM, onPressFi
                 </TouchableOpacity>
             </View>
             <TouchableOpacity onPress={onPressDM} style={styles.iconButton}>
-                <Ionicons name="paper-plane-outline" size={24}/> 
+                <Octicons name="paper-airplane" size={24}/> 
             </TouchableOpacity>
             </View>
         </View>
