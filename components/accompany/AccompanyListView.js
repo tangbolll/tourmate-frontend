@@ -44,50 +44,73 @@ const AccompanyListView = ({
     router,
 }) => {
 
-    // 피드 아이템 렌더링
-    const renderFeedItems = () => {
-        if (loading) {
-            return (
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>로딩 중...</Text>
-                </View>
-            );
-        }
-
-        if (filteredPosts.length === 0) {
-            let emptyMessage = '';
-            if (selectedTab === 'mine') {
-                emptyMessage = '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!';
-            } else if (selectedTab === 'applied') {
-                emptyMessage = '아직 신청한 동행이 없습니다.'; // 🚨 문구 수정
-            } else { // 'feed' 탭
-                emptyMessage = '표시할 동행이 없습니다.\n필터를 조정해보세요.';
-            }
-            return (
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>{emptyMessage}</Text>
-                </View>
-            );
-        }
-
-        return filteredPosts.map((post) => (
-            <AccompanyFeed
-                key={post.id}
-                {...post}
-                id={post.id}
-                date={post.date}
-                title={post.title}
-                tags={post.tags}
-                location={post.location}
-                participants={post.participants}
-                maxParticipants={post.maxParticipants}
-                imageUrl={post.imageUrl}
-                liked={!!likedPosts[post.id]}
-                onPressLike={() => handlePressLike(post.id)}
-                onPress={() => navigateToPost(post.id)}
-            />
-        ));
+    const getDisplayTags = (tags) => {
+    if (!tags || !Array.isArray(tags)) return [];
+    
+    // 성별/연령 관련 태그 (모두 표시)
+    const genderAgeTags = [
+        '남성', '여성', '성별무관', 
+        '10대', '20대', '30대', '40대', '50대', '60대', '나이무관'
+    ];
+    
+    // 성별/연령 태그 필터링
+    const displayedGenderAge = tags.filter(tag => genderAgeTags.includes(tag));
+    
+    // 카테고리 태그 필터링 (성별/연령 제외한 나머지)
+    const categoryTags = tags.filter(tag => !genderAgeTags.includes(tag));
+    
+    // 카테고리 태그는 최대 3개만 선택
+    const displayedCategories = categoryTags.slice(0, 3);
+    
+    // 성별/연령 + 카테고리(최대3개) 합치기
+    return [...displayedGenderAge, ...displayedCategories];
     };
+
+
+    // 피드 아이템 렌더링
+   const renderFeedItems = () => {
+    if (loading) {
+        return (
+            <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>로딩 중...</Text>
+            </View>
+        );
+    }
+
+    if (filteredPosts.length === 0) {
+        let emptyMessage = '';
+        if (selectedTab === 'mine') {
+            emptyMessage = '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!';
+        } else if (selectedTab === 'applied') {
+            emptyMessage = '아직 신청한 동행이 없습니다.';
+        } else { // 'feed' 탭
+            emptyMessage = '표시할 동행이 없습니다.\n필터를 조정해보세요.';
+        }
+        return (
+            <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>{emptyMessage}</Text>
+            </View>
+        );
+    }
+
+    return filteredPosts.map((post) => (
+        <AccompanyFeed
+            key={post.id}
+            {...post}
+            id={post.id}
+            date={post.date}
+            title={post.title}
+            tags={getDisplayTags(post.tags)} // 🔥 필터링된 태그만 전달
+            location={post.location}
+            participants={post.participants}
+            maxParticipants={post.maxParticipants}
+            imageUrl={post.imageUrl}
+            liked={!!likedPosts[post.id]}
+            onPressLike={() => handlePressLike(post.id)}
+            onPress={() => navigateToPost(post.id)}
+        />
+    ));
+};
 
     return (
         <SafeAreaView style={styles.container}>

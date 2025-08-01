@@ -141,48 +141,60 @@ const AccompanyList = () => {
     }, [selectedTab, fetchAccompanyFeedData, fetchMyCreatedAccompanyData, fetchMyAppliedAccompanyData]);
 
     useEffect(() => {
-        let allPosts = [];
-        if (selectedTab === 'mine') {
-            allPosts = [...myCreatedAccompanyList];
-        } else if (selectedTab === 'feed') {
-            allPosts = [...feedList];
-        } else if (selectedTab === 'applied') {
-            allPosts = [...myAppliedAccompanyList];
-        }
+    let allPosts = [];
+    if (selectedTab === 'mine') {
+        allPosts = [...myCreatedAccompanyList];
+    } else if (selectedTab === 'feed') {
+        allPosts = [...feedList];
+    } else if (selectedTab === 'applied') {
+        allPosts = [...myAppliedAccompanyList];
+    }
 
-        let filtered = [...allPosts];
-        if (searchText) {
-            const searchLower = searchText.toLowerCase();
-            filtered = filtered.filter(post =>
-                post.title.toLowerCase().includes(searchLower) ||
-                post.location.toLowerCase().includes(searchLower) ||
-                post.tags.some(tag => tag.toLowerCase().includes(searchLower))
-            );
-        }
-        if (filters.gender) {
-            filtered = filtered.filter(post =>
-                post.tags.includes(filters.gender) || post.tags.includes('성별무관')
-            );
-        }
-        if (filters.age) {
-            filtered = filtered.filter(post =>
-                post.tags.includes(filters.age) || post.tags.includes('나이무관')
-            );
-        }
-        if (filters.categories.length > 0) {
-            filtered = filtered.filter(post =>
-                filters.categories.some(category => post.tags.includes(category))
-            );
-        }
-        if (filters.travelPeriod) {
-            // 여행 기간 필터링 로직 추가
-        }
-        if (filters.travelLocation) {
-            filtered = filtered.filter(post => post.location.toLowerCase().includes(filters.travelLocation.toLowerCase()));
-        }
+    // 🔥 최신순 정렬 추가
+    allPosts.sort((a, b) => {
+        const getDate = (post) => {
+            return new Date(post.postDate || post.createdAt || post.date || '1970-01-01');
+        };
+        
+        const dateA = getDate(a);
+        const dateB = getDate(b);
+        
+        return dateB - dateA; // 최신순 정렬 (내림차순)
+    });
 
-        setFilteredPosts(filtered);
-    }, [searchText, filters, selectedTab, myCreatedAccompanyList, feedList, myAppliedAccompanyList]);
+    let filtered = [...allPosts];
+    if (searchText) {
+        const searchLower = searchText.toLowerCase();
+        filtered = filtered.filter(post =>
+            post.title.toLowerCase().includes(searchLower) ||
+            post.location.toLowerCase().includes(searchLower) ||
+            post.tags.some(tag => tag.toLowerCase().includes(searchLower))
+        );
+    }
+    if (filters.gender) {
+        filtered = filtered.filter(post =>
+            post.tags.includes(filters.gender) || post.tags.includes('성별무관')
+        );
+    }
+    if (filters.age) {
+        filtered = filtered.filter(post =>
+            post.tags.includes(filters.age) || post.tags.includes('나이무관')
+        );
+    }
+    if (filters.categories.length > 0) {
+        filtered = filtered.filter(post =>
+            filters.categories.some(category => post.tags.includes(category))
+        );
+    }
+    if (filters.travelPeriod) {
+        // 여행 기간 필터링 로직 추가
+    }
+    if (filters.travelLocation) {
+        filtered = filtered.filter(post => post.location.toLowerCase().includes(filters.travelLocation.toLowerCase()));
+    }
+
+    setFilteredPosts(filtered);
+}, [searchText, filters, selectedTab, myCreatedAccompanyList, feedList, myAppliedAccompanyList]); 
 
     const handleFilterPopup = useCallback(() => {
         setShowFilterPopup(false);
