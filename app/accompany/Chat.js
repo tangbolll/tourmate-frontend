@@ -10,13 +10,16 @@ import {
     Platform,
     SafeAreaView,
     Alert,
-    ActivityIndicator
+    ActivityIndicator,
+    Dimensions
 } from 'react-native';
 import Constants from 'expo-constants';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import MessageBubble from '../../components/accompany/MessageBubble';
 import Icon from 'react-native-vector-icons/Feather';
+import * as ImagePicker from 'expo-image-picker';
+
+const { width: screenWidth } = Dimensions.get('window');
 
 const getBaseURL = () => {
     if (__DEV__) { // 개발 환경
@@ -31,6 +34,88 @@ const getBaseURL = () => {
 };
 
 const API_URL = getBaseURL();
+
+// 개선된 MessageBubble 컴포넌트
+const MessageBubble = ({ message, style }) => {
+    const MAX_BUBBLE_WIDTH = screenWidth * 0.75;
+    const isMyMessage = message.user?.isSelf || false;
+    
+    // 텍스트 길이에 따른 자동 줄바꿈 처리
+    const formatText = (text) => {
+        if (!text) return '';
+        
+        const words = text.split(' ');
+        let formattedText = '';
+        let currentLine = '';
+        
+        words.forEach((word, index) => {
+            const testLine = currentLine + (currentLine ? ' ' : '') + word;
+            const charCount = testLine.replace(/[^\x00-\xff]/g, 'xx').length;
+            
+            if (charCount > CHARS_PER_LINE && currentLine) {
+                formattedText += currentLine + '\n';
+                currentLine = word;
+            } else {
+                currentLine = testLine;
+            }
+            
+            if (index === words.length - 1) {
+                formattedText += currentLine;
+            }
+        });
+        
+        return formattedText;
+    };
+
+    return (
+    <View style={[
+        bubbleStyles.messageContainer,
+        isMyMessage ? bubbleStyles.myMessageContainer : bubbleStyles.otherMessageContainer,
+        style
+    ]}>
+        {/* 발신자 이름 (상대방 메시지만) */}
+        {!isMyMessage && (
+            <Text style={bubbleStyles.senderName}>
+                {message.user?.name || '익명'}
+            </Text>
+        )}
+        
+        <View style={bubbleStyles.bubbleWithTime}>
+            {/* 시간 표시 (내 메시지일 때 왼쪽에) */}
+            {isMyMessage && message.time && (
+                <Text style={[bubbleStyles.timestamp, bubbleStyles.myTimestamp]}>
+                    {message.time}
+                </Text>
+            )}
+            
+            <View style={[
+                bubbleStyles.bubble,
+                isMyMessage ? bubbleStyles.myBubble : bubbleStyles.otherBubble,
+            ]}>
+                {/* 말풍선 꼬리 */}
+                <View style={[
+                    bubbleStyles.tail,
+                    isMyMessage ? bubbleStyles.myTail : bubbleStyles.otherTail
+                ]} />
+                
+                <Text style={[
+                    bubbleStyles.messageText,
+                    isMyMessage ? bubbleStyles.myMessageText : bubbleStyles.otherMessageText
+                ]}>
+                    {message.text}
+                </Text>
+            </View>
+            
+            {/* 시간 표시 (상대방 메시지일 때 오른쪽에) */}
+            {!isMyMessage && message.time && (
+                <Text style={[bubbleStyles.timestamp, bubbleStyles.otherTimestamp]}>
+                    {message.time}
+                </Text>
+            )}
+        </View>
+    </View>
+    );
+};
 
 const Chat = ({ postId: propPostId }) => {
     const params = useLocalSearchParams();
@@ -51,11 +136,11 @@ const Chat = ({ postId: propPostId }) => {
     // 현재 사용자 ID (실제로는 인증 시스템에서 가져올 값)
     const currentUserId = 2; // Long 타입으로 맞춤
 
-    // 🌐 채팅방 정보 가져오기 또는 생성 (ToChatroom과 동일한 로직)
+    // 채팅방 정보 가져오기 또는 생성 (ToChatroom과 동일한 로직)
     const fetchOrCreateChatRoom = async (accompanyId) => {
         try {
             const url = `${API_URL}/api/accompany/${accompanyId}/chatroom`;
-            console.log('🌐 채팅방 조회/생성 API 호출:', url);
+            console.log('채팅방 조회/생성 API 호출:', url);
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -67,17 +152,17 @@ const Chat = ({ postId: propPostId }) => {
             
             if (response.ok) {
                 const roomData = await response.json();
-                console.log('✅ 채팅방 데이터 (기존/새로생성):', roomData);
+                console.log(' 채팅방 데이터 (기존/새로생성):', roomData);
                 setChatRoom(roomData);
                 return roomData;
             } else if (response.status === 404) {
                 // 404면 채팅방이 없다는 뜻이므로, 다시 요청하면 백엔드에서 자동 생성
-                console.log('📝 채팅방이 없음, 자동 생성 요청');
+                console.log(' 채팅방이 없음, 자동 생성 요청');
                 const createResponse = await fetch(url);
                 
                 if (createResponse.ok) {
                     const newRoomData = await createResponse.json();
-                    console.log('✅ 새 채팅방 자동 생성:', newRoomData);
+                    console.log(' 새 채팅방 자동 생성:', newRoomData);
                     setChatRoom(newRoomData);
                     return newRoomData;
                 } else {
@@ -87,12 +172,12 @@ const Chat = ({ postId: propPostId }) => {
                 throw new Error(`채팅방 조회 실패: ${response.status}`);
             }
         } catch (error) {
-            console.error('❌ 채팅방 조회/생성 오류:', error);
+            console.error('채팅방 조회/생성 오류:', error);
             throw error;
         }
     };
 
-    // 🌐 메시지 목록 가져오기 (백엔드 API와 정확히 일치)
+    // 메시지 목록 가져오기 (백엔드 API와 정확히 일치)
     const fetchMessages = async (roomId) => {
         try {
             const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
@@ -113,7 +198,7 @@ const Chat = ({ postId: propPostId }) => {
                 const transformedMessages = messagesData.map(msg => ({
                     id: msg.roomId + '_' + msg.sendTime, // 고유 ID 생성
                     user: {
-                        name: msg.senderNickname || `사용자${msg.senderId}`, // ⚠️ senderNickname 필요
+                        name: msg.senderNickname || `사용자${msg.senderId}`, // senderNickname 필요
                         isSelf: msg.senderId === currentUserId,
                         isHost: false, // 동행 정보가 없으므로 호스트 구분 불가
                         isOther: msg.senderId !== currentUserId
@@ -215,7 +300,7 @@ const Chat = ({ postId: propPostId }) => {
         });
     };
 
-    // 🎯 초기 데이터 로드 (채팅방 자동 생성 포함)
+    // 초기 데이터 로드 (채팅방 자동 생성 포함)
     useEffect(() => {
         const loadChatData = async () => {
             if (!postId) {
@@ -317,7 +402,7 @@ const Chat = ({ postId: propPostId }) => {
                         <Icon name="map-pin" size={12} color="black" style={styles.icon} />
                         <Text style={styles.locationText}>동행 채팅방</Text>
                         <Icon name="user" size={12} color="black" style={[styles.icon, { marginLeft: 12 }]} />
-                        <Text style={styles.participantsText}>채팅 참여자</Text>
+                        <Text style={styles.participantsText}> 채팅 참여자</Text>
                     </View>
                     <View style={styles.headerTitleRow}>
                         <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
@@ -339,9 +424,9 @@ const Chat = ({ postId: propPostId }) => {
             <View style={styles.announcementWrapper}>
                 <View style={styles.announcementContainer}>
                     <Feather name="volume-2" size={20} color="black" />
-                    <Text style={styles.announcementLabel}>안내</Text>
+                    <Text style={styles.announcementLabel}> 안내</Text>
                     <Text style={styles.announcementText}>
-                        동행 {postId}번의 채팅방입니다. 서로를 존중하며 즐거운 대화를 나눠주세요!
+                        동행 {postId}번의 채팅방입니다.{"\n"}서로를 존중하며 즐거운 대화를 나눠주세요!
                     </Text>
                 </View>
             </View>
@@ -419,6 +504,108 @@ const Chat = ({ postId: propPostId }) => {
         </SafeAreaView>
     );
 };
+
+// 기존 스타일에 버블 스타일 추가
+const bubbleStyles = StyleSheet.create({
+    messageContainer: {
+        marginVertical: 3,
+        paddingHorizontal: 16,
+        width: '100%',
+    },
+    myMessageContainer: {
+        alignItems: 'flex-end',
+    },
+    otherMessageContainer: {
+        alignItems: 'flex-start',
+    },
+    bubble: {
+        maxWidth: screenWidth * 0.7,
+        minWidth: 60,
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        borderRadius: 10,
+        position: 'relative',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 1,
+        elevation: 2,
+        flexShrink: 1, 
+    },
+    myBubble: {
+        backgroundColor: '#D9D9D9',
+        marginRight: 8,
+    },
+    otherBubble: {
+        backgroundColor: '#D9D9D9',
+        marginLeft: 8,
+    },
+    senderName: {
+        fontSize: 12,
+        color: '#666',
+        marginBottom: 4,
+        marginLeft: 16, 
+        fontWeight: '500',
+    },
+    messageText: {
+        fontSize: 14,
+        lineHeight: 16,
+        textAlign: 'left',
+    },
+    myMessageText: {
+        color: '#000000',
+    },
+    otherMessageText: {
+        color: '#000000',
+    },
+    bubbleWithTime: {
+        flexDirection: 'row',
+        alignItems: 'flex-end',
+        maxWidth: '100%',
+    },
+    timestamp: {
+        fontSize: 11,
+        opacity: 0.7,
+        marginHorizontal: 5,
+        alignSelf: 'flex-end',
+        minWidth: 50, 
+    },
+    myTimestamp: {
+        color: '#666666',
+        textAlign: 'right',
+    },
+    otherTimestamp: {
+        color: '#666666',
+        textAlign: 'left',
+    },
+    tail: {
+        position: 'absolute',
+        top: 10,
+        width: 0,
+        height: 0,
+    },
+    myTail: {
+        right: -8,
+        borderLeftWidth: 8,
+        borderLeftColor: '#D9D9D9',
+        borderTopWidth: 6,
+        borderTopColor: 'transparent',
+        borderBottomWidth: 6,
+        borderBottomColor: 'transparent',
+    },
+    otherTail: {
+        left: -8,
+        borderRightWidth: 8,
+        borderRightColor: '#D9D9D9',
+        borderTopWidth: 6,
+        borderTopColor: 'transparent',
+        borderBottomWidth: 6,
+        borderBottomColor: 'transparent',
+    },
+});
 
 const styles = StyleSheet.create({
     container: {
