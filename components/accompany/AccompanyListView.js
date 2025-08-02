@@ -163,7 +163,7 @@ const AccompanyListView = ({
                             ))
                         ) : (
                             <View style={styles.emptyCardState}>
-                                <Text style={styles.emptyCardStateText}>신청한 동행이 없어요</Text>
+                                <Text style={styles.emptyCardStateText}>신청한 동행이 없어요.</Text>
                             </View>
                         )}
                     </ScrollView>

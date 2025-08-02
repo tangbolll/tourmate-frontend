@@ -21,6 +21,8 @@ const API_URL = getBaseURL();
 export const transformAccompanyData = (accompanyData) => {
     if (!accompanyData) return [];
 
+    //console.log('✅ 원본 백엔드 데이터:', accompanyData);
+    
     return accompanyData.map(item => ({
         id: item.id?.toString() || Math.random().toString(),
         title: item.title || '제목 없음',
@@ -47,15 +49,62 @@ export const transformAccompanyData = (accompanyData) => {
 
 // API 에러 처리 공통 함수
 export const handleApiError = (error, apiName = 'API') => {
+    console.error(`❌ ${apiName} 오류:`, error);
+    
     if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
         Alert.alert(
             '네트워크 연결 오류',
             '서버에 연결할 수 없습니다.\n\n확인사항:\n1. 서버가 실행 중인지 확인\n2. IP 주소가 올바른지 확인\n3. 포트 번호가 맞는지 확인'
         );
-    } else if (error.name === 'AbortError') {
-        Alert.alert('타임아웃', `${apiName} 서버 응답 시간이 초과되었습니다.`);
+    } else if (error.name === 'AbortError' || error.message.includes('시간이 초과')) {
+        // 타임아웃 에러는 Alert를 띄우지 않고 콘솔 로그만
+        console.warn(`⚠️ ${apiName} 타임아웃 발생 (재시도 로직으로 처리됨)`);
     } else {
         Alert.alert('오류', `${apiName} 요청 중 예상치 못한 오류가 발생했습니다: ${error.message}`);
+    }
+};
+
+// 재시도 로직이 포함된 fetch 함수
+const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 15000) => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+            console.log(`🔄 API 호출 시도 ${attempt}/${maxRetries}: ${url}`);
+            
+            const response = await fetch(url, { 
+                ...options, 
+                signal: controller.signal 
+            });
+            
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP ${response.status}: ${response.statusText || errorText}`);
+            }
+
+            console.log(`✅ API 호출 성공 (시도 ${attempt}/${maxRetries})`);
+            return response;
+
+        } catch (error) {
+            clearTimeout(timeoutId);
+            
+            if (attempt === maxRetries) {
+                // 마지막 시도에서도 실패한 경우
+                if (error.name === 'AbortError') {
+                    throw new Error(`${url.includes('my-applications') ? '신청한 동행 목록' : 
+                                   url.includes('/my/') ? '내가 만든 동행' : 
+                                   '전체 피드'} API 서버 응답 시간이 초과되었습니다.`);
+                }
+                throw error;
+            }
+
+            // 재시도 전 잠시 대기
+            console.warn(`⚠️ 시도 ${attempt} 실패, ${1000 * attempt}ms 후 재시도...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
     }
 };
 
@@ -64,23 +113,11 @@ export const fetchAccompanyFeedApi = async (currentUserId) => {
     const url = `${API_URL}/api/accompany/home?id=${currentUserId}`;
     console.log('🌐 전체 피드 API 호출:', url);
 
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 10000);
-
     try {
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(id);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to fetch feed: ${response.status} ${response.statusText || errorText}`);
-        }
+        const response = await fetchWithRetry(url);
         const data = await response.json();
         return transformAccompanyData(data.feed);
     } catch (error) {
-        if (error.name === 'AbortError') {
-            throw new Error('전체 피드 API 서버 응답 시간이 초과되었습니다.');
-        }
         throw error;
     }
 };
@@ -90,23 +127,11 @@ export const fetchMyCreatedAccompanyApi = async (currentUserId) => {
     const url = `${API_URL}/api/accompany/my/${currentUserId}`;
     console.log('🌐 내가 만든 동행 API 호출:', url);
 
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 10000);
-
     try {
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(id);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to fetch my created posts: ${response.status} ${response.statusText || errorText}`);
-        }
+        const response = await fetchWithRetry(url);
         const data = await response.json();
         return transformAccompanyData(data);
     } catch (error) {
-        if (error.name === 'AbortError') {
-            throw new Error('내가 만든 동행 API 서버 응답 시간이 초과되었습니다.');
-        }
         throw error;
     }
 };
@@ -116,23 +141,11 @@ export const fetchMyAppliedAccompanyApi = async (currentUserId) => {
     const url = `${API_URL}/api/accompany/my-applications?id=${currentUserId}`;
     console.log('🌐 신청한 동행 목록 API 호출:', url);
 
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 10000);
-
     try {
-        const response = await fetch(url, { signal: controller.signal });
-        clearTimeout(id);
-
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(`Failed to fetch applied posts: ${response.status} ${response.statusText || errorText}`);
-        }
+        const response = await fetchWithRetry(url, {}, 3, 20000); // 신청한 동행은 3번 재시도, 20초 타임아웃
         const data = await response.json();
         return transformAccompanyData(data);
     } catch (error) {
-        if (error.name === 'AbortError') {
-            throw new Error('신청한 동행 목록 API 서버 응답 시간이 초과되었습니다.');
-        }
         throw error;
     }
 };

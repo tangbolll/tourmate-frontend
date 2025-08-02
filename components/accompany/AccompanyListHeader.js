@@ -1,9 +1,10 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Octicons } from '@expo/vector-icons';
+// Octicons 아이콘은 더 이상 사용하지 않으므로 제거합니다.
+// import { Octicons } from '@expo/vector-icons';
 
-export default function AccompanyListHeader({ onPressAlarm, onPressDM, onPressFilter, searchText, setSearchText }) {
+export default function AccompanyListHeader({ onPressDM, onPressFilter, searchText, setSearchText }) {
     return (
         <View style={styles.container}>
         {/* Top Row */}
@@ -17,11 +18,11 @@ export default function AccompanyListHeader({ onPressAlarm, onPressDM, onPressFi
                     onChangeText={setSearchText}
                 />
                 <TouchableOpacity onPress={onPressFilter}>
-                <Ionicons name="options-outline" size={20} color="#666" />
+                    <Ionicons name="options-outline" size={20} color="#666" />
                 </TouchableOpacity>
             </View>
             <TouchableOpacity onPress={onPressDM} style={styles.iconButton}>
-                <Octicons name="paper-airplane" size={24}/> 
+                <Ionicons name="chatbubbles-outline" size={26} color="black" />
             </TouchableOpacity>
             </View>
         </View>
