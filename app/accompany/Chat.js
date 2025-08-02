@@ -18,110 +18,97 @@ import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Icon from 'react-native-vector-icons/Feather';
 import * as ImagePicker from 'expo-image-picker';
+import SockJS from 'sockjs-client';
+import { Client } from '@stomp/stompjs';
+import Ionicons from '@expo/vector-icons/Ionicons';
+
 
 const { width: screenWidth } = Dimensions.get('window');
+const CHARS_PER_LINE = 24; // 원하는 값으로 조정
+
+
 
 const getBaseURL = () => {
-    if (__DEV__) { // 개발 환경
+    if (__DEV__) {
         if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080'; // 안드로이드 에뮬레이터는 '10.0.2.2'를 로컬호스트로 사용
+            return 'http://10.0.2.2:8080';
         }
-        // iOS 시뮬레이터, 웹, 또는 안드로이드 실기기 개발 시 app.json의 DEV URL 사용
         return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } else { // 운영(배포) 환경
+    } else {
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
 };
 
 const API_URL = getBaseURL();
 
-// 개선된 MessageBubble 컴포넌트
+// MessageBubble 컴포넌트
 const MessageBubble = ({ message, style }) => {
     const MAX_BUBBLE_WIDTH = screenWidth * 0.75;
     const isMyMessage = message.user?.isSelf || false;
-    
-    // 텍스트 길이에 따른 자동 줄바꿈 처리
-    const formatText = (text) => {
-        if (!text) return '';
-        
-        const words = text.split(' ');
-        let formattedText = '';
-        let currentLine = '';
-        
-        words.forEach((word, index) => {
-            const testLine = currentLine + (currentLine ? ' ' : '') + word;
-            const charCount = testLine.replace(/[^\x00-\xff]/g, 'xx').length;
-            
-            if (charCount > CHARS_PER_LINE && currentLine) {
-                formattedText += currentLine + '\n';
-                currentLine = word;
-            } else {
-                currentLine = testLine;
-            }
-            
-            if (index === words.length - 1) {
-                formattedText += currentLine;
-            }
-        });
-        
-        return formattedText;
-    };
 
     return (
-    <View style={[
-        bubbleStyles.messageContainer,
-        isMyMessage ? bubbleStyles.myMessageContainer : bubbleStyles.otherMessageContainer,
-        style
-    ]}>
-        {/* 발신자 이름 (상대방 메시지만) */}
-        {!isMyMessage && (
-            <Text style={bubbleStyles.senderName}>
-                {message.user?.name || '익명'}
-            </Text>
-        )}
-        
-        <View style={bubbleStyles.bubbleWithTime}>
-            {/* 시간 표시 (내 메시지일 때 왼쪽에) */}
-            {isMyMessage && message.time && (
-                <Text style={[bubbleStyles.timestamp, bubbleStyles.myTimestamp]}>
-                    {message.time}
+        <View style={[
+            bubbleStyles.messageContainer,
+            isMyMessage ? bubbleStyles.myMessageContainer : bubbleStyles.otherMessageContainer,
+            style
+        ]}>
+            {/* 발신자 이름 (상대방 메시지만) */}
+            {!isMyMessage && (
+                <Text style={bubbleStyles.senderName}>
+                    {message.user?.name || '익명'}
                 </Text>
             )}
             
-            <View style={[
-                bubbleStyles.bubble,
-                isMyMessage ? bubbleStyles.myBubble : bubbleStyles.otherBubble,
-            ]}>
-                {/* 말풍선 꼬리 */}
-                <View style={[
-                    bubbleStyles.tail,
-                    isMyMessage ? bubbleStyles.myTail : bubbleStyles.otherTail
-                ]} />
+            <View style={bubbleStyles.bubbleWithTime}>
+                {/* 시간 표시 (내 메시지일 때 왼쪽에) */}
+                {isMyMessage && message.time && (
+                    <Text style={[bubbleStyles.timestamp, bubbleStyles.myTimestamp]}>
+                        {message.time}
+                    </Text>
+                )}
                 
-                <Text style={[
-                    bubbleStyles.messageText,
-                    isMyMessage ? bubbleStyles.myMessageText : bubbleStyles.otherMessageText
+                <View style={[
+                    bubbleStyles.bubble,
+                    isMyMessage ? bubbleStyles.myBubble : bubbleStyles.otherBubble,
                 ]}>
-                    {message.text}
-                </Text>
+                    {/* 말풍선 꼬리 */}
+                    <View style={[
+                        bubbleStyles.tail,
+                        isMyMessage ? bubbleStyles.myTail : bubbleStyles.otherTail
+                    ]} />
+                    
+                    <Text style={[
+                        bubbleStyles.messageText,
+                        isMyMessage ? bubbleStyles.myMessageText : bubbleStyles.otherMessageText
+                    ]}>
+                        {message.text}
+                    </Text>
+                </View>
+                
+                {/* 시간 표시 (상대방 메시지일 때 오른쪽에) */}
+                {!isMyMessage && message.time && (
+                    <Text style={[bubbleStyles.timestamp, bubbleStyles.otherTimestamp]}>
+                        {message.time}
+                    </Text>
+                )}
             </View>
-            
-            {/* 시간 표시 (상대방 메시지일 때 오른쪽에) */}
-            {!isMyMessage && message.time && (
-                <Text style={[bubbleStyles.timestamp, bubbleStyles.otherTimestamp]}>
-                    {message.time}
-                </Text>
-            )}
         </View>
-    </View>
     );
 };
 
-const Chat = ({ postId: propPostId }) => {
+const Chat = () => {
     const params = useLocalSearchParams();
     const router = useRouter();
-    const postId = propPostId || params.postId;
+
     
+    // URL 파라미터에서 데이터 추출
+    const postId = params.postId;
+    const location = params.location || '위치 정보 없음';
+    const participants = parseInt(params.participants) || 0;
+    const maxParticipants = parseInt(params.maxParticipants) || 0;
+    
+    console.log('Chat 컴포넌트 파라미터:', { postId, location, participants, maxParticipants });
+
     // 상태 관리
     const [chatRoom, setChatRoom] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -131,12 +118,13 @@ const Chat = ({ postId: propPostId }) => {
     const [error, setError] = useState(null);
     const [sendingMessage, setSendingMessage] = useState(false);
     
+    
     const scrollViewRef = useRef();
     
-    // 현재 사용자 ID (실제로는 인증 시스템에서 가져올 값)
-    const currentUserId = 2; // Long 타입으로 맞춤
+    // 현재 사용자 ID
+    const currentUserId = 2;
 
-    // 채팅방 정보 가져오기 또는 생성 (ToChatroom과 동일한 로직)
+    // 채팅방 정보 가져오기 또는 생성
     const fetchOrCreateChatRoom = async (accompanyId) => {
         try {
             const url = `${API_URL}/api/accompany/${accompanyId}/chatroom`;
@@ -152,17 +140,17 @@ const Chat = ({ postId: propPostId }) => {
             
             if (response.ok) {
                 const roomData = await response.json();
-                console.log(' 채팅방 데이터 (기존/새로생성):', roomData);
+                console.log('✅ 채팅방 데이터 (기존/새로생성):', roomData);
                 setChatRoom(roomData);
                 return roomData;
             } else if (response.status === 404) {
                 // 404면 채팅방이 없다는 뜻이므로, 다시 요청하면 백엔드에서 자동 생성
-                console.log(' 채팅방이 없음, 자동 생성 요청');
+                console.log('📝 채팅방이 없음, 자동 생성 요청');
                 const createResponse = await fetch(url);
                 
                 if (createResponse.ok) {
                     const newRoomData = await createResponse.json();
-                    console.log(' 새 채팅방 자동 생성:', newRoomData);
+                    console.log('✅ 새 채팅방 자동 생성:', newRoomData);
                     setChatRoom(newRoomData);
                     return newRoomData;
                 } else {
@@ -177,117 +165,94 @@ const Chat = ({ postId: propPostId }) => {
         }
     };
 
-    // 메시지 목록 가져오기 (백엔드 API와 정확히 일치)
-    const fetchMessages = async (roomId) => {
-        try {
-            const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
-            console.log('🌐 메시지 조회 API 호출:', url);
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            
-            if (response.ok) {
-                const messagesData = await response.json();
-                console.log('✅ 메시지 데이터:', messagesData);
-                
-                // 백엔드 ChatMessageResponse를 프론트엔드 형식으로 변환
-                const transformedMessages = messagesData.map(msg => ({
-                    id: msg.roomId + '_' + msg.sendTime, // 고유 ID 생성
-                    user: {
-                        name: msg.senderNickname || `사용자${msg.senderId}`, // senderNickname 필요
-                        isSelf: msg.senderId === currentUserId,
-                        isHost: false, // 동행 정보가 없으므로 호스트 구분 불가
-                        isOther: msg.senderId !== currentUserId
-                    },
-                    text: msg.content,
-                    time: formatTime(msg.sendTime),
-                    sendTime: msg.sendTime
-                }));
-                
-                // 시간순 정렬
-                transformedMessages.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
-                
-                setMessages(transformedMessages);
-            } else {
-                throw new Error(`메시지 조회 실패: ${response.status}`);
-            }
-        } catch (error) {
-            console.error('❌ 메시지 조회 오류:', error);
-            throw error;
-        }
-    };
+    useEffect(() => {
+    if (!chatRoom?.id || !currentUserId) return;
 
-    // 🌐 메시지 전송 (백엔드 API와 정확히 일치)
-    const sendMessage = async (content) => {
-        if (!chatRoom?.id || !content.trim()) return;
-        
-        setSendingMessage(true);
-        
-        // 임시 메시지 UI에 먼저 표시
-        const tempMessage = {
-            id: `temp_${Date.now()}`,
-            user: {
-                name: '나',
-                isSelf: true
-            },
-            text: content.trim(),
-            time: formatTime(new Date()),
-            isTemporary: true
-        };
-        
-        setMessages(prev => [...prev, tempMessage]);
-        setInputText('');
-        
-        // 스크롤을 맨 아래로
-        setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-        
-        try {
-            const url = `${API_URL}/api/accompany/chatroom/${chatRoom.id}/message`;
-            console.log('🌐 메시지 전송 API 호출:', url);
-            
-            const requestBody = {
-                senderId: currentUserId,
-                message: content.trim()
-                // sendTime은 서버에서 생성
-            };
-            
-            const response = await fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify(requestBody),
+    const socket = new SockJS(`${API_URL}/ws`);
+    const stompClient = new Client({
+        webSocketFactory: () => socket,
+        reconnectDelay: 5000,
+        debug: str => console.log(str),
+        onConnect: () => {
+            console.log('웹소켓 연결됨');
+
+            stompClient.subscribe(`/topic/chatroom.${chatRoom.id}`, (msg) => {
+                const chatMessage = JSON.parse(msg.body);
+                setMessages(prev => [...prev, {
+                    id: chatMessage.id,
+                    user: {
+                        isSelf: chatMessage.senderId === currentUserId,
+                        name: chatMessage.senderNickname
+                    },
+                    text: chatMessage.content,
+                    time: new Date(chatMessage.sendTime).toLocaleTimeString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    })
+                }]);
             });
-            
-            if (response.ok) {
-                console.log('✅ 메시지 전송 완료');
-                
-                // 임시 메시지 제거하고 실제 메시지로 교체
-                setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-                
-                // 메시지 목록 다시 가져오기 (최신 상태 반영)
-                await fetchMessages(chatRoom.id);
-                
-            } else {
-                throw new Error(`메시지 전송 실패: ${response.status}`);
-            }
-        } catch (error) {
-            console.error('❌ 메시지 전송 오류:', error);
-            
-            // 실패 시 임시 메시지 제거
-            setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-            
-            Alert.alert('오류', '메시지 전송에 실패했습니다.');
-        } finally {
-            setSendingMessage(false);
         }
+    });
+
+    stompClient.activate();
+    stompClientRef.current = stompClient;
+
+    return () => {
+        stompClient.deactivate();
     };
+}, [chatRoom?.id, currentUserId]);
+
+const handleSendStomp = (text = '') => {
+  // 텍스트가 없으면 전송하지 않음
+  if (!text.trim() || !stompClientRef.current?.connected || !chatRoom?.id) return;
+
+  // 서버로 보낼 메시지 포맷: 서버 API 스펙에 맞춰서 작성
+  const messageBody = {
+    senderId: currentUserId,  // 현재 사용자 ID
+    roomId: chatRoom.id,      // 현재 채팅방 ID
+    message: text             // 전송 메시지
+  };
+
+  try {
+    // STOMP 클라이언트로 메시지 publish (서버와 약속된 경로)
+    stompClientRef.current.publish({
+      destination: '/app/chat.sendMessage',  // 서버 쪽 @MessageMapping 경로와 일치해야 함
+      body: JSON.stringify(messageBody)
+    });
+
+    setInputText('');  // 전송 성공 후 입력창 초기화
+  } catch (error) {
+    Alert.alert("전송 실패", "메시지를 보낼 수 없습니다.");
+  }
+};
+
+const fetchMessages = async (roomId) => {
+  try {
+    const res = await fetch(`${API_URL}/api/accompany/chatroom/${roomId}/messages`);
+    if (res.ok) {
+      const messageList = await res.json();
+      setMessages(
+        messageList.map(msg => ({
+          id: msg.id,
+          user: {
+            isSelf: msg.senderId === currentUserId,
+            name: msg.senderNickname
+          },
+          text: msg.content,
+          time: formatTime(msg.sendTime)
+        }))
+      );
+    }
+  } catch (e) {
+    console.error('메시지 불러오기 실패:', e);
+  }
+};
+
+useEffect(() => {
+  if (scrollViewRef.current) {
+    scrollViewRef.current.scrollToEnd({ animated: true });
+  }
+}, [messages]);
 
     // 시간 포맷팅
     const formatTime = (dateString) => {
@@ -300,7 +265,7 @@ const Chat = ({ postId: propPostId }) => {
         });
     };
 
-    // 초기 데이터 로드 (채팅방 자동 생성 포함)
+    // 초기 데이터 로드
     useEffect(() => {
         const loadChatData = async () => {
             if (!postId) {
@@ -342,8 +307,8 @@ const Chat = ({ postId: propPostId }) => {
 
     // 메시지 전송 핸들러
     const handleSend = () => {
-        if (inputText.trim() === '') return;
-        sendMessage(inputText);
+        if ((inputText || '').trim() === '') return;
+        handleSendStomp(inputText);
     };
 
     // 액션 버튼 토글
@@ -356,7 +321,7 @@ const Chat = ({ postId: propPostId }) => {
         router.push(`/accompany/AccompanyPost?postId=${postId}`);
     };
 
-    // 🔄 로딩 상태
+    // 로딩 상태
     if (loading) {
         return (
             <SafeAreaView style={styles.container}>
@@ -368,7 +333,7 @@ const Chat = ({ postId: propPostId }) => {
         );
     }
 
-    // ❌ 에러 상태
+    // 에러 상태
     if (error) {
         return (
             <SafeAreaView style={styles.container}>
@@ -400,22 +365,16 @@ const Chat = ({ postId: propPostId }) => {
                 <View style={styles.headerContent}>
                     <View style={styles.headerLocationRow}>
                         <Icon name="map-pin" size={12} color="black" style={styles.icon} />
-                        <Text style={styles.locationText}>동행 채팅방</Text>
-                        <Icon name="user" size={12} color="black" style={[styles.icon, { marginLeft: 12 }]} />
-                        <Text style={styles.participantsText}> 채팅 참여자</Text>
+                        <Text style={styles.locationText}>{location}</Text>
+                        <Ionicons name="person" size={12} color="black" style={[styles.icon, { marginLeft: 12 }]} />
+                        <Text style={styles.participantsText}>{participants}명 / {maxParticipants}명</Text>
                     </View>
                     <View style={styles.headerTitleRow}>
-                        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-                            {chatRoom?.roomName || `동행 ${postId} 채팅방`}
-                        </Text>
-                        <View style={styles.headerButtons}>
-                            <TouchableOpacity style={styles.detailButton} onPress={handleViewPost}>
-                                <Text style={styles.detailButtonText}>게시물 보기</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.menuButton}>
-                                <Feather name="more-vertical" size={20} color="black" />
-                            </TouchableOpacity>
-                        </View>
+                        <TouchableOpacity onPress={handleViewPost}>
+                            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+                                {chatRoom?.roomName || `동행 ${postId} 채팅방`}
+                            </Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
@@ -468,7 +427,7 @@ const Chat = ({ postId: propPostId }) => {
             {/* 메시지 입력 영역 */}
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={68}
+                keyboardVerticalOffset={10}
                 style={styles.inputContainer}
             >
                 <TouchableOpacity style={styles.addButton} onPress={toggleActions}>
