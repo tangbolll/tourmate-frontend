@@ -36,8 +36,9 @@ export default function AccompanyPost() {
     // 좋아요 상태와 좋아요 수를 별도로 관리
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
+    const [showMoreMenu, setShowMoreMenu] = useState(false);
 
-    const currentUserId = "2";
+    const currentUserId = "1";
     const [isHost, setIsHost] = useState(false);
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
@@ -51,6 +52,31 @@ export default function AccompanyPost() {
     // 댓글 상태 관리 (답글 포함)
     const [comments, setComments] = useState([]);
     const [replyingTo, setReplyingTo] = useState(null);
+
+    // 게시물 삭제 API 호출 함수 (추후 구현)
+    const handleDeletePost = () => {
+        Alert.alert(
+            "게시물 삭제",
+            "정말 이 동행 게시물을 삭제하시겠습니까? 삭제된 게시물은 복구할 수 없습니다.",
+            [
+                {
+                    text: "취소",
+                    style: "cancel"
+                },
+                {
+                    text: "삭제",
+                    style: "destructive",
+                    onPress: async () => {
+                        // 여기에 삭제 API를 호출하는 로직을 추가합니다.
+                        // 예: await deletePostApi(postId);
+                        // 삭제 성공 시
+                        Alert.alert("삭제 완료", "게시물이 성공적으로 삭제되었습니다.");
+                        router.back(); // 이전 화면으로 돌아가기
+                    }
+                }
+            ]
+        );
+    };
 
     // API에서 동행 상세 정보 가져오기 (리팩토링 적용)
     const fetchAccompanyDetail = async (id) => {
@@ -186,13 +212,18 @@ export default function AccompanyPost() {
 
     // 동행 신청/취소 API 호출 함수 (리팩토링 적용)
     const handleApplicationPress = async () => {
+        // API 호출 전, UI 상태를 먼저 업데이트하여 즉각적인 피드백 제공
+        const previousAppliedState = applied; // 이전 상태 저장
+        setApplied(!applied);
+        
         try {
-            await toggleApplicationApi(postId, currentUserId, applied);
-            setApplied(!applied);
+            await toggleApplicationApi(postId, currentUserId, previousAppliedState);
             setShowAlarmPopup(true);
         } catch (error) {
-            console.error(`❌ 동행 ${applied ? '취소' : '신청'} 오류:`, error);
+            console.error(`❌ 동행 ${previousAppliedState ? '취소' : '신청'} 오류:`, error);
             Alert.alert('오류', error.message);
+            // 오류 발생 시, 상태를 원래대로 롤백
+            setApplied(previousAppliedState);
         }
     };
 
@@ -333,153 +364,178 @@ export default function AccompanyPost() {
 
     return (
         <SafeAreaView style={styles.safeArea}>
-            <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                style={{ flex: 1 }}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
-            >
-                <ScrollView
-                    ref={scrollViewRef}
-                    style={styles.scrollView}
-                    contentContainerStyle={styles.scrollContent}
-                    keyboardShouldPersistTaps="handled"
+            <View style={{ flex: 1 }}>
+                {/* ScrollView를 KeyboardAvoidingView로 감쌈 */}
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "height"}
+                    style={{ flex: 1 }}
+                    keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
                 >
-                    {/* Gray background that scrolls with content */}
-                    <View style={styles.grayBackground} />
+                    <ScrollView
+                        ref={scrollViewRef}
+                        style={styles.scrollView}
+                        contentContainerStyle={[
+                            styles.scrollContent,
+                            { paddingBottom: keyboardVisible ? 0 : 100 } // 키보드가 없을 때만 하단 패딩
+                        ]}
+                        keyboardShouldPersistTaps="handled"
+                    >
+                        {/* Gray background that scrolls with content */}
+                        <View style={styles.grayBackground} />
 
-                    {/* Back button */}
-                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                        <Ionicons name="chevron-back" size={24} color="black" />
-                    </TouchableOpacity>
+                        {/* Back button */}
+                        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                            <Ionicons name="chevron-back" size={24} color="black" />
+                        </TouchableOpacity>
 
-                    {/* Event header card */}
-                    <EventHeader
-                        title={postData.title}
-                        location={postData.location}
-                        participants={postData.currentParticipants}
-                        maxParticipants={postData.maxParticipants}
-                        onParticipantsClick={handleParticipantsClick}
-                        postId={postId}
-                        currentUserId={currentUserId}
-                    />
+                        {/* Event header card */}
+                        <EventHeader
+                            title={postData.title}
+                            location={postData.location}
+                            participants={postData.currentParticipants}
+                            maxParticipants={postData.maxParticipants}
+                            onParticipantsClick={handleParticipantsClick}
+                            postId={postId}
+                            currentUserId={currentUserId}
+                        />
 
-                    {/* More button outside header */}
-                    <TouchableOpacity style={styles.moreButton}>
-                        <Feather name="more-vertical" size={24} color="black" />
-                    </TouchableOpacity>
+                        {/* More button outside header */}
+                        <TouchableOpacity
+                            style={styles.moreButton}
+                            onPress={() => setShowMoreMenu(prev => !prev)}
+                        >
+                            <Feather name="more-vertical" size={24} color="black" />
+                        </TouchableOpacity>
 
-                    {/* Host info outside header */}
-                    <View style={styles.hostInfoContainer}>
-                        <Text style={styles.hostInfoText}>
-                            <Text style={styles.hostInfoLabel}>호스트 </Text>
-                            <Text>{postData.createdByName} </Text>
-                            <Text style={styles.hostInfoLabel}> 게시일 </Text>
-                            <Text>{postData.createdAt} </Text>
-                            <Text style={styles.hostInfoLabel}> 조회수 </Text>
-                            <Text>{postData.views}</Text>
-                        </Text>
-                    </View>
+                        {/* "더보기" 메뉴 드롭다운 */}
+                        {isHost && showMoreMenu && (
+                            <View style={styles.moreMenu}>
+                                <TouchableOpacity
+                                    style={styles.menuItem}
+                                    onPress={() => {
+                                        setShowMoreMenu(false); // 메뉴 닫기
+                                        handleDeletePost(); // 삭제 함수 호출
+                                    }}
+                                >
+                                    <Text style={styles.menuText}>삭제하기</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
 
-                    <EventSchedule
-                        travelStartDate={postData.travelStartDate}
-                        travelEndDate={postData.travelEndDate}
-                        recruitStartDate={postData.recruitStartDate}
-                        recruitEndDate={postData.recruitEndDate}
-                    />
-                    <Intro
-                        message={postData.description}
-                        photos={postData.imageUrl ? [postData.imageUrl] : []}
-                    />
+                        {/* Host info outside header */}
+                        <View style={styles.hostInfoContainer}>
+                            <Text style={styles.hostInfoText}>
+                                <Text style={styles.hostInfoLabel}>호스트 </Text>
+                                <Text>{postData.createdByName} </Text>
+                                <Text style={styles.hostInfoLabel}> 게시일 </Text>
+                                <Text>{postData.createdAt} </Text>
+                                <Text style={styles.hostInfoLabel}> 조회수 </Text>
+                                <Text>{postData.views}</Text>
+                            </Text>
+                        </View>
 
-                    <GatheringPlace
-                        location={postData.meetingPoint}
-                    />
-                    <Conditions
-                        gender={postData.gender}
-                        ageRange={postData.ageRange}
-                    />
-                    <Categories
-                        category={postData.category}
-                        tags={postData.tags}
-                    />
+                        <EventSchedule
+                            travelStartDate={postData.travelStartDate}
+                            travelEndDate={postData.travelEndDate}
+                            recruitStartDate={postData.recruitStartDate}
+                            recruitEndDate={postData.recruitEndDate}
+                        />
+                        <Intro
+                            message={postData.description}
+                            photos={postData.imageUrl ? [postData.imageUrl] : []}
+                        />
 
-                    {/* 댓글 섹션 제목 (항상 표시) */}
-                    <View style={styles.commentDivider} />
-                    <Text style={styles.commentTitle}> 코멘트</Text>
+                        <GatheringPlace
+                            location={postData.meetingPoint}
+                        />
+                        <Conditions
+                            gender={postData.gender}
+                            ageRange={postData.ageRange}
+                        />
+                        <Categories
+                            category={postData.category}
+                            tags={postData.tags}
+                        />
 
-                    {/* 댓글 목록 동적 렌더링 */}
-                    {comments.map((comment) => (
-                        <React.Fragment key={`comment_${comment.id}`}>
-                            <Comment
-                                profileImage={comment.profileImage}
-                                nickname={comment.nickname}
-                                time={comment.time}
-                                content={comment.content}
-                                isHost={comment.isHost}
-                                onReplyPress={() => handleReplyPress(comment.id)}
-                                style={comment.isTemporary ? { opacity: 0.7 } : {}}
-                            />
+                        {/* 댓글 섹션 제목 (항상 표시) */}
+                        <View style={styles.commentDivider} />
+                        <Text style={styles.commentTitle}> 코멘트</Text>
 
-                            {/* 답글들 렌더링 */}
-                            {comment.replies && comment.replies.map((reply) => (
-                                <Reply
-                                    key={`reply_${comment.id}_${reply.id}`}
-                                    profileImage={reply.profileImage}
-                                    nickname={reply.nickname}
-                                    time={reply.time}
-                                    content={reply.content}
-                                    isHost={reply.isHost}
+                        {/* 댓글 목록 동적 렌더링 */}
+                        {comments.map((comment) => (
+                            <React.Fragment key={`comment_${comment.id}`}>
+                                <Comment
+                                    profileImage={comment.profileImage}
+                                    nickname={comment.nickname}
+                                    time={comment.time}
+                                    content={comment.content}
+                                    isHost={comment.isHost}
                                     onReplyPress={() => handleReplyPress(comment.id)}
-                                    style={reply.isTemporary ? { opacity: 0.7 } : {}}
+                                    style={comment.isTemporary ? { opacity: 0.7 } : {}}
                                 />
-                            ))}
-                        </React.Fragment>
-                    ))}
-                    <WriteComment
-                        onSend={handleSend}
-                        onFocus={() => {
-                            setTimeout(() => {
-                                scrollViewRef.current?.scrollToEnd({ animated: true });
-                            }, 300);
-                        }}
-                        placeholder={
-                            replyingTo
-                                ? "답글을 작성해주세요..."
-                                : "50자 내로 코멘트를 작성해주세요."
-                        }
-                        isReplyMode={!!replyingTo}
-                        onCancel={cancelReply}
-                    />
 
-                    <View />
-                </ScrollView>
+                                {/* 답글들 렌더링 */}
+                                {comment.replies && comment.replies.map((reply) => (
+                                    <Reply
+                                        key={`reply_${comment.id}_${reply.id}`}
+                                        profileImage={reply.profileImage}
+                                        nickname={reply.nickname}
+                                        time={reply.time}
+                                        content={reply.content}
+                                        isHost={reply.isHost}
+                                        onReplyPress={() => handleReplyPress(comment.id)}
+                                        style={reply.isTemporary ? { opacity: 0.7 } : {}}
+                                    />
+                                ))}
+                            </React.Fragment>
+                        ))}
+                        
+                        <WriteComment
+                            onSend={handleSend}
+                            onFocus={() => {
+                                setTimeout(() => {
+                                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                                }, 300);
+                            }}
+                            placeholder={
+                                replyingTo
+                                    ? "답글을 작성해주세요..."
+                                    : "50자 내로 코멘트를 작성해주세요."
+                            }
+                            isReplyMode={!!replyingTo}
+                            onCancel={cancelReply}
+                        />
+                    </ScrollView>
+                </KeyboardAvoidingView>
 
-                {/* Conditional Rendering for Buttons */}
+                {/* 하단 버튼을 절대 위치로 고정 */}
                 {postData && (
-                    isHost ? (
-                        <AccompanyCloseButton
-                            title={closed ? "모집이 마감된 동행입니다." : "모집 마감"}
-                            onPress={handleClosedPress}
-                            likes={likeCount} 
-                            isLiked={isLiked} 
-                            onLikeToggle={handleLikeToggle} // AccompanyPost의 handleLikeToggle 전달
-                            isClosed={closed}
-                            postId={postId} // postId 전달
-                            currentUserId={currentUserId} // currentUserId 전달
-                        />
-                    ) : (
-                        <ApplicationButton
-                            title={applied ? "동행 취소" : "동행 신청"}
-                            onPress={handleApplicationPress}
-                            likes={likeCount}
-                            isLiked={isLiked}
-                            postId={postId} // postId 전달
-                            currentUserId={currentUserId} // currentUserId 전달
-                            closed={closed}
-                            onLikeToggle={handleLikeToggle} // AccompanyPost의 handleLikeToggle 전달
-                            applied={applied}
-                        />
-                    )
+                    <View style={styles.bottomButtonContainer}>
+                        {isHost ? (
+                            <AccompanyCloseButton
+                                title={closed ? "모집이 마감된 동행입니다." : "모집 마감"}
+                                onPress={handleClosedPress}
+                                likes={likeCount} 
+                                isLiked={isLiked} 
+                                onLikeToggle={handleLikeToggle}
+                                isClosed={closed}
+                                postId={postId}
+                                currentUserId={currentUserId}
+                            />
+                        ) : (
+                            <ApplicationButton
+                                title={applied ? "동행 취소" : "동행 신청"}
+                                onPress={handleApplicationPress}
+                                likes={likeCount}
+                                isLiked={isLiked}
+                                postId={postId}
+                                currentUserId={currentUserId}
+                                closed={closed}
+                                onLikeToggle={handleLikeToggle}
+                                applied={applied}
+                            />
+                        )}
+                    </View>
                 )}
 
                 {/* Popups */}
@@ -487,7 +543,7 @@ export default function AccompanyPost() {
                     <AlarmPopup
                         alarmText={
                             <Text style={styles.alarmPopupText}>
-                                {`동행을 마감하시겠습니까?\n마감된 동행은 다시 되돌릴 수 없습니다.`}
+                                동행을 마감하시겠습니까?{'\n'}마감된 동행은 다시 되돌릴 수 없습니다.
                             </Text>
                         }
                         onClose={handleCloseAlarmPopupHost}
@@ -503,8 +559,8 @@ export default function AccompanyPost() {
                         alarmText={
                             <Text style={styles.alarmPopupText}>
                                 {applied
-                                    ? `동행 신청이 완료되었습니다.\n호스트가 수락하거나 거절하면 알림이 발송됩니다.\n수락되기 전까지 신청을 취소할 수 있습니다.`
-                                    : `동행 신청이 취소되었습니다.\n다시 신청하시려면 아래 버튼을 눌러주세요.`}
+                                    ? `동행 신청이 완료되었습니다.${'\n'}호스트가 수락하거나 거절하면 알림이 발송됩니다.${'\n'}수락되기 전까지 신청을 취소할 수 있습니다.`
+                                    : `동행 신청이 취소되었습니다.${'\n'}다시 신청하시려면 아래 버튼을 눌러주세요.`}
                             </Text>
                         }
                         onClose={handleCloseAlarmPopup}
@@ -525,7 +581,7 @@ export default function AccompanyPost() {
                         isHost={true}
                     />
                 )}
-            </KeyboardAvoidingView>
+            </View>
         </SafeAreaView>
     );
 }
@@ -582,7 +638,6 @@ const styles = StyleSheet.create({
     },
     alarmPopupText: {
         fontSize: 15,
-
     },
     commentDivider: {
         borderBottomWidth: 1,
@@ -595,5 +650,45 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         marginBottom: 12,
         marginTop: 16,
+    },
+    bottomButtonContainer: {
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        // 필요시 그림자 추가
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: -2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+        moreMenu: {
+        position: 'absolute',
+        top: 80, // moreButton 위치에 맞게 조정
+        right: 16,
+        backgroundColor: 'white',
+        borderRadius: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 5,
+        zIndex: 20, // 다른 컴포넌트 위로 올라오도록
+    },
+    menuItem: {
+        paddingHorizontal: 20,
+        paddingVertical: 12,
+        width: 100, // 메뉴 너비 설정
+        alignItems: 'center',
+    },
+    menuText: {
+        fontSize: 14,
+        color: '#333',
+        fontWeight: 'bold',
     },
 });

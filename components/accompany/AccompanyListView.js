@@ -33,9 +33,9 @@ const AccompanyListView = ({
     feedList,
     selectedTab,
     setSelectedTab,
-    fetchMyCreatedAccompanyData, // 🚨 추가됨: props로 받음
-    fetchAccompanyFeedData,     // 🚨 추가됨: props로 받음
-    fetchMyAppliedAccompanyData, // 🚨 추가됨: props로 받음
+    fetchMyCreatedAccompanyData,
+    fetchAccompanyFeedData,
+    fetchMyAppliedAccompanyData,
     loading,
     filteredPosts,
     likedPosts,
@@ -45,75 +45,146 @@ const AccompanyListView = ({
 }) => {
 
     const getDisplayTags = (tags) => {
-    if (!tags || !Array.isArray(tags)) return [];
-    
-    // 성별/연령 관련 태그 (모두 표시)
-    const genderAgeTags = [
-        '남성', '여성', '성별무관', 
-        '10대', '20대', '30대', '40대', '50대', '60대', '나이무관'
-    ];
-    
-    // 성별/연령 태그 필터링
-    const displayedGenderAge = tags.filter(tag => genderAgeTags.includes(tag));
-    
-    // 카테고리 태그 필터링 (성별/연령 제외한 나머지)
-    const categoryTags = tags.filter(tag => !genderAgeTags.includes(tag));
-    
-    // 카테고리 태그는 최대 3개만 선택
-    const displayedCategories = categoryTags.slice(0, 3);
-    
-    // 성별/연령 + 카테고리(최대3개) 합치기
-    return [...displayedGenderAge, ...displayedCategories];
+        if (!tags || !Array.isArray(tags)) return [];
+        
+        const genderAgeTags = [
+            '남성', '여성', '성별무관',
+        ];
+        
+        const displayedGenderAge = tags.filter(tag => genderAgeTags.includes(tag));
+        const categoryTags = tags.filter(tag => !genderAgeTags.includes(tag));
+        const displayedCategories = categoryTags.slice(0, 3);
+        
+        return [...displayedGenderAge, ...displayedCategories];
     };
 
 
-    // 피드 아이템 렌더링
-   const renderFeedItems = () => {
-    if (loading) {
-        return (
-            <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>로딩 중...</Text>
-            </View>
-        );
-    }
-
-    if (filteredPosts.length === 0) {
-        let emptyMessage = '';
-        if (selectedTab === 'mine') {
-            emptyMessage = '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!';
-        } else if (selectedTab === 'applied') {
-            emptyMessage = '아직 신청한 동행이 없습니다.';
-        } else { // 'feed' 탭
-            emptyMessage = '표시할 동행이 없습니다.\n필터를 조정해보세요.';
+    const renderFeedItems = () => {
+        if (loading) {
+            return (
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>로딩 중...</Text>
+                </View>
+            );
         }
-        return (
-            <View style={styles.emptyState}>
-                <Text style={styles.emptyStateText}>{emptyMessage}</Text>
-            </View>
-        );
-    }
 
-    return filteredPosts.map((post) => (
-        <AccompanyFeed
-            key={post.id}
-            {...post}
-            id={post.id}
-            date={post.date}
-            title={post.title}
-            tags={getDisplayTags(post.tags)} // 🔥 필터링된 태그만 전달
-            location={post.location}
-            participants={post.participants}
-            maxParticipants={post.maxParticipants}
-            imageUrl={post.imageUrl}
-            liked={!!likedPosts[post.id]}
-            onPressLike={() => handlePressLike(post.id)}
-            onPress={() => navigateToPost(post.id)}
-        />
-    ));
-};
+        if (filteredPosts.length === 0) {
+            let emptyMessage = '';
+            if (selectedTab === 'mine') {
+                emptyMessage = '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!';
+            } else if (selectedTab === 'applied') {
+                emptyMessage = '아직 신청한 동행이 없습니다.';
+            } else { // 'feed' 탭
+                emptyMessage = '표시할 동행이 없습니다.\n필터를 조정해보세요.';
+            }
+            return (
+                <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>{emptyMessage}</Text>
+                </View>
+            );
+        }
+
+        return filteredPosts.map((post) => (
+            <AccompanyFeed
+                key={post.id}
+                {...post}
+                id={post.id}
+                date={post.date}
+                title={post.title}
+                tags={getDisplayTags(post.tags)}
+                location={post.location}
+                participants={post.participants}
+                maxParticipants={post.maxParticipants}
+                imageUrl={post.imageUrl}
+                liked={!!likedPosts[post.id]}
+                onPressLike={() => handlePressLike(post.id)}
+                onPress={() => navigateToPost(post.id)}
+            />
+        ));
+    };
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* 고정된 상단 헤더, 필터 영역 */}
+            <AccompanyListHeader
+                onPressAlarm={() => console.log('알림')}
+                onPressDM={() => console.log('DM')}
+                onPressFilter={handleFilterPopup}
+                searchText={searchText}
+                setSearchText={setSearchText}
+            />
+
+            {/* 필터 팝업 및 캘린더 팝업 (기존 위치 유지) */}
+            <FilterPopup
+                visible={showFilterPopup}
+                onClose={handleCloseFilterPopup}
+                onApply={(appliedFilters) => {
+                    handleApplyFilters(appliedFilters);
+                    handleCloseFilterPopup();
+                }}
+                filters={filters}
+                setFilters={setFilters}
+                onOpenCalendar={() => {
+                    handleCloseFilterPopup();
+                    setTimeout(() => setCalendarVisible(true), 300);
+                }}
+            />
+
+            <CalendarPopup
+                visible={calendarVisible}
+                onClose={() => setCalendarVisible(false)}
+                onSelectDates={handleCalendarSelect}
+            />
+
+            <View style={styles.filterTagsContainer}>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTagsScroll}>
+                    {getAllTags().map((tag) => (
+                        <FilterTag key={tag} tag={tag} onPress={() => handleRemoveTag(tag)} />
+                    ))}
+                </ScrollView>
+            </View>
+
+            <AccompanyToggle
+                isExpanded={showCards}
+                onToggle={() => setShowCards(!showCards)}
+            />
+
+            {showCards && (
+                <View style={styles.cardsContainer}>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsScroll}>
+                        {myAppliedAccompanyList.length > 0 ? (
+                            myAppliedAccompanyList.map((item) => (
+                                <AccompanyCard
+                                    key={item.id}
+                                    {...item}
+                                    onPress={() => navigateToPost(item.id)}
+                                    userApplicationStatus={item.userApplicationStatus}
+                                />
+                            ))
+                        ) : (
+                            <View style={styles.emptyCardState}>
+                                <Text style={styles.emptyCardStateText}>신청한 동행이 없어요</Text>
+                            </View>
+                        )}
+                    </ScrollView>
+                </View>
+            )}
+
+            <AccompanyTabToggle
+                selectedTab={selectedTab}
+                onSelectTab={(tab) => {
+                    setSelectedTab(tab);
+                    if (tab === 'mine') {
+                        fetchMyCreatedAccompanyData();
+                    } else if (tab === 'applied') {
+                        fetchMyAppliedAccompanyData();
+                    } else {
+                        fetchAccompanyFeedData();
+                    }
+                }}
+            />
+
+            {/* 🔥 동행 피드 영역에만 스크롤뷰 적용 */}
             <ScrollView
                 refreshControl={
                     <RefreshControl
@@ -123,87 +194,8 @@ const AccompanyListView = ({
                         tintColor={'#000'}
                     />
                 }
-                contentContainerStyle={styles.scrollViewContent}
+                contentContainerStyle={styles.feedScrollViewContent}
             >
-                <AccompanyListHeader
-                    onPressAlarm={() => console.log('알림')}
-                    onPressDM={() => console.log('DM')}
-                    onPressFilter={handleFilterPopup}
-                    searchText={searchText}
-                    setSearchText={setSearchText}
-                />
-
-                <FilterPopup
-                    visible={showFilterPopup}
-                    onClose={handleCloseFilterPopup}
-                    onApply={(appliedFilters) => {
-                        handleApplyFilters(appliedFilters);
-                        handleCloseFilterPopup();
-                    }}
-                    filters={filters}
-                    setFilters={setFilters}
-                    onOpenCalendar={() => {
-                        handleCloseFilterPopup();
-                        setTimeout(() => setCalendarVisible(true), 300);
-                    }}
-                />
-
-                <CalendarPopup
-                    visible={calendarVisible}
-                    onClose={() => setCalendarVisible(false)}
-                    onSelectDates={handleCalendarSelect}
-                />
-
-                <View style={styles.filterTagsContainer}>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.filterTagsScroll}>
-                        {getAllTags().map((tag) => (
-                            <FilterTag key={tag} tag={tag} onPress={() => handleRemoveTag(tag)} />
-                        ))}
-                    </ScrollView>
-                </View>
-
-                <AccompanyToggle
-                    isExpanded={showCards}
-                    onToggle={() => setShowCards(!showCards)}
-                />
-
-                {showCards && (
-                    <View style={styles.cardsContainer}>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsScroll}>
-                            {myAppliedAccompanyList.length > 0 ? (
-                                myAppliedAccompanyList.map((item) => (
-                                    <AccompanyCard
-                                        key={item.id}
-                                        {...item}
-                                        onPress={() => navigateToPost(item.id)}
-                                        buttonLabel="자세히 보기"
-                                        status={item.status} // 🚨 status prop 추가
-                                    />
-                                ))
-                            ) : (
-                                <View style={styles.emptyCardState}>
-                                    <Text style={styles.emptyCardStateText}>신청한 동행이 없어요</Text>
-                                    {/* 🚨 "새로운 동행을 찾아볼까요?" 문구 삭제 */}
-                                </View>
-                            )}
-                        </ScrollView>
-                    </View>
-                )}
-
-                <AccompanyTabToggle
-                    selectedTab={selectedTab}
-                    onSelectTab={(tab) => {
-                        setSelectedTab(tab);
-                        if (tab === 'mine') {
-                            fetchMyCreatedAccompanyData(); // 🚨 props로 받은 함수 호출
-                        } else if (tab === 'applied') {
-                            fetchMyAppliedAccompanyData(); // 🚨 props로 받은 함수 호출
-                        } else { // 'feed' 탭
-                            fetchAccompanyFeedData(); // 🚨 props로 받은 함수 호출
-                        }
-                    }}
-                />
-
                 {renderFeedItems()}
             </ScrollView>
 
@@ -224,7 +216,8 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         position: 'relative',
     },
-    scrollViewContent: {
+    // 기존 scrollViewContent 스타일은 더 이상 필요하지 않아 삭제합니다.
+    feedScrollViewContent: { // ✨ 피드 스크롤뷰를 위한 새로운 스타일 추가
         paddingBottom: 50,
     },
     floatingButton: {
@@ -259,11 +252,11 @@ const styles = StyleSheet.create({
         marginTop: 100,
     },
     emptyCardState: {
-        flex: 1, // 스크롤 뷰 내에서 공간을 채우도록 flex 추가
+        flex: 1,
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 20,
-        marginRight: 8, // 카드 사이의 간격 유지
+        marginRight: 8,
         width: 360,
         backgroundColor: 'transparent',
         borderRadius: 8,
@@ -271,8 +264,8 @@ const styles = StyleSheet.create({
     emptyCardStateText: {
         fontSize: 14,
         color: '#888',
-        textAlign: 'center', // 🚨 텍스트 가운데 정렬
-        marginBottom: 0, // 🚨 문구 삭제로 인한 간격 조정
+        textAlign: 'center',
+        marginBottom: 0,
     },
 });
 

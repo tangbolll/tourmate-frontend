@@ -51,7 +51,6 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginTop: 6,
         marginLeft: 16,
-        marginRight: 0,
         width: 40,
     },
     chipContainer: {
@@ -61,18 +60,24 @@ const styles = StyleSheet.create({
         paddingLeft: 0,
     },
     chip: {
-        height: 28,
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 20,
-        paddingVertical: 6,
+        paddingVertical: 5,
         paddingHorizontal: 12,
         marginRight: 8,
         marginBottom: 4,
+        justifyContent: 'center',
+        alignItems: 'center',
+        minHeight: 16, // 최소 높이 설정으로 일관성 유지
     },
     chipText: {
         fontSize: 14,
         color: '#333',
+        textAlign: 'center',
+        textAlignVertical: 'center', // Android에서 세로 중앙 정렬
+        includeFontPadding: false, // Android에서 폰트 패딩 제거
+        lineHeight: 16, // lineHeight를 fontSize보다 약간 크게 설정
     },
 });
 
