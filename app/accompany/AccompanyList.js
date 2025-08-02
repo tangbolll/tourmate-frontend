@@ -39,7 +39,7 @@ const AccompanyList = () => {
     });
 
     const router = useRouter();
-    const currentUserId = 2;
+    const currentUserId = 1;
 
     // 1. 전체 피드 데이터 가져오기
     const fetchAccompanyFeedData = useCallback(async () => {
