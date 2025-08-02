@@ -25,7 +25,7 @@ const EventHeader = ({ title, location, participants, maxParticipants, newApplic
                         <View style={styles.redDot} />
                     )}
                 </TouchableOpacity>
-                <ToChatroom postId={postId} currentUserId={currentUserId} />
+                <ToChatroom postId={postId} currentUserId={currentUserId} location={location} participants={participants} maxParticipants={maxParticipants} />
             </View>
         </View>
         </View>
