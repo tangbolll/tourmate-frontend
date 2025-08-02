@@ -3,16 +3,15 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import ToChatroom from '../../components/accompany/ToChatroom'; 
-const EventHeader = ({ title, location, participants, maxParticipants, newApplication = false, onParticipantsClick, postId, currentUserId  }) => {
+
+const EventHeader = ({ title, location, participants, maxParticipants, newApplication = false, onParticipantsClick, postId, currentUserId  }) => {
     return (
-        <HeaderWrapper>
+        <View style={styles.headerContainer}>
         <View style={styles.container}>
             <Text style={styles.title}>{title}</Text>
-
             <View style={styles.infoRow}>
                 <MaterialIcons name="location-pin" size={14} color="black" />
                 <Text style={styles.infoText}>{location}</Text>
-
                 <TouchableOpacity 
                     style={styles.participantsContainer} 
                     onPress={onParticipantsClick}
@@ -22,8 +21,6 @@ const EventHeader = ({ title, location, participants, maxParticipants, newApplic
                     <Text style={styles.infoText}>
                         {participants}명 / {maxParticipants}명
                     </Text>
-
-                    {/* 새로운 신청이 있을 때만 빨간 점 표시: 새로운 신청 있는지 파악하는 로직 짜야됨 */}
                     {newApplication && (
                         <View style={styles.redDot} />
                     )}
@@ -31,33 +28,9 @@ const EventHeader = ({ title, location, participants, maxParticipants, newApplic
                 <ToChatroom postId={postId} currentUserId={currentUserId} />
             </View>
         </View>
-        </HeaderWrapper>
-    );
-};
-
-function HeaderWrapper({ children }) {
-    return (
-        <View style={HeaderWrapperStyles.container}>
-            {children}
         </View>
     );
-}
-
-const HeaderWrapperStyles = StyleSheet.create({
-    container: {
-        width: '80%',
-        alignSelf: 'center',
-        marginTop: 24,
-        marginBottom: 12,
-        borderWidth: 0,
-        padding: 12,
-        borderRadius: 20,
-        backgroundColor: 'white',
-        shadowOffset: { width: 0, height: 2 },
-        shadowRadius: 4,
-        shadowOpacity: 0.2,
-    },
-});
+};
 
 const styles = StyleSheet.create({
     container: {
@@ -95,6 +68,19 @@ const styles = StyleSheet.create({
         borderRadius: 4,
         backgroundColor: 'red',
         marginLeft: 8,
+    },
+    headerContainer: {
+        width: '80%',
+        alignSelf: 'center',
+        marginTop: 24,
+        marginBottom: 12,
+        borderWidth: 0,
+        padding: 12,
+        borderRadius: 20,
+        backgroundColor: 'white',
+        shadowOffset: { width: 0, height: 2 },
+        shadowRadius: 4,
+        shadowOpacity: 0.2,
     },
 });
 
