@@ -7,16 +7,16 @@ import ToChatroom from '../../components/accompany/ToChatroom';
 const EventHeader = ({ title, location, participants, maxParticipants, newApplication = false, onParticipantsClick, postId, currentUserId  }) => {
     return (
         <View style={styles.headerContainer}>
-        <View style={styles.container}>
-            <Text style={styles.title}>{title}</Text>
-            <View style={styles.infoRow}>
-                <MaterialIcons name="location-pin" size={14} color="black" />
-                <Text style={styles.infoText}>{location}</Text>
-                <TouchableOpacity 
-                    style={styles.participantsContainer} 
-                    onPress={onParticipantsClick}
-                    activeOpacity={0.7}
-                >
+            <View style={styles.container}>
+                <Text style={styles.title}>{title}</Text>
+                <View style={styles.infoRow}>
+                    <MaterialIcons name="location-pin" size={14} color="black" />
+                    <Text style={styles.infoText}>{location}</Text>
+                    <TouchableOpacity 
+                        style={styles.participantsContainer} 
+                        onPress={onParticipantsClick}
+                        activeOpacity={0.7}
+                    >
                     <Ionicons name="person" size={14} color="black" style={[styles.icon, { marginLeft: 12 }]} />
                     <Text style={styles.infoText}>
                         {participants}명 / {maxParticipants}명
@@ -26,11 +26,11 @@ const EventHeader = ({ title, location, participants, maxParticipants, newApplic
                     )}
                 </TouchableOpacity>
                 <ToChatroom postId={postId} currentUserId={currentUserId} />
+                </View>
             </View>
         </View>
-        </View>
     );
-};
+}
 
 const styles = StyleSheet.create({
     container: {

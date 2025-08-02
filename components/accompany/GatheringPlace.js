@@ -1,17 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import * as Clipboard from 'expo-clipboard'; // <-- 여기를 추가
+import * as Clipboard from 'expo-clipboard';
 
 const GatheringPlace = ({ location }) => {
-    //  onPress 핸들러를 컴포넌트 내부에서 직접 정의
     const handleCopy = async () => {
         if (!location) {
             Alert.alert('알림', '복사할 장소 정보가 없습니다.');
             return;
         }
 
-        // 클립보드에 텍스트 복사
         await Clipboard.setStringAsync(location);
         Alert.alert('복사 완료', '장소 주소가 클립보드에 복사되었습니다.');
     };
@@ -23,9 +21,14 @@ const GatheringPlace = ({ location }) => {
 
             {/* 주소 */}
             <View style={styles.locationContainer}>
-                <MaterialCommunityIcons name="map-marker-radius" size={18} color="black" marginRight={4}/>
+                <MaterialCommunityIcons 
+                    name="map-marker-radius" 
+                    size={18} 
+                    color="black" 
+                    style={styles.icon}
+                />
                 <Text style={styles.location}>{location}</Text>
-                <TouchableOpacity onPress={handleCopy}> {/* <-- onPress 핸들러를 handleCopy로 변경 */}
+                <TouchableOpacity onPress={handleCopy}>
                     <Text style={styles.copy}>복사</Text>
                 </TouchableOpacity>
             </View>
@@ -49,6 +52,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 8,
+    },
+    icon: {
+        marginRight: 4,
     },
     location: {
         fontSize: 14,

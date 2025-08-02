@@ -45,7 +45,7 @@ export default function AccompanyFeed({
             <View style={styles.imageContainer}>
             <Image source={imageUrl ? { uri: imageUrl } : defaultImage} style={styles.image} />
             <TouchableOpacity onPress={onPressLike} style={styles.heartIcon}>
-                <Icon name="heart" size={30} color={liked ? 'red' : 'lightgray'} />
+                <Icon name="heart" size={30} color={liked ? '#ff3040' : 'lightgray'} />
             </TouchableOpacity>
             </View>
         </View>
