@@ -8,6 +8,8 @@ import {
     fetchAccompanyFeedApi,
     fetchMyCreatedAccompanyApi,
     fetchMyAppliedAccompanyApi,
+    toggleLikeApi,
+    getMultipleAccompanyLikesApi,
     handleApiError
 } from '../../utils/AccompanyListApi';
 
@@ -29,7 +31,8 @@ const AccompanyList = () => {
     const [loadingStates, setLoadingStates] = useState({
         feed: false,
         mine: false,
-        applied: false
+        applied: false,
+        likes: false
     });
 
     const [dataLoaded, setDataLoaded] = useState({
@@ -61,6 +64,33 @@ const AccompanyList = () => {
     // 전체 로딩 상태 계산
     const isLoading = Object.values(loadingStates).some(loading => loading);
 
+    // ✅ 수정된 좋아요 상태 로드 함수 - id 필드 사용
+    const fetchLikesForPosts = useCallback(async (posts) => {
+        if (!posts || posts.length === 0) return;
+
+        try {
+            updateLoadingState('likes', true);
+            console.log('🌐 좋아요 상태 로딩 시작...');
+            
+            // ✅ id 필드를 사용하도록 수정 (accompanyId 대신)
+            const postIds = posts.map(post => post.id).filter(id => id && id !== undefined);
+            console.log('🔍 좋아요 상태 로드할 ID들:', postIds);
+            
+            if (postIds.length > 0) {
+                const likesStatus = await getMultipleAccompanyLikesApi(postIds, currentUserId);
+                setLikedPosts(prev => ({ ...prev, ...likesStatus }));
+                console.log('✅ 좋아요 상태 로딩 완료:', likesStatus);
+            } else {
+                console.warn('⚠️ 유효한 post ID가 없어서 좋아요 상태 로드 건너뛰기');
+            }
+        } catch (error) {
+            console.error('❌ 좋아요 상태 로딩 실패:', error);
+            handleApiError(error, '좋아요 상태 로드');
+        } finally {
+            updateLoadingState('likes', false);
+        }
+    }, [currentUserId]);
+
     // 1. 전체 피드 데이터 가져오기
     const fetchAccompanyFeedData = useCallback(async (force = false) => {
         if (!force && dataLoaded.feed) {
@@ -73,16 +103,20 @@ const AccompanyList = () => {
             console.log('🌐 피드 데이터 로딩 시작...');
             const data = await fetchAccompanyFeedApi(currentUserId);
             console.log('✅ 피드 데이터 로딩 완료:', data.length);
+            console.log('🔍 피드 데이터 샘플:', data[0]);
             setFeedList(data);
             updateDataLoadedState('feed', true);
+            if (data.length > 0) {
+                await fetchLikesForPosts(data);
+            }
         } catch (error) {
             console.error('❌ 피드 데이터 로딩 실패:', error);
             handleApiError(error, '전체 동행 피드');
         } finally {
             updateLoadingState('feed', false);
         }
-    }, [currentUserId, dataLoaded.feed]);
-
+    }, [currentUserId, dataLoaded.feed, fetchLikesForPosts]);
+    
     // 2. 내가 만든 동행 데이터 가져오기
     const fetchMyCreatedAccompanyData = useCallback(async (force = false) => {
         if (!force && dataLoaded.mine) {
@@ -95,15 +129,19 @@ const AccompanyList = () => {
             console.log('🌐 내가 만든 동행 데이터 로딩 시작...');
             const data = await fetchMyCreatedAccompanyApi(currentUserId);
             console.log('✅ 내가 만든 동행 데이터 로딩 완료:', data.length);
+            console.log('🔍 내가 만든 동행 데이터 샘플:', data[0]);
             setMyCreatedAccompanyList(data);
             updateDataLoadedState('mine', true);
+            if (data.length > 0) {
+                await fetchLikesForPosts(data);
+            }
         } catch (error) {
             console.error('❌ 내가 만든 동행 데이터 로딩 실패:', error);
             handleApiError(error, '내가 만든 동행');
         } finally {
             updateLoadingState('mine', false);
         }
-    }, [currentUserId, dataLoaded.mine]);
+    }, [currentUserId, dataLoaded.mine, fetchLikesForPosts]);
 
     // 3. 신청한 동행 목록 데이터 가져오기
     const fetchMyAppliedAccompanyData = useCallback(async (force = false) => {
@@ -117,15 +155,19 @@ const AccompanyList = () => {
             console.log('🌐 신청한 동행 데이터 로딩 시작...');
             const data = await fetchMyAppliedAccompanyApi(currentUserId);
             console.log('✅ 신청한 동행 데이터 로딩 완료:', data.length);
+            console.log('🔍 신청한 동행 데이터 샘플:', data[0]);
             setMyAppliedAccompanyList(data);
             updateDataLoadedState('applied', true);
+            if (data.length > 0) {
+                await fetchLikesForPosts(data);
+            }
         } catch (error) {
             console.error('❌ 신청한 동행 데이터 로딩 실패:', error);
             handleApiError(error, '신청한 동행 목록');
         } finally {
             updateLoadingState('applied', false);
         }
-    }, [currentUserId, dataLoaded.applied]);
+    }, [currentUserId, dataLoaded.applied, fetchLikesForPosts]);
 
     // 컴포넌트 마운트 시 필수 데이터 로드
     useEffect(() => {
@@ -258,6 +300,51 @@ const AccompanyList = () => {
         }
     }, [selectedTab, fetchAccompanyFeedData, fetchMyCreatedAccompanyData, fetchMyAppliedAccompanyData]);
 
+    // ✅ 수정된 좋아요 토글 핸들러 - id 필드 사용
+    const handleToggleLike = useCallback(async (postId) => {
+        console.log(`💖 좋아요 토글 시작: postId=${postId} (타입: ${typeof postId})`);
+        
+        // 유효하지 않은 postId 체크
+        if (!postId || postId === undefined || postId === 'undefined') {
+            console.error('❌ 유효하지 않은 postId:', postId);
+            Alert.alert('오류', '게시물을 찾을 수 없습니다.');
+            return;
+        }
+        
+        // 이미 로딩 중이면 중복 호출 방지
+        if (loadingStates.likes) {
+            console.log('⚠️ 이미 좋아요 요청 처리 중...');
+            return;
+        }
+
+        try {
+            updateLoadingState('likes', true);
+            console.log(`🔄 좋아요 토글 API 호출: postId=${postId}, userId=${currentUserId}`);
+            
+            // API 호출
+            const response = await toggleLikeApi(postId, currentUserId);
+            const { isLiked, likeCount } = response;
+            
+            console.log(`✅ 좋아요 토글 성공. 상태: ${isLiked}, 좋아요 수: ${likeCount}`);
+
+            // UI 상태 즉시 업데이트
+            setLikedPosts(prev => ({ ...prev, [postId]: isLiked }));
+            
+            // 필터링된 포스트 목록에서도 좋아요 수 업데이트
+            setFilteredPosts(prevPosts =>
+                prevPosts.map(post =>
+                    post.id === postId ? { ...post, likeCount: likeCount } : post
+                )
+            );
+
+        } catch (error) {
+            console.error('❌ 좋아요 토글 실패:', error);
+            Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
+        } finally {
+            updateLoadingState('likes', false);
+        }
+    }, [currentUserId, loadingStates.likes]);
+
     // 필터링 로직
     useEffect(() => {
         let allPosts = [];
@@ -270,6 +357,7 @@ const AccompanyList = () => {
         }
 
         console.log(`🔍 ${selectedTab} 탭 데이터 개수:`, allPosts.length);
+        console.log(`🔍 ${selectedTab} 탭 첫 번째 아이템 ID:`, allPosts[0]?.id);
 
         // 최신순 정렬
         allPosts.sort((a, b) => {
@@ -324,6 +412,7 @@ const AccompanyList = () => {
         }
 
         console.log(`🔍 필터링 후 데이터 개수:`, filtered.length);
+        console.log(`🔍 필터링 후 첫 번째 아이템 ID:`, filtered[0]?.id);
         setFilteredPosts(filtered);
     }, [searchText, filters, selectedTab, myCreatedAccompanyList, feedList, myAppliedAccompanyList]);
 
@@ -352,14 +441,6 @@ const AccompanyList = () => {
         console.log('Applied filters:', newFilters);
     }, []);
 
-    const handlePressLike = useCallback((postId) => {
-        setLikedPosts(prev => ({
-            ...prev,
-            [postId]: !prev[postId]
-        }));
-        console.log(`찜 ${likedPosts[postId] ? '취소' : '추가'}: ${postId}`);
-    }, [likedPosts]);
-
     const handleRemoveTag = useCallback((tagToRemove) => {
         setFilters(prev => {
             const updated = { ...prev };
@@ -387,6 +468,7 @@ const AccompanyList = () => {
         router.push(`/accompany/AccompanyPost?postId=${postId}`);
     }, [router]);
 
+    // ✅ 수정된 viewProps - 중복 제거 및 정리
     const viewProps = {
         refreshing,
         onRefresh,
@@ -411,9 +493,9 @@ const AccompanyList = () => {
         selectedTab,
         setSelectedTab,
         loading: isLoading, // 전체 로딩 상태
+        likedPosts, // 좋아요 상태 맵
+        handlePressLike: handleToggleLike, // ✅ 좋아요 토글 함수 (중복 제거)
         filteredPosts,
-        likedPosts,
-        handlePressLike,
         navigateToPost,
         router,
         fetchAccompanyFeedData,
