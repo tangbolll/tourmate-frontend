@@ -173,6 +173,7 @@ const AccompanyCreation = () => {
     try {
         // FormData 생성 (JSON 대신 사용)
         const formData = new FormData();
+        formData.append('request', JSON.stringify(accompanyData));
         
         // 일반 데이터 추가
         formData.append('userId', '2');
@@ -212,22 +213,20 @@ const AccompanyCreation = () => {
                 });
             });
 
-            // 👇 FormData 내부 확인: 꼭 루프 바깥에서 한 번만
+            //  FormData 내부 확인 - 추후 디버깅용으로 남겨둠
             for (let pair of formData._parts) {
                 console.log('🧾 FormData 내용:', pair[0], pair[1]);
             }
         }
         console.log('📤 FormData 생성 완료');
 
-
         const url = `${getBaseURL()}/api/accompany/create`;
         console.log('🌐 API URL:', url);
 
         const response = await fetch(url, {
             method: 'POST',
-            body: formData, // JSON.stringify 제거!
+            body: formData, 
             headers: {
-                // Content-Type 헤더 제거! React Native가 자동으로 설정
                 'Accept': 'application/json',
             },
         });

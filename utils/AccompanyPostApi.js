@@ -27,12 +27,21 @@ const transformAccompanyDetail = (backendData) => {
         return '';
     };
 
+    // 이미지 URL 배열을 가져오는 함수
+    const getImageUrls = (item) => {
+        if (item.images && item.images.length > 0) return item.images;
+        if (item.imageUrls && item.imageUrls.length > 0) return item.imageUrls;
+        if (item.imageUrl) return [item.imageUrl];
+        return [];
+    };
+
     return {
         id: backendData.id?.toString() || '1',
         title: backendData.title || '제목 없음',
         location: backendData.location || '위치 미정',
         createdAt: backendData.postDate ? dayjs(backendData.postDate).locale('ko').format('YYYY.MM.DD') : dayjs().locale('ko').format('YYYY.MM.DD'),
-        imageUrl: getImageUrl(backendData),
+        imageUrl: getImageUrl(backendData),      // 첫 번째 이미지 (기존 호환성)
+        imageUrls: getImageUrls(backendData),   // 모든 이미지 배열 추가
         views: backendData.views || 0,
         travelStartDate: backendData.tripStartDate ? dayjs(backendData.tripStartDate).locale('ko').format('YYYY.MM.DD') : '기간미정',
         travelEndDate: backendData.tripEndDate ? dayjs(backendData.tripEndDate).locale('ko').format('YYYY.MM.DD') : '',

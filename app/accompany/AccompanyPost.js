@@ -442,7 +442,7 @@ export default function AccompanyPost() {
                         />
                         <Intro
                             message={postData.description}
-                            photos={postData.imageUrl ? [postData.imageUrl] : []}
+                            photos={postData.imageUrls || []}
                         />
 
                         <GatheringPlace
