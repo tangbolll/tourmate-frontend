@@ -206,14 +206,19 @@ const AccompanyCreation = () => {
             console.log('📤 이미지 개수:', images.length);
             images.forEach((image, index) => {
                 formData.append('images', {
-                    uri: image.uri,
-                    type: image.type || 'image/jpeg',
-                    name: image.name || `image_${index}.jpg`,
+                    uri: Platform.OS === 'ios' ? image.uri.replace('file://', '') : image.uri,
+                    type: 'image/jpeg',
+                    name: `image_${index}.jpg`,
                 });
             });
-        }
 
+            // 👇 FormData 내부 확인: 꼭 루프 바깥에서 한 번만
+            for (let pair of formData._parts) {
+                console.log('🧾 FormData 내용:', pair[0], pair[1]);
+            }
+        }
         console.log('📤 FormData 생성 완료');
+
 
         const url = `${getBaseURL()}/api/accompany/create`;
         console.log('🌐 API URL:', url);

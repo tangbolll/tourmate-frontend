@@ -44,7 +44,7 @@
     "lucide-react-native": "^0.487.0",
     "nativewind": "^4.1.23",
     "patch-package": "^8.0.0",
-    "react": "19.1.1",
+    "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.5",
     "react-native-calendar-picker": "^8.0.5",
