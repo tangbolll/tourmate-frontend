@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, RefreshControl } from 'react-native';
 import AccompanyListHeader from './AccompanyListHeader';
 import CalendarPopup from './CalendarPopup';
@@ -44,6 +44,16 @@ const AccompanyListView = ({
     router,
 }) => {
 
+    // 🔍 디버깅: 컴포넌트가 렌더링될 때마다 데이터 상태 확인
+    useEffect(() => {
+        console.log('🔍 AccompanyListView 렌더링됨');
+        console.log('🔍 selectedTab:', selectedTab);
+        console.log('🔍 filteredPosts 길이:', filteredPosts?.length || 0);
+        console.log('🔍 filteredPosts ID들:', filteredPosts?.map(post => `${post.id} (${typeof post.id})`));
+        console.log('🔍 likedPosts 상태:', likedPosts);
+        console.log('🔍 loading 상태:', loading);
+    });
+
     const getDisplayTags = (tags) => {
         if (!tags || !Array.isArray(tags)) return [];
         
@@ -58,7 +68,6 @@ const AccompanyListView = ({
         return [...displayedGenderAge, ...displayedCategories];
     };
 
-
     const renderFeedItems = () => {
         if (loading) {
             return (
@@ -68,7 +77,7 @@ const AccompanyListView = ({
             );
         }
 
-        if (filteredPosts.length === 0) {
+        if (!filteredPosts || filteredPosts.length === 0) {
             let emptyMessage = '';
             if (selectedTab === 'mine') {
                 emptyMessage = '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!';
@@ -84,23 +93,43 @@ const AccompanyListView = ({
             );
         }
 
-        return filteredPosts.map((post) => (
-            <AccompanyFeed
-                key={post.id}
-                {...post}
-                id={post.id}
-                date={post.date}
-                title={post.title}
-                tags={getDisplayTags(post.tags)}
-                location={post.location}
-                participants={post.participants}
-                maxParticipants={post.maxParticipants}
-                imageUrl={post.imageUrl}
-                liked={!!likedPosts[post.id]}
-                onPressLike={() => handlePressLike(post.id)}
-                onPress={() => navigateToPost(post.id)}
-            />
-        ));
+        return filteredPosts.map((post, index) => {
+            // 🔍 각 포스트별 디버깅 정보
+            const isLiked = !!likedPosts[post.id];
+            console.log(`🔍 포스트 ${index}: id=${post.id}, liked=${isLiked}, title=${post.title}`);
+            
+            return (
+                <AccompanyFeed
+                    key={post.id || `post-${index}`} // id가 없을 경우 대체 키 사용
+                    {...post}
+                    id={post.id}
+                    date={post.date}
+                    title={post.title}
+                    tags={getDisplayTags(post.tags)}
+                    location={post.location}
+                    participants={post.participants}
+                    maxParticipants={post.maxParticipants}
+                    imageUrl={post.imageUrl}
+                    liked={isLiked}
+                    onPressLike={() => {
+                        console.log(`🔥 좋아요 버튼 클릭: postId=${post.id}`);
+                        if (post.id) {
+                            handlePressLike(post.id);
+                        } else {
+                            console.error('❌ 좋아요 클릭 실패: post.id가 없음', post);
+                        }
+                    }}
+                    onPress={() => {
+                        console.log(`🔗 포스트 클릭: postId=${post.id}`);
+                        if (post.id) {
+                            navigateToPost(post.id);
+                        } else {
+                            console.error('❌ 포스트 클릭 실패: post.id가 없음', post);
+                        }
+                    }}
+                />
+            );
+        });
     };
 
     return (
@@ -152,12 +181,17 @@ const AccompanyListView = ({
             {showCards && (
                 <View style={styles.cardsContainer}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsScroll}>
-                        {myAppliedAccompanyList.length > 0 ? (
-                            myAppliedAccompanyList.map((item) => (
+                        {myAppliedAccompanyList && myAppliedAccompanyList.length > 0 ? (
+                            myAppliedAccompanyList.map((item, index) => (
                                 <AccompanyCard
-                                    key={item.id}
+                                    key={item.id || `card-${index}`}
                                     {...item}
-                                    onPress={() => navigateToPost(item.id)}
+                                    onPress={() => {
+                                        console.log(`🔗 카드 클릭: itemId=${item.id}`);
+                                        if (item.id) {
+                                            navigateToPost(item.id);
+                                        }
+                                    }}
                                     userApplicationStatus={item.userApplicationStatus}
                                 />
                             ))
@@ -173,6 +207,7 @@ const AccompanyListView = ({
             <AccompanyTabToggle
                 selectedTab={selectedTab}
                 onSelectTab={(tab) => {
+                    console.log(`🔄 탭 변경: ${selectedTab} → ${tab}`);
                     setSelectedTab(tab);
                     if (tab === 'mine') {
                         fetchMyCreatedAccompanyData();
@@ -189,7 +224,10 @@ const AccompanyListView = ({
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
-                        onRefresh={onRefresh}
+                        onRefresh={() => {
+                            console.log('🔄 새로고침 시작');
+                            onRefresh();
+                        }}
                         colors={['#000']}
                         tintColor={'#000'}
                     />
@@ -202,6 +240,7 @@ const AccompanyListView = ({
             <TouchableOpacity style={styles.floatingButton}>
                 <CreateAccompanyButton
                     onPress={() => {
+                        console.log('➕ 동행 생성 버튼 클릭');
                         router.push('/accompany/AccompanyCreation');
                     }}
                 />
@@ -216,8 +255,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         position: 'relative',
     },
-    // 기존 scrollViewContent 스타일은 더 이상 필요하지 않아 삭제합니다.
-    feedScrollViewContent: { // ✨ 피드 스크롤뷰를 위한 새로운 스타일 추가
+    feedScrollViewContent: {
         paddingBottom: 50,
     },
     floatingButton: {
