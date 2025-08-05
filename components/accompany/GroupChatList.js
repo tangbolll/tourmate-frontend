@@ -41,14 +41,16 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
           />
           <View style={styles.chatContent}>
             <View style={styles.header}>
+                <View style={styles.leftSection}>
               <Text style={styles.chatTitle}>{title}</Text>
+                <Text style={styles.participants}> · {participants}명</Text>
+                </View>
               <Text style={styles.timestamp}>{timestamp}</Text>
             </View>
             <View style={styles.chatDetails}>
               <Text style={styles.chatMessage} numberOfLines={1}>
                 {message}
               </Text>
-              <Text style={styles.participants}>{participants}명</Text>
               {unreadCount > 0 && (
                 <View style={styles.unreadBadge}>
                   <Text style={styles.unreadText}>{unreadCount}</Text>
@@ -90,10 +92,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 5,
   },
+  leftSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
   chatTitle: {
     fontSize: 16,
     fontWeight: 'bold',
-    flex: 1,
+  },
+  participants: {
+    fontSize: 14,
+    color: '#A0A0A0',
   },
   timestamp: {
     fontSize: 12,
@@ -107,11 +116,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 14,
     color: '#666',
-  },
-  participants: {
-    fontSize: 12,
-    color: '#A0A0A0',
-    marginLeft: 10,
   },
   unreadBadge: {
     backgroundColor: '#FF6347',
