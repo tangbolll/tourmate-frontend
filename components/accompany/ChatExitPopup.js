@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Modal, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Modal, TouchableOpacity, Image } from 'react-native';
 
 const ChatExitPopup = ({ isVisible, onClose, onConfirm, chatTitle }) => {
   return (
@@ -11,18 +11,25 @@ const ChatExitPopup = ({ isVisible, onClose, onConfirm, chatTitle }) => {
     >
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
-          {/* 이미지 (임시) */}
-          <View style={styles.imagePlaceholder} />
+          
+          {/* 프로필 이미지 (임시) */}
+          {/* 실제 이미지 URL prop을 받아서 사용하도록 수정할 수 있습니다. */}
+          <View style={styles.profileImagePlaceholder}>
+            {/* <Image source={{ uri: photoUrl }} style={styles.profileImage} /> */}
+          </View>
           
           <Text style={styles.modalTitle}>{chatTitle}</Text>
           <Text style={styles.modalText}>해당 채팅방에서 나가시겠습니까?</Text>
 
           <View style={styles.buttonContainer}>
-            <TouchableOpacity style={[styles.button, styles.cancelButton]} onPress={onClose}>
+            {/* 왼쪽 '네' 버튼 */}
+            <TouchableOpacity style={styles.leftButton} onPress={onConfirm}>
               <Text style={styles.buttonText}>네</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={[styles.button, styles.confirmButton]} onPress={onConfirm}>
-              <Text style={[styles.buttonText, { color: '#000' }]}>아니오</Text>
+            
+            {/* 오른쪽 '아니오' 버튼 */}
+            <TouchableOpacity style={styles.rightButton} onPress={onClose}>
+              <Text style={styles.buttonText}>아니오</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -39,10 +46,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalView: {
-    width: 300,
+    width: '80%',
     backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 25,
+    borderRadius: 10, 
+    paddingTop: 30,
     alignItems: 'center',
     shadowColor: '#000',
     shadowOffset: {
@@ -53,46 +60,52 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  imagePlaceholder: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+  profileImagePlaceholder: {
+    width: 100,
+    height: 100,
+    borderRadius: 10,
     backgroundColor: '#E0E0E0',
-    marginBottom: 15,
+    marginBottom: 20,
+    overflow: 'hidden', // 이미지가 둥근 테두리 밖으로 나가지 않도록
+  },
+  profileImage: {
+    width: '100%',
+    height: '100%',
   },
   modalTitle: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 8,
+    textAlign: 'center',
   },
   modalText: {
     fontSize: 14,
     color: '#666',
-    marginBottom: 25,
+    marginBottom: 20,
+    textAlign: 'center',
   },
   buttonContainer: {
     flexDirection: 'row',
     width: '100%',
-    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
   },
-  button: {
+  leftButton: {
     flex: 1,
-    borderRadius: 10,
-    padding: 10,
-    elevation: 2,
-    marginHorizontal: 5,
+    padding: 15,
+    alignItems: 'center',
+    borderRightWidth: 1,
+    borderRightColor: '#E0E0E0',
+  },
+  rightButton: {
+    flex: 1,
+    padding: 15,
     alignItems: 'center',
   },
-  cancelButton: {
-    backgroundColor: '#E5E5E5',
-  },
-  confirmButton: {
-    backgroundColor: '#FFD966',
-  },
   buttonText: {
-    color: 'black',
+    color: '#000',
     fontWeight: 'bold',
-    fontSize: 14,
+    fontSize: 16,
   },
 });
 

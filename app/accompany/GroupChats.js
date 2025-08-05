@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import GroupChatList from '../../components/accompany/GroupChatList';
@@ -45,11 +46,13 @@ const dummyChats = [
 ];
 
 const GroupChats = () => {
-  const [isPopupVisible, setPopupVisible] = useState(false);
-  const [selectedChat, setSelectedChat] = useState(null);
+    const router = useRouter();
+    const [isPopupVisible, setPopupVisible] = useState(false);
+    const [selectedChat, setSelectedChat] = useState(null);
 
   const handleChatPress = (item) => {
     // 채팅방 상세 페이지로 이동하는 로직
+    // router.push(`accompany/chat/${item.id}`);
     console.log(`${item.title} 채팅방으로 이동`);
   };
 
@@ -68,7 +71,11 @@ const GroupChats = () => {
     <SafeAreaView style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton}>
+        {/* onPress 이벤트 핸들러를 올바르게 수정 */}
+        <TouchableOpacity 
+          style={styles.backButton}
+          onPress={() => router.push('accompany')}
+        >
           <Ionicons name="chevron-back" size={24} color="black" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>동행 그룹채팅</Text>
@@ -87,7 +94,8 @@ const GroupChats = () => {
             timestamp={item.timestamp}
             unreadCount={item.unreadCount}
             onPress={() => handleChatPress(item)}
-            onSwipeLeft={() => handleChatSwipeLeft(item)} // 스와이프 이벤트 핸들러
+            // 스와이프 이벤트 핸들러 prop을 올바르게 전달
+            onSwipeLeft={() => handleChatSwipeLeft(item)}
           />
         )}
         keyExtractor={(item) => item.id}
