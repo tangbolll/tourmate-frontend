@@ -162,7 +162,7 @@ const styles = StyleSheet.create({
     },
     modalImage: {
         width: width,
-        height: '100%', // 모달 높이에 맞춤
+        height: '100%', 
     },
 });
 
