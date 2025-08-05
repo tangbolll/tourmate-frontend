@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-// Octicons 아이콘은 더 이상 사용하지 않으므로 제거합니다.
-// import { Octicons } from '@expo/vector-icons';
+import GroupChats from '../../app/accompany/GroupChats';
 
-export default function AccompanyListHeader({ onPressDM, onPressFilter, searchText, setSearchText }) {
+export default function AccompanyListHeader({  onPressDM, onPressFilter, searchText, setSearchText }) {
+
     return (
         <View style={styles.container}>
         {/* Top Row */}

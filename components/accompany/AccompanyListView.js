@@ -54,6 +54,12 @@ const AccompanyListView = ({
         console.log('🔍 loading 상태:', loading);
     });
 
+    const handlePressDM = () => {
+        // 여기서 navigation.navigate를 직접 호출
+        navigation.navigate('accompany/GroupChats'); 
+    };
+
+
     const getDisplayTags = (tags) => {
         if (!tags || !Array.isArray(tags)) return [];
         
@@ -137,7 +143,7 @@ const AccompanyListView = ({
             {/* 고정된 상단 헤더, 필터 영역 */}
             <AccompanyListHeader
                 onPressAlarm={() => console.log('알림')}
-                onPressDM={() => console.log('DM')}
+                onPressDM={handlePressDM}
                 onPressFilter={handleFilterPopup}
                 searchText={searchText}
                 setSearchText={setSearchText}
