@@ -194,6 +194,7 @@ const AccompanyListView = ({
                                     {...item}
                                     onPress={() => {
                                         console.log(`🔗 카드 클릭: itemId=${item.id}`);
+                                        console.log(`🔗 userApplicationstatus:, ${item.userApplicationStatus}`);
                                         if (item.id) {
                                             navigateToPost(item.id);
                                         }
