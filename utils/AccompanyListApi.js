@@ -62,6 +62,7 @@ export const transformAccompanyData = (accompanyData) => {
             hostId: item.userId || null,
             status: item.status || '상태 미정',
             likeCount: item.likeCount || 0,
+            userApplicationStatus: item.userApplicationStatus || null, // 새로 추가된 상태
         };
     });
 };
