@@ -1,13 +1,79 @@
-import React, { useState } from 'react';
+// ToChatroom 컴포넌트에 디버깅 로그 추가
+
+import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
-const ToChatroom = ({ postId, currentUserId = 2, location, participants, maxParticipants, style }) => {
+const ToChatroom = ({ 
+    postId, 
+    currentUserId = 2, 
+    location, 
+    participants, 
+    maxParticipants, 
+    style,
+    status // props로 받은 상태
+}) => {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
+    const [canShow, setCanShow] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // 🚀 Chat 화면으로 바로 이동 (채팅방 생성은 Chat에서 처리)
+    useEffect(() => {
+        console.log('🔍 ToChatroom 컴포넌트 props:', {
+            postId,
+            currentUserId,
+            status
+        });
+        checkShouldShow();
+    }, [postId, currentUserId, status]);
+
+    const checkShouldShow = async () => {
+        console.log('🔍 checkShouldShow 시작');
+        
+        if (!postId || !currentUserId) {
+            console.log('❌ postId 또는 currentUserId 없음:', { postId, currentUserId });
+            setCanShow(false);
+            setIsLoading(false);
+            return;
+        }
+
+        // props로 받은 상태 먼저 확인
+        console.log('🔍 status 확인:', status);
+        if (status && status !== 'COMPLETED') {
+            console.log('❌ 상태가 COMPLETED가 아님:', status);
+            setCanShow(false);
+            setIsLoading(false);
+            return;
+        }
+
+        try {
+            const url = `http://localhost:8080/api/accompany/${postId}/chat-access?userId=${currentUserId}`;
+            console.log('🔍 API 호출:', url);
+            
+            const response = await fetch(url);
+            console.log('🔍 API 응답 상태:', response.status);
+            
+            if (response.ok) {
+                const data = await response.json();
+                console.log('🔍 API 응답 데이터:', data);
+                
+                const shouldShow = data.canAccess && data.isCompleted;
+                console.log('🔍 표시 여부 결정:', shouldShow);
+                setCanShow(shouldShow);
+            } else {
+                const errorText = await response.text();
+                console.log('❌ API 오류 응답:', errorText);
+                setCanShow(false);
+            }
+        } catch (error) {
+            console.error('❌ API 호출 오류:', error);
+            setCanShow(false);
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     const handlePress = async () => {
         if (isNavigating || !postId) return;
         
@@ -15,7 +81,6 @@ const ToChatroom = ({ postId, currentUserId = 2, location, participants, maxPart
         setIsNavigating(true);
         
         try {
-            // Chat 화면으로 이동하면서 필요한 데이터 전달
             const params = new URLSearchParams({
                 postId: postId.toString(),
                 location: location || '위치 정보 없음',
@@ -69,7 +134,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#F0F0F0',
     },
     iconContainer: {
-        // 아이콘 컨테이너 스타일 (필요시 추가)
+        // 아이콘 컨테이너 스타일
     },
     text: {
         fontSize: 12,
