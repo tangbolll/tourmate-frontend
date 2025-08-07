@@ -56,7 +56,8 @@ const AccompanyListView = ({
 
     const handlePressDM = () => {
         // 여기서 navigation.navigate를 직접 호출
-        navigation.navigate('accompany/GroupChats'); 
+        console.log('DM 버튼 클릭');
+        router.push('/accompany/GroupChats');
     };
 
 
