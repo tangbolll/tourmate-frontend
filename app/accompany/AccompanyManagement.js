@@ -11,30 +11,36 @@ import {
     Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import ApplicationButton from '../../components/accompany/ApplicationButton';
-import CloseAlarmPopup from '../../components/accompany/CloseAlarmPopup'; // 새로운 팝업 컴포넌트
+import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton'; // ✅ 통합 버튼으로 변경
+import CloseAlarmPopup from '../../components/accompany/CloseAlarmPopup';
 
 const AccompanyManagement = ({ navigation }) => {
     const [likeCount, setLikeCount] = useState(122);
     const [isLiked, setIsLiked] = useState(false);
-    const [closed, setIsClosed] = useState(false);  // 동행 마감 상태
+    
+    // ✅ 동행 상태 관리 - 더 구체적으로
+    const [accompanyStatus, setAccompanyStatus] = useState('RECRUITING'); // 'RECRUITING', 'COMPLETED', 'CLOSED'
+    const [userApplicationStatus, setUserApplicationStatus] = useState(null); // 호스트는 null
+    
     const [applicantScrollPosition, setApplicantScrollPosition] = useState(0);
     const [companionScrollPosition, setCompanionScrollPosition] = useState(0);
-    const [popupVisible, setPopupVisible] = useState(false); // 팝업 표시 상태
+    const [popupVisible, setPopupVisible] = useState(false);
     
     const applicantScrollRef = useRef(null);
     const companionScrollRef = useRef(null);
 
+    // ✅ 모집 마감 처리 함수
     const handleClosedPress = () => {
-        // 이미 마감된 상태가 아닐 때만 팝업 표시
-        if (!closed) {
+        // RECRUITING 상태일 때만 마감 가능
+        if (accompanyStatus === 'RECRUITING') {
             setPopupVisible(true);
         }
     };
 
+    // ✅ 마감 확인 처리
     const handleConfirmClose = () => {
         console.log("동행 마감 확인");
-        setIsClosed(true);
+        setAccompanyStatus('COMPLETED'); // 상태를 COMPLETED로 변경
         setPopupVisible(false);
     };
 
@@ -43,132 +49,132 @@ const AccompanyManagement = ({ navigation }) => {
         setPopupVisible(false);
     };
 
+    // ✅ 좋아요 토글 함수
+    const handleLikeToggle = () => {
+        if (isLiked) {
+            setLikeCount(likeCount - 1);
+        } else {
+            setLikeCount(likeCount + 1);
+        }
+        setIsLiked(!isLiked);
+    };
+
     // 동행 신청자 데이터
     const applicants = [
         { 
-        id: 1,
-        nickname: '서휘경',
-        gender: '여', 
-        age: 20, 
-        hashtags: '#안뇽 #졸려 #이것만하구자야디'
+            id: 1,
+            nickname: '서휘경',
+            gender: '여', 
+            age: 20, 
+            hashtags: '#안뇽 #졸려 #이것만하구자야디'
         },
         { 
-        id: 2,
-        nickname: '김태연',
-        gender: '여', 
-        age: 20, 
-        hashtags: '#김태뿌지직 #아닙니다 #방구쟁이아닙니다 #사실그짓말입니다'
+            id: 2,
+            nickname: '김태연',
+            gender: '여', 
+            age: 20, 
+            hashtags: '#김태뿌지직 #아닙니다 #방구쟁이아닙니다 #사실그짓말입니다'
         },
         { 
-        id: 3,
-        nickname: '김윤서',
-        gender: '여', 
-        age: 20, 
-        hashtags: '#기획팀멋져요 #파이팅'
+            id: 3,
+            nickname: '김윤서',
+            gender: '여', 
+            age: 20, 
+            hashtags: '#기획팀멋져요 #파이팅'
         },
         { 
-        id: 4,
-        nickname: '김서연',
-        gender: '여', 
-        age: 20, 
-        hashtags: '#관광 #21 #가지가지'
+            id: 4,
+            nickname: '김서연',
+            gender: '여', 
+            age: 20, 
+            hashtags: '#관광 #21 #가지가지'
         },
         { 
-        id: 5,
-        nickname: '김민수',
-        gender: '여', 
-        age: 21, 
-        hashtags: '#백엔드는 #잘 #되어가시나요'
+            id: 5,
+            nickname: '김민수',
+            gender: '여', 
+            age: 21, 
+            hashtags: '#백엔드는 #잘 #되어가시나요'
         }
     ];
 
     // 동행 목록 데이터
     const companions = [
         { 
-        id: 1,
-        nickname: '여라미',
-        gender: '여', 
-        age: 22, 
-        hashtags: '#즉흥적인 계획가 #맛집탐방',
-        isHost: true
+            id: 1,
+            nickname: '여라미',
+            gender: '여', 
+            age: 22, 
+            hashtags: '#즉흥적인 계획가 #맛집탐방',
+            isHost: true
         },
         { 
-        id: 2,
-        nickname: '지백',
-        gender: '여', 
-        age: 24, 
-        hashtags: '#무계획여행 #맛집탐방 #호캉스'
+            id: 2,
+            nickname: '지백',
+            gender: '여', 
+            age: 24, 
+            hashtags: '#무계획여행 #맛집탐방 #호캉스'
         },
         { 
-        id: 3,
-        nickname: '주리를틀어라',
-        gender: '여', 
-        age: 21, 
-        hashtags: '#활기찬 탐방가 #맛집탐방 #국토순례'
+            id: 3,
+            nickname: '주리를틀어라',
+            gender: '여', 
+            age: 21, 
+            hashtags: '#활기찬 탐방가 #맛집탐방 #국토순례'
         },
     ];
-
-    // 좋아요 토글
-    const toggleLike = () => {
-        if (isLiked) {
-        setLikeCount(likeCount - 1);
-        } else {
-        setLikeCount(likeCount + 1);
-        }
-        setIsLiked(!isLiked);
-    };
 
     // 신청자 렌더링
     const renderApplicant = (applicant) => (
         <View key={applicant.id} style={styles.memberRow}>
-        <View style={styles.profileSection}>
-            <Image 
-            source={require('../../assets/defaultProfile.png')} 
-            style={styles.profileImage} 
-            defaultSource={require('../../assets/defaultProfile.png')}
-            />
-            <View style={styles.userInfo}>
-            <View style={styles.nameRow}>
-                <Text style={styles.nickname}>{applicant.nickname}</Text>
-                <Text style={styles.genderAge}> · {applicant.gender} · {applicant.age}세</Text>
+            <View style={styles.profileSection}>
+                <Image 
+                    source={require('../../assets/defaultProfile.png')} 
+                    style={styles.profileImage} 
+                    defaultSource={require('../../assets/defaultProfile.png')}
+                />
+                <View style={styles.userInfo}>
+                    <View style={styles.nameRow}>
+                        <Text style={styles.nickname}>{applicant.nickname}</Text>
+                        <Text style={styles.genderAge}> · {applicant.gender} · {applicant.age}세</Text>
+                    </View>
+                    <Text style={styles.hashtags}>{applicant.hashtags}</Text>
+                </View>
             </View>
-            <Text style={styles.hashtags}>{applicant.hashtags}</Text>
+            
+            <View style={styles.actionButtons}>
+                <TouchableOpacity style={styles.acceptButton}>
+                    <Text style={styles.acceptText}>수락</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.rejectButton}>
+                    <Text style={styles.rejectText}>거절</Text>
+                </TouchableOpacity>
             </View>
-        </View>
-        
-        <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.acceptButton}>
-            <Text style={styles.acceptText}>수락</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.rejectButton}>
-            <Text style={styles.rejectText}>거절</Text>
-            </TouchableOpacity>
-        </View>
         </View>
     );
 
     // 동행 목록 렌더링
     const renderCompanion = (companion) => (
         <View key={companion.id} style={styles.memberRow}>
-        <View style={styles.profileSection}>
-            <Image 
-            source={require('../../assets/defaultProfile.png')} 
-            style={styles.profileImage} 
-            defaultSource={require('../../assets/defaultProfile.png')}
-            />
-            <View style={styles.userInfo}>
-            <View style={styles.nameRow}>
-                <Text style={styles.nickname}>{companion.nickname}</Text>
-                <Text style={styles.genderAge}> · {companion.gender} · {companion.age}세</Text>
-                {companion.isHost && <Text style={styles.hostTag}>호스트</Text>}
+            <View style={styles.profileSection}>
+                <Image 
+                    source={require('../../assets/defaultProfile.png')} 
+                    style={styles.profileImage} 
+                    defaultSource={require('../../assets/defaultProfile.png')}
+                />
+                <View style={styles.userInfo}>
+                    <View style={styles.nameRow}>
+                        <Text style={styles.nickname}>{companion.nickname}</Text>
+                        <Text style={styles.genderAge}> · {companion.gender} · {companion.age}세</Text>
+                        {companion.isHost && <Text style={styles.hostTag}>호스트</Text>}
+                    </View>
+                    <Text style={styles.hashtags}>{companion.hashtags}</Text>
+                </View>
             </View>
-            <Text style={styles.hashtags}>{companion.hashtags}</Text>
-            </View>
-        </View>
         </View>
     );
 
-    // 스크롤 위치 계산 함수
+    // 스크롤 위치 계산 함수들
     const handleApplicantScroll = (event) => {
         const scrollHeight = event.nativeEvent.contentSize.height;
         const scrollPosition = event.nativeEvent.contentOffset.y;
@@ -204,78 +210,82 @@ const AccompanyManagement = ({ navigation }) => {
     // 단순화된 데이터 변수
     const applicationCnt = applicants.length;
     const currentMember = companions.length;
-    const totalMemeber = 5; // 예시 총 인원
+    const totalMemeber = 5;
 
     return (
         <SafeAreaView style={styles.container}>
-        {/* 헤더 */}
-        <View style={styles.header}>
-            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="chevron-back" size={24} color="black" />
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>동행 관리</Text>
-            <View style={{width: 24}} />
-        </View>
+            {/* 헤더 */}
+            <View style={styles.header}>
+                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                    <Ionicons name="chevron-back" size={24} color="black" />
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>동행 관리</Text>
+                <View style={{width: 24}} />
+            </View>
 
-        <View style={styles.mainContainer}>
-            {/* 동행 신청 섹션 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>동행 신청 <Text style={styles.countText}>{applicationCnt}건</Text></Text>
-                
-                <View style={styles.scrollContainer}>
-                    <ScrollView 
-                        ref={applicantScrollRef}
-                        onScroll={handleApplicantScroll}
-                        scrollEventThrottle={16}
-                        style={styles.applicantList}
-                        nestedScrollEnabled={true}
-                        contentContainerStyle={styles.scrollContentContainer}
-                    >
-                        {applicants.map(applicant => renderApplicant(applicant))}
-                    </ScrollView>
-                    {renderScrollIndicator(applicantScrollPosition)}
+            <View style={styles.mainContainer}>
+                {/* 동행 신청 섹션 */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>동행 신청 <Text style={styles.countText}>{applicationCnt}건</Text></Text>
+                    
+                    <View style={styles.scrollContainer}>
+                        <ScrollView 
+                            ref={applicantScrollRef}
+                            onScroll={handleApplicantScroll}
+                            scrollEventThrottle={16}
+                            style={styles.applicantList}
+                            nestedScrollEnabled={true}
+                            contentContainerStyle={styles.scrollContentContainer}
+                        >
+                            {applicants.map(applicant => renderApplicant(applicant))}
+                        </ScrollView>
+                        {renderScrollIndicator(applicantScrollPosition)}
+                    </View>
+                </View>
+
+                {/* 동행 목록 섹션 */}
+                <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>동행 목록 <Text style={styles.countText}>{currentMember}명 / {totalMemeber}명</Text></Text>
+                    
+                    <View style={styles.scrollContainer}>
+                        <ScrollView 
+                            ref={companionScrollRef}
+                            onScroll={handleCompanionScroll}
+                            scrollEventThrottle={16}
+                            style={styles.companionList}
+                            nestedScrollEnabled={true}
+                            contentContainerStyle={styles.scrollContentContainer}
+                        >
+                            {companions.map(companion => renderCompanion(companion))}
+                        </ScrollView>
+                        {renderScrollIndicator(companionScrollPosition)}
+                    </View>
                 </View>
             </View>
 
-            {/* 동행 목록 섹션 */}
-            <View style={styles.section}>
-                <Text style={styles.sectionTitle}>동행 목록 <Text style={styles.countText}>{currentMember}명 / {totalMemeber}명</Text></Text>
-                
-                <View style={styles.scrollContainer}>
-                    <ScrollView 
-                        ref={companionScrollRef}
-                        onScroll={handleCompanionScroll}
-                        scrollEventThrottle={16}
-                        style={styles.companionList}
-                        nestedScrollEnabled={true}
-                        contentContainerStyle={styles.scrollContentContainer}
-                    >
-                        {companions.map(companion => renderCompanion(companion))}
-                    </ScrollView>
-                    {renderScrollIndicator(companionScrollPosition)}
-                </View>
-            </View>
-        </View>
+            {/* ✅ 하단 버튼 영역 - 통합 버튼으로 교체 */}
+            <AccompanyBottomButton
+                isHost={true} // 관리 페이지는 항상 호스트
+                accompanyStatus={accompanyStatus}
+                userApplicationStatus={userApplicationStatus}
+                onPress={handleClosedPress}
+                likes={likeCount}
+                isLiked={isLiked}
+                onLikeToggle={handleLikeToggle}
+                applied={false} // 호스트는 신청 상태 없음
+            />
 
-        {/* 하단 버튼 영역 */}
-        <ApplicationButton
-            title={closed ? "모집이 마감된 동행입니다" : "모집 마감"}
-            onPress={handleClosedPress}
-            closed={closed}
-            customStyle={closed ? styles.disabledButton : {}}
-            customTextStyle={closed ? styles.ButtonText : {}}
-        />
-
-        {/* 마감 확인 팝업 - 새로운 스타일의 팝업 사용 */}
-        <CloseAlarmPopup 
-            visible={popupVisible}
-            onConfirm={handleConfirmClose}
-            onCancel={handleCancelClose}
-        />
+            {/* 마감 확인 팝업 */}
+            <CloseAlarmPopup 
+                visible={popupVisible}
+                onConfirm={handleConfirmClose}
+                onCancel={handleCancelClose}
+            />
         </SafeAreaView>
     );
 };
 
+// styles는 동일하게 유지 (ApplicationButton 관련 스타일은 제거 가능)
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -320,11 +330,11 @@ const styles = StyleSheet.create({
         position: 'relative',
     },
     applicantList: {
-        height: 180, // 약 3개의 항목이 보이도록 조정 (60px * 3)
+        height: 180,
         flex: 1,
     },
     companionList: {
-        height: 300, // 약 5개의 항목이 보이도록 조정 (60px * 5)
+        height: 300,
         flex: 1,
     },
     scrollContentContainer: {
@@ -430,68 +440,6 @@ const styles = StyleSheet.create({
         borderRadius: 2,
         position: 'absolute',
     },
-    closedButton: {
-        backgroundColor: '#808080',
-    },
-    closedButtonText: {
-        color: 'white',
-    },
-    centeredView: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    },
-    modalView: {
-        width: '80%',
-        backgroundColor: 'white',
-        borderRadius: 10,
-        overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 0,
-            height: 2
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5,
-    },
-    modalContent: {
-        padding: 20,
-    },
-    modalTitle: {
-        fontSize: 18,
-        fontWeight: 'bold',
-        marginBottom: 10,
-        textAlign: 'left',
-    },
-    modalText: {
-        fontSize: 14,
-        textAlign: 'center',
-        lineHeight: 20,
-    },
-    buttonContainer: {
-        flexDirection: 'row',
-        borderTopWidth: 1,
-        borderTopColor: '#eee',
-    },
-    button: {
-        flex: 1,
-        paddingVertical: 12,
-        alignItems: 'center',
-    },
-    leftButton: {
-        borderRightWidth: 0.5,
-        borderRightColor: '#eee',
-    },
-    rightButton: {
-        borderLeftWidth: 0.5,
-        borderLeftColor: '#eee',
-    },
-    buttonTextBold: {
-        fontSize: 16,
-        fontWeight: 'bold',
-    }
 });
 
 export default AccompanyManagement;

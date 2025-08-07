@@ -61,7 +61,8 @@ const transformAccompanyDetail = (backendData) => {
         createdByName: backendData.host?.nickname || '알 수 없음',
         likes: backendData.likeCount || 0,
         isLiked: backendData.likedByCurrentUser || false,
-        isClosed: backendData.isClosed || false,
+        status: backendData.accompanyStatus || 'RECRUITING',  // 동행 상태: RECRUITING, COMPLETED, CLOSED
+        userApplicationStatus: backendData.userApplicationStatus || null,  // 사용자 신청 상태:PENDING, ACCEPTED, REJECTED, CANCELLED
     };
 };
 

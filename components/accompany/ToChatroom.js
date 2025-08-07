@@ -1,5 +1,3 @@
-// ToChatroom 컴포넌트에 디버깅 로그 추가
-
 import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -12,7 +10,7 @@ const ToChatroom = ({
     participants, 
     maxParticipants, 
     style,
-    status // props로 받은 상태
+    status
 }) => {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
@@ -20,28 +18,18 @@ const ToChatroom = ({
     const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
-        console.log('🔍 ToChatroom 컴포넌트 props:', {
-            postId,
-            currentUserId,
-            status
-        });
         checkShouldShow();
     }, [postId, currentUserId, status]);
 
     const checkShouldShow = async () => {
-        console.log('🔍 checkShouldShow 시작');
-        
         if (!postId || !currentUserId) {
-            console.log('❌ postId 또는 currentUserId 없음:', { postId, currentUserId });
             setCanShow(false);
             setIsLoading(false);
             return;
         }
 
-        // props로 받은 상태 먼저 확인
-        console.log('🔍 status 확인:', status);
-        if (status && status !== 'COMPLETED') {
-            console.log('❌ 상태가 COMPLETED가 아님:', status);
+        // props로 받은 상태가 COMPLETED가 아니면 숨김
+       if (status && status !== 'COMPLETED') {
             setCanShow(false);
             setIsLoading(false);
             return;
@@ -49,25 +37,16 @@ const ToChatroom = ({
 
         try {
             const url = `http://localhost:8080/api/accompany/${postId}/chat-access?userId=${currentUserId}`;
-            console.log('🔍 API 호출:', url);
-            
             const response = await fetch(url);
-            console.log('🔍 API 응답 상태:', response.status);
             
             if (response.ok) {
                 const data = await response.json();
-                console.log('🔍 API 응답 데이터:', data);
-                
-                const shouldShow = data.canAccess && data.isCompleted;
-                console.log('🔍 표시 여부 결정:', shouldShow);
-                setCanShow(shouldShow);
+                // COMPLETED 상태이고 접근 권한이 있을 때만 표시
+                setCanShow(data.canAccess && data.isCompleted);
             } else {
-                const errorText = await response.text();
-                console.log('❌ API 오류 응답:', errorText);
                 setCanShow(false);
             }
         } catch (error) {
-            console.error('❌ API 호출 오류:', error);
             setCanShow(false);
         } finally {
             setIsLoading(false);
@@ -77,7 +56,6 @@ const ToChatroom = ({
     const handlePress = async () => {
         if (isNavigating || !postId) return;
         
-        console.log('그룹채팅 버튼 클릭 - postId:', postId);
         setIsNavigating(true);
         
         try {
@@ -88,16 +66,21 @@ const ToChatroom = ({
                 maxParticipants: maxParticipants?.toString() || '0'
             });
             
-            console.log('🚀 채팅방으로 이동:', `/accompany/Chat?${params.toString()}`);
             router.push(`/accompany/Chat?${params.toString()}`);
             
         } catch (error) {
-            console.error('❌ 채팅방 이동 오류:', error);
+            console.error('채팅방 이동 오류:', error);
         } finally {
             setIsNavigating(false);
         }
     };
 
+    // 로딩 중이거나 표시 조건에 맞지 않으면 아무것도 렌더링하지 않음
+    if (isLoading || !canShow) {
+        return null;
+    }
+
+    // COMPLETED 상태이고 참여자인 경우에만 버튼 표시
     return (
         <TouchableOpacity 
             style={[styles.container, isNavigating && styles.disabledContainer, style]} 

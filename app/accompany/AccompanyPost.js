@@ -10,11 +10,12 @@ import GatheringPlace from '../../components/accompany/GatheringPlace';
 import Conditions from '../../components/accompany/Conditions';
 import Categories from '../../components/accompany/Categories';
 import WriteComment from '../../components/accompany/WriteComment';
-import ApplicationButton from '../../components/accompany/ApplicationButton';
-import AccompanyCloseButton from '../../components/accompany/AccompanyCloseButton';
+// import ApplicationButton from '../../components/accompany/ApplicationButton';
+// import AccompanyCloseButton from '../../components/accompany/AccompanyCloseButton';
 import AlarmPopup from '../../components/accompany/AlarmPopup';
 import MemberPopup from '../../components/accompany/MemberPopup';
 import EventHeader from '../../components/accompany/EventHeader';
+import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton';
 
 // 분리된 API 함수 임포트
 import {
@@ -80,27 +81,45 @@ export default function AccompanyPost() {
 
     // API에서 동행 상세 정보 가져오기 (리팩토링 적용)
     const fetchAccompanyDetail = async (id) => {
-        try {
-            setLoading(true);
-            setError(null);
-            const transformedData = await fetchAccompanyDetailApi(id, currentUserId);
-            setPostData(transformedData);
-            setIsHost(transformedData.createdBy === currentUserId);
-            setApplied(transformedData.applymember.includes(currentUserId));
-            setClosed(transformedData.isClosed);
-            // 초기 상태 설정
-            setIsLiked(transformedData.isLiked);
-            setLikeCount(transformedData.likes);
-            console.log('✅ fetchAccompanyDetail: 초기 좋아요 상태:', transformedData.isLiked);
-            console.log('✅ fetchAccompanyDetail: 초기 좋아요 수:', transformedData.likes);
-        } catch (err) {
-            console.error('❌ 데이터 로드 오류:', err);
-            setError(err.message || '데이터를 불러오지 못했습니다.');
-            Alert.alert('오류', '동행 정보를 불러오지 못했습니다.');
-        } finally {
-            setLoading(false);
-        }
+    try {
+        setLoading(true);
+        setError(null);
+        const transformedData = await fetchAccompanyDetailApi(id, currentUserId);
+        setPostData(transformedData);
+        setIsHost(transformedData.createdBy === currentUserId);
+        
+        // ✅ 사용자 신청 상태 올바르게 설정
+        const getUserApplicationStatus = (data) => {
+            if (data.userApplicationStatus) {
+                return ['PENDING', 'ACCEPTED'].includes(data.userApplicationStatus);
+            }
+            return data.applymember?.includes(currentUserId) || false;
+        };
+        
+        setApplied(getUserApplicationStatus(transformedData));
+        
+        // ✅ 동행 상태 설정 (COMPLETED 또는 CLOSED이면 마감)
+        setClosed(['COMPLETED', 'CLOSED'].includes(transformedData.status));
+
+        setIsLiked(transformedData.isLiked);
+        setLikeCount(transformedData.likes);
+        
+        console.log('✅ fetchAccompanyDetail 상태 확인:', {
+            status: transformedData.status,
+            userApplicationStatus: transformedData.userApplicationStatus,
+            applied: getUserApplicationStatus(transformedData),
+            closed: ['COMPLETED', 'CLOSED'].includes(transformedData.status)
+        });
+        
+    } catch (err) {
+        console.error('❌ 데이터 로드 오류:', err);
+        setError(err.message || '데이터를 불러오지 못했습니다.');
+        Alert.alert('오류', '동행 정보를 불러오지 못했습니다.');
+    } finally {
+        setLoading(false);
+    }
     };
+
 
     // 댓글 불러오기 함수 (리팩토링 적용)
     const fetchComments = async (accompanyId) => {
@@ -352,7 +371,7 @@ export default function AccompanyPost() {
                         {error || '동행 정보를 불러올 수 없습니다.'}
                     </Text>
                     <TouchableOpacity
-                        style={{ backgroundColor: '#007AFF', padding: 12, borderRadius: 8 }}
+                        style={{ backgroundColor: '#cfd2d5ff', padding: 12, borderRadius: 8 }}
                         onPress={() => router.back()}
                     >
                         <Text style={{ color: 'white', fontSize: 16 }}>돌아가기</Text>
@@ -512,30 +531,16 @@ export default function AccompanyPost() {
                 {/* 하단 버튼을 절대 위치로 고정 */}
                 {postData && (
                     <View style={styles.bottomButtonContainer}>
-                        {isHost ? (
-                            <AccompanyCloseButton
-                                title={closed ? "모집이 마감된 동행입니다." : "모집 마감"}
-                                onPress={handleClosedPress}
-                                likes={likeCount} 
-                                isLiked={isLiked} 
-                                onLikeToggle={handleLikeToggle}
-                                isClosed={closed}
-                                postId={postId}
-                                currentUserId={currentUserId}
-                            />
-                        ) : (
-                            <ApplicationButton
-                                title={applied ? "동행 취소" : "동행 신청"}
-                                onPress={handleApplicationPress}
-                                likes={likeCount}
-                                isLiked={isLiked}
-                                postId={postId}
-                                currentUserId={currentUserId}
-                                closed={closed}
-                                onLikeToggle={handleLikeToggle}
-                                applied={applied}
-                            />
-                        )}
+                        <AccompanyBottomButton
+                            isHost={isHost}
+                            accompanyStatus={postData.status}
+                            userApplicationStatus={postData.userApplicationStatus}
+                            onPress={isHost ? handleClosedPress : handleApplicationPress}
+                            likes={likeCount}
+                            isLiked={isLiked}
+                            onLikeToggle={handleLikeToggle}
+                            applied={applied}
+                        />
                     </View>
                 )}
 
