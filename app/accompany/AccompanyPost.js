@@ -10,8 +10,6 @@ import GatheringPlace from '../../components/accompany/GatheringPlace';
 import Conditions from '../../components/accompany/Conditions';
 import Categories from '../../components/accompany/Categories';
 import WriteComment from '../../components/accompany/WriteComment';
-// import ApplicationButton from '../../components/accompany/ApplicationButton';
-// import AccompanyCloseButton from '../../components/accompany/AccompanyCloseButton';
 import AlarmPopup from '../../components/accompany/AlarmPopup';
 import MemberPopup from '../../components/accompany/MemberPopup';
 import EventHeader from '../../components/accompany/EventHeader';
@@ -20,6 +18,7 @@ import AccompanyBottomButton from '../../components/accompany/AccompanyBottomBut
 // 분리된 API 함수 임포트
 import {
     fetchAccompanyDetailApi,
+    transformAccompanyDetail,
     fetchCommentsApi,
     saveCommentApi,
     toggleLikeApi,
@@ -46,13 +45,18 @@ export default function AccompanyPost() {
     const [closed, setClosed] = useState(false);
     const [showMemberPopupGuest, setShowMemberPopupGuest] = useState(false);
     const [showMemberPopupHost, setShowMemberPopupHost] = useState(false);
-    const [applied, setApplied] = useState(false);
+    // const [applied, setApplied] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const scrollViewRef = useRef(null);
 
     // 댓글 상태 관리 (답글 포함)
     const [comments, setComments] = useState([]);
     const [replyingTo, setReplyingTo] = useState(null);
+
+    // userApplicationStatus로 신청 여부 계산하는 헬퍼 함수
+    const isUserApplied = (status) => {
+        return status && ['PENDING', 'ACCEPTED'].includes(status);
+    };
 
     // 게시물 삭제 API 호출 함수 (추후 구현)
     const handleDeletePost = () => {
@@ -79,38 +83,54 @@ export default function AccompanyPost() {
         );
     };
 
-    // API에서 동행 상세 정보 가져오기 (리팩토링 적용)
+    // 백엔드 데이터 구조를 프론트에서 사용할 수 있도록 변환
+const transformAccompanyDetail = (backendData) => {
+    return {
+        ...backendData,
+        userApplicationStatus: backendData.userApplicationStatus || null,
+    };
+};
+
+    // 동행 상세 정보를 가져오는 함수
     const fetchAccompanyDetail = async (id) => {
     try {
         setLoading(true);
         setError(null);
-        const transformedData = await fetchAccompanyDetailApi(id, currentUserId);
+        
+        const backendData = await fetchAccompanyDetailApi(id, currentUserId);
+        const transformedData = transformAccompanyDetail(backendData);
+
+        console.log('🔍 백엔드 원본 데이터:', {
+            id: backendData.id,
+            userApplicationStatus: backendData.userApplicationStatus,
+            member: backendData.member,
+            applyMember: backendData.applyMember,
+            userId: backendData.userId,
+            currentUserId: currentUserId
+        });
+
+        console.log('🔍 변환된 데이터:', {
+            userApplicationStatus: transformedData.userApplicationStatus,
+            member: transformedData.member,
+            applymember: transformedData.applymember,
+            createdBy: transformedData.createdBy
+        });
+
         setPostData(transformedData);
         setIsHost(transformedData.createdBy === currentUserId);
-        
-        // ✅ 사용자 신청 상태 올바르게 설정
-        const getUserApplicationStatus = (data) => {
-            if (data.userApplicationStatus) {
-                return ['PENDING', 'ACCEPTED'].includes(data.userApplicationStatus);
-            }
-            return data.applymember?.includes(currentUserId) || false;
-        };
-        
-        setApplied(getUserApplicationStatus(transformedData));
-        
-        // ✅ 동행 상태 설정 (COMPLETED 또는 CLOSED이면 마감)
-        setClosed(['COMPLETED', 'CLOSED'].includes(transformedData.status));
 
-        setIsLiked(transformedData.isLiked);
-        setLikeCount(transformedData.likes);
-        
-        console.log('✅ fetchAccompanyDetail 상태 확인:', {
+        console.log('✅ 최종 상태 체크:', {
             status: transformedData.status,
             userApplicationStatus: transformedData.userApplicationStatus,
-            applied: getUserApplicationStatus(transformedData),
-            closed: ['COMPLETED', 'CLOSED'].includes(transformedData.status)
+            isApplied: isUserApplied(transformedData.userApplicationStatus),
+            closed: ['COMPLETED', 'CLOSED'].includes(transformedData.status),
+            isHost: transformedData.createdBy === currentUserId
         });
-        
+
+        setClosed(['COMPLETED', 'CLOSED'].includes(transformedData.status));
+        setIsLiked(transformedData.isLiked);
+        setLikeCount(transformedData.likes);
+
     } catch (err) {
         console.error('❌ 데이터 로드 오류:', err);
         setError(err.message || '데이터를 불러오지 못했습니다.');
@@ -119,7 +139,6 @@ export default function AccompanyPost() {
         setLoading(false);
     }
     };
-
 
     // 댓글 불러오기 함수 (리팩토링 적용)
     const fetchComments = async (accompanyId) => {
@@ -229,23 +248,51 @@ export default function AccompanyPost() {
         }
     };
 
-    // 동행 신청/취소 API 호출 함수 (리팩토링 적용)
-    const handleApplicationPress = async () => {
-        // API 호출 전, UI 상태를 먼저 업데이트하여 즉각적인 피드백 제공
-        const previousAppliedState = applied; // 이전 상태 저장
-        setApplied(!applied);
-        
-        try {
-            await toggleApplicationApi(postId, currentUserId, previousAppliedState);
-            setShowAlarmPopup(true);
-        } catch (error) {
-            console.error(`❌ 동행 ${previousAppliedState ? '취소' : '신청'} 오류:`, error);
-            Alert.alert('오류', error.message);
-            // 오류 발생 시, 상태를 원래대로 롤백
-            setApplied(previousAppliedState);
-        }
-    };
+    // 동행 신청/취소 함수
+    // AccompanyPost.jsx - 수정된 handleApplicationPress
 
+const handleApplicationPress = async () => {
+    const currentStatus = postData?.userApplicationStatus;
+    const isCurrentlyApplied = isUserApplied(currentStatus);
+    
+    console.log('🔄 신청/취소 시작:', {
+        currentStatus,
+        isCurrentlyApplied,
+        postId,
+        userId: currentUserId
+    });
+    
+    // 낙관적 업데이트
+    const newStatus = isCurrentlyApplied ? null : 'PENDING';
+    setPostData(prev => ({
+        ...prev,
+        userApplicationStatus: newStatus
+    }));
+    
+    try {
+        // 🔥 currentStatus 대신 isCurrentlyApplied 전달
+        const result = await toggleApplicationApi(postId, currentUserId, currentStatus);
+        console.log('✅ API 호출 성공:', result);
+        
+        // 🔥 API 결과의 newStatus를 사용해서 최종 상태 업데이트
+        setPostData(prev => ({
+            ...prev,
+            userApplicationStatus: result.newStatus
+        }));
+        
+        setShowAlarmPopup(true);
+        
+    } catch (error) {
+        console.error(`❌ 동행 ${isCurrentlyApplied ? '취소' : '신청'} 오류:`, error);
+        Alert.alert('오류', error.message);
+        
+        // 🔥 오류 발생 시 원래 상태로 롤백
+        setPostData(prev => ({
+            ...prev,
+            userApplicationStatus: currentStatus
+        }));
+    }
+};
     // 동행 모집 마감 API 호출 함수 (리팩토링 적용)
     const closeAccompanyPost = async () => {
         try {
@@ -327,9 +374,32 @@ export default function AccompanyPost() {
         setShowAlarmPopupHost(false);
     };
 
-    const handleConfirmClose = () => {
-        closeAccompanyPost();
-    };
+    const handleConfirmClose = async () => {
+    // 1. 즉시 UI 업데이트 (낙관적 업데이트)
+    setPostData(prev => ({
+        ...prev,
+        status: 'COMPLETED'  // 동행 상태를 COMPLETED로 변경
+    }));
+    setClosed(true);  // closed 상태도 즉시 변경
+    setShowAlarmPopupHost(false);  // 팝업 닫기
+    
+    // 2. 백엔드 API 호출
+    try {
+        await closeAccompanyPostApi(postId);
+        Alert.alert("성공", "동행 모집이 마감되었습니다.");
+    } catch (error) {
+        console.error('❌ 동행 모집 마감 오류:', error);
+        
+        // 3. API 실패 시 UI 롤백
+        setPostData(prev => ({
+            ...prev,
+            status: 'RECRUITING'  // 원래 상태로 되돌리기
+        }));
+        setClosed(false);
+        
+        Alert.alert('오류', error.message || '동행 마감 처리 중 오류가 발생했습니다.');
+    }
+};
 
     const members = postData ? [
         {
@@ -530,18 +600,17 @@ export default function AccompanyPost() {
 
                 {/* 하단 버튼을 절대 위치로 고정 */}
                 {postData && (
-                    <View style={styles.bottomButtonContainer}>
-                        <AccompanyBottomButton
-                            isHost={isHost}
-                            accompanyStatus={postData.status}
-                            userApplicationStatus={postData.userApplicationStatus}
-                            onPress={isHost ? handleClosedPress : handleApplicationPress}
-                            likes={likeCount}
-                            isLiked={isLiked}
-                            onLikeToggle={handleLikeToggle}
-                            applied={applied}
-                        />
-                    </View>
+                <View style={styles.bottomButtonContainer}>
+                    <AccompanyBottomButton
+                        isHost={isHost}
+                        accompanyStatus={postData.status}
+                        userApplicationStatus={postData.userApplicationStatus}
+                        onPress={isHost ? handleClosedPress : handleApplicationPress}
+                        likes={likeCount}
+                        isLiked={isLiked}
+                        onLikeToggle={handleLikeToggle}
+                    />
+                </View>
                 )}
 
                 {/* Popups */}
@@ -564,7 +633,7 @@ export default function AccompanyPost() {
                     <AlarmPopup
                         alarmText={
                             <Text style={styles.alarmPopupText}>
-                                {applied
+                                {isUserApplied(postData?.userApplicationStatus)
                                     ? `동행 신청이 완료되었습니다.${'\n'}호스트가 수락하거나 거절하면 알림이 발송됩니다.${'\n'}수락되기 전까지 신청을 취소할 수 있습니다.`
                                     : `동행 신청이 취소되었습니다.${'\n'}다시 신청하시려면 아래 버튼을 눌러주세요.`}
                             </Text>

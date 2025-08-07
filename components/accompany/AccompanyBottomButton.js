@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -6,17 +6,26 @@ const AccompanyBottomButton = ({
     isHost,
     accompanyStatus, // 'RECRUITING', 'COMPLETED', 'CLOSED'
     userApplicationStatus, // 'PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'
-    onPress,
+    onPress, // 이 함수는 API 호출만 담당합니다.
     likes,
     isLiked,
     onLikeToggle,
-    applied // 신청했는지 여부
 }) => {
-    // 버튼 텍스트와 상태를 결정하는 함수
+    const [AccompanyStatus, setAccompanyStatus] = useState(accompanyStatus); 
+    const [UserApplicationStatus, setUserApplicationStatus] = useState(userApplicationStatus); 
+    const [likesCount, setLikesCount] = useState(likes); 
+    const [isLikedState, setIsLikedState] = useState(isLiked); 
+
+    useEffect(() => {
+        setAccompanyStatus(accompanyStatus);
+        setUserApplicationStatus(userApplicationStatus);
+        setLikesCount(likes);
+        setIsLikedState(isLiked);
+    }, [accompanyStatus, userApplicationStatus, likes, isLiked]);
+
     const getButtonConfig = () => {
         if (isHost) {
-            // 호스트인 경우
-            switch (accompanyStatus) {
+            switch (AccompanyStatus) {
                 case 'RECRUITING':
                     return {
                         text: '모집 마감',
@@ -43,50 +52,52 @@ const AccompanyBottomButton = ({
                     };
             }
         } else {
-            // 참가자인 경우
-            switch (accompanyStatus) {
+            switch (AccompanyStatus) {
                 case 'RECRUITING':
-                    // 신청 상태에 따라 다르게 표시
-                    if (userApplicationStatus === 'PENDING') {
-                        return {
-                            text: '동행 취소',
-                            disabled: false, // 취소 가능
-                            backgroundColor: 'black' 
-                        };
-                    } else if (userApplicationStatus === 'ACCEPTED') {
-                        return {
-                            text: '참여 중인 동행입니다',
-                            disabled: false, // 취소 가능
-                            backgroundColor: '#CCCCCC' 
-                        };
-                    } else if (userApplicationStatus === 'REJECTED') {
-                        return {
-                            text: '거절된 동행입니다',
-                            disabled: false, // 다시 신청 가능
-                            backgroundColor: '#CCCCCC' 
-                        };
-                    } else {
-                        return {
-                            text: '동행 신청',
-                            disabled: false,
-                            backgroundColor: 'black'
-                        };
+                    switch (UserApplicationStatus) {
+                        case 'PENDING':
+                            return {
+                                text: '동행 취소',
+                                disabled: false,
+                                backgroundColor: 'black'
+                            };
+                        case 'ACCEPTED':
+                            return {
+                                text: '참여 중인 동행입니다',
+                                disabled: true,
+                                backgroundColor: '#CCCCCC'
+                            };
+                        case 'REJECTED':
+                            return {
+                                text: '거절된 동행입니다',
+                                disabled: true,
+                                backgroundColor: '#CCCCCC'
+                            };
+                        case 'CANCELLED':
+                            return {
+                                text: '동행 신청',
+                                disabled: false,
+                                backgroundColor: 'black'
+                            };
+                        case null:
+                        case undefined:
+                        default:
+                            return {
+                                text: '동행 신청',
+                                disabled: false,
+                                backgroundColor: 'black'
+                            };
                     }
                 case 'COMPLETED':
+                case 'CLOSED':
                     return {
                         text: '마감된 동행입니다',
                         disabled: true,
                         backgroundColor: '#CCCCCC'
                     };
-                case 'CLOSED':
-                    return {
-                        text: '종료된 동행입니다',
-                        disabled: true,
-                        backgroundColor: '#CCCCCC'
-                    };
                 default:
                     return {
-                        text: applied ? '동행 취소' : '동행 신청',
+                        text: '동행 신청',
                         disabled: false,
                         backgroundColor: 'black'
                     };
@@ -96,31 +107,64 @@ const AccompanyBottomButton = ({
 
     const buttonConfig = getButtonConfig();
 
+    const handleMainButtonPress = async () => {
+
+        const previousUserApplicationStatus = UserApplicationStatus;
+
+        try {
+            // 낙관적 업데이트: UI를 먼저 업데이트합니다.
+            if (isHost && AccompanyStatus === 'RECRUITING') {
+                setAccompanyStatus('RECRUITING');
+            } else if (!isHost && AccompanyStatus === 'RECRUITING') {
+                if (UserApplicationStatus === 'PENDING') {
+                    setUserApplicationStatus('CANCELLED');
+                } else if (UserApplicationStatus === null || UserApplicationStatus === undefined || UserApplicationStatus === 'REJECTED' || UserApplicationStatus === 'CANCELLED') {
+                    setUserApplicationStatus('PENDING');
+                }
+            }
+            
+            await onPress(); // 부모 컴포넌트의 API 호출 함수 실행
+            // API 호출 성공 시 상태가 유지됩니다.
+
+        } catch (error) {
+            console.error('API 호출 중 에러 발생:', error);
+            // 에러 발생 시 상태를 이전 상태로 되돌립니다.
+            setAccompanyStatus(previousAccompanyStatus);
+            setUserApplicationStatus(previousUserApplicationStatus);
+            // 필요하다면 사용자에게 오류 메시지를 표시할 수 있습니다.
+        }
+    };
+
+    const handleLikePress = () => {
+        const newLikedState = !isLikedState;
+        setIsLikedState(newLikedState);
+        setLikesCount(prev => newLikedState ? prev + 1 : prev - 1);
+        onLikeToggle();
+    };
+
     return (
         <View style={styles.container}>
-            {/* 메인 버튼 */}
             <TouchableOpacity 
                 style={[
                     styles.button, 
                     { backgroundColor: buttonConfig.backgroundColor }
                 ]} 
-                onPress={onPress}
+                onPress={handleMainButtonPress}
                 disabled={buttonConfig.disabled}
             >
                 <Text style={styles.buttonText}>{buttonConfig.text}</Text>
             </TouchableOpacity>
             
-            {/* 좋아요 버튼 */}
             <TouchableOpacity 
                 style={styles.likesContainer} 
-                onPress={onLikeToggle}
+                onPress={handleLikePress}
             >
                 <View style={styles.iconWrapper}>
-                    <Text style={styles.likeText}>{likes}</Text>
+                    <Text style={styles.likeText}>{likesCount}</Text>
                     <Ionicons 
-                        name={isLiked ? "heart" : "heart-outline"} 
+                        name={isLikedState ? "heart" : "heart-outline"} 
                         size={30} 
-                        color={isLiked ? "#FF6B6B" : "black"} 
+                        color={isLikedState ? "#FF6B6B" : "black"} 
                     />
                 </View>
             </TouchableOpacity>

@@ -66,6 +66,11 @@ const transformAccompanyDetail = (backendData) => {
     };
 };
 
+    // userApplicationStatus 기반으로 신청 여부 판단
+    const isUserApplied = (userApplicationStatus) => {
+        return userApplicationStatus && ['PENDING', 'ACCEPTED'].includes(userApplicationStatus);
+    };
+
 const formatTimeAgo = (dateString) => {
     const now = dayjs();
     const commentTime = dayjs(dateString);
@@ -81,7 +86,7 @@ const formatTimeAgo = (dateString) => {
     return commentTime.format('M월 D일');
 };
 
-// 동행 상세 정보를 가져오는 API 함수
+// 동행 상세 정보를 가져오는 API 함수 - 개선된 버전
 export const fetchAccompanyDetailApi = async (postId, userId) => {
     const url = `${API_URL}/api/accompany/AccompanyPost?postId=${postId}&userId=${userId}`;
     console.log('🌐 동행 상세 조회 API 호출:', url);
@@ -92,7 +97,9 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
     }
 
     const backendData = await response.json();
+    console.log('📋 백엔드 원본 데이터:', backendData);
 
+    // 좋아요 상태 조회
     const likeStatusResponse = await fetch(`${API_URL}/api/accompany/${postId}/like/status?id=${userId}`);
     if (likeStatusResponse.ok) {
         const likeData = await likeStatusResponse.json();
@@ -100,14 +107,38 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
         backendData.likedByCurrentUser = likeData.isLiked;
     }
 
-    const myApplicationsResponse = await fetch(`${API_URL}/api/accompany/my-applications?id=${userId}`);
-    if (myApplicationsResponse.ok) {
-        const myApplications = await myApplicationsResponse.json();
-        const isApplied = myApplications.some(app => app.id?.toString() === postId);
-        backendData.appliedByCurrentUser = isApplied;
+    // 사용자 신청 상태 조회 - 더 정확한 방법
+    try {
+        const applicationStatusResponse = await fetch(`${API_URL}/api/accompany/${postId}/application-status?userId=${userId}`);
+        if (applicationStatusResponse.ok) {
+            const applicationData = await applicationStatusResponse.json();
+            backendData.userApplicationStatus = applicationData.status;
+            console.log('📝 사용자 신청 상태:', applicationData);
+        } else {
+            // 대안: my-applications 엔드포인트 사용
+            const myApplicationsResponse = await fetch(`${API_URL}/api/accompany/my-applications?id=${userId}`);
+            if (myApplicationsResponse.ok) {
+                const myApplications = await myApplicationsResponse.json();
+                const currentApplication = myApplications.find(app => app.id?.toString() === postId);
+                
+                if (currentApplication) {
+                    backendData.userApplicationStatus = currentApplication.status || 'PENDING';
+                    console.log('📝 사용자 신청 상태 (대안 방법):', currentApplication);
+                } else {
+                    backendData.userApplicationStatus = null;
+                    console.log('📝 신청 내역 없음');
+                }
+            }
+        }
+    } catch (error) {
+        console.warn('⚠️ 사용자 신청 상태 조회 실패:', error);
+        backendData.userApplicationStatus = null;
     }
 
-    return transformAccompanyDetail(backendData);
+    const transformedData = transformAccompanyDetail(backendData);
+    console.log('✅ 변환된 최종 데이터:', transformedData);
+    
+    return transformedData;
 };
 
 // 댓글 목록을 가져오는 API 함수
@@ -191,24 +222,65 @@ export const toggleLikeApi = async (postId, userId) => {
 };
 
 // 동행 신청/취소 API 함수
-export const toggleApplicationApi = async (postId, userId, isApplied) => {
-    let url, method;
-    if (isApplied) {
-        url = `${API_URL}/api/accompany/${postId}/apply/cancel?id=${userId}`;
-        method = 'DELETE';
-    } else {
-        url = `${API_URL}/api/accompany/${postId}/apply?id=${userId}`;
-        method = 'POST';
-    }
-    console.log(`🌐 동행 ${isApplied ? '취소' : '신청'} API 호출:`, url);
+// 동행 신청/취소 API 함수 - 수정된 버전
+export const toggleApplicationApi = async (postId, userId, currentUserApplicationStatus) => {
+    try {
+        const isCurrentlyApplied = isUserApplied(currentUserApplicationStatus);
+        
+        // 올바른 URL과 메서드 설정
+        let url, method;
+        
+        if (isCurrentlyApplied) {
+            // 취소: DELETE /api/accompany/{accompanyId}/apply/cancel
+            url = `${API_URL}/api/accompany/${postId}/apply/cancel?id=${userId}`;
+            method = 'DELETE';
+        } else {
+            // 신청: POST /api/accompany/{accompanyId}/apply
+            url = `${API_URL}/api/accompany/${postId}/apply?id=${userId}`;
+            method = 'POST';
+        }
+        
+        console.log(`🌐 동행 ${isCurrentlyApplied ? '취소' : '신청'} API 호출:`, url);
+        console.log(`📝 HTTP Method: ${method}`);
+        console.log(`📝 Current Status: ${currentUserApplicationStatus}`);
 
-    const response = await fetch(url, { method });
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Failed to toggle application status');
+        const response = await fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ API 응답 오류 (${response.status}):`, errorText);
+            
+            if (errorText.includes('already applied')) {
+                throw new Error('이미 신청한 동행입니다.');
+            } else if (errorText.includes('not found')) {
+                throw new Error('동행을 찾을 수 없습니다.');
+            } else if (errorText.includes('not applied')) {
+                throw new Error('신청하지 않은 동행입니다.');
+            }
+            
+            throw new Error(`${isCurrentlyApplied ? '동행 취소' : '동행 신청'}에 실패했습니다. (${response.status})`);
+        }
+
+        // 🔥 중요: 백엔드가 문자열을 반환하므로 text()로 받기
+        const result = await response.text();
+        console.log(`✅ 동행 ${isCurrentlyApplied ? '취소' : '신청'} 성공:`, result);
+        
+        // 🔥 성공했으므로 새로운 상태 반환
+        return {
+            success: true,
+            newStatus: isCurrentlyApplied ? null : 'PENDING',
+            message: isCurrentlyApplied ? '동행 신청이 취소되었습니다.' : '동행 신청이 완료되었습니다.'
+        };
+
+    } catch (error) {
+        console.error(`❌ 동행 ${isUserApplied(currentUserApplicationStatus) ? '취소' : '신청'} 오류:`, error);
+        throw error;
     }
-    
-    return await response.text();
 };
 
 // 동행 모집 마감 API 함수
