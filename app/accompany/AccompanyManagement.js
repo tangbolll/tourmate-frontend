@@ -11,7 +11,7 @@ import {
     Modal
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton'; // ✅ 통합 버튼으로 변경
+import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton'; 
 import CloseAlarmPopup from '../../components/accompany/CloseAlarmPopup';
 
 const AccompanyManagement = ({ navigation }) => {
@@ -37,7 +37,7 @@ const AccompanyManagement = ({ navigation }) => {
         }
     };
 
-    // ✅ 마감 확인 처리
+    // 마감 확인 처리
     const handleConfirmClose = () => {
         console.log("동행 마감 확인");
         setAccompanyStatus('COMPLETED'); // 상태를 COMPLETED로 변경
@@ -49,7 +49,7 @@ const AccompanyManagement = ({ navigation }) => {
         setPopupVisible(false);
     };
 
-    // ✅ 좋아요 토글 함수
+    // 좋아요 토글 함수
     const handleLikeToggle = () => {
         if (isLiked) {
             setLikeCount(likeCount - 1);
