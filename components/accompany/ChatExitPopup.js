@@ -1,7 +1,67 @@
 import React from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, Image } from 'react-native';
 
-const ChatExitPopup = ({ isVisible, onClose, onConfirm, chatTitle }) => {
+// 기본 프로필 이미지들
+const defaultProfiles = [
+  require('../../assets/defaultProfile.png'),
+  require('../../assets/defaultProfile1.png'),
+  require('../../assets/defaultProfile2.png'),
+];
+
+const ChatExitPopup = ({ isVisible, onClose, onConfirm, chatTitle, participants }) => {
+  // 겹쳐진 프로필 렌더링 함수
+  const renderProfileImages = () => {
+    // 참가자가 1명일 때
+    if (participants === 1) {
+      return (
+        <View style={styles.profileImageContainer}>
+          <Image 
+            source={defaultProfiles[0]} 
+            style={styles.singleProfileImage}
+          />
+        </View>
+      );
+    }
+    
+    // 2명일 때
+    if (participants === 2) {
+      return (
+        <View style={styles.profileImageContainer}>
+          <View style={styles.multipleProfilesContainer}>
+            <Image 
+              source={defaultProfiles[1]} 
+              style={[styles.profileImage, styles.backProfileImage]}
+            />
+            <Image 
+              source={defaultProfiles[0]} 
+              style={[styles.profileImage, styles.frontProfileImage]}
+            />
+          </View>
+        </View>
+      );
+    }
+    
+    // 3명 이상일 때 3개 프로필 모두 표시
+    return (
+      <View style={styles.profileImageContainer}>
+        <View style={styles.multipleProfilesContainer}>
+          <Image 
+            source={defaultProfiles[2]} 
+            style={[styles.profileImage, styles.thirdProfileImage]}
+          />
+          <Image 
+            source={defaultProfiles[1]} 
+            style={[styles.profileImage, styles.backProfileImage]}
+          />
+          <Image 
+            source={defaultProfiles[0]} 
+            style={[styles.profileImage, styles.frontProfileImage]}
+          />
+        </View>
+      </View>
+    );
+  };
+
   return (
     <Modal
       animationType="fade"
@@ -12,11 +72,8 @@ const ChatExitPopup = ({ isVisible, onClose, onConfirm, chatTitle }) => {
       <View style={styles.centeredView}>
         <View style={styles.modalView}>
           
-          {/* 프로필 이미지 (임시) */}
-          {/* 실제 이미지 URL prop을 받아서 사용하도록 수정할 수 있습니다. */}
-          <View style={styles.profileImagePlaceholder}>
-            {/* <Image source={{ uri: photoUrl }} style={styles.profileImage} /> */}
-          </View>
+          {/* 프로필 이미지 */}
+          {renderProfileImages()}
           
           <Text style={styles.modalTitle}>{chatTitle}</Text>
           <Text style={styles.modalText}>해당 채팅방에서 나가시겠습니까?</Text>
@@ -60,17 +117,36 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 5,
   },
-  profileImagePlaceholder: {
+  profileImageContainer: {
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  singleProfileImage: {
     width: 100,
     height: 100,
-    borderRadius: 10,
-    backgroundColor: '#E0E0E0',
-    marginBottom: 20,
-    overflow: 'hidden', // 이미지가 둥근 테두리 밖으로 나가지 않도록
+    borderRadius: 100,
+  },
+  multipleProfilesContainer: {
+    width: 140,
+    height: 100,
+    position: 'relative',
   },
   profileImage: {
-    width: '100%',
-    height: '100%',
+    width: 100,
+    height: 100,
+    borderRadius: 100,
+    position: 'absolute',
+    borderWidth: 3,
+    borderColor: '#fff',
+  },
+  thirdProfileImage: {
+    left: 40,
+  },
+  backProfileImage: {
+    left: 20,
+  },
+  frontProfileImage: {
+    left: 0,
   },
   modalTitle: {
     fontSize: 16,
