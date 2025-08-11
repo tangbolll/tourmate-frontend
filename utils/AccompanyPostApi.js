@@ -122,7 +122,7 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
                 const currentApplication = myApplications.find(app => app.id?.toString() === postId);
                 
                 if (currentApplication) {
-                    backendData.userApplicationStatus = currentApplication.status || 'PENDING';
+                    backendData.userApplicationStatus = currentApplication.status || 'CANCELLED';
                     console.log('📝 사용자 신청 상태 (대안 방법):', currentApplication);
                 } else {
                     backendData.userApplicationStatus = null;
@@ -231,9 +231,9 @@ export const toggleApplicationApi = async (postId, userId, currentUserApplicatio
         let url, method;
         
         if (isCurrentlyApplied) {
-            // 취소: DELETE /api/accompany/{accompanyId}/apply/cancel
+            // 취소: PATCH /api/accompany/{accompanyId}/apply/cancel
             url = `${API_URL}/api/accompany/${postId}/apply/cancel?id=${userId}`;
-            method = 'DELETE';
+            method = 'PATCH';
         } else {
             // 신청: POST /api/accompany/{accompanyId}/apply
             url = `${API_URL}/api/accompany/${postId}/apply?id=${userId}`;
