@@ -50,7 +50,7 @@ const AccompanyList = () => {
     });
 
     const router = useRouter();
-    const currentUserId = 1;
+    const currentUserId = 3;
 
     // 로딩 상태 업데이트 헬퍼 함수
     const updateLoadingState = (tab, isLoading) => {
