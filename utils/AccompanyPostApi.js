@@ -221,8 +221,8 @@ export const toggleLikeApi = async (postId, userId) => {
     return await response.json();
 };
 
+
 // 동행 신청/취소 API 함수
-// 동행 신청/취소 API 함수 - 수정된 버전
 export const toggleApplicationApi = async (postId, userId, currentUserApplicationStatus) => {
     try {
         const isCurrentlyApplied = isUserApplied(currentUserApplicationStatus);
@@ -296,3 +296,28 @@ export const closeAccompanyPostApi = async (postId) => {
     
     return await response.text();
 };
+
+// 동행 삭제 코드
+export const deleteAccompanyPostApi = async (postId) => {
+    try {
+        const response = await fetch(`${API_URL}/api/accompany/${postId}`, {
+            method: 'DELETE',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json();
+            throw new Error(errorData.message || '삭제에 실패했습니다.');
+        }
+
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Delete API Error:', error);
+        throw error;
+    }
+};
+
+           

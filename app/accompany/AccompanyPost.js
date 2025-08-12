@@ -18,12 +18,13 @@ import AccompanyBottomButton from '../../components/accompany/AccompanyBottomBut
 // 분리된 API 함수 임포트
 import {
     fetchAccompanyDetailApi,
-    transformAccompanyDetail,
+    // transformAccompanyDetail,
     fetchCommentsApi,
     saveCommentApi,
     toggleLikeApi,
     toggleApplicationApi,
-    closeAccompanyPostApi
+    closeAccompanyPostApi,
+    deleteAccompanyPostApi
 } from '../../utils/AccompanyPostApi'; // 경로는 프로젝트 구조에 맞게 조정
 
 export default function AccompanyPost() {
@@ -37,8 +38,9 @@ export default function AccompanyPost() {
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
     const [showMoreMenu, setShowMoreMenu] = useState(false);
+    const [showDeletePopup, setShowDeletePopup] = useState(false);
 
-    const currentUserId = "3";
+    const currentUserId = "2";
     const [isHost, setIsHost] = useState(false);
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
@@ -58,30 +60,25 @@ export default function AccompanyPost() {
         return status && ['PENDING', 'ACCEPTED'].includes(status);
     };
 
-    // 게시물 삭제 API 호출 함수 (추후 구현)
+    // 게시물 삭제 API 호출 함수 
     const handleDeletePost = () => {
-        Alert.alert(
-            "게시물 삭제",
-            "정말 이 동행 게시물을 삭제하시겠습니까? 삭제된 게시물은 복구할 수 없습니다.",
-            [
-                {
-                    text: "취소",
-                    style: "cancel"
-                },
-                {
-                    text: "삭제",
-                    style: "destructive",
-                    onPress: async () => {
-                        // 여기에 삭제 API를 호출하는 로직을 추가합니다.
-                        // 예: await deletePostApi(postId);
-                        // 삭제 성공 시
-                        Alert.alert("삭제 완료", "게시물이 성공적으로 삭제되었습니다.");
-                        router.back(); // 이전 화면으로 돌아가기
-                    }
-                }
-            ]
-        );
+        console.log("🔥 handleDeletePost 함수 시작됨!");
+        setShowDeletePopup(true);
     };
+
+    const handleConfirmDelete = async () => {
+        try {
+            await deleteAccompanyPostApi(postId);
+            setShowDeletePopup(false);
+            // 성공 처리
+            router.back();
+        } catch (error) {
+            console.error('게시물 삭제 오류:', error);
+            setShowDeletePopup(false);
+            // 에러 처리
+        }
+    };
+
 
     // 백엔드 데이터 구조를 프론트에서 사용할 수 있도록 변환
 const transformAccompanyDetail = (backendData) => {
@@ -489,7 +486,7 @@ const handleApplicationPress = async () => {
                             status={postData.status}
                         />
 
-                        {/* More button outside header */}
+                        {/* 더보기 버튼 */}
                         <TouchableOpacity
                             style={styles.moreButton}
                             onPress={() => setShowMoreMenu(prev => !prev)}
@@ -503,6 +500,7 @@ const handleApplicationPress = async () => {
                                 <TouchableOpacity
                                     style={styles.menuItem}
                                     onPress={() => {
+                                        console.log("삭제 버튼 클릭됨!");
                                         setShowMoreMenu(false); // 메뉴 닫기
                                         handleDeletePost(); // 삭제 함수 호출
                                     }}
@@ -511,6 +509,8 @@ const handleApplicationPress = async () => {
                                 </TouchableOpacity>
                             </View>
                         )}
+
+                
 
                         {/* Host info outside header */}
                         <View style={styles.hostInfoContainer}>
@@ -639,6 +639,21 @@ const handleApplicationPress = async () => {
                             </Text>
                         }
                         onClose={handleCloseAlarmPopup}
+                    />
+                )}
+
+                {showDeletePopup && (
+                    <AlarmPopup
+                        alarmText={
+                            <Text style={styles.alarmPopupText}>
+                                정말 이 동행을 삭제하시겠습니까?{'\n'}삭제된 게시물은 복구할 수 없습니다.
+                            </Text>
+                        }
+                        onClose={() => setShowDeletePopup(false)}
+                        onConfirm={handleConfirmDelete}
+                        confirmText="삭제"
+                        cancelText="취소"
+                        showConfirmButton={true}
                     />
                 )}
 
