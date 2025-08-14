@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Platform } from 'react-native';
 
 const AccompanyBottomButton = ({ 
     isHost,
@@ -186,9 +187,11 @@ container: {
     paddingHorizontal: 16,
     paddingTop: 16, 
     paddingBottom: 40, // 하단 패딩 확장
-    minHeight: 100, 
+    minHeight: 80, 
     position: 'absolute',
-    bottom: -50,
+    width: '100%',
+    // bottom: -50,
+    bottom: Platform.OS === 'web' ? -30 : -50,
 },
     button: {
         flex: 1,
