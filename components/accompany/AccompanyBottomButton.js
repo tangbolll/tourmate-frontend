@@ -173,19 +173,23 @@ const AccompanyBottomButton = ({
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: -4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 5,
-        backgroundColor: '#fff',
-        paddingHorizontal: 16,
-        paddingTop: 12,
-    },
+container: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 5,
+    backgroundColor: '#fff',
+    paddingHorizontal: 16,
+    paddingTop: 16, 
+    paddingBottom: 40, // 하단 패딩 확장
+    minHeight: 100, 
+    position: 'absolute',
+    bottom: -50,
+},
     button: {
         flex: 1,
         paddingVertical: 12,
