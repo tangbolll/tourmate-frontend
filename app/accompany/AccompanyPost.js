@@ -60,23 +60,25 @@ export default function AccompanyPost() {
         return status && ['PENDING', 'ACCEPTED'].includes(status);
     };
 
-    // 게시물 삭제 API 호출 함수 
+    // AccompanyPost.jsx에 추가할 누락된 함수
     const handleDeletePost = () => {
         console.log("🔥 handleDeletePost 함수 시작됨!");
         setShowDeletePopup(true);
     };
 
-    const handleConfirmDelete = async () => {
-        try {
-            await deleteAccompanyPostApi(postId);
-            setShowDeletePopup(false);
-            // 성공 처리
-            router.back();
-        } catch (error) {
-            console.error('게시물 삭제 오류:', error);
-            setShowDeletePopup(false);
-            // 에러 처리
-        }
+    // 수정된 handleConfirmDelete (더 안전하게)
+    const handleConfirmDelete = () => {
+        // 즉시 나가기
+        setShowDeletePopup(false);
+        router.replace('/accompany');
+        
+        // 백그라운드에서 삭제 (에러 무시)
+        deleteAccompanyPostApi(postId)
+            .then(() => console.log('✅ 삭제 성공'))
+            .catch(error => {
+                console.error('❌ 삭제 실패:', error);
+                // 사용자는 이미 나갔으므로 에러 알림 없음
+            });
     };
 
 
@@ -439,7 +441,7 @@ const handleApplicationPress = async () => {
                     </Text>
                     <TouchableOpacity
                         style={{ backgroundColor: '#cfd2d5ff', padding: 12, borderRadius: 8 }}
-                        onPress={() => router.back()}
+                        onPress={() => router.push('/accompany')}
                     >
                         <Text style={{ color: 'white', fontSize: 16 }}>돌아가기</Text>
                     </TouchableOpacity>
@@ -502,7 +504,7 @@ const handleApplicationPress = async () => {
                                     onPress={() => {
                                         console.log("삭제 버튼 클릭됨!");
                                         setShowMoreMenu(false); // 메뉴 닫기
-                                        handleDeletePost(); // 삭제 함수 호출
+                                        handleDeletePost(); 
                                     }}
                                 >
                                     <Text style={styles.menuText}>삭제하기</Text>
