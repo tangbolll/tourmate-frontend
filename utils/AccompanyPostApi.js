@@ -66,10 +66,10 @@ const transformAccompanyDetail = (backendData) => {
     };
 };
 
-    // userApplicationStatus 기반으로 신청 여부 판단
-    const isUserApplied = (userApplicationStatus) => {
-        return userApplicationStatus && ['PENDING', 'ACCEPTED'].includes(userApplicationStatus);
-    };
+// userApplicationStatus 기반으로 신청 여부 판단
+const isUserApplied = (userApplicationStatus) => {
+    return userApplicationStatus && ['PENDING', 'ACCEPTED'].includes(userApplicationStatus);
+};
 
 const formatTimeAgo = (dateString) => {
     const now = dayjs();
@@ -122,7 +122,7 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
                 const currentApplication = myApplications.find(app => app.id?.toString() === postId);
                 
                 if (currentApplication) {
-                    backendData.userApplicationStatus = currentApplication.status || 'CANCELLED';
+                    backendData.userApplicationStatus = currentApplication.userApplicationStatus || 'CANCELLED';
                     console.log('📝 사용자 신청 상태 (대안 방법):', currentApplication);
                 } else {
                     backendData.userApplicationStatus = null;
@@ -221,7 +221,6 @@ export const toggleLikeApi = async (postId, userId) => {
     return await response.json();
 };
 
-
 // 동행 신청/취소 API 함수
 export const toggleApplicationApi = async (postId, userId, currentUserApplicationStatus) => {
     try {
@@ -300,6 +299,8 @@ export const closeAccompanyPostApi = async (postId) => {
 // 동행 삭제 코드
 export const deleteAccompanyPostApi = async (postId) => {
     try {
+        console.log('🗑️ DELETE API 호출 시작 - postId:', postId);
+        
         const response = await fetch(`${API_URL}/api/accompany/${postId}`, {
             method: 'DELETE',
             headers: {
@@ -308,16 +309,118 @@ export const deleteAccompanyPostApi = async (postId) => {
         });
 
         if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(errorData.message || '삭제에 실패했습니다.');
+            // JSON 파싱 에러 방지를 위한 안전한 에러 처리
+            let errorMessage = '삭제에 실패했습니다.';
+            
+            try {
+                const errorData = await response.json();
+                errorMessage = errorData.message || errorMessage;
+            } catch (jsonError) {
+                // JSON 파싱 실패 시 응답을 텍스트로 읽기
+                try {
+                    const errorText = await response.text();
+                    console.error('❌ 서버 응답 (텍스트):', errorText);
+                    errorMessage = `서버 오류 (${response.status}): ${response.statusText}`;
+                } catch (textError) {
+                    console.error('❌ 응답 읽기 실패:', textError);
+                    errorMessage = `서버 오류 (${response.status})`;
+                }
+            }
+            
+            throw new Error(errorMessage);
         }
 
-        const data = await response.json();
+        // 🔥 성공 응답도 안전하게 처리
+        let data;
+        try {
+            const responseText = await response.text();
+            console.log('📄 응답 텍스트:', responseText);
+            
+            if (responseText.trim() === '') {
+                // 빈 응답인 경우
+                data = { success: true, message: '삭제 완료' };
+            } else {
+                // JSON 파싱 시도
+                data = JSON.parse(responseText);
+            }
+        } catch (parseError) {
+            console.warn('⚠️ JSON 파싱 실패, 하지만 삭제는 성공:', parseError);
+            // 파싱 실패해도 HTTP 상태가 성공이면 삭제된 것으로 간주
+            data = { success: true, message: '삭제 완료' };
+        }
+        
+        console.log('✅ DELETE API 성공:', data);
         return data;
+        
     } catch (error) {
-        console.error('Delete API Error:', error);
+        console.error('🔥 DELETE API 에러:', error);
         throw error;
     }
 };
 
-           
+// 🆕 새로 추가된 API 함수들
+
+// 읽지 않은 동행 신청 개수 조회 API 함수
+export const getUnreadApplicationsApi = async (accompanyId, hostId) => {
+    try {
+        const url = `${API_URL}/api/accompany/${accompanyId}/unread-applications?hostId=${hostId}`;
+        console.log('🌐 읽지 않은 신청 개수 조회 API 호출:', url);
+
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ 읽지 않은 신청 개수 조회 실패 (${response.status}):`, errorText);
+            throw new Error(`읽지 않은 신청 개수 조회에 실패했습니다. (${response.status})`);
+        }
+
+        const result = await response.json();
+        console.log('✅ 읽지 않은 신청 개수 조회 성공:', result);
+        
+        return {
+            unreadCount: result.unreadCount || 0
+        };
+
+    } catch (error) {
+        console.error('❌ 읽지 않은 신청 개수 조회 오류:', error);
+        throw error;
+    }
+};
+
+// 동행 신청을 '읽음'으로 표시하는 API 함수
+export const markApplicationsViewedApi = async (accompanyId, hostId) => {
+    try {
+        const url = `${API_URL}/api/accompany/${accompanyId}/mark-applications-viewed?hostId=${hostId}`;
+        console.log('🌐 신청 읽음 표시 API 호출:', url);
+
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ 신청 읽음 표시 실패 (${response.status}):`, errorText);
+            throw new Error(`신청 읽음 표시에 실패했습니다. (${response.status})`);
+        }
+
+        const result = await response.text();
+        console.log('✅ 신청 읽음 표시 성공:', result);
+        
+        return {
+            success: true,
+            message: result || '신청이 읽음으로 표시되었습니다.'
+        };
+
+    } catch (error) {
+        console.error('❌ 신청 읽음 표시 오류:', error);
+        throw error;
+    }
+};
