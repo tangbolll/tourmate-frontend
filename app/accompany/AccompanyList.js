@@ -64,32 +64,58 @@ const AccompanyList = () => {
     // 전체 로딩 상태 계산
     const isLoading = Object.values(loadingStates).some(loading => loading);
 
-    // ✅ 수정된 좋아요 상태 로드 함수 - id 필드 사용
+    // 좋아요 상태 로드 함수 - 수정된 버전
     const fetchLikesForPosts = useCallback(async (posts) => {
-        if (!posts || posts.length === 0) return;
+        if (!posts || posts.length === 0) {
+            console.log('📝 좋아요 로드할 포스트가 없습니다.');
+            return;
+        }
 
         try {
             updateLoadingState('likes', true);
             console.log('🌐 좋아요 상태 로딩 시작...');
+            console.log('🔍 전달받은 posts:', posts);
             
-            // ✅ id 필드를 사용하도록 수정 (accompanyId 대신)
-            const postIds = posts.map(post => post.id).filter(id => id && id !== undefined);
-            console.log('🔍 좋아요 상태 로드할 ID들:', postIds);
+            // id 필드를 사용하도록 수정
+            const postIds = posts.map(post => {
+                console.log(`🔍 포스트 ID 추출: ${post.id} (제목: ${post.title})`);
+                return post.id;
+            }).filter(id => id && id !== undefined && id !== 'undefined');
             
-            if (postIds.length > 0) {
+            console.log('🔍 좋아요 상태 로드할 유효한 ID들:', postIds);
+            console.log('🔍 현재 사용자 ID:', currentUserId);
+            
+            if (postIds.length > 0 && currentUserId) {
+                console.log('🔄 getMultipleAccompanyLikesApi 호출 중...');
                 const likesStatus = await getMultipleAccompanyLikesApi(postIds, currentUserId);
-                setLikedPosts(prev => ({ ...prev, ...likesStatus }));
-                console.log('✅ 좋아요 상태 로딩 완료:', likesStatus);
+                
+                console.log('✅ API 응답받은 좋아요 상태:', likesStatus);
+                
+                // 상태 업데이트 전 현재 상태 로그
+                console.log('🔍 업데이트 전 likedPosts 상태:', likedPosts);
+                
+                setLikedPosts(prev => {
+                    const newState = { ...prev, ...likesStatus };
+                    console.log('🔍 업데이트된 likedPosts 상태:', newState);
+                    return newState;
+                });
+                
             } else {
-                console.warn('⚠️ 유효한 post ID가 없어서 좋아요 상태 로드 건너뛰기');
+                if (postIds.length === 0) {
+                    console.warn('⚠️ 유효한 post ID가 없어서 좋아요 상태 로드 건너뛰기');
+                }
+                if (!currentUserId) {
+                    console.warn('⚠️ 현재 사용자 ID가 없어서 좋아요 상태 로드 건너뛰기');
+                }
             }
+            
         } catch (error) {
             console.error('❌ 좋아요 상태 로딩 실패:', error);
             handleApiError(error, '좋아요 상태 로드');
         } finally {
             updateLoadingState('likes', false);
         }
-    }, [currentUserId]);
+    }, [currentUserId]); // ✅ likedPosts 의존성 제거하여 무한루프 방지
 
     // 1. 전체 피드 데이터 가져오기
     const fetchAccompanyFeedData = useCallback(async (force = false) => {
@@ -300,14 +326,21 @@ const AccompanyList = () => {
         }
     }, [selectedTab, fetchAccompanyFeedData, fetchMyCreatedAccompanyData, fetchMyAppliedAccompanyData]);
 
-    // ✅ 수정된 좋아요 토글 핸들러 - id 필드 사용
+    // 좋아요 토글 함수 - 수정된 버전
     const handleToggleLike = useCallback(async (postId) => {
         console.log(`💖 좋아요 토글 시작: postId=${postId} (타입: ${typeof postId})`);
+        console.log('🔍 현재 사용자 ID:', currentUserId);
         
-        // 유효하지 않은 postId 체크
+        // 유효성 검사
         if (!postId || postId === undefined || postId === 'undefined') {
             console.error('❌ 유효하지 않은 postId:', postId);
             Alert.alert('오류', '게시물을 찾을 수 없습니다.');
+            return;
+        }
+        
+        if (!currentUserId) {
+            console.error('❌ 사용자 ID가 없습니다.');
+            Alert.alert('오류', '로그인이 필요합니다.');
             return;
         }
         
@@ -317,33 +350,60 @@ const AccompanyList = () => {
             return;
         }
 
+        // 현재 좋아요 상태 확인
+        const currentLikeStatus = likedPosts[postId];
+        console.log(`🔍 현재 좋아요 상태: ${currentLikeStatus}`);
+
         try {
             updateLoadingState('likes', true);
-            console.log(`🔄 좋아요 토글 API 호출: postId=${postId}, userId=${currentUserId}`);
+            
+            // 낙관적 업데이트 (API 호출 전에 UI 먼저 업데이트)
+            const optimisticLikeStatus = !currentLikeStatus;
+            console.log(`🔄 낙관적 업데이트: ${currentLikeStatus} → ${optimisticLikeStatus}`);
+            
+            setLikedPosts(prev => ({ 
+                ...prev, 
+                [postId]: optimisticLikeStatus 
+            }));
             
             // API 호출
+            console.log(`🌐 좋아요 토글 API 호출: postId=${postId}, userId=${currentUserId}`);
             const response = await toggleLikeApi(postId, currentUserId);
+            
+            console.log(`✅ 좋아요 토글 API 응답:`, response);
+            
             const { isLiked, likeCount } = response;
             
-            console.log(`✅ 좋아요 토글 성공. 상태: ${isLiked}, 좋아요 수: ${likeCount}`);
+            console.log(`✅ 좋아요 토글 성공. 최종 상태: ${isLiked}, 좋아요 수: ${likeCount}`);
 
-            // UI 상태 즉시 업데이트
+            // 실제 API 응답으로 상태 업데이트 (낙관적 업데이트 보정)
             setLikedPosts(prev => ({ ...prev, [postId]: isLiked }));
             
             // 필터링된 포스트 목록에서도 좋아요 수 업데이트
             setFilteredPosts(prevPosts =>
                 prevPosts.map(post =>
-                    post.id === postId ? { ...post, likeCount: likeCount } : post
+                    post.id.toString() === postId.toString() ? 
+                        { ...post, likeCount: likeCount } : 
+                        post
                 )
             );
 
         } catch (error) {
             console.error('❌ 좋아요 토글 실패:', error);
+            
+            // 에러 발생 시 낙관적 업데이트 롤백
+            console.log('🔄 좋아요 상태 롤백');
+            setLikedPosts(prev => ({ 
+                ...prev, 
+                [postId]: currentLikeStatus 
+            }));
+            
             Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
         } finally {
             updateLoadingState('likes', false);
         }
-    }, [currentUserId, loadingStates.likes]);
+    }, [currentUserId, loadingStates.likes, likedPosts]);
+
 
     // 필터링 로직
     useEffect(() => {
