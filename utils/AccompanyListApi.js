@@ -170,9 +170,8 @@ export const fetchMyAppliedAccompanyApi = async (currentUserId) => {
     }
 };
 
-// 4. 좋아요 추가/취소 API
+// 4. 좋아요 추가/취소 API - 디버깅 로그 추가
 export const toggleLikeApi = async (accompanyId, userId) => {
-    // accompanyId를 명시적으로 Number 타입으로 변환
     const numericAccompanyId = Number(accompanyId);
     
     if (isNaN(numericAccompanyId)) {
@@ -180,20 +179,47 @@ export const toggleLikeApi = async (accompanyId, userId) => {
         throw new Error('Invalid accompanyId provided.');
     }
 
+    console.log(`🔍 toggleLikeApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
+
     try {
-        const response = await axios.post(`${API_URL}/api/accompany/${numericAccompanyId}/like`, null, {
+        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like`;
+        console.log(`🌐 API 호출 URL: ${url}`);
+        console.log(`🌐 API 호출 파라미터: id=${userId}`);
+        
+        const response = await axios.post(url, null, {
             params: {
-                id: userId // 백엔드 @RequestParam id에 맞춤
-            }
+                id: userId
+            },
+            timeout: 10000 // 10초 타임아웃 추가
         });
-        return response.data;
+        
+        console.log(`✅ toggleLikeApi 응답 성공:`, response.data);
+        console.log(`🔍 토글 응답 데이터 타입 확인:`, {
+            liked: typeof response.data.liked,
+            likeCount: typeof response.data.likeCount,
+            전체_응답: response.data
+        });
+        
+        // ✅ 백엔드 응답 필드명에 맞춰 변환
+        return {
+            isLiked: response.data.liked, // liked → isLiked로 변환
+            likeCount: response.data.likeCount
+        };
+        
     } catch (error) {
-        handleApiError(error, '좋아요 토글');
+        console.error(`❌ toggleLikeApi 에러 (ID: ${numericAccompanyId}):`, {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+            url: error.config?.url
+        });
+        
+        handleApiError(error, `좋아요 토글 (ID: ${numericAccompanyId})`);
         throw error;
     }
 };
 
-// 5. 좋아요 상태 조회 API
+// 5. 좋아요 상태 조회 API - 디버깅 로그 추가
 export const getLikeStatusApi = async (accompanyId, userId) => {
     // accompanyId를 명시적으로 Number 타입으로 변환
     const numericAccompanyId = Number(accompanyId);
@@ -203,24 +229,58 @@ export const getLikeStatusApi = async (accompanyId, userId) => {
         return { isLiked: false, likeCount: 0 };
     }
     
-    console.log(`🔍 파라미터 확인: accompanyId=${numericAccompanyId} (타입: ${typeof numericAccompanyId}), userId=${userId} (타입: ${typeof userId})`);
+    console.log(`🔍 getLikeStatusApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
+    
     try {
-        const response = await axios.get(`${API_URL}/api/accompany/${numericAccompanyId}/like/status`, {
+        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like/status`;
+        console.log(`🌐 API 호출 URL: ${url}`);
+        console.log(`🌐 API 호출 파라미터: id=${userId}`);
+        
+        const response = await axios.get(url, {
             params: {
                 id: userId
-            }
+            },
+            timeout: 10000 // 10초 타임아웃 추가
         });
-        return response.data; // { isLiked, likeCount }
+        
+        console.log(`✅ getLikeStatusApi 응답 성공:`, response.data);
+        console.log(`🔍 응답 데이터 타입 확인:`, {
+            liked: typeof response.data.liked,
+            likeCount: typeof response.data.likeCount,
+            전체_응답: response.data
+        });
+        
+        // ✅ 백엔드 응답 필드명에 맞춰 변환
+        return {
+            isLiked: response.data.liked, // liked → isLiked로 변환
+            likeCount: response.data.likeCount
+        };
+        
     } catch (error) {
-        handleApiError(error, '좋아요 상태 조회');
-        // 오류 발생 시 false 반환
+        console.error(`❌ getLikeStatusApi 에러 (ID: ${numericAccompanyId}):`, {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+            url: error.config?.url
+        });
+        
+        // 404 에러인 경우 (동행이 존재하지 않음)
+        if (error.response?.status === 404) {
+            console.warn(`⚠️ 동행 ID ${numericAccompanyId}를 찾을 수 없습니다.`);
+            return { isLiked: false, likeCount: 0 };
+        }
+        
+        // 다른 에러의 경우
+        handleApiError(error, `좋아요 상태 조회 (ID: ${numericAccompanyId})`);
         return { isLiked: false, likeCount: 0 };
     }
 };
 
-// 6. 여러 동행 포스트의 좋아요 상태를 한 번에 조회
+
+// 6. 여러 동행 포스트의 좋아요 상태를 한 번에 조회 - 수정된 버전
 export const getMultipleAccompanyLikesApi = async (accompanyIds, userId) => {
     console.log('🔍 getMultipleAccompanyLikesApi 호출됨');
+    console.log('🔍 입력 매개변수:', { accompanyIds, userId });
     
     // undefined나 null 필터링하고 Number 타입으로 변환
     const validAccompanyIds = accompanyIds
@@ -228,22 +288,37 @@ export const getMultipleAccompanyLikesApi = async (accompanyIds, userId) => {
         .map(id => Number(id));
         
     console.log('🔍 유효한 accompanyIds:', validAccompanyIds);
-    console.log('🔍 accompanyIds 타입들:', validAccompanyIds.map(id => `${id} (${typeof id})`));
     
     if (validAccompanyIds.length === 0) {
         console.warn('⚠️ 유효한 accompanyId가 없어서 빈 객체 반환');
         return {};
     }
     
-    const likeStatusPromises = validAccompanyIds.map(accompanyId =>
-        getLikeStatusApi(accompanyId, userId)
-    );
-    const results = await Promise.all(likeStatusPromises);
-    const likedPostsMap = {};
-    validAccompanyIds.forEach((accompanyId, index) => {
-        likedPostsMap[accompanyId] = results[index].isLiked;
-    });
-    
-    console.log('🔍 최종 likedPostsMap:', likedPostsMap);
-    return likedPostsMap;
+    try {
+        // 각 동행에 대해 좋아요 상태 조회
+        const likeStatusPromises = validAccompanyIds.map(async (accompanyId) => {
+            console.log(`🔍 개별 좋아요 상태 조회: accompanyId=${accompanyId}, userId=${userId}`);
+            const result = await getLikeStatusApi(accompanyId, userId);
+            console.log(`🔍 개별 응답 결과 (ID: ${accompanyId}):`, result);
+            return { accompanyId, ...result };
+        });
+        
+        const results = await Promise.all(likeStatusPromises);
+        console.log('🔍 모든 개별 응답 결과:', results);
+        
+        // 결과를 객체로 변환 - isLiked 값만 추출
+        const likedPostsMap = {};
+        results.forEach(({ accompanyId, isLiked, likeCount }) => {
+            likedPostsMap[accompanyId] = isLiked; // ✅ isLiked 값만 저장
+            console.log(`🔍 매핑 결과: ${accompanyId} -> ${isLiked} (좋아요 수: ${likeCount})`);
+        });
+        
+        console.log('✅ 최종 likedPostsMap:', likedPostsMap);
+        return likedPostsMap;
+        
+    } catch (error) {
+        console.error('❌ getMultipleAccompanyLikesApi 에러:', error);
+        handleApiError(error, '좋아요 상태 일괄 조회');
+        return {};
+    }
 };

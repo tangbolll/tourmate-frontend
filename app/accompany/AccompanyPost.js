@@ -37,6 +37,9 @@ export default function AccompanyPost() {
     // 좋아요 상태와 좋아요 수를 별도로 관리
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
+    const [isLoadingLikeStatus, setIsLoadingLikeStatus] = useState(true); // 초기 로딩 상태
+    const [isTogglingLike, setIsTogglingLike] = useState(false); // 토글 로딩 상태
+
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
 
@@ -213,40 +216,109 @@ const transformAccompanyDetail = (backendData) => {
         }
     };
 
-    // 좋아요 토글 함수 (리팩토링 적용)
-    const handleLikeToggle = async () => {
+    // 컴포넌트 마운트 시 좋아요 상태 로드
+    const loadLikeStatus = useCallback(async () => {
+        if (!postId || !currentUserId) {
+            console.log('⚠️ AccompanyPost: postId 또는 currentUserId가 없어서 좋아요 상태 로드 건너뛰기');
+            setIsLoadingLikeStatus(false);
+            return;
+        }
+
+        try {
+            setIsLoadingLikeStatus(true);
+            console.log(`🔄 AccompanyPost: 좋아요 상태 로딩 시작 (postId: ${postId}, userId: ${currentUserId})`);
+            
+            const result = await getLikeStatusApi(postId, currentUserId);
+            
+            console.log(`✅ AccompanyPost: 좋아요 상태 로딩 완료`, result);
+            
+            setIsLiked(result.isLiked);
+            setLikeCount(result.likeCount);
+            
+        } catch (error) {
+            console.error('❌ AccompanyPost: 좋아요 상태 로딩 실패:', error);
+            // 에러 발생 시 기본값 유지
+            setIsLiked(false);
+            setLikeCount(0);
+        } finally {
+            setIsLoadingLikeStatus(false);
+        }
+    }, [postId, currentUserId]);
+
+    // postId나 currentUserId가 변경되면 좋아요 상태 재로드
+    useEffect(() => {
+        loadLikeStatus();
+    }, [loadLikeStatus]);
+
+    // 좋아요 토글 함수 (개선된 버전)
+    const handleLikeToggle = useCallback(async () => {
         if (!postId || !currentUserId) {
             console.error('❌ AccompanyPost: postId 또는 currentUserId가 유효하지 않아 좋아요 토글을 할 수 없습니다.', { postId, currentUserId });
             Alert.alert('오류', '게시물 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
             return;
         }
 
-        try {
-            console.log('🔄 handleLikeToggle: 좋아요 API 호출 전 현재 isLiked 상태:', isLiked);
+        // 이미 토글 중이면 중복 호출 방지
+        if (isTogglingLike) {
+            console.log('⚠️ AccompanyPost: 이미 좋아요 토글 처리 중...');
+            return;
+        }
 
-            // API 호출 전에 UI 상태를 먼저 변경하여 즉각적인 피드백 제공
+        // 현재 상태 백업 (롤백용)
+        const originalIsLiked = isLiked;
+        const originalLikeCount = likeCount;
+
+        try {
+            setIsTogglingLike(true);
+            console.log('🔄 AccompanyPost: 좋아요 토글 시작', {
+                postId,
+                currentUserId,
+                currentIsLiked: isLiked,
+                currentLikeCount: likeCount
+            });
+
+            // 낙관적 업데이트 (API 호출 전에 UI 먼저 변경)
             const newIsLiked = !isLiked;
-            const newLikeCount = newIsLiked ? likeCount + 1 : likeCount - 1;
+            const newLikeCount = newIsLiked ? likeCount + 1 : Math.max(0, likeCount - 1);
+            
+            console.log(`🔄 AccompanyPost: 낙관적 업데이트 ${isLiked} → ${newIsLiked}, 좋아요 수: ${likeCount} → ${newLikeCount}`);
+            
             setIsLiked(newIsLiked);
             setLikeCount(newLikeCount);
 
+            // API 호출
             const result = await toggleLikeApi(postId, currentUserId);
             
-            console.log('✅ handleLikeToggle: 좋아요 API 응답 result.isLiked:', result.isLiked);
-            console.log('✨ handleLikeToggle: API 응답으로 상태 업데이트 완료.');
-            // API 응답으로 최종 상태를 업데이트 (혹시라도 불일치 발생 시 대비)
+            console.log('✅ AccompanyPost: 좋아요 토글 API 응답:', result);
+            
+            // API 응답으로 최종 상태 업데이트 (낙관적 업데이트 보정)
             setIsLiked(result.isLiked);
             setLikeCount(result.likeCount);
+            
+            console.log('✨ AccompanyPost: 좋아요 토글 완료', {
+                finalIsLiked: result.isLiked,
+                finalLikeCount: result.likeCount
+            });
 
         } catch (error) {
-            console.error('❌ 좋아요 토글 오류:', error);
+            console.error('❌ AccompanyPost: 좋아요 토글 오류:', error);
+            
             // 오류 발생 시 원래 상태로 롤백
-            setIsLiked(isLiked);
-            setLikeCount(likeCount);
+            console.log('🔄 AccompanyPost: 좋아요 상태 롤백', {
+                rollbackIsLiked: originalIsLiked,
+                rollbackLikeCount: originalLikeCount
+            });
+            
+            setIsLiked(originalIsLiked);
+            setLikeCount(originalLikeCount);
+            
             Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
+        } finally {
+            setIsTogglingLike(false);
         }
-    };
+    }, [postId, currentUserId, isLiked, likeCount, isTogglingLike]);
 
+    
     // 동행 신청/취소 함수
     // AccompanyPost.jsx - 수정된 handleApplicationPress
 
