@@ -24,9 +24,7 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 
 
 const { width: screenWidth } = Dimensions.get('window');
-const CHARS_PER_LINE = 24; // 원하는 값으로 조정
-
-
+const CHARS_PER_LINE = 24;
 
 const getBaseURL = () => {
     if (__DEV__) {
@@ -120,6 +118,7 @@ const Chat = () => {
     
     
     const scrollViewRef = useRef();
+    const stompClientRef = useRef(null);
     
     // 현재 사용자 ID
     const currentUserId = 2;
