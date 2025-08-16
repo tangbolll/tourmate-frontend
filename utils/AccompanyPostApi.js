@@ -203,23 +203,132 @@ export const saveCommentApi = async (postId, content, userId, parentCommentId = 
     };
 };
 
-// 좋아요 토글 API 함수
-export const toggleLikeApi = async (postId, userId) => {
-    const url = `${API_URL}/api/accompany/${postId}/like?id=${userId}`;
-    console.log('🌐 좋아요 토글 API 호출:', url);
-
-    const response = await fetch(url, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-    });
-
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to toggle like: ${errorText}`);
+// 좋아요 추가/취소 API - 디버깅 로그 추가
+export const toggleLikeApi = async (accompanyId, userId) => {
+    const numericAccompanyId = Number(accompanyId);
+    
+    if (isNaN(numericAccompanyId)) {
+        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
+        throw new Error('Invalid accompanyId provided.');
     }
 
-    return await response.json();
+    console.log(`🔍 toggleLikeApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
+
+    try {
+        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like`;
+        console.log(`🌐 API 호출 URL: ${url}`);
+        console.log(`🌐 API 호출 파라미터: id=${userId}`);
+        
+        const response = await axios.post(url, null, {
+            params: {
+                id: userId
+            },
+            timeout: 10000 // 10초 타임아웃 추가
+        });
+        
+        console.log(`✅ toggleLikeApi 응답 성공:`, {
+            status: response.status,
+            data: response.data,
+            headers: response.headers
+        });
+        
+        console.log(`🔍 토글 응답 데이터 상세 분석:`, {
+            liked: response.data.liked,
+            liked_type: typeof response.data.liked,
+            likeCount: response.data.likeCount,
+            likeCount_type: typeof response.data.likeCount,
+            전체_응답_키들: Object.keys(response.data)
+        });
+        
+        // ✅ 백엔드 응답 필드명에 맞춰 변환하고 유효성 검사 추가
+        const result = {
+            isLiked: Boolean(response.data.liked), // Boolean으로 확실히 변환
+            likeCount: Number(response.data.likeCount) || 0 // Number로 확실히 변환, fallback 0
+        };
+        
+        console.log(`🔍 최종 반환값:`, {
+            isLiked: result.isLiked,
+            isLiked_type: typeof result.isLiked,
+            likeCount: result.likeCount,
+            likeCount_type: typeof result.likeCount
+        });
+        
+        return result;
+        
+    } catch (error) {
+        console.error(`❌ toggleLikeApi 에러 (ID: ${numericAccompanyId}):`, {
+            message: error.message,
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            url: error.config?.url,
+            method: error.config?.method,
+            params: error.config?.params
+        });
+        
+        handleApiError(error, `좋아요 토글 (ID: ${numericAccompanyId})`);
+        throw error;
+    }
 };
+
+// 좋아요 상태 조회 API - 디버깅 로그 추가
+export const getLikeStatusApi = async (accompanyId, userId) => {
+    // accompanyId를 명시적으로 Number 타입으로 변환
+    const numericAccompanyId = Number(accompanyId);
+    
+    if (isNaN(numericAccompanyId)) {
+        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
+        return { isLiked: false, likeCount: 0 };
+    }
+    
+    console.log(`🔍 getLikeStatusApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
+    
+    try {
+        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like/status`;
+        console.log(`🌐 API 호출 URL: ${url}`);
+        console.log(`🌐 API 호출 파라미터: id=${userId}`);
+        
+        const response = await axios.get(url, {
+            params: {
+                id: userId
+            },
+            timeout: 10000 // 10초 타임아웃 추가
+        });
+        
+        console.log(`✅ getLikeStatusApi 응답 성공:`, response.data);
+        console.log(`🔍 응답 데이터 타입 확인:`, {
+            liked: typeof response.data.liked,
+            likeCount: typeof response.data.likeCount,
+            전체_응답: response.data
+        });
+        
+        // ✅ 백엔드 응답 필드명에 맞춰 변환
+        return {
+            isLiked: response.data.liked, // liked → isLiked로 변환
+            likeCount: response.data.likeCount
+        };
+        
+    } catch (error) {
+        console.error(`❌ getLikeStatusApi 에러 (ID: ${numericAccompanyId}):`, {
+            message: error.message,
+            status: error.response?.status,
+            data: error.response?.data,
+            url: error.config?.url
+        });
+        
+        // 404 에러인 경우 (동행이 존재하지 않음)
+        if (error.response?.status === 404) {
+            console.warn(`⚠️ 동행 ID ${numericAccompanyId}를 찾을 수 없습니다.`);
+            return { isLiked: false, likeCount: 0 };
+        }
+        
+        // 다른 에러의 경우
+        handleApiError(error, `좋아요 상태 조회 (ID: ${numericAccompanyId})`);
+        return { isLiked: false, likeCount: 0 };
+    }
+};
+
+
 
 
 // 동행 신청/취소 API 함수
@@ -319,5 +428,3 @@ export const deleteAccompanyPostApi = async (postId) => {
         throw error;
     }
 };
-
-           
