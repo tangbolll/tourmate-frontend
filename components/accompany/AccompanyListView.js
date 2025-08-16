@@ -50,8 +50,15 @@ const AccompanyListView = ({
         console.log('🔍 selectedTab:', selectedTab);
         console.log('🔍 filteredPosts 길이:', filteredPosts?.length || 0);
         console.log('🔍 filteredPosts ID들:', filteredPosts?.map(post => `${post.id} (${typeof post.id})`));
-        console.log('🔍 likedPosts 상태:', likedPosts);
         console.log('🔍 loading 상태:', loading);
+        console.log('🔍 현재 likedPosts 상태 변경됨:', likedPosts);
+        console.log('🔍 likedPosts 키 목록:', Object.keys(likedPosts));
+        console.log('🔍 likedPosts 값 목록:', Object.values(likedPosts));
+        
+        // 각 키-값 쌍 상세 출력
+        Object.entries(likedPosts).forEach(([key, value]) => {
+            console.log(`🔍 likedPosts[${key}] = ${value} (타입: ${typeof value})`);
+        });
     });
 
     const handlePressDM = () => {
