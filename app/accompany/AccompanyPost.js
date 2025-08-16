@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, Keyboard, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -21,6 +21,7 @@ import {
     fetchCommentsApi,
     saveCommentApi,
     toggleLikeApi,
+    getLikeStatusApi,
     toggleApplicationApi,
     closeAccompanyPostApi,
     deleteAccompanyPostApi,
@@ -39,6 +40,9 @@ export default function AccompanyPost() {
     // 좋아요 상태와 좋아요 수를 별도로 관리
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
+    const [isLikeLoading, setIsLikeLoading] = useState(false); // 좋아요 로딩 상태 추가
+
+
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
 
@@ -249,41 +253,144 @@ export default function AccompanyPost() {
         }
     };
 
-    // 좋아요 토글 함수 (리팩토링 적용)
-    const handleLikeToggle = async () => {
+    // 좋아요 토글 함수 - AccompanyBottomButton에서 호출됨
+    const handleLikeToggle = useCallback(async () => {
         if (!postId || !currentUserId) {
             console.error('❌ AccompanyPost: postId 또는 currentUserId가 유효하지 않아 좋아요 토글을 할 수 없습니다.', { postId, currentUserId });
             Alert.alert('오류', '게시물 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
             return;
         }
 
+        // 이미 로딩 중이면 중복 처리 방지
+        if (isLikeLoading) {
+            console.log('⚠️ AccompanyPost: 이미 좋아요 처리 중이므로 무시');
+            return;
+        }
+
+        console.log('💖 AccompanyPost: 좋아요 토글 시작', {
+            postId,
+            currentUserId,
+            currentIsLiked: isLiked,
+            currentLikeCount: likeCount
+        });
+
         try {
-            console.log('🔄 handleLikeToggle: 좋아요 API 호출 전 현재 isLiked 상태:', isLiked);
+            setIsLikeLoading(true);
 
-            // API 호출 전에 UI 상태를 먼저 변경하여 즉각적인 피드백 제공
-            const newIsLiked = !isLiked;
-            const newLikeCount = newIsLiked ? likeCount + 1 : likeCount - 1;
-            setIsLiked(newIsLiked);
-            setLikeCount(newLikeCount);
-
+            // ✅ 낙관적 업데이트 제거 - API 호출만 수행
             const result = await toggleLikeApi(postId, currentUserId);
             
-            console.log('✅ handleLikeToggle: 좋아요 API 응답 result.isLiked:', result.isLiked);
-            console.log('✨ handleLikeToggle: API 응답으로 상태 업데이트 완료.');
-            // API 응답으로 최종 상태를 업데이트 (혹시라도 불일치 발생 시 대비)
-            setIsLiked(result.isLiked);
-            setLikeCount(result.likeCount);
+            console.log('✅ AccompanyPost: 좋아요 토글 API 응답:', result);
+            
+            // ✅ API 응답으로만 상태 업데이트 (API 완료 후에만 UI 변경)
+            const newIsLiked = result.isLiked;
+            const newLikeCount = result.likeCount;
+            
+            setIsLiked(newIsLiked);
+            setLikeCount(newLikeCount);
+            
+            console.log('✨ AccompanyPost: API 응답 후 상태 업데이트 완료', {
+                API응답_isLiked: result.isLiked,
+                API응답_likeCount: result.likeCount,
+                업데이트된_isLiked: newIsLiked,
+                업데이트된_likeCount: newLikeCount
+            });
 
         } catch (error) {
-            console.error('❌ 좋아요 토글 오류:', error);
-            // 오류 발생 시 원래 상태로 롤백
-            setIsLiked(isLiked);
-            setLikeCount(likeCount);
+            console.error('❌ AccompanyPost: 좋아요 토글 실패:', error);
             Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
+            
+            // 에러를 다시 throw하여 자식 컴포넌트에서도 처리할 수 있도록
+            throw error;
+        } finally {
+            setIsLikeLoading(false);
         }
-    };
+    }, [postId, currentUserId, isLikeLoading]);
 
+    useEffect(() => {
+        if (postData) {
+            console.log('🔍 AccompanyPost: postData 전체 구조 확인:', {
+                postData: postData,
+                keys: Object.keys(postData),
+                isLiked: postData.isLiked,
+                likeCount: postData.likeCount,
+                likes: postData.likes,
+                liked: postData.liked
+            });
+            
+            // ✅ 좋아요 정보 초기화 - 다양한 필드명 처리
+            let initialIsLiked = false; // 기본값 false
+            let initialLikeCount = 0;   // 기본값 0
+            let needsSeparateLikeQuery = true; // 별도 좋아요 상태 조회 필요 여부
+            
+            // isLiked 필드 확인 (다양한 가능성 체크)
+            if (typeof postData.isLiked === 'boolean') {
+                initialIsLiked = postData.isLiked;
+                needsSeparateLikeQuery = false;
+                console.log('🔍 AccompanyPost: 초기 좋아요 상태 설정 (isLiked)', postData.isLiked);
+            } else if (typeof postData.liked === 'boolean') {
+                initialIsLiked = postData.liked;
+                needsSeparateLikeQuery = false;
+                console.log('🔍 AccompanyPost: 초기 좋아요 상태 설정 (liked)', postData.liked);
+            } else {
+                console.log('⚠️ AccompanyPost: 좋아요 상태 필드를 찾을 수 없어 별도 API 조회 필요');
+            }
+            
+            // likeCount 필드 확인
+            if (typeof postData.likeCount === 'number') {
+                initialLikeCount = postData.likeCount;
+                console.log('🔍 AccompanyPost: 초기 좋아요 수 설정 (likeCount)', postData.likeCount);
+            } else if (typeof postData.likes === 'number') {
+                initialLikeCount = postData.likes;
+                console.log('🔍 AccompanyPost: 초기 좋아요 수 설정 (likes)', postData.likes);
+            } else {
+                console.log('⚠️ AccompanyPost: 좋아요 수 필드를 찾을 수 없어 기본값 0 사용');
+            }
+            
+            setIsLiked(initialIsLiked);
+            setLikeCount(initialLikeCount);
+            
+            console.log('✨ AccompanyPost: 좋아요 상태 초기화 완료', {
+                설정된_isLiked: initialIsLiked,
+                설정된_likeCount: initialLikeCount,
+                별도조회필요: needsSeparateLikeQuery
+            });
+            
+            // ✅ 별도 좋아요 상태 조회 필요한 경우
+            if (needsSeparateLikeQuery && postId && currentUserId) {
+                fetchLikeStatus();
+            }
+        }
+    }, [postData]);
+
+    // 별도 좋아요 상태 조회 함수
+    const fetchLikeStatus = useCallback(async () => {
+        if (!postId || !currentUserId) return;
+        
+        try {
+            console.log('🔍 AccompanyPost: 별도 좋아요 상태 조회 시작');
+            setIsLikeLoading(true);
+            
+            const likeStatus = await getLikeStatusApi(postId, currentUserId);
+            
+            setIsLiked(likeStatus.isLiked);
+            setLikeCount(likeStatus.likeCount);
+            
+            console.log('✨ AccompanyPost: 별도 좋아요 상태 조회 완료', likeStatus);
+        } catch (error) {
+            console.error('❌ AccompanyPost: 별도 좋아요 상태 조회 실패:', error);
+            // 실패 시 기본값 유지
+            setIsLiked(false);
+            setLikeCount(0);
+        } finally {
+            setIsLikeLoading(false);
+        }
+    }, [postId, currentUserId]);
+
+    
     // 동행 신청/취소 함수
+    // AccompanyPost.jsx - 수정된 handleApplicationPress
+
     const handleApplicationPress = async () => {
         const currentStatus = postData?.userApplicationStatus;
         const isCurrentlyApplied = isUserApplied(currentStatus);
@@ -303,10 +410,11 @@ export default function AccompanyPost() {
         }));
         
         try {
+            // 🔥 currentStatus 대신 isCurrentlyApplied 전달
             const result = await toggleApplicationApi(postId, currentUserId, currentStatus);
             console.log('✅ API 호출 성공:', result);
             
-            // API 결과의 newStatus를 사용해서 최종 상태 업데이트
+            // 🔥 API 결과의 newStatus를 사용해서 최종 상태 업데이트
             setPostData(prev => ({
                 ...prev,
                 userApplicationStatus: result.newStatus
@@ -318,14 +426,13 @@ export default function AccompanyPost() {
             console.error(`❌ 동행 ${isCurrentlyApplied ? '취소' : '신청'} 오류:`, error);
             Alert.alert('오류', error.message);
             
-            // 오류 발생 시 원래 상태로 롤백
+            // 🔥 오류 발생 시 원래 상태로 롤백
             setPostData(prev => ({
                 ...prev,
                 userApplicationStatus: currentStatus
             }));
         }
     };
-
     // 동행 모집 마감 API 호출 함수 (리팩토링 적용)
     const closeAccompanyPost = async () => {
         try {
@@ -660,6 +767,7 @@ export default function AccompanyPost() {
                         likes={likeCount}
                         isLiked={isLiked}
                         onLikeToggle={handleLikeToggle}
+                        isLoading={isLikeLoading}
                     />
                 </View>
                 )}
