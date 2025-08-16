@@ -193,25 +193,44 @@ export const toggleLikeApi = async (accompanyId, userId) => {
             timeout: 10000 // 10초 타임아웃 추가
         });
         
-        console.log(`✅ toggleLikeApi 응답 성공:`, response.data);
-        console.log(`🔍 토글 응답 데이터 타입 확인:`, {
-            liked: typeof response.data.liked,
-            likeCount: typeof response.data.likeCount,
-            전체_응답: response.data
+        console.log(`✅ toggleLikeApi 응답 성공:`, {
+            status: response.status,
+            data: response.data,
+            headers: response.headers
         });
         
-        // ✅ 백엔드 응답 필드명에 맞춰 변환
-        return {
-            isLiked: response.data.liked, // liked → isLiked로 변환
-            likeCount: response.data.likeCount
+        console.log(`🔍 토글 응답 데이터 상세 분석:`, {
+            liked: response.data.liked,
+            liked_type: typeof response.data.liked,
+            likeCount: response.data.likeCount,
+            likeCount_type: typeof response.data.likeCount,
+            전체_응답_키들: Object.keys(response.data)
+        });
+        
+        // ✅ 백엔드 응답 필드명에 맞춰 변환하고 유효성 검사 추가
+        const result = {
+            isLiked: Boolean(response.data.liked), // Boolean으로 확실히 변환
+            likeCount: Number(response.data.likeCount) || 0 // Number로 확실히 변환, fallback 0
         };
+        
+        console.log(`🔍 최종 반환값:`, {
+            isLiked: result.isLiked,
+            isLiked_type: typeof result.isLiked,
+            likeCount: result.likeCount,
+            likeCount_type: typeof result.likeCount
+        });
+        
+        return result;
         
     } catch (error) {
         console.error(`❌ toggleLikeApi 에러 (ID: ${numericAccompanyId}):`, {
             message: error.message,
             status: error.response?.status,
+            statusText: error.response?.statusText,
             data: error.response?.data,
-            url: error.config?.url
+            url: error.config?.url,
+            method: error.config?.method,
+            params: error.config?.params
         });
         
         handleApiError(error, `좋아요 토글 (ID: ${numericAccompanyId})`);

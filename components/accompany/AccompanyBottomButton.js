@@ -1,27 +1,45 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const AccompanyBottomButton = ({ 
     isHost,
-    accompanyStatus, // 'RECRUITING', 'COMPLETED', 'CLOSED'
-    userApplicationStatus, // 'PENDING', 'ACCEPTED', 'REJECTED', 'CANCELLED'
-    onPress, // 이 함수는 API 호출만 담당합니다.
+    accompanyStatus,
+    userApplicationStatus,
+    onPress,
     likes,
     isLiked,
     onLikeToggle,
+    isLoading = false,
 }) => {
     const [AccompanyStatus, setAccompanyStatus] = useState(accompanyStatus); 
     const [UserApplicationStatus, setUserApplicationStatus] = useState(userApplicationStatus); 
-    const [likesCount, setLikesCount] = useState(likes); 
-    const [isLikedState, setIsLikedState] = useState(isLiked); 
 
     useEffect(() => {
+        console.log('🔍 AccompanyBottomButton props 변경 감지:', {
+            accompanyStatus,
+            userApplicationStatus,
+            likes,
+            isLiked: isLiked,
+            isLikedType: typeof isLiked,
+            isLoading
+        });
+        
         setAccompanyStatus(accompanyStatus);
         setUserApplicationStatus(userApplicationStatus);
-        setLikesCount(likes);
-        setIsLikedState(isLiked);
-    }, [accompanyStatus, userApplicationStatus, likes, isLiked]);
+        // 좋아요 상태는 부모에서 관리하므로 여기서 setState 하지 않음
+    }, [accompanyStatus, userApplicationStatus, likes, isLiked, isLoading]);
+
+    // ✅ 디버깅 로그만 유지 (좋아요 상태는 부모에서 관리)
+    useEffect(() => {
+        console.log('🔍 AccompanyBottomButton 현재 표시 상태:', {
+            AccompanyStatus,
+            UserApplicationStatus,
+            부모_likes: likes,
+            부모_isLiked: isLiked,
+            isLoading
+        });
+    }, [AccompanyStatus, UserApplicationStatus, likes, isLiked, isLoading]);
 
     const getButtonConfig = () => {
         if (isHost) {
@@ -108,7 +126,7 @@ const AccompanyBottomButton = ({
     const buttonConfig = getButtonConfig();
 
     const handleMainButtonPress = async () => {
-
+        const previousAccompanyStatus = AccompanyStatus; // ✅ 변수명 수정
         const previousUserApplicationStatus = UserApplicationStatus;
 
         try {
@@ -135,11 +153,23 @@ const AccompanyBottomButton = ({
         }
     };
 
-    const handleLikePress = () => {
-        const newLikedState = !isLikedState;
-        setIsLikedState(newLikedState);
-        setLikesCount(prev => newLikedState ? prev + 1 : prev - 1);
-        onLikeToggle();
+    // ✅ 좋아요 토글 - 부모에게 완전히 위임
+    const handleLikePress = async () => {
+        console.log('💖 AccompanyBottomButton: 좋아요 버튼 클릭');
+        console.log('🔍 클릭 시점 상태:', { 부모_isLiked: isLiked, 부모_likes: likes });
+        
+        if (isLoading) {
+            console.log('⚠️ 로딩 중이므로 좋아요 처리 건너뛰기');
+            return;
+        }
+        
+        try {
+            // ✅ 낙관적 업데이트나 상태 변경 없이 부모에게만 위임
+            await onLikeToggle();
+        } catch (error) {
+            // 에러는 부모에서 이미 처리되므로 여기서는 무시
+            console.log('AccompanyBottomButton: 부모에서 처리된 에러');
+        }
     };
 
     return (
@@ -158,14 +188,20 @@ const AccompanyBottomButton = ({
             <TouchableOpacity 
                 style={styles.likesContainer} 
                 onPress={handleLikePress}
+                activeOpacity={0.7}
+                disabled={isLoading} // ✅ 로딩 중일 때 비활성화
             >
                 <View style={styles.iconWrapper}>
-                    <Text style={styles.likeText}>{likesCount}</Text>
-                    <Ionicons 
-                        name={isLikedState ? "heart" : "heart-outline"} 
-                        size={30} 
-                        color={isLikedState ? "#FF6B6B" : "black"} 
-                    />
+                    <Text style={styles.likeText}>{likes}</Text>
+                    {isLoading ? (
+                        <ActivityIndicator size="small" color="#FF6B6B" />
+                    ) : (
+                        <Ionicons 
+                            name={isLiked ? "heart" : "heart-outline"} 
+                            size={30} 
+                            color={isLiked ? "#FF6B6B" : "black"} 
+                        />
+                    )}
                 </View>
             </TouchableOpacity>
         </View>
