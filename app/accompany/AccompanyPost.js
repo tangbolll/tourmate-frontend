@@ -46,7 +46,7 @@ export default function AccompanyPost() {
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
 
-    const currentUserId = "3";
+    const currentUserId = "2";
     const [isHost, setIsHost] = useState(false);
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
@@ -478,16 +478,16 @@ export default function AccompanyPost() {
         }
     }, [postId, currentUserId]);
 
-    // 정기적으로 새로운 신청을 확인하는 useEffect 추가
-    useEffect(() => {
-        if (!isHost || !postId) return;
+    // // 정기적으로 새로운 신청을 확인하는 useEffect 추가
+    // useEffect(() => {
+    //     if (!isHost || !postId) return;
 
-        const interval = setInterval(() => {
-            fetchUnreadApplications();
-        }, 30000); // 30초마다 확인
+    //     const interval = setInterval(() => {
+    //         fetchUnreadApplications();
+    //     }, 30000); // 30초마다 확인
 
-        return () => clearInterval(interval);
-    }, [isHost, postId]);
+    //     return () => clearInterval(interval);
+    // }, [isHost, postId]);
 
     // Keyboard listeners to handle scrolling when keyboard appears
     useEffect(() => {
