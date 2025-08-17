@@ -92,6 +92,7 @@ const Chat = () => {
     const router = useRouter();
 
     // URL 파라미터에서 데이터 추출
+    const currentUserId = params.currentUserId || 2;
     const postId = params.postId;
     const location = params.location || '위치 정보 없음';
     const participants = parseInt(params.participants) || 0;
@@ -110,10 +111,7 @@ const Chat = () => {
     const [isConnected, setIsConnected] = useState(false);
     
     const scrollViewRef = useRef();
-    const stompClientRef = useRef(null); // 🔧 누락된 ref 추가
-    
-    // 현재 사용자 ID
-    const currentUserId = 2;
+    const stompClientRef = useRef(null);
 
     // 채팅방 정보 가져오기
     const fetchOrCreateChatRoom = async (accompanyId) => {
@@ -197,7 +195,7 @@ const Chat = () => {
         });
     };
 
-    // 🔧 웹소켓 연결 useEffect - 수정된 버전
+        // 웹소켓 연결 useEffect
     useEffect(() => {
         if (!chatRoom?.id || !currentUserId) {
             console.log('웹소켓 연결 조건 미충족:', { chatRoomId: chatRoom?.id, currentUserId });
@@ -225,11 +223,16 @@ const Chat = () => {
                         try {
                             const chatMessage = JSON.parse(message.body);
                             
+                            // 🔧 내가 보낸 메시지는 웹소켓으로 받지 않음 (중복 방지)
+                            if (String(chatMessage.senderId) === String(currentUserId)) {
+                                return;
+                            }
+                            
                             // 새 메시지를 상태에 추가
                             const newMessage = {
                                 id: chatMessage.id || `${chatMessage.roomId}_${Date.now()}`,
                                 user: {
-                                    isSelf: chatMessage.senderId === currentUserId,
+                                    isSelf: false, // 다른 사람의 메시지
                                     name: chatMessage.senderNickname || `사용자${chatMessage.senderId}`
                                 },
                                 text: chatMessage.content,
@@ -238,10 +241,12 @@ const Chat = () => {
                             };
                             
                             setMessages(prev => {
-                                // 중복 메시지 방지
+                                // 🔧 중복 메시지 방지 (ID 기반)
                                 if (prev.some(msg => msg.id === newMessage.id)) {
+                                    console.log('🔄 중복 메시지 방지:', newMessage.id);
                                     return prev;
                                 }
+                                console.log('➕ 새 메시지 추가:', newMessage);
                                 return [...prev, newMessage];
                             });
                             
@@ -281,7 +286,7 @@ const Chat = () => {
         };
     }, [chatRoom?.id, currentUserId]);
 
-    // 🔧 메시지 전송 함수 - 수정된 버전
+    // 🔧 메시지 전송 함수 (낙관적 업데이트 개선)
     const handleSendStomp = async (text = '') => {
         if (!text.trim()) {
             console.log('❌ 빈 메시지는 전송할 수 없습니다.');
@@ -302,25 +307,28 @@ const Chat = () => {
 
         setSendingMessage(true);
         
-        // 임시 메시지 UI에 먼저 표시
+        // 🔧 낙관적 업데이트용 임시 메시지 (고유 ID 생성)
+        const tempId = `temp_${Date.now()}_${Math.random()}`;
         const tempMessage = {
-            id: `temp_${Date.now()}`,
+            id: tempId,
             user: {
                 name: '나',
                 isSelf: true
             },
             text: text.trim(),
             time: formatTime(new Date()),
-            isTemporary: true
+            isTemporary: true,
+            tempId: tempId // 🔧 임시 메시지 식별용
         };
         
+        console.log('➕ 낙관적 업데이트 - 임시 메시지 추가:', tempMessage);
         setMessages(prev => [...prev, tempMessage]);
         setInputText('');
 
         try {
             // 서버로 보낼 메시지 포맷
             const messageBody = {
-                senderId: currentUserId,
+                senderId: parseInt(currentUserId), //  백엔드가 숫자를 기대하므로 변환
                 roomId: chatRoom.id,
                 message: text.trim()
             };
@@ -335,16 +343,14 @@ const Chat = () => {
 
             console.log('✅ 메시지 전송 완료');
 
-            // 임시 메시지 제거 (실제 메시지는 웹소켓으로 받아서 추가됨)
-            setTimeout(() => {
-                setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
-            }, 1000);
+            // 🔧 전송 성공 후 임시 메시지를 완전히 제거 (웹소켓으로 실제 메시지가 오지 않으므로)
+            // 낙관적 업데이트된 메시지를 그대로 유지
 
         } catch (error) {
             console.error('❌ 메시지 전송 오류:', error);
             
-            // 실패 시 임시 메시지 제거
-            setMessages(prev => prev.filter(msg => msg.id !== tempMessage.id));
+            // 🔧 실패 시 임시 메시지 제거
+            setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
             Alert.alert('전송 실패', '메시지를 보낼 수 없습니다.');
         } finally {
             setSendingMessage(false);
@@ -360,7 +366,7 @@ const Chat = () => {
         }
     }, [messages]);
 
-    // 🔧 초기 데이터 로드 - 순서 중요!
+    // 초기 데이터 로드
     useEffect(() => {
         const loadChatData = async () => {
             if (!postId) {
@@ -421,7 +427,7 @@ const Chat = () => {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#007AFF" />
+                    <ActivityIndicator size="large" color="gray" />
                     <Text style={styles.loadingText}>채팅방을 준비하는 중...</Text>
                 </View>
             </SafeAreaView>
@@ -463,12 +469,6 @@ const Chat = () => {
                         <Text style={styles.locationText}>{location}</Text>
                         <Ionicons name="person" size={12} color="black" style={[styles.icon, { marginLeft: 12 }]} />
                         <Text style={styles.participantsText}>{participants}명 / {maxParticipants}명</Text>
-                        {/* 연결 상태 표시 */}
-                        <View style={[styles.connectionStatus, isConnected ? styles.connected : styles.disconnected]}>
-                            <Text style={styles.connectionText}>
-                                {isConnected ? '●' : '●'}
-                            </Text>
-                        </View>
                     </View>
                     <View style={styles.headerTitleRow}>
                         <TouchableOpacity onPress={handleViewPost}>
