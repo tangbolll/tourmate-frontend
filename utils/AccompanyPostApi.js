@@ -440,7 +440,7 @@ export const deleteAccompanyPostApi = async (postId) => {
             throw new Error(errorMessage);
         }
 
-        // 🔥 성공 응답도 안전하게 처리
+        // 성공 응답
         let data;
         try {
             const responseText = await response.text();
@@ -468,7 +468,6 @@ export const deleteAccompanyPostApi = async (postId) => {
     }
 };
 
-// 🆕 새로 추가된 API 함수들
 
 // 읽지 않은 동행 신청 개수 조회 API 함수
 export const getUnreadApplicationsApi = async (accompanyId, hostId) => {
