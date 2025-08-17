@@ -130,10 +130,10 @@ const Step1 = ({
             
             <Text style={styles.label}>여행기간</Text>
             <TouchableOpacity onPress={openCalendar} style={styles.inputWrapper}>
-                <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
+                <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
                 <Text style={[styles.inputWithIcon, { 
                     color: startDate && endDate ? '#000' : '#888',
-                    lineHeight: 16 
+                    lineHeight: 20,
                 }]}>
                     {getDateRangeText()}
                 </Text>
@@ -208,7 +208,7 @@ const styles = StyleSheet.create({
         marginBottom: 12,
     },
     icon: {
-        marginRight: 8,
+        marginRight: 4,
     },
     input: {
         height: 44,
@@ -222,16 +222,19 @@ const styles = StyleSheet.create({
         color: '#000',
     },
     inputWithIcon: {
+        height: 20,
         flex: 1,
         fontSize: 14,
         marginLeft: 8,
         color: '#000',
+        textAlignVertical: 'center',
     },
     textArea: {
         height: 100,
         textAlignVertical: 'top'
     },
     counter: {
+        fontSize: 12,
         alignSelf: 'flex-end',
         color: '#888',
         marginTop: -8
