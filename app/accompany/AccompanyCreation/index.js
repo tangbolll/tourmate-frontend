@@ -15,6 +15,7 @@ import { formatDate } from '../../../utils/dateUtils';
 import Step1 from './Step1';
 import Step2 from './Step2';
 import { useRouter } from 'expo-router';
+import axios from 'axios';
 
 const getBaseURL = () => {
     if (__DEV__) { // 개발 환경
@@ -166,112 +167,97 @@ const AccompanyCreation = () => {
 
 
 
-    const handleSubmit = async () => {
-    console.log('🚀 동행 생성 시작');
-    setIsLoading(true);
+const handleSubmit = async () => {
+        console.log('🚀 동행 생성 시작');
+        setIsLoading(true);
 
-    try {
-        // FormData 생성 (JSON 대신 사용)
-        const formData = new FormData();
-        formData.append('request', JSON.stringify(accompanyData));
-        
-        // 일반 데이터 추가
-        formData.append('userId', '2');
-        formData.append('title', title.trim());
-        formData.append('location', location.trim());
-        formData.append('meetPlace', meetLocation.trim());
-        formData.append('intro', description.trim());
-        formData.append('maxRecruit', maxPeople.toString());
-        formData.append('travelStartDate', formatDateForBackend(dateRange.startDate || dateRange.startDay));
-        formData.append('travelEndDate', formatDateForBackend(dateRange.endDate || dateRange.endDay));
-        formData.append('recStartDate', formatDateForBackend(recruitDateRange.startDate));
-        formData.append('recEndDate', formatDateForBackend(recruitDateRange.endDate));
-        formData.append('gender', selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'));
-        
-        // 배열 데이터 처리
-        const ageGroups = selectedAges.includes('누구나') ? ['ALL'] : selectedAges;
-        ageGroups.forEach(age => {
-            formData.append('ageGroup', age);
-        });
-        
-        selectedCategories.forEach(category => {
-            formData.append('category', category);
-        });
-        
-        tags.forEach(tag => {
-            formData.append('tag', tag);
-        });
-        
-        // 이미지 파일들 추가
-        if (images && images.length > 0) {
-            console.log('📤 이미지 개수:', images.length);
-            images.forEach((image, index) => {
-                formData.append('images', {
-                    uri: Platform.OS === 'ios' ? image.uri.replace('file://', '') : image.uri,
-                    type: 'image/jpeg',
-                    name: `image_${index}.jpg`,
+        try {
+            // 백엔드 DTO에 맞는 데이터 객체 생성
+            const accompanyData = {
+                userId: 2,
+                title: title.trim(),
+                location: location.trim(),
+                meetPlace: meetLocation.trim(),
+                intro: description.trim(),
+                maxRecruit: parseInt(maxPeople),
+                travelStartDate: formatDateForBackend(dateRange.startDate || dateRange.startDay),
+                travelEndDate: formatDateForBackend(dateRange.endDate || dateRange.endDay),
+                recStartDate: formatDateForBackend(recruitDateRange.startDate),
+                recEndDate: formatDateForBackend(recruitDateRange.endDate),
+                gender: selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'),
+                ageGroup: [...new Set(selectedAges.includes('누구나') ? ['ALL'] : selectedAges)],
+                category: [...new Set(selectedCategories)],
+                tag: [...new Set(tags)]
+            };
+
+            // FormData 생성
+            const formData = new FormData();
+            
+            // JSON 데이터를 문자열로 변환하여 추가 (React Native에서는 이렇게 해야 함)
+            formData.append('request', {
+                string: JSON.stringify(accompanyData),
+                type: 'application/json'
+            });
+            
+            // 이미지 파일들 추가
+            if (images && images.length > 0) {
+                images.forEach((image, index) => {
+                    formData.append('images', {
+                        uri: Platform.OS === 'ios' ? image.uri.replace('file://', '') : image.uri,
+                        type: 'image/jpeg',
+                        name: `image_${index}.jpg`,
+                    });
                 });
+            }
+            
+            console.log('📤 FormData 생성 완료');
+            console.log('📝 전송할 데이터:', accompanyData);
+
+            const url = `${getBaseURL()}/api/accompany/create`;
+            console.log('🌐 API URL:', url);
+
+            const response = await axios.post(url, formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                    'Accept': 'application/json',
+                },
             });
 
-            //  FormData 내부 확인 - 추후 디버깅용으로 남겨둠
-            for (let pair of formData._parts) {
-                console.log('🧾 FormData 내용:', pair[0], pair[1]);
+            console.log('📡 응답 받음:', response.status);
+
+            if (response.status === 200) {
+                const result = response.data;
+                console.log('✅ 성공 응답:', result);
+                Alert.alert(
+                    "동행 생성 완료",
+                    "동행이 성공적으로 생성되었습니다!",
+                    [
+                        {
+                            text: "확인",
+                            onPress: () => {
+                                // 동행 목록 페이지로 이동
+                                router.push('/accompany');
+                            }
+                        }
+                    ],
+                    { cancelable: false }
+                );
             }
-        }
-        console.log('📤 FormData 생성 완료');
-
-        const url = `${getBaseURL()}/api/accompany/create`;
-        console.log('🌐 API URL:', url);
-
-        const response = await fetch(url, {
-            method: 'POST',
-            body: formData, 
-            headers: {
-                'Accept': 'application/json',
-            },
-        });
-
-        console.log('📡 응답 받음:', response.status);
-
-        if (response.ok) {
-            const result = await response.json();
-            console.log('✅ 성공 응답:', result);
-            Alert.alert(
-                "동행 생성 완료!", 
-                `"${title}" 동행이 등록되었습니다!`,
-                [
-                    {
-                        text: "확인",
-                        onPress: () => router.push('/accompany')
-                    }
-                ]
-            );
-        } else {
-            const contentType = response.headers.get('content-type');
-            let errorText = '';
-
-            try {
-                if (contentType?.includes('application/json')) {
-                    const errorData = await response.json();
-                    errorText = JSON.stringify(errorData, null, 2);
-                } else {
-                    errorText = await response.text();
-                }
-            } catch {
-                errorText = '응답 파싱 실패';
+        } catch (error) {
+            console.error('❌ 네트워크 에러:', error);
+            if (error.response) {
+                console.log('❌ 서버 에러 응답:', error.response.data);
+                Alert.alert(
+                    "동행 생성 실패",
+                    `서버 오류 발생 (${error.response.status})\n\n${JSON.stringify(error.response.data, null, 2)}`
+                );
+            } else {
+                Alert.alert("네트워크 오류", "서버에 연결할 수 없습니다. 와이파이 연결과 서버 실행 상태를 확인해주세요.");
             }
-
-            console.log('❌ 에러 응답:', errorText);
-            Alert.alert("동행 생성 실패", `서버 오류 발생 (${response.status})\n\n${errorText}`);
+        } finally {
+            setIsLoading(false);
         }
-
-    } catch (error) {
-        console.error('❌ 네트워크 에러:', error.message);
-        Alert.alert("네트워크 오류", "서버에 연결할 수 없습니다. 와이파이 연결과 서버 실행 상태를 확인해주세요.");
-    } finally {
-        setIsLoading(false);
-    }
-};
+    };
 
     
     const renderStep = () => {

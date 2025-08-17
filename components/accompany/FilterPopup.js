@@ -253,9 +253,9 @@ const styles = StyleSheet.create({
     conditionLabelInline: {
         fontSize: 15,
         color: '#555',
-        width: 50,
+        width: 38,
         marginTop: 6,
-        marginLeft: 10
+        marginLeft: 6
     },
     chipContainer: {
         flexDirection: 'row',
@@ -269,7 +269,7 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         borderColor: '#ccc',
         borderWidth: 1,
-        marginRight: 8,
+        marginRight: 5,
         marginBottom: 7,
     },
     chipSelected: {
