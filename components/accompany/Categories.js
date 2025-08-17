@@ -57,7 +57,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: '500',
         marginTop: 6,
-        marginLeft: 16,
+        marginLeft: 8,
         width: 40,
     },
     chipContainer: {
