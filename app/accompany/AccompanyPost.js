@@ -46,7 +46,7 @@ export default function AccompanyPost() {
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
 
-    const currentUserId = "2";
+    const currentUserId = "3";
     const [isHost, setIsHost] = useState(false);
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
@@ -256,7 +256,7 @@ export default function AccompanyPost() {
     // 좋아요 토글 함수 - AccompanyBottomButton에서 호출됨
     const handleLikeToggle = useCallback(async () => {
         if (!postId || !currentUserId) {
-            console.error('❌ AccompanyPost: postId 또는 currentUserId가 유효하지 않아 좋아요 토글을 할 수 없습니다.', { postId, currentUserId });
+            console.error('❌ AccompanyPost: postId 또는 currentUserId가 유효하지 않음', { postId, currentUserId });
             Alert.alert('오류', '게시물 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
             return;
         }
@@ -270,37 +270,67 @@ export default function AccompanyPost() {
         console.log('💖 AccompanyPost: 좋아요 토글 시작', {
             postId,
             currentUserId,
-            currentIsLiked: isLiked,
-            currentLikeCount: likeCount
+            현재_isLiked: isLiked,
+            현재_likeCount: likeCount,
+            타입_확인: {
+                isLiked_type: typeof isLiked,
+                likeCount_type: typeof likeCount
+            }
         });
 
         try {
             setIsLikeLoading(true);
 
-            // ✅ 낙관적 업데이트 제거 - API 호출만 수행
+            // ✅ API 호출 - 서버가 최종 상태 결정
+            console.log('🚀 toggleLikeApi 호출 중...');
             const result = await toggleLikeApi(postId, currentUserId);
             
             console.log('✅ AccompanyPost: 좋아요 토글 API 응답:', result);
             
-            // ✅ API 응답으로만 상태 업데이트 (API 완료 후에만 UI 변경)
-            const newIsLiked = result.isLiked;
-            const newLikeCount = result.likeCount;
+            // ✅ API 응답으로 상태 업데이트
+            const newIsLiked = Boolean(result.isLiked);
+            const newLikeCount = Number(result.likeCount) || 0;
+            
+            console.log('🔄 상태 업데이트 진행:', {
+                이전_isLiked: isLiked,
+                새로운_isLiked: newIsLiked,
+                이전_likeCount: likeCount,
+                새로운_likeCount: newLikeCount,
+                변경됨: isLiked !== newIsLiked ? '예' : '아니오'
+            });
             
             setIsLiked(newIsLiked);
             setLikeCount(newLikeCount);
             
-            console.log('✨ AccompanyPost: API 응답 후 상태 업데이트 완료', {
-                API응답_isLiked: result.isLiked,
-                API응답_likeCount: result.likeCount,
-                업데이트된_isLiked: newIsLiked,
-                업데이트된_likeCount: newLikeCount
-            });
+            console.log('✨ AccompanyPost: 상태 업데이트 완료');
+
+            // ✅ 성공 피드백 (선택사항)
+            // console.log(newIsLiked ? '💖 좋아요 추가됨' : '💔 좋아요 취소됨');
 
         } catch (error) {
-            console.error('❌ AccompanyPost: 좋아요 토글 실패:', error);
-            Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
+            console.error('❌ AccompanyPost: 좋아요 토글 실패:', {
+                error: error.message,
+                postId,
+                currentUserId,
+                현재상태: { isLiked, likeCount }
+            });
             
-            // 에러를 다시 throw하여 자식 컴포넌트에서도 처리할 수 있도록
+            // 에러 타입별 메시지 처리
+            let errorMessage = '좋아요 처리 중 오류가 발생했습니다.';
+            
+            if (error.message.includes('게시물을 찾을 수 없습니다')) {
+                errorMessage = '게시물을 찾을 수 없습니다.';
+            } else if (error.message.includes('서버 오류')) {
+                errorMessage = '서버 오류입니다. 잠시 후 다시 시도해주세요.';
+            } else if (error.message.includes('시간이 초과')) {
+                errorMessage = '네트워크 상태를 확인해주세요.';
+            } else if (error.message.includes('인증이 필요')) {
+                errorMessage = '다시 로그인해주세요.';
+            }
+            
+            Alert.alert('오류', errorMessage);
+            
+            // 에러를 다시 throw하여 자식 컴포넌트에서도 인지할 수 있도록
             throw error;
         } finally {
             setIsLikeLoading(false);

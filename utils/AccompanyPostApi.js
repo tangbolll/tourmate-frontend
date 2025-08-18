@@ -49,20 +49,27 @@ const transformAccompanyDetail = (backendData) => {
         recruitEndDate: backendData.recEndDate ? dayjs(backendData.recEndDate).locale('ko').format('YYYY.MM.DD') : '',
         description: backendData.intro || '설명이 없습니다.',
         meetingPoint: backendData.meetPlace || '미정',
-        member: backendData.participants?.map(p => p.userId?.toString()) || [],
-        applymember: backendData.applicants?.map(a => a.userId?.toString()) || [],
+        
+        member: backendData.member ? Array.from(backendData.member).map(p => p.userId?.toString()) : [],
+        applymember: backendData.applyMember ? Array.from(backendData.applyMember).map(a => a.userId?.toString()) : [],
+        
         gender: backendData.gender === 'ALL' ? '남녀무관' : (backendData.gender || '미정'),
-        ageRange: (backendData.ageGroup || []).map(age => age === "ALL" ? "누구나" : age),
-        category: backendData.category || [],
-        tags: backendData.tag || [],
-        currentParticipants: backendData.participants?.length || 1,
+        ageRange: backendData.ageGroup ? Array.from(backendData.ageGroup).map(age => age === "ALL" ? "누구나" : age) : [],
+        category: backendData.category ? Array.from(backendData.category) : [],
+        tags: backendData.tag ? Array.from(backendData.tag) : [],
+        
+        currentParticipants: backendData.currentParticipants || (backendData.member ? backendData.member.size : 1),
         maxParticipants: backendData.maxRecruit || 0,
+
         createdBy: backendData.userId?.toString() || 'unknown',
-        createdByName: backendData.host?.nickname || '알 수 없음',
+        createdByName: backendData.nickname || '알 수 없음',  // nickname 필드 사용
+        
         likes: backendData.likeCount || 0,
         isLiked: backendData.likedByCurrentUser || false,
         status: backendData.accompanyStatus || 'RECRUITING',  // 동행 상태: RECRUITING, COMPLETED, CLOSED
-        userApplicationStatus: backendData.userApplicationStatus || null,  // 사용자 신청 상태:PENDING, ACCEPTED, REJECTED, CANCELLED
+        userApplicationStatus: backendData.userApplicationStatus || null,  // 사용자 신청 상태: PENDING, ACCEPTED, REJECTED, CANCELLED
+        
+        updateDate: backendData.updateDate ? dayjs(backendData.updateDate).locale('ko').format('YYYY.MM.DD HH:mm') : null,
     };
 };
 
@@ -86,59 +93,256 @@ const formatTimeAgo = (dateString) => {
     return commentTime.format('M월 D일');
 };
 
-// 동행 상세 정보를 가져오는 API 함수 - 개선된 버전
 export const fetchAccompanyDetailApi = async (postId, userId) => {
-    const url = `${API_URL}/api/accompany/AccompanyPost?postId=${postId}&userId=${userId}`;
-    console.log('🌐 동행 상세 조회 API 호출:', url);
+    console.log('🌐 동행 상세 조회 시작:', { postId, userId });
 
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new Error(`Server error (${response.status})`);
-    }
-
-    const backendData = await response.json();
-    console.log('📋 백엔드 원본 데이터:', backendData);
-
-    // 좋아요 상태 조회
-    const likeStatusResponse = await fetch(`${API_URL}/api/accompany/${postId}/like/status?id=${userId}`);
-    if (likeStatusResponse.ok) {
-        const likeData = await likeStatusResponse.json();
-        backendData.likeCount = likeData.likeCount;
-        backendData.likedByCurrentUser = likeData.isLiked;
-    }
-
-    // 사용자 신청 상태 조회 - 더 정확한 방법
     try {
-        const applicationStatusResponse = await fetch(`${API_URL}/api/accompany/${postId}/application-status?userId=${userId}`);
-        if (applicationStatusResponse.ok) {
-            const applicationData = await applicationStatusResponse.json();
-            backendData.userApplicationStatus = applicationData.status;
-            console.log('📝 사용자 신청 상태:', applicationData);
-        } else {
-            // 대안: my-applications 엔드포인트 사용
-            const myApplicationsResponse = await fetch(`${API_URL}/api/accompany/my-applications?id=${userId}`);
-            if (myApplicationsResponse.ok) {
-                const myApplications = await myApplicationsResponse.json();
+        // 🚀 병렬로 필요한 API들을 모두 호출
+        const apiCalls = [
+            // 1. 기본 동행 정보
+            fetch(`${API_URL}/api/accompany/AccompanyPost?postId=${postId}&userId=${userId}`)
+        ];
+
+        // 2. 좋아요 상태 (userId가 있을 때만)
+        if (userId) {
+            apiCalls.push(
+                fetch(`${API_URL}/api/accompany/${postId}/like/status?id=${userId}`)
+            );
+        }
+
+        // 3. 사용자 신청 상태 (userId가 있을 때만)
+        if (userId) {
+            apiCalls.push(
+                fetch(`${API_URL}/api/accompany/my-applications?id=${userId}`)
+            );
+        }
+
+        console.log(`📡 ${apiCalls.length}개의 API를 병렬로 호출합니다.`);
+        
+        // 병렬 실행
+        const responses = await Promise.allSettled(apiCalls);
+        
+        // 1️⃣ 기본 동행 정보 처리
+        const basicResponse = responses[0];
+        if (basicResponse.status !== 'fulfilled' || !basicResponse.value.ok) {
+            throw new Error(`기본 동행 정보 조회 실패: ${basicResponse.value?.status || 'Network Error'}`);
+        }
+        
+        const backendData = await basicResponse.value.json();
+        console.log('📋 기본 동행 데이터:', backendData);
+
+        // 2️⃣ 좋아요 상태 처리
+        let likeData = { liked: false, likeCount: backendData.likeCount || 0 };
+        
+        if (userId && responses[1]) {
+            const likeResponse = responses[1];
+            if (likeResponse.status === 'fulfilled' && likeResponse.value.ok) {
+                likeData = await likeResponse.value.json();
+                console.log('📝 좋아요 상태 조회 성공:', likeData);
+            } else {
+                console.warn('⚠️ 좋아요 상태 조회 실패:', likeResponse.reason || likeResponse.value?.status);
+            }
+        }
+
+        // 3️⃣ 사용자 신청 상태 처리
+        let userApplicationStatus = null;
+        
+        if (userId && responses[2]) {
+            const applicationResponse = responses[2];
+            if (applicationResponse.status === 'fulfilled' && applicationResponse.value.ok) {
+                const myApplications = await applicationResponse.value.json();
                 const currentApplication = myApplications.find(app => app.id?.toString() === postId);
                 
                 if (currentApplication) {
-                    backendData.userApplicationStatus = currentApplication.userApplicationStatus || 'CANCELLED';
-                    console.log('📝 사용자 신청 상태 (대안 방법):', currentApplication);
+                    userApplicationStatus = currentApplication.userApplicationStatus || 'CANCELLED';
+                    console.log('📝 사용자 신청 상태 확인:', currentApplication);
                 } else {
-                    backendData.userApplicationStatus = null;
                     console.log('📝 신청 내역 없음');
                 }
+            } else {
+                console.warn('⚠️ 신청 상태 조회 실패:', applicationResponse.reason || applicationResponse.value?.status);
             }
         }
+
+        // 4️⃣ 데이터 병합
+        const combinedData = {
+            ...backendData,
+            likeCount: likeData.likeCount,
+            likedByCurrentUser: likeData.liked,
+            userApplicationStatus: userApplicationStatus
+        };
+
+        console.log('🔍 최종 병합 결과:', {
+            기본_likeCount: backendData.likeCount,
+            API_likeCount: likeData.likeCount,
+            API_liked: likeData.liked,
+            최종_isLiked: combinedData.likedByCurrentUser,
+            신청상태: userApplicationStatus
+        });
+
+        const transformedData = transformAccompanyDetail(combinedData);
+        console.log('✅ 최종 변환 완료:', transformedData);
+        
+        return transformedData;
+
     } catch (error) {
-        console.warn('⚠️ 사용자 신청 상태 조회 실패:', error);
-        backendData.userApplicationStatus = null;
+        console.error('❌ fetchAccompanyDetailApiOptimized 에러:', error);
+        throw error;
+    }
+};
+
+// ✅ 수정된 좋아요 추가/취소 API - fetch 사용
+export const toggleLikeApi = async (accompanyId, userId) => {
+    const numericAccompanyId = Number(accompanyId);
+    
+    if (isNaN(numericAccompanyId)) {
+        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
+        throw new Error('Invalid accompanyId provided.');
     }
 
-    const transformedData = transformAccompanyDetail(backendData);
-    console.log('✅ 변환된 최종 데이터:', transformedData);
+    if (!userId) {
+        console.error('❌ userId가 제공되지 않았습니다');
+        throw new Error('UserId is required for like toggle.');
+    }
+
+    console.log(`🔍 toggleLikeApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
+
+    try {
+        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like?id=${userId}`;
+        console.log(`🌐 API 호출 URL: ${url}`);
+        
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`❌ API 응답 실패:`, {
+                status: response.status,
+                statusText: response.statusText,
+                errorText
+            });
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`✅ toggleLikeApi 응답 성공:`, data);
+        
+        // ✅ 응답 데이터 유효성 검사 - 백엔드 필드명에 맞게 수정
+        if (data.isLiked === undefined || data.likeCount === undefined) {
+            console.error('❌ 백엔드 응답 데이터 형식이 올바르지 않습니다:', data);
+            throw new Error('Invalid response format from server');
+        }
+        
+        console.log(`🔍 토글 응답 데이터 상세 분석:`, {
+            isLiked: data.isLiked,
+            isLiked_type: typeof data.isLiked,
+            likeCount: data.likeCount,
+            likeCount_type: typeof data.likeCount,
+            전체_응답_키들: Object.keys(data)
+        });
+        
+        // ✅ 타입 보장하여 반환
+        const result = {
+            isLiked: Boolean(data.isLiked),
+            likeCount: Math.max(0, Number(data.likeCount) || 0)
+        };
+        
+        console.log(`🔍 최종 반환값:`, {
+            isLiked: result.isLiked,
+            isLiked_type: typeof result.isLiked,
+            likeCount: result.likeCount,
+            likeCount_type: typeof result.likeCount
+        });
+        
+        return result;
+        
+    } catch (error) {
+        console.error(`❌ toggleLikeApi 에러 (ID: ${numericAccompanyId}):`, {
+            message: error.message,
+            name: error.name
+        });
+        
+        // ✅ 에러 타입별 처리
+        if (error.message.includes('status: 404')) {
+            throw new Error('게시물을 찾을 수 없습니다.');
+        } else if (error.message.includes('status: 5')) {
+            throw new Error('서버 오류입니다. 잠시 후 다시 시도해주세요.');
+        } else if (error.message.includes('network') || error.message.includes('fetch')) {
+            throw new Error('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
+        } else if (error.message.includes('status: 400')) {
+            throw new Error('잘못된 요청입니다.');
+        } else if (error.message.includes('status: 401')) {
+            throw new Error('인증이 필요합니다.');
+        } else if (error.message.includes('status: 403')) {
+            throw new Error('권한이 없습니다.');
+        }
+        
+        // 기타 에러의 경우 원본 에러 전달
+        throw error;
+    }
+};
+
+// ✅ 수정된 좋아요 상태 조회 API - fetch 사용
+export const getLikeStatusApi = async (accompanyId, userId) => {
+    // accompanyId를 명시적으로 Number 타입으로 변환
+    const numericAccompanyId = Number(accompanyId);
     
-    return transformedData;
+    if (isNaN(numericAccompanyId)) {
+        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
+        return { isLiked: false, likeCount: 0 };
+    }
+    
+    console.log(`🔍 getLikeStatusApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
+    
+    try {
+        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like/status?id=${userId}`;
+        console.log(`🌐 API 호출 URL: ${url}`);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log(`✅ getLikeStatusApi 응답 성공:`, data);
+        console.log(`🔍 응답 데이터 타입 확인:`, {
+            isLiked: typeof data.isLiked,
+            likeCount: typeof data.likeCount,
+            전체_응답: data
+        });
+        
+        // ✅ 백엔드 응답 필드명에 맞춰 반환
+        return {
+            isLiked: Boolean(data.isLiked), // isLiked 필드 사용
+            likeCount: Number(data.likeCount) || 0
+        };
+        
+    } catch (error) {
+        console.error(`❌ getLikeStatusApi 에러 (ID: ${numericAccompanyId}):`, {
+            message: error.message,
+            name: error.name
+        });
+        
+        // 404 에러인 경우 (동행이 존재하지 않음)
+        if (error.message.includes('status: 404')) {
+            console.warn(`⚠️ 동행 ID ${numericAccompanyId}를 찾을 수 없습니다.`);
+            return { isLiked: false, likeCount: 0 };
+        }
+        
+        // 다른 에러의 경우
+        console.error(`❌ 좋아요 상태 조회 실패 (ID: ${numericAccompanyId}):`, error.message);
+        return { isLiked: false, likeCount: 0 };
+    }
 };
 
 // 댓글 목록을 가져오는 API 함수
@@ -202,133 +406,6 @@ export const saveCommentApi = async (postId, content, userId, parentCommentId = 
         isHost: result.isHostComment,
     };
 };
-
-// 좋아요 추가/취소 API - 디버깅 로그 추가
-export const toggleLikeApi = async (accompanyId, userId) => {
-    const numericAccompanyId = Number(accompanyId);
-    
-    if (isNaN(numericAccompanyId)) {
-        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
-        throw new Error('Invalid accompanyId provided.');
-    }
-
-    console.log(`🔍 toggleLikeApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
-
-    try {
-        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like`;
-        console.log(`🌐 API 호출 URL: ${url}`);
-        console.log(`🌐 API 호출 파라미터: id=${userId}`);
-        
-        const response = await axios.post(url, null, {
-            params: {
-                id: userId
-            },
-            timeout: 10000 // 10초 타임아웃 추가
-        });
-        
-        console.log(`✅ toggleLikeApi 응답 성공:`, {
-            status: response.status,
-            data: response.data,
-            headers: response.headers
-        });
-        
-        console.log(`🔍 토글 응답 데이터 상세 분석:`, {
-            liked: response.data.liked,
-            liked_type: typeof response.data.liked,
-            likeCount: response.data.likeCount,
-            likeCount_type: typeof response.data.likeCount,
-            전체_응답_키들: Object.keys(response.data)
-        });
-        
-        // ✅ 백엔드 응답 필드명에 맞춰 변환하고 유효성 검사 추가
-        const result = {
-            isLiked: Boolean(response.data.liked), // Boolean으로 확실히 변환
-            likeCount: Number(response.data.likeCount) || 0 // Number로 확실히 변환, fallback 0
-        };
-        
-        console.log(`🔍 최종 반환값:`, {
-            isLiked: result.isLiked,
-            isLiked_type: typeof result.isLiked,
-            likeCount: result.likeCount,
-            likeCount_type: typeof result.likeCount
-        });
-        
-        return result;
-        
-    } catch (error) {
-        console.error(`❌ toggleLikeApi 에러 (ID: ${numericAccompanyId}):`, {
-            message: error.message,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            url: error.config?.url,
-            method: error.config?.method,
-            params: error.config?.params
-        });
-        
-        handleApiError(error, `좋아요 토글 (ID: ${numericAccompanyId})`);
-        throw error;
-    }
-};
-
-// 좋아요 상태 조회 API - 디버깅 로그 추가
-export const getLikeStatusApi = async (accompanyId, userId) => {
-    // accompanyId를 명시적으로 Number 타입으로 변환
-    const numericAccompanyId = Number(accompanyId);
-    
-    if (isNaN(numericAccompanyId)) {
-        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
-        return { isLiked: false, likeCount: 0 };
-    }
-    
-    console.log(`🔍 getLikeStatusApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
-    
-    try {
-        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like/status`;
-        console.log(`🌐 API 호출 URL: ${url}`);
-        console.log(`🌐 API 호출 파라미터: id=${userId}`);
-        
-        const response = await axios.get(url, {
-            params: {
-                id: userId
-            },
-            timeout: 10000 // 10초 타임아웃 추가
-        });
-        
-        console.log(`✅ getLikeStatusApi 응답 성공:`, response.data);
-        console.log(`🔍 응답 데이터 타입 확인:`, {
-            liked: typeof response.data.liked,
-            likeCount: typeof response.data.likeCount,
-            전체_응답: response.data
-        });
-        
-        // ✅ 백엔드 응답 필드명에 맞춰 변환
-        return {
-            isLiked: response.data.liked, // liked → isLiked로 변환
-            likeCount: response.data.likeCount
-        };
-        
-    } catch (error) {
-        console.error(`❌ getLikeStatusApi 에러 (ID: ${numericAccompanyId}):`, {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data,
-            url: error.config?.url
-        });
-        
-        // 404 에러인 경우 (동행이 존재하지 않음)
-        if (error.response?.status === 404) {
-            console.warn(`⚠️ 동행 ID ${numericAccompanyId}를 찾을 수 없습니다.`);
-            return { isLiked: false, likeCount: 0 };
-        }
-        
-        // 다른 에러의 경우
-        handleApiError(error, `좋아요 상태 조회 (ID: ${numericAccompanyId})`);
-        return { isLiked: false, likeCount: 0 };
-    }
-};
-
-
 
 
 // 동행 신청/취소 API 함수

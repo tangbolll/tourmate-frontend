@@ -132,6 +132,7 @@ const styles = StyleSheet.create({
     },
     text: {
         fontSize: 14,
+        lineHeight: 17,
         color: '#333',
     },
     // 기존 imageContainer 스타일 대신 사용
