@@ -89,7 +89,7 @@ const Report = ({ visible, onClose, onSubmit }) => {
                 <View style={styles.reasonSection}>
                 <Text style={styles.sectionTitle}>사유 선택</Text>
                 <Text style={styles.sectionSubtitle}>
-                    신고 사유를 선택해주시면 관리자가 검토 후 처리할 예정입니다.
+                    신고 사유를 선택해주시면 관리자가 검토 후 처리합니다.
                 </Text>
 
                 <View style={styles.reasonList}>
@@ -200,7 +200,7 @@ const styles = StyleSheet.create({
         marginBottom: 8,
     },
     sectionSubtitle: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#666',
         marginBottom: 8,
         lineHeight: 20,

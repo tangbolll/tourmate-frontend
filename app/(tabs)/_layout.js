@@ -67,24 +67,26 @@ export default function AppLayout() {
             
             {/* 홈 */}
             <Tabs.Screen name="index" options={{
-                tabBarLabel: ({ focused }) => (
-                    <Text style={{
-                        fontSize: 11,
-                        color: focused ? '#000' : '#999',
-                        fontWeight: focused ? 'bold' : 'normal'
-                    }}>홈</Text>
-                ),
+                // tabBarLabel: ({ focused }) => (
+                //     <Text style={{
+                //         fontSize: 11,
+                //         color: focused ? '#000' : '#999',
+                //         fontWeight: focused ? 'bold' : 'normal'
+                //     }}>홈</Text>
+                // ),
+                tabBarLabel: () => null, // 홈 탭은 라벨을 숨김
+                tabBarActiveTintColor: '#000',
                 tabBarIcon: ({ focused }) => (
                     <View style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: 22,
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
                         backgroundColor: focused ? '#000' : '#ccc',
                         justifyContent: 'center',
                         alignItems: 'center',
-                        marginBottom: 24,
+                        marginBottom: 16,
                     }}>
-                        <Ionicons name="home" size={22} color="#fff" />
+                        <Ionicons name="home" size={28} color="#fff" />
                     </View>
                 ),
             }} />

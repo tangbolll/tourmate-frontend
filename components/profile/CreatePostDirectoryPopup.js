@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -13,10 +13,14 @@ import {
 import { Feather } from '@expo/vector-icons';
 import DayPicker from './DayPicker';
 
+// userEmail은 이 컴포넌트에서 직접 사용하지 않고, 부모 컴포넌트에서 API 호출 시 전달됩니다.
+// 따라서 이 컴포넌트에서는 userEmail 변수를 제거했습니다.
+// const userEmail = "333@naver.com"; 
+
 const CreatePostDirectoryPopup = ({
     visible,
     onClose,
-    onSave,
+    onSave, // 부모 컴포넌트로부터 전달받는 저장/생성 함수
     onDelete,
     mode = 'create', // 'create' 또는 'edit'
     existingData = null, // 수정 시 기존 데이터
@@ -32,7 +36,7 @@ const CreatePostDirectoryPopup = ({
     useEffect(() => {
         if (visible) {
             if (mode === 'edit' && existingData) {
-                setFolderName(existingData.name || '');
+                setFolderName(existingData.title || ''); // 기존 데이터의 key가 'title'인지 확인
                 setStartDate(existingData.startDate ? new Date(existingData.startDate) : new Date());
                 setEndDate(existingData.endDate ? new Date(existingData.endDate) : new Date());
             } else {
@@ -45,6 +49,7 @@ const CreatePostDirectoryPopup = ({
     }, [visible, mode, existingData]);
 
     const formatDateToString = (date) => {
+        if (!date) return null;
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
         const day = String(date.getDate()).padStart(2, '0');
@@ -52,6 +57,7 @@ const CreatePostDirectoryPopup = ({
     };
 
     const formatDateForDisplay = (date) => {
+        if (!date) return '날짜를 선택하세요';
         const month = date.getMonth() + 1;
         const day = date.getDate();
         const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
@@ -84,29 +90,22 @@ const CreatePostDirectoryPopup = ({
         setShowCalendar(true);
     };
 
-    const handleSave = () => {
+    // 💡 변경점: handleSave 함수를 삭제하고, handlePressSave 함수를 추가했습니다.
+    // 이 함수는 데이터를 정리하여 props로 받은 onSave 함수를 호출합니다.
+    const handlePressSave = () => {
         if (!folderName.trim()) {
-            Alert.alert('알림', '폴더명을 입력해주세요.');
-            return;
-        }
-
-        if (!startDate || !endDate) {
-            Alert.alert('알림', '날짜를 선택해주세요.');
+            Alert.alert('오류', '폴더명을 입력해주세요.');
             return;
         }
 
         const folderData = {
-            name: folderName.trim(),
-            startDate: startDate.toISOString(),
-            endDate: endDate.toISOString(),
+            title: folderName,
+            startDate: formatDateToString(startDate),
+            endDate: formatDateToString(endDate),
         };
 
-        if (mode === 'edit' && existingData) {
-            folderData.id = existingData.id;
-        }
-
+        // 💡 부모로부터 받은 onSave 함수를 호출하며 데이터를 전달
         onSave(folderData);
-        onClose();
     };
 
     const handleDelete = () => {
@@ -119,8 +118,13 @@ const CreatePostDirectoryPopup = ({
                     text: '삭제',
                     style: 'destructive',
                     onPress: () => {
-                        onDelete(existingData.id);
-                        onClose();
+                        // existingData가 존재하고 id가 있을 때만 삭제 로직 실행
+                        if (onDelete && existingData && existingData.id) {
+                            onDelete(existingData.id);
+                            onClose();
+                        } else {
+                             Alert.alert('오류', '삭제할 폴더 ID가 없습니다.');
+                        }
                     },
                 },
             ]
@@ -199,7 +203,8 @@ const CreatePostDirectoryPopup = ({
                                 <TouchableOpacity style={styles.deleteButton} onPress={handleDelete}>
                                     <Text style={styles.deleteButtonText}>삭제</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                                {/* 💡 변경점: handlePressSave 함수를 호출하여 데이터를 부모에게 전달합니다. */}
+                                <TouchableOpacity style={styles.saveButton} onPress={handlePressSave}>
                                     <Text style={styles.saveButtonText}>저장</Text>
                                 </TouchableOpacity>
                             </>
@@ -208,7 +213,8 @@ const CreatePostDirectoryPopup = ({
                                 <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
                                     <Text style={styles.cancelButtonText}>취소</Text>
                                 </TouchableOpacity>
-                                <TouchableOpacity style={styles.createButton} onPress={handleSave}>
+                                {/* 💡 변경점: handlePressSave 함수를 호출하여 데이터를 부모에게 전달합니다. */}
+                                <TouchableOpacity style={styles.createButton} onPress={handlePressSave}>
                                     <Text style={styles.createButtonText}>생성</Text>
                                 </TouchableOpacity>
                             </>

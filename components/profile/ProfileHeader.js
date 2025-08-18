@@ -7,16 +7,14 @@ const defaultProfile = require('../../assets/defaultProfile1.png');
 // 목 데이터
 const mockUserData = {
     userPhoto: null, // null이면 defaultProfile 사용
-    userId: '@hwi02',
-    userName: '서휘경',
-    userBirth: '2001-01-01',
+    userNickname: '생귤탱귤김탱볼',
+    userAge: '22세',
     userSex: '여',
-    userType: '계획적인 모험가',
-    userInfo: '계획적인 여행을 좋아하지만, 새로운 경험을 하고 싶어요.\n다양한 활동을 하는 여행을 하고 싶습니다!'
+    userType: '#계획적인 모험가',
 };
 
 export function ProfileHeader() {
-    const { userPhoto, userId, userName, userBirth, userSex, userType, userInfo } = mockUserData;
+    const { userPhoto, userNickname, userAge, userSex, userType } = mockUserData;
     
     return (
         <View style={styles.headerContainer}>
@@ -41,17 +39,13 @@ export function ProfileHeader() {
                 {/* 사용자 기본 정보 */}
                 <View style={styles.userBasicInfo}>
                     <View style={styles.userAllInfo}>
-                        <Text style={styles.userId}>{userId}</Text>
-                        <Text style={styles.userName}>{userName}</Text>
-                        <Text style={styles.userMeta}>· {userBirth} · {userSex}</Text>
+                        <Text style={styles.userNickname}>{userNickname}</Text>
+                        <Text style={styles.userMeta}>· {userSex} · {userAge}</Text>
                     </View>
                 </View>
                 
                 {/* 사용자 타입 */}
                 <Text style={styles.userType}>{userType}</Text>
-                
-                {/* 사용자 소개 */}
-                <Text style={styles.userInfo}>{userInfo}</Text>
             </View>
         </View>
     );
@@ -72,7 +66,7 @@ const styles = StyleSheet.create({
     },
     headerContainer: {
         marginTop: 60,
-        height: 150,
+        height: 100,
         flexDirection: 'row',
         paddingHorizontal: 20,
         paddingVertical: 15,
@@ -112,19 +106,15 @@ const styles = StyleSheet.create({
     userAllInfo: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
+        gap: 4,
         flexWrap: 'wrap',
-    },
-    userId: {
-        fontSize: 12,
-        color: '#888',
     },
     userDetails: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 8,
     },
-    userName: {
+    userNickname: {
         fontSize: 12,
         fontWeight: '600',
         color: '#000',
@@ -143,13 +133,5 @@ const styles = StyleSheet.create({
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 12,
-    },
-    userInfo: {
-        fontSize: 12,
-        color: '#444',
-        lineHeight: 18,
-        flex: 1,
-        // 한 줄 넘어가면 아래로 자동 줄바꿈
-        flexWrap: 'wrap',
     },
 });
