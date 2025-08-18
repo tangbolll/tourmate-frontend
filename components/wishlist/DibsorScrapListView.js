@@ -24,6 +24,28 @@ const DibsScrapListView = ({
     onPostcardPress
 }) => {
 
+    // 태그 필터링 함수 - 성별 + 카테고리만 표시 (연령, 사용자정의 태그 제외)
+    const filterTags = (tags) => {
+        if (!tags || !Array.isArray(tags)) return [];
+        
+        // 성별 관련 태그들
+        const genderTags = ['남자만', '여자만', '성별무관'];
+        
+        // 기본 카테고리 태그들 (연령 관련 태그 제외)
+        const categoryTags = [
+            '투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '액티비티', '힐링', '역사유적', '박물관/미술관'
+        ];
+        
+        // 연령 관련 태그들 (제외할 태그들)
+        const ageTags = ['10대', '20대', '30대', '40대', '50대', '60대+', '전연령'];
+        
+        return tags.filter(tag => {
+            // 성별 태그이거나 기본 카테고리 태그인 경우만 포함
+            // 연령 태그는 제외
+            return genderTags.includes(tag) || (categoryTags.includes(tag) && !ageTags.includes(tag));
+        });
+    };
+
     // 현재 탭에 따른 데이터 선택
     const getCurrentTabData = () => {
         return selectedTab === '찜' ? dibsList : scrapList;
@@ -60,7 +82,7 @@ const DibsScrapListView = ({
                 id={post.id}
                 date={post.date}
                 title={post.title}
-                tags={post.tags}
+                tags={filterTags(post.tags)} // 태그 필터링 적용
                 location={post.location}
                 participants={post.participants}
                 maxParticipants={post.maxParticipants}
@@ -109,7 +131,7 @@ const styles = StyleSheet.create({
         paddingBottom: 50,
     },
     emptyState: {
-        padding: 16, // 32 → 16으로 줄임
+        padding: 16,
         alignItems: 'center',
         justifyContent: 'center',
     },
@@ -118,7 +140,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#888',
         lineHeight: 24,
-        marginTop: 20, // 100 → 20으로 대폭 줄임
+        marginTop: 20,
     },
 });
 

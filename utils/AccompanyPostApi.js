@@ -2,6 +2,7 @@ import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import axios from 'axios';
 
 // API 베이스 URL 설정
 const getBaseURL = () => {
@@ -191,7 +192,7 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
     }
 };
 
-// ✅ 수정된 좋아요 추가/취소 API - fetch 사용
+// ✅ 수정된 좋아요 추가/취소 API
 export const toggleLikeApi = async (accompanyId, userId) => {
     const numericAccompanyId = Number(accompanyId);
     
@@ -200,55 +201,38 @@ export const toggleLikeApi = async (accompanyId, userId) => {
         throw new Error('Invalid accompanyId provided.');
     }
 
-    if (!userId) {
-        console.error('❌ userId가 제공되지 않았습니다');
-        throw new Error('UserId is required for like toggle.');
-    }
-
     console.log(`🔍 toggleLikeApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
 
     try {
-        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like?id=${userId}`;
+        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like`;
         console.log(`🌐 API 호출 URL: ${url}`);
+        console.log(`🌐 API 호출 파라미터: id=${userId}`);
         
-        const response = await fetch(url, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        const response = await axios.post(url, null, {
+            params: {
+                id: userId
+            },
+            timeout: 10000 // 10초 타임아웃 추가
         });
         
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error(`❌ API 응답 실패:`, {
-                status: response.status,
-                statusText: response.statusText,
-                errorText
-            });
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log(`✅ toggleLikeApi 응답 성공:`, data);
-        
-        // ✅ 응답 데이터 유효성 검사 - 백엔드 필드명에 맞게 수정
-        if (data.isLiked === undefined || data.likeCount === undefined) {
-            console.error('❌ 백엔드 응답 데이터 형식이 올바르지 않습니다:', data);
-            throw new Error('Invalid response format from server');
-        }
+        console.log(`✅ toggleLikeApi 응답 성공:`, {
+            status: response.status,
+            data: response.data,
+            headers: response.headers
+        });
         
         console.log(`🔍 토글 응답 데이터 상세 분석:`, {
-            isLiked: data.isLiked,
-            isLiked_type: typeof data.isLiked,
-            likeCount: data.likeCount,
-            likeCount_type: typeof data.likeCount,
-            전체_응답_키들: Object.keys(data)
+            liked: response.data.liked,
+            liked_type: typeof response.data.liked,
+            likeCount: response.data.likeCount,
+            likeCount_type: typeof response.data.likeCount,
+            전체_응답_키들: Object.keys(response.data)
         });
         
-        // ✅ 타입 보장하여 반환
+        // ✅ 백엔드 응답 필드명에 맞춰 변환하고 유효성 검사 추가
         const result = {
-            isLiked: Boolean(data.isLiked),
-            likeCount: Math.max(0, Number(data.likeCount) || 0)
+            isLiked: Boolean(response.data.liked), // Boolean으로 확실히 변환
+            likeCount: Number(response.data.likeCount) || 0 // Number로 확실히 변환, fallback 0
         };
         
         console.log(`🔍 최종 반환값:`, {
@@ -263,28 +247,19 @@ export const toggleLikeApi = async (accompanyId, userId) => {
     } catch (error) {
         console.error(`❌ toggleLikeApi 에러 (ID: ${numericAccompanyId}):`, {
             message: error.message,
-            name: error.name
+            status: error.response?.status,
+            statusText: error.response?.statusText,
+            data: error.response?.data,
+            url: error.config?.url,
+            method: error.config?.method,
+            params: error.config?.params
         });
         
-        // ✅ 에러 타입별 처리
-        if (error.message.includes('status: 404')) {
-            throw new Error('게시물을 찾을 수 없습니다.');
-        } else if (error.message.includes('status: 5')) {
-            throw new Error('서버 오류입니다. 잠시 후 다시 시도해주세요.');
-        } else if (error.message.includes('network') || error.message.includes('fetch')) {
-            throw new Error('요청 시간이 초과되었습니다. 네트워크 상태를 확인해주세요.');
-        } else if (error.message.includes('status: 400')) {
-            throw new Error('잘못된 요청입니다.');
-        } else if (error.message.includes('status: 401')) {
-            throw new Error('인증이 필요합니다.');
-        } else if (error.message.includes('status: 403')) {
-            throw new Error('권한이 없습니다.');
-        }
-        
-        // 기타 에러의 경우 원본 에러 전달
+        handleApiError(error, `좋아요 토글 (ID: ${numericAccompanyId})`);
         throw error;
     }
 };
+
 
 // ✅ 수정된 좋아요 상태 조회 API - fetch 사용
 export const getLikeStatusApi = async (accompanyId, userId) => {

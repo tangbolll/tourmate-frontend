@@ -2,6 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView } from 'react-native';
 import SelectDibsOrScrap from '../../components/wishlist/SelectDibsOrScrap';
 import DibsScrapListView from '../../components/wishlist/DibsorScrapListView';
+import { 
+    fetchAccompanyFeedApi, 
+    getMultipleAccompanyLikesApi, 
+    toggleLikeApi 
+} from '../../utils/AccompanyListApi';
 
 const DibsorScrap = ({ router }) => {
     // 상태 관리
@@ -13,61 +18,56 @@ const DibsorScrap = ({ router }) => {
     const [dibsList, setDibsList] = useState([]);
     const [scrapList, setScrapList] = useState([]);
     const [likedPosts, setLikedPosts] = useState({});
+    const [allAccompanyPosts, setAllAccompanyPosts] = useState([]); // 전체 동행 포스트
     
     // 데이터 로딩 상태
     const [dibsLoaded, setDibsLoaded] = useState(false);
     const [scrapLoaded, setScrapLoaded] = useState(false);
 
-    // 찜 데이터 로드
+    // 현재 사용자 ID (실제 앱에서는 상태관리나 컨텍스트에서 가져와야 함)
+    const currentUserId = "3"; // TODO: 실제 사용자 ID로 교체
+
+    // 찜 데이터 로드 (좋아요한 동행 포스트만 필터링)
     const fetchDibsData = useCallback(async () => {
         try {
             setLoading(true);
-            // TODO: 실제 API 호출로 대체
-            // const response = await api.getDibsList();
-            // setDibsList(response.data);
             
-            // 임시 더미 데이터
-            const dummyDibsData = [
-                {
-                    id: 'dibs1',
-                    date: '03.04 월',
-                    title: '공주 공산성에서 야경 같이 즐겨요',
-                    tags: ['야경', '여자만', '저녁식사', '걷기'],
-                    location: '공주',
-                    participants: 2,
-                    maxParticipants: 3,
-                    imageUrl: 'https://example.com/image1.jpg'
-                },
-                {
-                    id: 'dibs2',
-                    date: '03.05 화',
-                    title: '부여 백제문화단지 투어',
-                    tags: ['문화', '역사', '남녀무관', '점심'],
-                    location: '부여',
-                    participants: 1,
-                    maxParticipants: 4,
-                    imageUrl: 'https://example.com/image2.jpg'
-                }
-            ];
+            // 1. 전체 동행 피드 데이터 가져오기
+            console.log('🔍 전체 동행 피드 데이터 로딩 시작...');
+            const allPosts = await fetchAccompanyFeedApi(currentUserId);
+            setAllAccompanyPosts(allPosts);
             
-            setDibsList(dummyDibsData);
+            // 2. 모든 포스트의 좋아요 상태 조회
+            console.log('🔍 좋아요 상태 조회 시작...');
+            const accompanyIds = allPosts.map(post => post.id);
+            const likesMap = await getMultipleAccompanyLikesApi(accompanyIds, currentUserId);
+            setLikedPosts(likesMap);
+            
+            // 3. 좋아요한 포스트만 필터링하여 찜 목록 설정
+            const likedAccompanyPosts = allPosts.filter(post => likesMap[post.id] === true);
+            console.log('🔍 좋아요한 동행 포스트:', likedAccompanyPosts);
+            
+            setDibsList(likedAccompanyPosts);
             setDibsLoaded(true);
+            
         } catch (error) {
-            console.error('찜 데이터 로드 실패:', error);
+            console.error('❌ 찜 데이터 로드 실패:', error);
+            // 에러 시 빈 배열로 설정
+            setDibsList([]);
         } finally {
             setLoading(false);
         }
-    }, []);
+    }, [currentUserId]);
 
-    // 스크랩 데이터 로드
+    // 스크랩 데이터 로드 (기존 엽서 데이터 유지)
     const fetchScrapData = useCallback(async () => {
         try {
             setLoading(true);
-            // TODO: 실제 API 호출로 대체
+            // TODO: 실제 스크랩 API 호출로 대체
             // const response = await api.getScrapList();
             // setScrapList(response.data);
             
-            // 임시 더미 엽서 데이터
+            // 임시 더미 엽서 데이터 (기존 유지)
             const dummyScrapData = [
                 {
                     id: 'postcard1',
@@ -221,6 +221,8 @@ const DibsorScrap = ({ router }) => {
         setRefreshing(true);
         try {
             if (selectedTab === '찜') {
+                // 찜 탭에서는 데이터를 다시 로드하고 상태 초기화
+                setDibsLoaded(false);
                 await fetchDibsData();
             } else {
                 await fetchScrapData();
@@ -230,16 +232,51 @@ const DibsorScrap = ({ router }) => {
         }
     }, [selectedTab, fetchDibsData, fetchScrapData]);
 
-    // 좋아요 핸들러
-    const handlePressLike = useCallback((postId) => {
-        setLikedPosts(prev => ({
-            ...prev,
-            [postId]: !prev[postId]
-        }));
-        
-        // TODO: 실제 좋아요 API 호출
-        // api.toggleLike(postId);
-    }, []);
+    // 좋아요 핸들러 - 실제 API 연동
+    const handlePressLike = useCallback(async (postId) => {
+        try {
+            console.log('🔍 좋아요 토글 시작:', postId);
+            
+            // 낙관적 업데이트 (UI 먼저 변경)
+            const currentLikeStatus = likedPosts[postId] || false;
+            setLikedPosts(prev => ({
+                ...prev,
+                [postId]: !currentLikeStatus
+            }));
+            
+            // API 호출
+            const result = await toggleLikeApi(postId, currentUserId);
+            console.log('🔍 좋아요 토글 결과:', result);
+            
+            // API 응답으로 상태 동기화
+            setLikedPosts(prev => ({
+                ...prev,
+                [postId]: result.isLiked
+            }));
+            
+            // 찜 목록 업데이트 (좋아요 해제 시 목록에서 제거)
+            if (selectedTab === '찜') {
+                if (!result.isLiked) {
+                    // 좋아요 해제 시 찜 목록에서 제거
+                    setDibsList(prev => prev.filter(item => item.id !== postId));
+                }
+                // 좋아요 수 업데이트
+                setDibsList(prev => prev.map(item => 
+                    item.id === postId 
+                        ? { ...item, likeCount: result.likeCount }
+                        : item
+                ));
+            }
+            
+        } catch (error) {
+            console.error('❌ 좋아요 처리 실패:', error);
+            // 에러 시 원래 상태로 복원
+            setLikedPosts(prev => ({
+                ...prev,
+                [postId]: !prev[postId]
+            }));
+        }
+    }, [likedPosts, currentUserId, selectedTab]);
 
     // 포스트 네비게이션 핸들러
     const navigateToPost = useCallback((postId) => {
