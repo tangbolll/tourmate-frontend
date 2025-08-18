@@ -48,7 +48,7 @@ export default function AccompanyPost() {
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
 
-    const currentUserId = 2;
+    const currentUserId = "3";
     const [isHost, setIsHost] = useState(false);
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
