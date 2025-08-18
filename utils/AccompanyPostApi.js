@@ -577,3 +577,30 @@ export const getUnreadApplicationsApi = async (accompanyId, hostId) => {
         throw error;
     }
 };
+
+// 그룹채팅방 접근 권한 조회 API 함수
+export const getChatAccessApi = async (postId, userId) => {
+    try {
+        const url = `${API_URL}/api/accompany/${postId}/chat-access?userId=${userId}`;
+        console.log('🌐 채팅 접근 권한 조회 API 호출:', url);
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+            console.warn(`⚠️ 채팅 접근 권한 조회 실패: ${response.status}`);
+            return { canAccess: false, isCompleted: false };
+        }
+        
+        const data = await response.json();
+        console.log('✅ 채팅 접근 권한 조회 성공:', data);
+        
+        return {
+            canAccess: data.canAccess || false,
+            isCompleted: data.isCompleted || false
+        };
+        
+    } catch (error) {
+        console.error('❌ 채팅 접근 권한 조회 오류:', error);
+        return { canAccess: false, isCompleted: false };
+    }
+};

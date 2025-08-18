@@ -27,7 +27,8 @@ import {
     deleteAccompanyPostApi,
     // 새로운 API 함수들 추가
     getUnreadApplicationsApi,
-    markApplicationsViewedApi
+    markApplicationsViewedApi,
+    getChatAccessApi
 } from '../../utils/AccompanyPostApi';
 
 export default function AccompanyPost() {
@@ -41,12 +42,13 @@ export default function AccompanyPost() {
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
     const [isLikeLoading, setIsLikeLoading] = useState(false); // 좋아요 로딩 상태 추가
+    const [chatAccess, setChatAccess] = useState({ canAccess: false, isCompleted: false });
 
 
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
 
-    const currentUserId = "3";
+    const currentUserId = 2;
     const [isHost, setIsHost] = useState(false);
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
@@ -130,42 +132,23 @@ export default function AccompanyPost() {
             setLoading(true);
             setError(null);
             
-            const backendData = await fetchAccompanyDetailApi(id, currentUserId);
+            // 🔥 병렬로 모든 데이터 호출
+            const [backendData, chatAccessData] = await Promise.all([
+                fetchAccompanyDetailApi(id, currentUserId),
+                getChatAccessApi(id, currentUserId)  // 채팅 접근 권한도 함께 조회
+            ]);
+
             const transformedData = transformAccompanyDetail(backendData);
-
-            console.log('🔍 백엔드 원본 데이터:', {
-                id: backendData.id,
-                userApplicationStatus: backendData.userApplicationStatus,
-                member: backendData.member,
-                applyMember: backendData.applyMember,
-                userId: backendData.userId,
-                currentUserId: currentUserId
-            });
-
-            console.log('🔍 변환된 데이터:', {
-                userApplicationStatus: transformedData.userApplicationStatus,
-                member: transformedData.member,
-                applymember: transformedData.applymember,
-                createdBy: transformedData.createdBy
-            });
-
+            
             setPostData(transformedData);
+            setChatAccess(chatAccessData);  // 채팅 접근 권한 설정
+            
             const hostStatus = transformedData.createdBy === currentUserId;
             setIsHost(hostStatus);
-
-            console.log('✅ 최종 상태 체크:', {
-                status: transformedData.status,
-                userApplicationStatus: transformedData.userApplicationStatus,
-                isApplied: isUserApplied(transformedData.userApplicationStatus),
-                closed: ['COMPLETED', 'CLOSED'].includes(transformedData.status),
-                isHost: hostStatus
-            });
-
             setClosed(['COMPLETED', 'CLOSED'].includes(transformedData.status));
             setIsLiked(transformedData.isLiked);
             setLikeCount(transformedData.likes);
 
-            // 호스트인 경우 읽지 않은 신청 개수 조회
             if (hostStatus) {
                 await fetchUnreadApplications();
             }
@@ -667,11 +650,12 @@ export default function AccompanyPost() {
                             location={postData.location}
                             participants={postData.currentParticipants}
                             maxParticipants={postData.maxParticipants}
-                            newApplication={hasNewApplications} // 새로운 신청 여부 전달
+                            newApplication={hasNewApplications} 
                             onParticipantsClick={handleParticipantsClick}
                             postId={postId}
                             currentUserId={currentUserId}
                             status={postData.status}
+                            chatAccess={chatAccess}
                         />
 
                         {/* 더보기 버튼 */}

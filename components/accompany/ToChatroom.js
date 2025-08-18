@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
@@ -10,47 +10,28 @@ const ToChatroom = ({
     participants, 
     maxParticipants, 
     style,
-    status
+    status,
+    chatAccess, 
+    isDataLoading = false  
 }) => {
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
-    const [canShow, setCanShow] = useState(false);
-    const [isLoading, setIsLoading] = useState(true);
 
-    useEffect(() => {
-        checkShouldShow();
-    }, [postId, currentUserId, status]);
-
-    const checkShouldShow = async () => {
-        if (!postId || !currentUserId) {
-            setCanShow(false);
-            setIsLoading(false);
-            return;
-        }
-
-        // props로 받은 상태가 COMPLETED가 아니면 숨김
-       if (status && status !== 'COMPLETED') {
-            setCanShow(false);
-            setIsLoading(false);
-            return;
-        }
-
-        try {
-            const url = `http://localhost:8080/api/accompany/${postId}/chat-access?userId=${currentUserId}`;
-            const response = await fetch(url);
-            
-            if (response.ok) {
-                const data = await response.json();
-                // COMPLETED 상태이고 접근 권한이 있을 때만 표시
-                setCanShow(data.canAccess && data.isCompleted);
-            } else {
-                setCanShow(false);
-            }
-        } catch (error) {
-            setCanShow(false);
-        } finally {
-            setIsLoading(false);
-        }
+    // 표시 조건 체크 함수
+    const shouldShow = () => {
+        // 데이터 로딩 중이면 숨김
+        if (isDataLoading) return false;
+        
+        // 필수 데이터 확인
+        if (!postId || !currentUserId) return false;
+        
+        // 상태가 COMPLETED가 아니면 숨김
+        if (status && status !== 'COMPLETED') return false;
+        
+        // 채팅 접근 권한 확인
+        if (!chatAccess) return false;
+        
+        return chatAccess.canAccess && chatAccess.isCompleted;
     };
 
     const handlePress = async () => {
@@ -75,12 +56,11 @@ const ToChatroom = ({
         }
     };
 
-    // 로딩 중이거나 표시 조건에 맞지 않으면 아무것도 렌더링하지 않음
-    if (isLoading || !canShow) {
+    // 표시 조건에 맞지 않으면 렌더링하지 않음
+    if (!shouldShow()) {
         return null;
     }
 
-    // COMPLETED 상태이고 참여자인 경우에만 버튼 표시
     return (
         <TouchableOpacity 
             style={[styles.container, isNavigating && styles.disabledContainer, style]} 
@@ -101,6 +81,7 @@ const ToChatroom = ({
         </TouchableOpacity>
     );
 };
+
 
 const styles = StyleSheet.create({
     container: {
