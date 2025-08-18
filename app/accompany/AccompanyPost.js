@@ -689,9 +689,9 @@ export default function AccompanyPost() {
                             <Text style={styles.hostInfoText}>
                                 <Text style={styles.hostInfoLabel}>호스트 </Text>
                                 {postData.createdByName}
-                                <Text style={styles.hostInfoLabel}> 게시일 </Text>
+                                <Text style={styles.hostInfoLabel}>  게시일 </Text>
                                 {postData.createdAt}
-                                <Text style={styles.hostInfoLabel}> 조회수 </Text>
+                                <Text style={styles.hostInfoLabel}>  조회수 </Text>
                                 {postData.views}
                             </Text>
                         </View>

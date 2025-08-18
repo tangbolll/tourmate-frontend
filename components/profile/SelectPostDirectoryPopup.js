@@ -9,43 +9,9 @@ import {
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-// 목 데이터
-const mockFolderData = [
-    {
-        id: '1',
-        folderName: 'Busan',
-        startDate: '2024-01-01',
-        endDate: '2024-01-07',
-    },
-    {
-        id: '2',
-        folderName: 'Seoul',
-        startDate: '2024-02-10',
-        endDate: '2024-02-15',
-    },
-    {
-        id: '3',
-        folderName: 'Jeju',
-        startDate: '2024-03-20',
-        endDate: '2024-03-25',
-    },
-    {
-        id: '4',
-        folderName: 'Gangneung',
-        startDate: '2024-04-05',
-        endDate: '2024-04-10',
-    },
-    {
-        id: '5',
-        folderName: 'Gyeongju',
-        startDate: '2024-05-12',
-        endDate: '2024-05-18',
-    },
-];
-
-const SelectPostDirectoryPopup = ({ visible, onClose, onSelect, selectedFolder }) => {
+const SelectPostDirectoryPopup = ({ visible, onClose, onSelect, folders }) => {
     const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-    const [currentSelected, setCurrentSelected] = useState(selectedFolder || mockFolderData[0]);
+    const [currentSelected, setCurrentSelected] = useState('');
 
     const handleFolderSelect = (folder) => {
         setCurrentSelected(folder);
@@ -75,7 +41,7 @@ const SelectPostDirectoryPopup = ({ visible, onClose, onSelect, selectedFolder }
                 styles.dropdownItemText,
                 currentSelected?.id === item.id && styles.selectedItemText
             ]}>
-                {item.folderName}
+                {item.title}
             </Text>
         </TouchableOpacity>
     );
@@ -113,7 +79,7 @@ const SelectPostDirectoryPopup = ({ visible, onClose, onSelect, selectedFolder }
                                 onPress={() => setIsDropdownOpen(!isDropdownOpen)}
                             >
                                 <Text style={styles.dropdownText}>
-                                    {currentSelected?.folderName || '폴더를 선택하세요'}
+                                    {currentSelected?.title || '폴더를 선택하세요'}
                                 </Text>
                                 <Text style={styles.dropdownArrow}>
                                     {isDropdownOpen ? '▲' : '▼'}
@@ -124,7 +90,7 @@ const SelectPostDirectoryPopup = ({ visible, onClose, onSelect, selectedFolder }
                             {isDropdownOpen && (
                                 <View style={styles.dropdownList}>
                                     <FlatList
-                                        data={mockFolderData}
+                                        data={folders}
                                         renderItem={renderFolderItem}
                                         keyExtractor={(item) => item.id}
                                         showsVerticalScrollIndicator={false}

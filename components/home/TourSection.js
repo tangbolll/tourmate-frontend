@@ -23,8 +23,8 @@ const TourSection = () => {
     const getTravelStatus = () => {
         // 테스트용 - 실제로는 여행 시작/종료 날짜를 파싱해서 비교
         const today = new Date();
-        const travelStartDate = new Date('2025-07-13'); // 여행 시작일
-        const travelEndDate = new Date('2025-07-20'); // 여행 종료일
+        const travelStartDate = new Date('2025-08-19'); // 여행 시작일
+        const travelEndDate = new Date('2025-08-20'); // 여행 종료일
         
         const timeDiff = travelStartDate.getTime() - today.getTime();
         const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));

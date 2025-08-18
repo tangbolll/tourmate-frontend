@@ -1,5 +1,5 @@
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet } from 'react-native';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { ProfileHeader } from '../../components/profile/ProfileHeader';
 import PostTabHeader from '../../components/profile/PostTabHeader';
@@ -9,17 +9,43 @@ import AddPostFloatingButton from '../../components/profile/AddPostFloatingButto
 import CreatePostDirectoryPopup from '../../components/profile/CreatePostDirectoryPopup';
 import SelectPostDirectoryPopup from '../../components/profile/SelectPostDirectoryPopup';
 
+import { 
+    createPostcardWithNewFolderApi, 
+    updateFolderApi, 
+    deleteFolderApi,
+    getFoldersByUserApi,
+    handleApiError
+} from '../../utils/PostCardApi';
+
 export default function ProfileHome() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('board');
-    
-    // 팝업 상태 관리
+    const [folders, setFolders] = useState([]); // 폴더 목록 상태 추가
     const [createPopupVisible, setCreatePopupVisible] = useState(false);
     const [selectPopupVisible, setSelectPopupVisible] = useState(false);
     const [popupMode, setPopupMode] = useState('create');
     const [editingFolder, setEditingFolder] = useState(null);
 
-    // 폴더 생성 팝업 열기
+    // 💡 참고: 실제 사용자 이메일은 로그인 세션 등에서 가져와야 합니다.
+    const userEmail = "333@naver.com"; 
+
+    // 폴더 목록을 서버에서 불러오는 함수
+    const fetchFolders = useCallback(async () => {
+        try {
+            const fetchedFolders = await getFoldersByUserApi(userEmail);
+            setFolders(fetchedFolders);
+            console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", fetchedFolders);
+        } catch (error) {
+            handleApiError(error, '폴더 목록 조회');
+        }
+    }, [userEmail]);
+
+    // 컴포넌트 마운트 시 폴더 목록 불러오기
+    useEffect(() => {
+        fetchFolders();
+    }, [fetchFolders]);
+
+    // 폴더 생성/수정 팝업 열기
     const handleCreateFolder = useCallback(() => {
         setPopupMode('create');
         setEditingFolder(null);
@@ -33,26 +59,21 @@ export default function ProfileHome() {
         setCreatePopupVisible(true);
     }, []);
 
-    // WritePost 페이지로 네비게이션 - 개선된 버전
+    // WritePost 페이지로 네비게이션
     const navigateToWritePost = useCallback((folderData) => {
-        // URL 파라미터로 전달할 때 문자열로 변환
         const params = {};
-        
-        if (folderData.id) {
-            params.directoryId = String(folderData.id);
+        if (folderData.folderId) {
+            params.directoryId = String(folderData.folderId);
         }
-        if (folderData.name || folderData.folderName) {
-            params.directoryName = String(folderData.name || folderData.folderName);
+        if (folderData.title) {
+            params.directoryName = folderData.title;
         }
+        // 이 부분은 API 응답 형태에 맞춰 수정될 수 있습니다.
         if (folderData.startDate) {
-            params.startDate = folderData.startDate instanceof Date 
-                ? folderData.startDate.toISOString() 
-                : String(folderData.startDate);
+            params.startDate = folderData.startDate;
         }
         if (folderData.endDate) {
-            params.endDate = folderData.endDate instanceof Date 
-                ? folderData.endDate.toISOString() 
-                : String(folderData.endDate);
+            params.endDate = folderData.endDate;
         }
 
         console.log('Navigating to WritePost with params:', params);
@@ -63,26 +84,56 @@ export default function ProfileHome() {
         });
     }, [router]);
 
-    // 폴더 저장 처리
-    const handleSave = useCallback((folderData) => {
-        if (popupMode === 'create') {
-            // 새 폴더 생성 로직
-            console.log('새 폴더 생성:', folderData);
-            // 새 폴더 생성 후 바로 WritePost로 이동
-            navigateToWritePost(folderData);
-        } else {
-            // 폴더 수정 로직
-            console.log('폴더 수정:', folderData);
+    // 폴더 저장 처리 (API 연동)
+    const handleSave = useCallback(async (folderData) => {
+        setCreatePopupVisible(false);
+        try {
+            if (popupMode === 'create') {
+                const newFolderData = {
+                    title: folderData.title,
+                    startDate: folderData.startDate,
+                    endDate: folderData.endDate,
+                    userEmail: userEmail,
+                    // postcards: [] // 엽서 데이터는 비워둠
+                };
+                console.log('새 폴더 생성 API 호출 준비:', newFolderData);
+                const response = await createPostcardWithNewFolderApi(newFolderData);
+                Alert.alert('성공', '새 폴더가 생성되었습니다.');
+                // 폴더 생성 후 목록 갱신
+                await fetchFolders(); 
+                // 생성된 폴더 정보로 엽서 작성 페이지 이동
+                navigateToWritePost(response);
+            } else {
+                // 폴더 수정 로직
+                const updateData = {
+                    title: folderData.title,
+                    startDate: folderData.startDate,
+                    endDate: folderData.endDate,
+                };
+                console.log('폴더 수정 API 호출 준비:', editingFolder.folderId, updateData);
+                await updateFolderApi(editingFolder.folderId, updateData);
+                Alert.alert('성공', '폴더가 수정되었습니다.');
+                // 폴더 목록 갱신
+                await fetchFolders();
+            }
+        } catch (error) {
+            handleApiError(error, `폴더 ${popupMode === 'create' ? '생성' : '수정'}`);
         }
-        setCreatePopupVisible(false);
-    }, [popupMode, navigateToWritePost]);
+    }, [popupMode, editingFolder, navigateToWritePost, userEmail, fetchFolders]);
 
-    // 폴더 삭제 처리
-    const handleDelete = useCallback((folderId) => {
-        // 폴더 삭제 로직
-        console.log('폴더 삭제:', folderId);
+    // 폴더 삭제 처리 (API 연동)
+    const handleDelete = useCallback(async (folderId) => {
         setCreatePopupVisible(false);
-    }, []);
+        try {
+            console.log('폴더 삭제 API 호출 준비:', folderId);
+            await deleteFolderApi(folderId);
+            Alert.alert('성공', '폴더가 삭제되었습니다.');
+            // 폴더 목록에서 삭제된 폴더 제거
+            await fetchFolders();
+        } catch (error) {
+            handleApiError(error, '폴더 삭제');
+        }
+    }, [fetchFolders]);
 
     // 기존 폴더 선택 처리
     const handleFolderSelect = useCallback((selectedFolder) => {
@@ -99,12 +150,9 @@ export default function ProfileHome() {
     // 플로팅 버튼 옵션 선택 처리
     const handleFloatingButtonOption = useCallback((option) => {
         console.log('Selected option:', option);
-        
         if (option === 'existing') {
-            // 기존 폴더에 엽서 추가 - 폴더 선택 팝업 열기
             setSelectPopupVisible(true);
         } else if (option === 'new') {
-            // 새 폴더에 엽서 추가 - 폴더 생성 팝업 열기
             handleCreateFolder();
         }
     }, [handleCreateFolder]);
@@ -114,11 +162,14 @@ export default function ProfileHome() {
             case 'board':
                 return <PostBoardTab />;
             case 'directory':
-                return <PostDirectoryTab onEditFolder={handleEditFolder} />;
+                return <PostDirectoryTab 
+                    onEditFolder={handleEditFolder} 
+                    folders={folders} // 불러온 폴더 데이터를 PostDirectoryTab에 전달
+                />;
             default:
                 return <PostBoardTab />;
         }
-    }, [activeTab, handleEditFolder]);
+    }, [activeTab, handleEditFolder, folders]);
 
     return (
         <View style={styles.container}>
@@ -131,12 +182,10 @@ export default function ProfileHome() {
                 {renderTabContent()}
             </View>
             
-            {/* 플로팅 버튼 */}
             <AddPostFloatingButton 
                 onOptionSelect={handleFloatingButtonOption}
             />
 
-            {/* 폴더 생성/수정 팝업 */}
             <CreatePostDirectoryPopup
                 visible={createPopupVisible}
                 onClose={() => setCreatePopupVisible(false)}
@@ -146,12 +195,11 @@ export default function ProfileHome() {
                 existingData={editingFolder}
             />
 
-            {/* 기존 폴더 선택 팝업 */}
             <SelectPostDirectoryPopup
                 visible={selectPopupVisible}
                 onClose={() => setSelectPopupVisible(false)}
                 onSelect={handleFolderSelect}
-                selectedFolder={null}
+                folders={folders} // 불러온 폴더 데이터를 SelectPostDirectoryPopup에 전달
             />
         </View>
     );
@@ -161,7 +209,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        position: 'relative', // 플로팅 버튼을 위한 relative positioning
+        position: 'relative',
     },
     tabContent: {
         flex: 1,
