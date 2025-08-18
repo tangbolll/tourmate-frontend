@@ -67,19 +67,34 @@ const AccompanyListView = ({
         router.push('/accompany/GroupChats');
     };
 
-
+    // 🔥 수정된 getDisplayTags 함수 - 성별(항상 표시) + 정의된 카테고리만 표시
     const getDisplayTags = (tags) => {
         if (!tags || !Array.isArray(tags)) return [];
         
-        const genderAgeTags = [
-            '남성', '여성', '성별무관',
+        // 성별 관련 태그들
+        const genderTags = ['남성', '여성', '성별무관', 'ALL'];
+        
+        // 연령 관련 태그들 (제외할 태그들)
+        const ageTags = ['10대', '20대', '30대', '40대', '50대', '60대', '나이무관'];
+        
+        // 허용되는 카테고리 태그들만 정의 (사용자 커스텀 태그 제외)
+        const allowedCategoryTags = [
+            '투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '액티비티', '힐링', '역사유적', '박물관/미술관'
         ];
         
-        const displayedGenderAge = tags.filter(tag => genderAgeTags.includes(tag));
-        const categoryTags = tags.filter(tag => !genderAgeTags.includes(tag));
-        const displayedCategories = categoryTags.slice(0, 3);
+        // 성별 태그 찾기 (항상 표시)
+        const genderTag = tags.find(tag => genderTags.includes(tag));
+        const displayedGenderTags = genderTag ? [genderTag] : [];
         
-        return [...displayedGenderAge, ...displayedCategories];
+        // 허용된 카테고리 태그만 필터링 (성별, 연령 태그 제외)
+        const categoryTags = tags.filter(tag => 
+            !genderTags.includes(tag) && 
+            !ageTags.includes(tag) &&
+            allowedCategoryTags.includes(tag)  // 허용된 카테고리만 포함
+        );
+        
+        // 성별 + 허용된 카테고리 태그만 반환
+        return [...displayedGenderTags, ...categoryTags];
     };
 
     const renderFeedItems = () => {
@@ -119,7 +134,7 @@ const AccompanyListView = ({
                     id={post.id}
                     date={post.date}
                     title={post.title}
-                    tags={getDisplayTags(post.tags)}
+                    tags={getDisplayTags(post.tags)} // tags 배열을 다시 전달
                     location={post.location}
                     participants={post.participants}
                     maxParticipants={post.maxParticipants}
