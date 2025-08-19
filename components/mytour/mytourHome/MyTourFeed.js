@@ -52,6 +52,7 @@ export default function MyTourFeed({
 
     const handleBookmarkPress = () => {
         // 북마크 토글
+        console.log("1단계: MyTourFeed의 별 버튼 클릭됨!"); 
         if (onBookmarkPress) {
             onBookmarkPress();
         }
@@ -83,7 +84,7 @@ export default function MyTourFeed({
                     name={isBookmarked ? "star" : "star-border"} 
                     size={24} 
                     color={isBookmarked ? "#FFD700" : "#ccc"} 
-                    />
+                />
                 </TouchableOpacity>
                 </View>
 
@@ -122,14 +123,14 @@ export default function MyTourFeed({
 
 const styles = StyleSheet.create({
     card: {
-        width: (width - 48) / 2, // 양쪽 마진 16씩, 두 개가 들어가도록
+        width: (width - 48) / 2,
         backgroundColor: '#fff',
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#e0e0e0',
         marginBottom: 16,
-        marginLeft: 4,
-        marginRight: 4,
+        //marginLeft: 15,
+        //marginRight: 15,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
