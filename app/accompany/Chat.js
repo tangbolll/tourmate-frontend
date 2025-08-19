@@ -37,24 +37,36 @@ const getBaseURL = () => {
 
 const API_URL = getBaseURL();
 
-// MessageBubble 컴포넌트 (기존과 동일)
-const MessageBubble = ({ message, style }) => {
+// 날짜 구분선 컴포넌트
+const DateSeparator = ({ date }) => {
+    return (
+        <View style={styles.dateSeparatorContainer}>
+            <View style={styles.dateSeparatorLine} />
+            <Text style={styles.dateSeparatorText}>{date}</Text>
+            <View style={styles.dateSeparatorLine} />
+        </View>
+    );
+};
+
+// MessageBubble 컴포넌트
+const MessageBubble = ({ message, showSenderName, showTime, isFirstInGroup, isLastInGroup, style }) => {
     const isMyMessage = message.user?.isSelf || false;
 
     return (
         <View style={[
             bubbleStyles.messageContainer,
             isMyMessage ? bubbleStyles.myMessageContainer : bubbleStyles.otherMessageContainer,
+            isFirstInGroup ? {} : { marginTop: 2 }, // 연속 메시지는 간격 줄임
             style
         ]}>
-            {!isMyMessage && (
+            {!isMyMessage && showSenderName && (
                 <Text style={bubbleStyles.senderName}>
                     {message.user?.name || '익명'}
                 </Text>
             )}
             
             <View style={bubbleStyles.bubbleWithTime}>
-                {isMyMessage && message.time && (
+                {isMyMessage && showTime && (
                     <Text style={[bubbleStyles.timestamp, bubbleStyles.myTimestamp]}>
                         {message.time}
                     </Text>
@@ -63,11 +75,16 @@ const MessageBubble = ({ message, style }) => {
                 <View style={[
                     bubbleStyles.bubble,
                     isMyMessage ? bubbleStyles.myBubble : bubbleStyles.otherBubble,
+                    // 연속 메시지의 경우 꼬리 표시 조건 변경
+                    isFirstInGroup ? {} : (isMyMessage ? { marginRight: 8 } : { marginLeft: 8 })
                 ]}>
-                    <View style={[
-                        bubbleStyles.tail,
-                        isMyMessage ? bubbleStyles.myTail : bubbleStyles.otherTail
-                    ]} />
+                    {/* 첫 번째 메시지에만 꼬리 표시 */}
+                    {isFirstInGroup && (
+                        <View style={[
+                            bubbleStyles.tail,
+                            isMyMessage ? bubbleStyles.myTail : bubbleStyles.otherTail
+                        ]} />
+                    )}
                     
                     <Text style={[
                         bubbleStyles.messageText,
@@ -77,7 +94,7 @@ const MessageBubble = ({ message, style }) => {
                     </Text>
                 </View>
                 
-                {!isMyMessage && message.time && (
+                {!isMyMessage && showTime && (
                     <Text style={[bubbleStyles.timestamp, bubbleStyles.otherTimestamp]}>
                         {message.time}
                     </Text>
@@ -112,6 +129,100 @@ const Chat = () => {
     
     const scrollViewRef = useRef();
     const stompClientRef = useRef(null);
+
+    // 날짜 포맷팅 함수들
+    const formatTime = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleTimeString('ko-KR', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: true 
+        });
+    };
+
+    const formatDateForSeparator = (dateString) => {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ko-KR', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    };
+
+    const isSameDay = (date1, date2) => {
+        if (!date1 || !date2) return false;
+        const d1 = new Date(date1);
+        const d2 = new Date(date2);
+        return d1.getFullYear() === d2.getFullYear() &&
+               d1.getMonth() === d2.getMonth() &&
+               d1.getDate() === d2.getDate();
+    };
+
+    // 메시지를 날짜별로 그룹화하고 연속 메시지 처리하는 함수
+    const groupMessagesByDate = (messages) => {
+        const grouped = [];
+        let currentDate = null;
+
+        messages.forEach((message, index) => {
+            const messageDate = message.sendTime;
+            
+            // 날짜가 바뀌었거나 첫 번째 메시지인 경우 날짜 구분선 추가
+            if (!currentDate || !isSameDay(currentDate, messageDate)) {
+                currentDate = messageDate;
+                grouped.push({
+                    type: 'dateSeparator',
+                    date: formatDateForSeparator(messageDate),
+                    id: `date_${messageDate}_${index}`
+                });
+            }
+            
+            // 연속 메시지 그룹 처리
+            const prevMessage = messages[index - 1];
+            const nextMessage = messages[index + 1];
+            
+            // 같은 사용자의 연속 메시지인지 확인
+            const isSameUser = prevMessage && 
+                prevMessage.user?.isSelf === message.user?.isSelf &&
+                (prevMessage.user?.name === message.user?.name || 
+                 (prevMessage.user?.isSelf && message.user?.isSelf));
+            
+            const isNextSameUser = nextMessage && 
+                nextMessage.user?.isSelf === message.user?.isSelf &&
+                (nextMessage.user?.name === message.user?.name || 
+                 (nextMessage.user?.isSelf && message.user?.isSelf));
+            
+            // 같은 시간(분)인지 확인
+            const isSameTime = prevMessage && 
+                formatTime(prevMessage.sendTime) === formatTime(message.sendTime);
+            
+            const isNextSameTime = nextMessage && 
+                formatTime(nextMessage.sendTime) === formatTime(message.sendTime);
+            
+            // 연속 메시지 그룹에서의 위치 결정
+            const isFirstInGroup = !isSameUser || !isSameDay(prevMessage?.sendTime, messageDate);
+            const isLastInGroup = !isNextSameUser || !isSameDay(nextMessage?.sendTime, messageDate);
+            
+            // 시간 표시 여부 결정 (같은 사용자의 연속 메시지 중 마지막에만 시간 표시)
+            const showTime = isLastInGroup || !isNextSameTime;
+            
+            // 사용자명 표시 여부 결정 (연속 메시지의 첫 번째에만 표시)
+            const showSenderName = isFirstInGroup;
+            
+            // 메시지 추가
+            grouped.push({
+                type: 'message',
+                ...message,
+                showSenderName,
+                showTime,
+                isFirstInGroup,
+                isLastInGroup
+            });
+        });
+
+        return grouped;
+    };
 
     // 채팅방 정보 가져오기
     const fetchOrCreateChatRoom = async (accompanyId) => {
@@ -184,18 +295,7 @@ const Chat = () => {
         }
     };
 
-    // 시간 포맷팅
-    const formatTime = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleTimeString('ko-KR', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: true 
-        });
-    };
-
-        // 웹소켓 연결 useEffect
+    // 웹소켓 연결 useEffect
     useEffect(() => {
         if (!chatRoom?.id || !currentUserId) {
             console.log('웹소켓 연결 조건 미충족:', { chatRoomId: chatRoom?.id, currentUserId });
@@ -223,7 +323,7 @@ const Chat = () => {
                         try {
                             const chatMessage = JSON.parse(message.body);
                             
-                            // 🔧 내가 보낸 메시지는 웹소켓으로 받지 않음 (중복 방지)
+                            // 내가 보낸 메시지는 웹소켓으로 받지 않음 (중복 방지)
                             if (String(chatMessage.senderId) === String(currentUserId)) {
                                 return;
                             }
@@ -286,7 +386,7 @@ const Chat = () => {
         };
     }, [chatRoom?.id, currentUserId]);
 
-    // 🔧 메시지 전송 함수 (낙관적 업데이트 개선)
+    // 메시지 전송 함수 (낙관적 업데이트)
     const handleSendStomp = async (text = '') => {
         if (!text.trim()) {
             console.log('❌ 빈 메시지는 전송할 수 없습니다.');
@@ -317,6 +417,7 @@ const Chat = () => {
             },
             text: text.trim(),
             time: formatTime(new Date()),
+            sendTime: new Date().toISOString(),
             isTemporary: true,
             tempId: tempId // 🔧 임시 메시지 식별용
         };
@@ -455,6 +556,9 @@ const Chat = () => {
         );
     }
 
+    // 메시지들을 날짜별로 그룹화
+    const groupedMessages = groupMessagesByDate(messages);
+
     return (
         <SafeAreaView style={styles.container}>
             {/* 헤더 부분 */}
@@ -497,19 +601,34 @@ const Chat = () => {
                 ref={scrollViewRef}
                 onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
             >
-                {messages.length === 0 ? (
+                {groupedMessages.length === 0 ? (
                     <View style={styles.emptyContainer}>
                         <Text style={styles.emptyText}>동행 {postId}번 채팅방이 생성되었습니다!</Text>
                         <Text style={styles.emptySubText}>첫 번째 메시지를 보내보세요!</Text>
                     </View>
                 ) : (
-                    messages.map(message => (
-                        <MessageBubble 
-                            key={message.id} 
-                            message={message}
-                            style={message.isTemporary ? { opacity: 0.7 } : {}}
-                        />
-                    ))
+                    groupedMessages.map(item => {
+                        if (item.type === 'dateSeparator') {
+                            return (
+                                <DateSeparator 
+                                    key={item.id}
+                                    date={item.date}
+                                />
+                            );
+                        } else {
+                            return (
+                                <MessageBubble 
+                                    key={item.id} 
+                                    message={item}
+                                    showSenderName={item.showSenderName}
+                                    showTime={item.showTime}
+                                    isFirstInGroup={item.isFirstInGroup}
+                                    isLastInGroup={item.isLastInGroup}
+                                    style={item.isTemporary ? { opacity: 0.7 } : {}}
+                                />
+                            );
+                        }
+                    })
                 )}
             </ScrollView>
 
@@ -565,7 +684,7 @@ const Chat = () => {
     );
 };
 
-// 스타일 정의는 기존과 동일하되 연결 상태 표시 추가
+// 스타일 정의
 const bubbleStyles = StyleSheet.create({
     messageContainer: {
         marginVertical: 3,
@@ -789,6 +908,23 @@ const styles = StyleSheet.create({
     messagesContainer: {
         flex: 1,
         padding: 8,
+    },
+    // 날짜 구분선 스타일 추가
+    dateSeparatorContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginVertical: 16,
+        paddingHorizontal: 16,
+    },
+    dateSeparatorLine: {
+        flex: 1,
+        height: 1,
+        backgroundColor: '#E5E7EB',
+    },
+    dateSeparatorText: {
+        fontSize: 12,
+        color: '#9CA3AF',
+        paddingHorizontal: 12,
     },
     emptyContainer: {
         flex: 1,
