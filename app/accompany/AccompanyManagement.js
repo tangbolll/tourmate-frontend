@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { 
     View, 
     Text, 
@@ -7,21 +7,49 @@ import {
     ScrollView, 
     Image,
     SafeAreaView,
-    Dimensions,
-    Modal
+    Alert
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton'; 
 import CloseAlarmPopup from '../../components/accompany/CloseAlarmPopup';
+import {
+    toggleLikeApi, 
+    getLikeStatusApi, 
+} from '../../utils/AccompanyPostApi';
+import { 
+    acceptApplicationApi, 
+    rejectApplicationApi, 
+    removeParticipantApi, 
+    closeAccompanyApi, 
+    getAccompanyManagementDataApi 
+} from '../../utils/AccompanyManagementApi';
 
-const AccompanyManagement = ({ navigation }) => {
-    const [likeCount, setLikeCount] = useState(122);
+const AccompanyManagement = () => {
+    const params = useLocalSearchParams();
+    const router = useRouter();
+    const { postId } = params;
+    
+    // 기본 상태
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const currentUserId = "2"; // 실제로는 로그인한 사용자 ID
+    
+    // 동행 관리 데이터
+    const [accompanyData, setAccompanyData] = useState(null);
+    const [applicants, setApplicants] = useState([]);
+    const [participants, setParticipants] = useState([]);
+    
+    // 좋아요 상태와 좋아요 수를 별도로 관리
     const [isLiked, setIsLiked] = useState(false);
+    const [likeCount, setLikeCount] = useState(0);
+    const [isLikeLoading, setIsLikeLoading] = useState(false);
     
-    // ✅ 동행 상태 관리 - 더 구체적으로
-    const [accompanyStatus, setAccompanyStatus] = useState('RECRUITING'); // 'RECRUITING', 'COMPLETED', 'CLOSED'
-    const [userApplicationStatus, setUserApplicationStatus] = useState(null); // 호스트는 null
+    // 동행 상태 관리
+    const [accompanyStatus, setAccompanyStatus] = useState('RECRUITING');
+    const [userApplicationStatus, setUserApplicationStatus] = useState(null);
     
+    // UI 상태
     const [applicantScrollPosition, setApplicantScrollPosition] = useState(0);
     const [companionScrollPosition, setCompanionScrollPosition] = useState(0);
     const [popupVisible, setPopupVisible] = useState(false);
@@ -29,124 +57,238 @@ const AccompanyManagement = ({ navigation }) => {
     const applicantScrollRef = useRef(null);
     const companionScrollRef = useRef(null);
 
-    // ✅ 모집 마감 처리 함수
+    // // 동행 관리 데이터 로드
+    // const fetchAccompanyManagementData = async () => {
+    //     try {
+    //         setLoading(true);
+    //         setError(null);
+            
+    //         const data = await getAccompanyManagementDataApi(postId, currentUserId);
+            
+    //         setAccompanyData(data.accompanyInfo);
+    //         setApplicants(data.applicants || []);
+    //         setParticipants(data.participants || []);
+            
+    //         // 동행 상태 설정
+    //         setAccompanyStatus(data.accompanyInfo.status || 'RECRUITING');
+            
+    //         // 좋아요 정보 설정
+    //         setIsLiked(data.accompanyInfo.isLiked || false);
+    //         setLikeCount(data.accompanyInfo.likeCount || data.accompanyInfo.likes || 0);
+            
+    //     } catch (err) {
+    //         console.error('❌ 동행 관리 데이터 로드 오류:', err);
+    //         setError(err.message || '데이터를 불러오지 못했습니다.');
+    //         Alert.alert('오류', '동행 관리 정보를 불러오지 못했습니다.');
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
+    // 좋아요 토글 함수
+    const handleLikeToggle = useCallback(async () => {
+        if (!postId || !currentUserId) {
+            Alert.alert('오류', '게시물 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+            return;
+        }
+
+        if (isLikeLoading) {
+            return;
+        }
+
+        try {
+            setIsLikeLoading(true);
+            
+            const result = await toggleLikeApi(postId, currentUserId);
+            
+            setIsLiked(Boolean(result.isLiked));
+            setLikeCount(Number(result.likeCount) || 0);
+            
+        } catch (error) {
+            console.error('❌ 좋아요 토글 실패:', error);
+            Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
+        } finally {
+            setIsLikeLoading(false);
+        }
+    }, [postId, currentUserId, isLikeLoading]);
+
+    // 신청 수락 처리 - ID 타입 변환 추가
+    const handleAcceptApplication = async (applicantId) => {
+        try {
+            console.log('🔍 수락 버튼 클릭:', { applicantId, type: typeof applicantId });
+            
+            // ✅ ID를 숫자로 변환
+            const numericApplicantId = Number(applicantId);
+            
+            if (isNaN(numericApplicantId)) {
+                console.error('❌ 유효하지 않은 applicantId:', applicantId);
+                Alert.alert('오류', '유효하지 않은 사용자 ID입니다.');
+                return;
+            }
+            
+            await acceptApplicationApi(postId, numericApplicantId);
+            
+            // UI 업데이트: 신청자를 참가자로 이동
+            const acceptedApplicant = applicants.find(app => Number(app.id) === numericApplicantId);
+            if (acceptedApplicant) {
+                setApplicants(prev => prev.filter(app => Number(app.id) !== numericApplicantId));
+                setParticipants(prev => [...prev, { ...acceptedApplicant, isHost: false }]);
+            }
+            
+            Alert.alert('성공', '신청을 수락했습니다.');
+            
+        } catch (error) {
+            console.error('❌ 신청 수락 실패:', error);
+            Alert.alert('오류', error.message || '신청 수락에 실패했습니다.');
+        }
+    };
+
+    // 신청 거절 처리 - ID 타입 변환 추가
+    const handleRejectApplication = async (applicantId) => {
+        try {
+            console.log('🔍 거절 버튼 클릭:', { applicantId, type: typeof applicantId });
+            
+            // ✅ ID를 숫자로 변환
+            const numericApplicantId = Number(applicantId);
+            
+            if (isNaN(numericApplicantId)) {
+                console.error('❌ 유효하지 않은 applicantId:', applicantId);
+                Alert.alert('오류', '유효하지 않은 사용자 ID입니다.');
+                return;
+            }
+            
+            await rejectApplicationApi(postId, numericApplicantId);
+            
+            // UI 업데이트: 신청자 목록에서 제거
+            setApplicants(prev => prev.filter(app => Number(app.id) !== numericApplicantId));
+            
+            Alert.alert('성공', '신청을 거절했습니다.');
+            
+        } catch (error) {
+            console.error('❌ 신청 거절 실패:', error);
+            Alert.alert('오류', error.message || '신청 거절에 실패했습니다.');
+        }
+    };
+
+    // 참가자 내보내기 처리 - ID 타입 변환 추가
+    const handleRemoveParticipant = async (participantId) => {
+        try {
+            console.log('🔍 내보내기 버튼 클릭:', { participantId, type: typeof participantId });
+            
+            // ✅ ID를 숫자로 변환
+            const numericParticipantId = Number(participantId);
+            
+            if (isNaN(numericParticipantId)) {
+                console.error('❌ 유효하지 않은 participantId:', participantId);
+                Alert.alert('오류', '유효하지 않은 사용자 ID입니다.');
+                return;
+            }
+            
+            await removeParticipantApi(postId, numericParticipantId);
+            
+            // UI 업데이트: 참가자 목록에서 제거
+            setParticipants(prev => prev.filter(participant => Number(participant.id) !== numericParticipantId));
+            
+            Alert.alert('성공', '참가자를 내보냈습니다.');
+            
+        } catch (error) {
+            console.error('❌ 참가자 내보내기 실패:', error);
+            Alert.alert('오류', error.message || '참가자 내보내기에 실패했습니다.');
+        }
+    };
+
+    // 데이터 로드 후 ID 타입 확인을 위한 로깅 추가
+    const fetchAccompanyManagementData = async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            
+            const data = await getAccompanyManagementDataApi(postId, currentUserId);
+            
+            // ✅ 받은 데이터 구조 확인
+            console.log('🔍 받은 데이터 구조:', {
+                applicants: data.applicants,
+                participants: data.participants,
+                applicantsIds: data.applicants?.map(app => ({ id: app.id, type: typeof app.id })),
+                participantsIds: data.participants?.map(part => ({ id: part.id, type: typeof part.id }))
+            });
+            
+            setAccompanyData(data.accompanyInfo);
+            setApplicants(data.applicants || []);
+            setParticipants(data.participants || []);
+            
+            // 동행 상태 설정
+            setAccompanyStatus(data.accompanyInfo.status || 'RECRUITING');
+            
+            // 좋아요 정보 설정
+            setIsLiked(data.accompanyInfo.isLiked || false);
+            setLikeCount(data.accompanyInfo.likeCount || data.accompanyInfo.likes || 0);
+            
+        } catch (err) {
+            console.error('❌ 동행 관리 데이터 로드 오류:', err);
+            setError(err.message || '데이터를 불러오지 못했습니다.');
+            Alert.alert('오류', '동행 관리 정보를 불러오지 못했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 모집 마감 처리 함수
     const handleClosedPress = () => {
-        // RECRUITING 상태일 때만 마감 가능
         if (accompanyStatus === 'RECRUITING') {
             setPopupVisible(true);
         }
     };
 
     // 마감 확인 처리
-    const handleConfirmClose = () => {
-        console.log("동행 마감 확인");
-        setAccompanyStatus('COMPLETED'); // 상태를 COMPLETED로 변경
-        setPopupVisible(false);
+    const handleConfirmClose = async () => {
+        try {
+            await closeAccompanyApi(postId);
+            
+            setAccompanyStatus('COMPLETED');
+            setPopupVisible(false);
+            
+            Alert.alert('성공', '동행 모집이 마감되었습니다.');
+            
+        } catch (error) {
+            console.error('❌ 동행 마감 실패:', error);
+            Alert.alert('오류', error.message || '동행 마감에 실패했습니다.');
+        }
     };
 
     const handleCancelClose = () => {
-        console.log("동행 마감 취소");
         setPopupVisible(false);
     };
-
-    // 좋아요 토글 함수
-    const handleLikeToggle = () => {
-        if (isLiked) {
-            setLikeCount(likeCount - 1);
-        } else {
-            setLikeCount(likeCount + 1);
-        }
-        setIsLiked(!isLiked);
-    };
-
-    // 동행 신청자 데이터
-    const applicants = [
-        { 
-            id: 1,
-            nickname: '서휘경',
-            gender: '여', 
-            age: 20, 
-            hashtags: '#안뇽 #졸려 #이것만하구자야디'
-        },
-        { 
-            id: 2,
-            nickname: '김태연',
-            gender: '여', 
-            age: 20, 
-            hashtags: '#김태뿌지직 #아닙니다 #방구쟁이아닙니다 #사실그짓말입니다'
-        },
-        { 
-            id: 3,
-            nickname: '김윤서',
-            gender: '여', 
-            age: 20, 
-            hashtags: '#기획팀멋져요 #파이팅'
-        },
-        { 
-            id: 4,
-            nickname: '김서연',
-            gender: '여', 
-            age: 20, 
-            hashtags: '#관광 #21 #가지가지'
-        },
-        { 
-            id: 5,
-            nickname: '김민수',
-            gender: '여', 
-            age: 21, 
-            hashtags: '#백엔드는 #잘 #되어가시나요'
-        }
-    ];
-
-    // 동행 목록 데이터
-    const companions = [
-        { 
-            id: 1,
-            nickname: '여라미',
-            gender: '여', 
-            age: 22, 
-            hashtags: '#즉흥적인 계획가 #맛집탐방',
-            isHost: true
-        },
-        { 
-            id: 2,
-            nickname: '지백',
-            gender: '여', 
-            age: 24, 
-            hashtags: '#무계획여행 #맛집탐방 #호캉스'
-        },
-        { 
-            id: 3,
-            nickname: '주리를틀어라',
-            gender: '여', 
-            age: 21, 
-            hashtags: '#활기찬 탐방가 #맛집탐방 #국토순례'
-        },
-    ];
 
     // 신청자 렌더링
     const renderApplicant = (applicant) => (
         <View key={applicant.id} style={styles.memberRow}>
             <View style={styles.profileSection}>
                 <Image 
-                    source={require('../../assets/defaultProfile.png')} 
+                    source={applicant.profileImage ? { uri: applicant.profileImage } : require('../../assets/defaultProfile.png')} 
                     style={styles.profileImage} 
                     defaultSource={require('../../assets/defaultProfile.png')}
                 />
                 <View style={styles.userInfo}>
                     <View style={styles.nameRow}>
-                        <Text style={styles.nickname}>{applicant.nickname}</Text>
+                        <Text style={styles.nickname}>{applicant.nickname || applicant.name}</Text>
                         <Text style={styles.genderAge}> · {applicant.gender} · {applicant.age}세</Text>
                     </View>
-                    <Text style={styles.hashtags}>{applicant.hashtags}</Text>
+                    <Text style={styles.hashtags}>{applicant.hashtags || applicant.tags}</Text>
                 </View>
             </View>
             
             <View style={styles.actionButtons}>
-                <TouchableOpacity style={styles.acceptButton}>
+                <TouchableOpacity 
+                    style={styles.acceptButton}
+                    onPress={() => handleAcceptApplication(applicant.id)}
+                >
                     <Text style={styles.acceptText}>수락</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.rejectButton}>
+                <TouchableOpacity 
+                    style={styles.rejectButton}
+                    onPress={() => handleRejectApplication(applicant.id)}
+                >
                     <Text style={styles.rejectText}>거절</Text>
                 </TouchableOpacity>
             </View>
@@ -158,19 +300,31 @@ const AccompanyManagement = ({ navigation }) => {
         <View key={companion.id} style={styles.memberRow}>
             <View style={styles.profileSection}>
                 <Image 
-                    source={require('../../assets/defaultProfile.png')} 
+                    source={companion.profileImage ? { uri: companion.profileImage } : require('../../assets/defaultProfile.png')} 
                     style={styles.profileImage} 
                     defaultSource={require('../../assets/defaultProfile.png')}
                 />
                 <View style={styles.userInfo}>
                     <View style={styles.nameRow}>
-                        <Text style={styles.nickname}>{companion.nickname}</Text>
+                        <Text style={styles.nickname}>{companion.nickname || companion.name}</Text>
                         <Text style={styles.genderAge}> · {companion.gender} · {companion.age}세</Text>
                         {companion.isHost && <Text style={styles.hostTag}>호스트</Text>}
                     </View>
-                    <Text style={styles.hashtags}>{companion.hashtags}</Text>
+                    <Text style={styles.hashtags}>{companion.hashtags || companion.tags}</Text>
                 </View>
             </View>
+            
+            {/* 호스트가 아닌 참가자에게는 내보내기 버튼 표시 */}
+            {!companion.isHost && (
+                <View style={styles.actionButtons}>
+                    <TouchableOpacity 
+                        style={styles.removeButton}
+                        onPress={() => handleRemoveParticipant(companion.id)}
+                    >
+                        <Text style={styles.removeText}>내보내기</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
         </View>
     );
 
@@ -207,16 +361,58 @@ const AccompanyManagement = ({ navigation }) => {
         );
     };
 
-    // 단순화된 데이터 변수
+    // 초기 데이터 로드
+    useEffect(() => {
+        if (postId) {
+            fetchAccompanyManagementData();
+        } else {
+            setError('잘못된 동행 ID입니다.');
+            setLoading(false);
+        }
+    }, [postId]);
+
+    // 로딩 상태
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text style={{ fontSize: 16, color: '#666' }}>동행 관리 정보를 불러오는 중...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    // 에러 상태
+    if (error || !accompanyData) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
+                    <Text style={{ fontSize: 18, color: '#FF6B6B', marginBottom: 10 }}>
+                        오류가 발생했습니다
+                    </Text>
+                    <Text style={{ fontSize: 14, color: '#666', textAlign: 'center', marginBottom: 20 }}>
+                        {error || '동행 관리 정보를 불러올 수 없습니다.'}
+                    </Text>
+                    <TouchableOpacity
+                        style={{ backgroundColor: '#cfd2d5ff', padding: 12, borderRadius: 8 }}
+                        onPress={() => router.back()}
+                    >
+                        <Text style={{ color: 'white', fontSize: 16 }}>돌아가기</Text>
+                    </TouchableOpacity>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     const applicationCnt = applicants.length;
-    const currentMember = companions.length;
-    const totalMemeber = 5;
+    const currentMember = participants.length;
+    const totalMember = accompanyData?.maxParticipants || 5;
 
     return (
         <SafeAreaView style={styles.container}>
             {/* 헤더 */}
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
+                <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
                     <Ionicons name="chevron-back" size={24} color="black" />
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>동행 관리</Text>
@@ -226,7 +422,7 @@ const AccompanyManagement = ({ navigation }) => {
             <View style={styles.mainContainer}>
                 {/* 동행 신청 섹션 */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>동행 신청 <Text style={styles.countText}>{applicationCnt}건</Text></Text>
+                    <Text style={styles.sectionTitle}>동행 신청 <Text style={styles.countText}> {applicationCnt}건</Text></Text>
                     
                     <View style={styles.scrollContainer}>
                         <ScrollView 
@@ -238,6 +434,11 @@ const AccompanyManagement = ({ navigation }) => {
                             contentContainerStyle={styles.scrollContentContainer}
                         >
                             {applicants.map(applicant => renderApplicant(applicant))}
+                            {applicants.length === 0 && (
+                                <View style={styles.emptyContainer}>
+                                    <Text style={styles.emptyText}>새로운 신청이 없습니다.</Text>
+                                </View>
+                            )}
                         </ScrollView>
                         {renderScrollIndicator(applicantScrollPosition)}
                     </View>
@@ -245,7 +446,7 @@ const AccompanyManagement = ({ navigation }) => {
 
                 {/* 동행 목록 섹션 */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>동행 목록 <Text style={styles.countText}>{currentMember}명 / {totalMemeber}명</Text></Text>
+                    <Text style={styles.sectionTitle}>동행 목록 <Text style={styles.countText}> {currentMember}명 / {totalMember}명</Text></Text>
                     
                     <View style={styles.scrollContainer}>
                         <ScrollView 
@@ -256,23 +457,23 @@ const AccompanyManagement = ({ navigation }) => {
                             nestedScrollEnabled={true}
                             contentContainerStyle={styles.scrollContentContainer}
                         >
-                            {companions.map(companion => renderCompanion(companion))}
+                            {participants.map(companion => renderCompanion(companion))}
                         </ScrollView>
                         {renderScrollIndicator(companionScrollPosition)}
                     </View>
                 </View>
             </View>
 
-            {/* ✅ 하단 버튼 영역 - 통합 버튼으로 교체 */}
+            {/* 하단 버튼 영역 */}
             <AccompanyBottomButton
-                isHost={true} // 관리 페이지는 항상 호스트
+                isHost={true}
                 accompanyStatus={accompanyStatus}
                 userApplicationStatus={userApplicationStatus}
                 onPress={handleClosedPress}
                 likes={likeCount}
                 isLiked={isLiked}
                 onLikeToggle={handleLikeToggle}
-                applied={false} // 호스트는 신청 상태 없음
+                isLoading={isLikeLoading}
             />
 
             {/* 마감 확인 팝업 */}
@@ -285,7 +486,6 @@ const AccompanyManagement = ({ navigation }) => {
     );
 };
 
-// styles는 동일하게 유지 (ApplicationButton 관련 스타일은 제거 가능)
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -348,7 +548,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#F5F5F5',
-        height: 60,
+        minHeight: 60,
     },
     profileSection: {
         flexDirection: 'row',
@@ -423,6 +623,21 @@ const styles = StyleSheet.create({
         fontSize: 13,
         fontWeight: '500',
     },
+    removeButton: {
+        backgroundColor: 'white',
+        borderWidth: 1,
+        borderColor: 'gray',
+        paddingVertical: 4,
+        paddingHorizontal: 8,
+        borderRadius: 20,
+        alignItems: 'center',
+        width: 70,
+    },
+    removeText: {
+        color: 'black',
+        fontSize: 12,
+        fontWeight: '500',
+    },
     scrollIndicatorContainer: {
         width: 4,
         backgroundColor: '#EEEEEE',
@@ -439,6 +654,14 @@ const styles = StyleSheet.create({
         backgroundColor: '#999',
         borderRadius: 2,
         position: 'absolute',
+    },
+    emptyContainer: {
+        padding: 20,
+        alignItems: 'center',
+    },
+    emptyText: {
+        fontSize: 14,
+        color: '#999',
     },
 });
 

@@ -12,6 +12,7 @@ import Categories from '../../components/accompany/Categories';
 import WriteComment from '../../components/accompany/WriteComment';
 import AlarmPopup from '../../components/accompany/AlarmPopup';
 import MemberPopup from '../../components/accompany/MemberPopup';
+import AccompanyManagement from './AccompanyManagement';
 import EventHeader from '../../components/accompany/EventHeader';
 import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton';
 
@@ -31,6 +32,7 @@ import {
     getChatAccessApi
 } from '../../utils/AccompanyPostApi';
 
+
 export default function AccompanyPost() {
     const params = useLocalSearchParams();
     const router = useRouter();
@@ -44,19 +46,19 @@ export default function AccompanyPost() {
     const [isLikeLoading, setIsLikeLoading] = useState(false); // 좋아요 로딩 상태 추가
     const [chatAccess, setChatAccess] = useState({ canAccess: false, isCompleted: false });
 
-
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
 
-    const currentUserId = "3";
+    const currentUserId = "2";
     const [isHost, setIsHost] = useState(false);
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
     const [closed, setClosed] = useState(false);
     const [showMemberPopupGuest, setShowMemberPopupGuest] = useState(false);
-    const [showMemberPopupHost, setShowMemberPopupHost] = useState(false);
+    // const [showMemberPopupHost, setShowMemberPopupHost] = useState(false);
     const [keyboardVisible, setKeyboardVisible] = useState(false);
     const scrollViewRef = useRef(null);
+
 
     // 새로운 신청 관련 상태 추가
     const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0);
@@ -132,7 +134,7 @@ export default function AccompanyPost() {
             setLoading(true);
             setError(null);
             
-            // 🔥 병렬로 모든 데이터 호출
+            // 병렬로 모든 데이터 호출
             const [backendData, chatAccessData] = await Promise.all([
                 fetchAccompanyDetailApi(id, currentUserId),
                 getChatAccessApi(id, currentUserId)  // 채팅 접근 권한도 함께 조회
@@ -287,9 +289,6 @@ export default function AccompanyPost() {
             
             console.log('✨ AccompanyPost: 상태 업데이트 완료');
 
-            // ✅ 성공 피드백 (선택사항)
-            // console.log(newIsLiked ? '💖 좋아요 추가됨' : '💔 좋아요 취소됨');
-
         } catch (error) {
             console.error('❌ AccompanyPost: 좋아요 토글 실패:', {
                 error: error.message,
@@ -369,7 +368,7 @@ export default function AccompanyPost() {
                 별도조회필요: needsSeparateLikeQuery
             });
             
-            // ✅ 별도 좋아요 상태 조회 필요한 경우
+            // 별도 좋아요 상태 조회 필요한 경우
             if (needsSeparateLikeQuery && postId && currentUserId) {
                 fetchLikeStatus();
             }
@@ -423,11 +422,11 @@ export default function AccompanyPost() {
         }));
         
         try {
-            // 🔥 currentStatus 대신 isCurrentlyApplied 전달
+            // currentStatus 대신 isCurrentlyApplied 전달
             const result = await toggleApplicationApi(postId, currentUserId, currentStatus);
             console.log('✅ API 호출 성공:', result);
             
-            // 🔥 API 결과의 newStatus를 사용해서 최종 상태 업데이트
+            // API 결과의 newStatus를 사용해서 최종 상태 업데이트
             setPostData(prev => ({
                 ...prev,
                 userApplicationStatus: result.newStatus
@@ -472,8 +471,14 @@ export default function AccompanyPost() {
     // 참가자 클릭 핸들러 수정 - 읽음 표시 기능 추가
     const handleParticipantsClick = () => {
         if (isHost) {
-            setShowMemberPopupHost(true);
-            // 호스트가 참가자 목록을 클릭하면 읽음 표시
+            // 팝업 대신 라우팅으로 변경
+            router.push({
+                pathname: '/accompany/AccompanyManagement',
+                params: {
+                    postId: postId,
+                    // 필요한 다른 데이터들도 params로 전달
+                }
+            });
             markApplicationsAsViewed();
         } else {
             setShowMemberPopupGuest(true);
@@ -530,7 +535,7 @@ export default function AccompanyPost() {
 
     const handleCloseMemberPopup = () => {
         setShowMemberPopupGuest(false);
-        setShowMemberPopupHost(false);
+        // setShowMemberPopupHost(false);
     };
 
     const handleClosedPress = () => {
@@ -837,13 +842,13 @@ export default function AccompanyPost() {
                     />
                 )}
 
-                {showMemberPopupHost && (
-                    <MemberPopup
+                {/* {showMemberPopupHost && (
+                    <AccompanyManagement
                         members={members}
                         onClose={handleCloseMemberPopup}
                         isHost={true}
                     />
-                )}
+                )} */}
             </View>
         </SafeAreaView>
     );

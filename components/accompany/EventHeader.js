@@ -4,7 +4,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import ToChatroom from '../../components/accompany/ToChatroom'; 
 
-const EventHeader = ({ title, location, participants, maxParticipants, newApplication = false, onParticipantsClick, postId, currentUserId, status, chatAccess }) => {
+const EventHeader = ({ title, location, participants, maxParticipants, newApplication, onParticipantsClick, postId, currentUserId, status, chatAccess }) => {
     return (
         <View style={styles.headerContainer}>
             <View style={styles.container}>
