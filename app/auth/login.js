@@ -2,20 +2,56 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { login as kakaoLogin } from '@react-native-kakao/user';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
+import axios from 'axios';
+
+const KAKAO_CLIENT_ID = '258d62eaabf3e1213e2b974f01185d44';
+const KAKAO_REDIRECT_URI = Linking.createURL('/auth/kakao-redirect', { scheme: 'http', port: 8081 }); // Use Linking.createURL for deep linking
+const BACKEND_URL = 'http://localhost:8080'; // Your backend URL
 
 const LoginScreen = () => {
 
   const handleLogin = async () => {
     try {
-      const token = await kakaoLogin();
-      console.log("Kakao Login Success:", token);
-      Alert.alert("로그인 성공", `액세스 토큰: ${token.accessToken}`);
-      // TODO: Send this token to your backend for verification and get a JWT
+      // 1. Construct the Kakao OAuth URL
+      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${KAKAO_CLIENT_ID}&redirect_uri=${KAKAO_REDIRECT_URI}`;
+
+      // 2. Open the URL in a web browser for authentication
+      const result = await WebBrowser.openAuthSessionAsync(
+        kakaoAuthUrl,
+        KAKAO_REDIRECT_URI
+      );
+
+      if (result.type === 'success' && result.url) {
+        const url = new URL(result.url);
+        const code = url.searchParams.get('code');
+
+        if (code) {
+          console.log("Authorization Code:", code);
+          // 3. Send the authorization code to your backend
+          const response = await axios.get(`${BACKEND_URL}/login/oauth2/code/kakao?code=${code}`);
+          const jwtToken = response.headers.authorization; // Assuming JWT is in Authorization header
+
+          if (jwtToken) {
+            console.log("JWT Token:", jwtToken);
+            Alert.alert("로그인 성공", `JWT 토큰: ${jwtToken}`);
+            // TODO: Store JWT token securely (e.g., AsyncStorage) and navigate to main app
+          } else {
+            Alert.alert("로그인 실패", "백엔드로부터 JWT 토큰을 받지 못했습니다.");
+          }
+        } else {
+          Alert.alert("로그인 실패", "카카오로부터 인증 코드를 받지 못했습니다.");
+        }
+      } else if (result.type === 'cancel') {
+        Alert.alert("로그인 취소", "카카오 로그인이 취소되었습니다.");
+      } else {
+        Alert.alert("로그인 실패", "카카오 로그인에 실패했습니다.");
+      }
 
     } catch (error) {
       console.error("Kakao Login Failed:", error);
-      Alert.alert("로그인 실패", "카카오 로그인에 실패했습니다.");
+      Alert.alert("로그인 실패", `카카오 로그인 중 오류 발생: ${error.message}`);
     }
   };
 
