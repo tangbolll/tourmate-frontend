@@ -1,157 +1,147 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, ScrollView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import CompleteButton from '../../components/mytour/createItinerary/CompleteButton';
 import ItineraryTitleInput from '../../components/mytour/createItinerary/ItineraryTitleInput';
 import TourPlace from '../../components/mytour/createItinerary/TourPlace';
 import TourPeriod from '../../components/mytour/createItinerary/TourPeriod';
-import DayPicker from '../../components/mytour/createItinerary/DayPicker';
+import Constants from 'expo-constants';
+
+const getBaseURL = () => {
+  if (__DEV__) {
+    if (Platform.OS === 'android') return 'http://10.0.2.2:8080';
+    return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+  } else {
+    return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+  }
+};
+
+const API_URL = getBaseURL();
 
 export default function CreateItinerary() {
-    const router = useRouter();
-    const { selectedRegions, currentTitle, currentPeriod } = useLocalSearchParams();
-    
-    // 상태 관리 - 수정 모드일 때 기존 데이터로 초기화
-    const [itineraryTitle, setItineraryTitle] = useState(currentTitle || '');
-    const [periodData, setPeriodData] = useState(
-        currentPeriod ? JSON.parse(currentPeriod) : {
-            type: 'date',
-            startDate: '',
-            endDate: '',
-            nights: '',
-            days: ''
+  const router = useRouter();
+  const { selectedRegions, currentTitle, currentPeriod } = useLocalSearchParams();
+
+  const regions = selectedRegions ? JSON.parse(selectedRegions) : [];
+
+  const [itineraryTitle, setItineraryTitle] = useState(currentTitle || '');
+  const [periodData, setPeriodData] = useState(
+    currentPeriod ? JSON.parse(currentPeriod) : { type: 'date', startDate: '', endDate: '', nights: '', days: '' }
+  );
+
+  const handleBack = () => router.back();
+
+  const getTitle = () => {
+    if (regions.length === 1) return `${regions[0].name} 여행`;
+    const firstCity = regions[0].name;
+    const remainingCount = regions.length - 1;
+    return `${firstCity} 외 ${remainingCount}개 지역 여행`;
+  };
+
+  const handleTitleChange = (title) => setItineraryTitle(title);
+  const handlePeriodChange = (data) => setPeriodData(data);
+
+  const handleCompletePress = async () => {
+    console.log("현재 선택된 regions state:", regions); // 데이터 확인용 로그
+
+    try {
+        // 숫자로 변환
+        const selectedAreaCodes = [...new Set(regions.map(r => Number(r.parentCode)))];
+        const selectedSigunguCodes = regions.map(r => Number(r.code));
+
+        // 이름 배열
+        const selectedAreaNames = selectedAreaCodes.map(code => {
+            const regionObject = regions.find(r => Number(r.parentCode) === code);
+            return regionObject ? regionObject.country : '';
+        });
+        const selectedSigunguNames = regions.map(r => r.name);
+
+
+        // 날짜 처리: 빈 문자열이면 null
+        const startDate = periodData.startDate?.trim() ? periodData.startDate : null;
+        const endDate = periodData.endDate?.trim() ? periodData.endDate : null;
+        const nightCount = periodData.nights ? Number(periodData.nights) : null;
+        const dayCount = periodData.days ? Number(periodData.days) : null;
+
+        const payload = {
+        title: itineraryTitle || getTitle(),
+        areaCode: selectedAreaCodes,
+        sigunguCode: selectedSigunguCodes,
+        periodType: periodData.type === 'date' ? 1 : 2,
+        areaName: selectedAreaNames,
+        sigunguName: selectedSigunguNames,
+        startDate,
+        endDate,
+        nightCount,
+        dayCount,
+        ownerId: 1 // 로그인 사용자 ID
+        };
+
+        console.log('서버 전송 payload:', payload);
+
+        const response = await fetch(`${API_URL}/api/myTour/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`저장 실패: ${errorText}`);
         }
-    );
-    
-    // JSON 문자열을 다시 객체로 변환
-    const regions = selectedRegions ? JSON.parse(selectedRegions) : [];
 
-    const handleBack = () => {
-        router.back();
-    };
-
-    const getTitle = () => {
-        if (regions.length === 1) return `${regions[0].region} 여행`;
-        
-        const firstCity = regions[0].region;
-        const remainingCount = regions.length - 1;
-        return `${firstCity} 외 ${remainingCount}개 도시 여행`;
-    };
-
-    const handleTitleChange = (title) => {
-        setItineraryTitle(title);
-    };
-
-    const handlePeriodChange = (data) => {
-        setPeriodData(data);
-    };
-
-    // handleCompletePress 함수 정의
-    const handleCompletePress = () => {
-        console.log('완료 버튼 클릭');
-        console.log('여행 제목:', itineraryTitle || getTitle());
-        console.log('기간 데이터:', periodData);
+        const data = await response.json();
+        console.log('저장 완료:', data);
+        alert('여행 일정 저장 성공!');
         
         router.push({
-            pathname: './designItinerary',
-            params: {
-                selectedRegions: JSON.stringify(regions),
-                itineraryTitle: itineraryTitle || getTitle(),
-                periodData: JSON.stringify(periodData)
-            }
+        pathname: './designItinerary',
+        params: {
+            selectedRegions: JSON.stringify(regions),
+            itineraryTitle: itineraryTitle || getTitle(),
+            periodData: JSON.stringify(periodData)
+        }
         });
+
+    } catch (error) {
+        console.error('저장 오류:', error);
+        alert('여행 일정 저장에 실패했습니다.');
+    }
     };
 
-    return (
-        <SafeAreaView style={styles.container}>
-            {/* 고정 헤더 */}
-            <View style={styles.header}>
-                <TouchableOpacity onPress={handleBack} style={styles.backButton}>
-                    <Ionicons name="chevron-back" size={24} color="black" />
-                </TouchableOpacity>
-                <Text style={styles.headerTitle}>{getTitle()}</Text>
-                <View style={styles.headerSpacer} />
-            </View>
 
-            {/* 구분선 */}
-            <View style={styles.headerDivider} />
 
-            {/* 메인 컨텐츠 영역 */}
-            <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-                <ItineraryTitleInput 
-                    placeholder={getTitle()} 
-                    onTitleChange={handleTitleChange}
-                />
-                <TourPlace 
-                    selectedRegion={regions} 
-                />
-                <TourPeriod 
-                    onPeriodChange={handlePeriodChange}
-                />
-            </ScrollView>
+  return (
+    <SafeAreaView style={styles.container}>
+      <View style={styles.header}>
+        <TouchableOpacity onPress={handleBack} style={styles.backButton}>
+          <Ionicons name="chevron-back" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>{getTitle()}</Text>
+        <View style={styles.headerSpacer} />
+      </View>
 
-            {/* 고정 푸터 */}
-            <CompleteButton
-                title="작성 완료"
-                onPress={handleCompletePress}
-                closed={false}
-            />
-        </SafeAreaView>
-    );
+      <View style={styles.headerDivider} />
+
+      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
+        <ItineraryTitleInput placeholder={getTitle()} onTitleChange={handleTitleChange} />
+        <TourPlace selectedRegion={regions} />
+        <TourPeriod onPeriodChange={handlePeriodChange} />
+      </ScrollView>
+
+      <CompleteButton title="작성 완료" onPress={handleCompletePress} closed={false} />
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-        paddingVertical: 12,
-        backgroundColor: '#fff',
-    },
-    backButton: {
-        padding: 4,
-    },
-    headerTitle: {
-        flex: 1,
-        fontSize: 18,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        color: 'black',
-    },
-    headerSpacer: {
-        width: 32,
-    },
-    headerDivider: {
-        height: 1,
-        backgroundColor: '#E5E5E5',
-    },
-    content: {
-        flex: 1,
-        backgroundColor: '#fff',
-    },
-    contentContainer: {
-        padding: 16,
-    },
-    emptyContent: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        paddingHorizontal: 20,
-    },
-    emptyText: {
-        fontSize: 18,
-        color: '#6b7280',
-        marginBottom: 10,
-    },
-    selectedRegionsText: {
-        fontSize: 14,
-        color: '#9ca3af',
-        textAlign: 'center',
-        lineHeight: 20,
-    },
+  container: { flex: 1, backgroundColor: '#fff' },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 12, backgroundColor: '#fff' },
+  backButton: { padding: 4 },
+  headerTitle: { flex: 1, fontSize: 18, fontWeight: 'bold', textAlign: 'center', color: 'black' },
+  headerSpacer: { width: 32 },
+  headerDivider: { height: 1, backgroundColor: '#E5E5E5' },
+  content: { flex: 1, backgroundColor: '#fff' },
+  contentContainer: { padding: 16 },
 });

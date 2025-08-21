@@ -1,115 +1,96 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
-import SearchRegionHeader from '../../components/mytour/createItinerary/SearchRegionHeader';
-import SelectedRegions from '../../components/mytour/createItinerary/SelectedRegions';
-import BottomSheet from '../../components/mytour/createItinerary/BottomSheet';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
+import SearchRegionHeader from '../../components/mytour/createItinerary/SearchRegionHeader';
+import SelectedRegions from '../../components/mytour/createItinerary/SelectedRegions';
+import AllAreaToggle from '../../components/mytour/createItinerary/AllAreaToggle';
+import CreateItineraryButton from '../../components/mytour/createItinerary/CreateItineraryButton';
+
 const TourDesign = () => {
-    const router = useRouter();
-    const [searchText, setSearchText] = useState('');
-    const [selectedRegions, setSelectedRegions] = useState([]);
-    const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(true);
-    const [sheetHeight, setSheetHeight] = useState(0.6); // 0.6 = 60%
+  const router = useRouter();
+  const [searchText, setSearchText] = useState('');
+  const [selectedRegions, setSelectedRegions] = useState([]); // 선택 지역 상태
 
-    const handleSearchChange = (text) => {
-        setSearchText(text);
-    };
+  const handleSearchChange = (text) => setSearchText(text);
+  const handleBack = () => router.back();
 
-    const handleBack = () => {
-        console.log('뒤로 가기');
-        // Expo Router 뒤로가기
-        router.back();
-    };
+  const handleRegionSelect = (key, country, regionName, code, parentCode) => {
+    setSelectedRegions(prev => {
+        // ❗️ 1. 비교할 때 parentCode도 함께 확인합니다.
+        const exists = prev.find(r => r.code === code && r.parentCode === parentCode);
 
-    const handleRegionSelect = (regionKey, country, region) => {
-        setSelectedRegions(prev => {
-            const exists = prev.find(r => r.key === regionKey);
-            if (exists) {
-                return prev.filter(r => r.key !== regionKey);
-            } else {
-                return [...prev, { key: regionKey, country, region }];
-            }
-        });
-    };
+        if (exists) {
+            // ❗️ 2. 제거할 때도 parentCode를 함께 확인하여 정확도를 높입니다.
+            return prev.filter(r => !(r.code === code && r.parentCode === parentCode));
+        } else {
+            // 추가하는 로직은 기존과 동일합니다.
+            return [...prev, { key, country, name: regionName, code, parentCode }];
+        }
+    });
+};
 
-    const handleRemoveRegion = (regionKey) => {
-        setSelectedRegions(prev => prev.filter(r => r.key !== regionKey));
-    };
+  const handleRemoveRegion = (regionKey) => {
+    setSelectedRegions(prev => prev.filter(r => r.key !== regionKey));
+  };
 
-    const handleCreateTrip = () => {
-        router.push({
-            pathname: 'mytour/createItinerary',
-            params: {
-                selectedRegions: JSON.stringify(selectedRegions)
-            }
-        });
-    };
+  // 선택 완료 → CreateItinerary로 이동
+  const handleNext = () => {
+    console.log('선택된 지역:', selectedRegions); // ← 여기에서 선택된 지역 확인
+    router.push({
+      pathname: './createItinerary',
+      params: {
+        selectedRegions: JSON.stringify(selectedRegions),
+        currentTitle: '',  // 초기 제목 필요시
+        currentPeriod: '', // 초기 기간 필요시
+      },
+    });
+  };
 
-    // 하나 이상의 지역이 선택되었는지 확인
-    const isCreateButtonActive = selectedRegions.length > 0;
+  const isNextButtonActive = selectedRegions.length > 0;
 
-    return (
-        <GestureHandlerRootView style={{ flex: 1 }}>
-        <SafeAreaView style={styles.container}>
-            {/* 상단 헤더 */}
-            <SearchRegionHeader 
-                searchText={searchText}
-                onSearchChange={handleSearchChange}
-                onBack={handleBack}
+  return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaView style={styles.container}>
+        <SearchRegionHeader
+          searchText={searchText}
+          onSearchChange={handleSearchChange}
+          onBack={handleBack}
+        />
+
+        <View style={styles.contentContainer}>
+          {selectedRegions.length > 0 && (
+            <SelectedRegions
+              selectedRegions={selectedRegions}
+              onRemoveRegion={handleRemoveRegion}
             />
-            
-            {/* 지도 영역 */}
-            <View style={styles.mapContainer}>
-                <View style={styles.mapPlaceholder}>
-                    <Text style={styles.mapPlaceholderText}>지도 영역</Text>
-                </View>
-                
-            </View>
+          )}
 
-            {/* 바텀 시트 */}
-            <BottomSheet
-                isOpen={isBottomSheetOpen}
-                onClose={() => setIsBottomSheetOpen(false)}
-                onHeightChange={setSheetHeight}
-                selectedRegions={selectedRegions}
-                onRegionSelect={handleRegionSelect}
-                onRemoveRegion={handleRemoveRegion}
-                isCreateButtonActive={isCreateButtonActive}
-                handleCreateTrip={handleCreateTrip}
+          <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+            <AllAreaToggle
+              onRegionSelect={handleRegionSelect}
+              selectedRegions={selectedRegions}
             />
-        </SafeAreaView>
-        </GestureHandlerRootView>
-    );
+          </ScrollView>
+        </View>
+
+        <View style={styles.floatingButtonContainer}>
+          <CreateItineraryButton
+            isActive={isNextButtonActive}
+            onPress={handleNext}
+          />
+        </View>
+      </SafeAreaView>
+    </GestureHandlerRootView>
+  );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#f9fafb',
-    },
-    mapContainer: {
-        flex: 1,
-        position: 'relative',
-    },
-    mapPlaceholder: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f3f4f6',
-    },
-    mapPlaceholderText: {
-        fontSize: 18,
-        color: '#6b7280',
-    },
-    selectedRegionsOverlay: {
-        position: 'absolute',
-        top: 20,
-        left: 0,
-        right: 0,
-        zIndex: 50,
-    },
+  container: { flex: 1, backgroundColor: '#f9fafb' },
+  contentContainer: { flex: 1 },
+  scrollContent: { flex: 1 },
+  floatingButtonContainer: { padding: 20, backgroundColor: '#f9fafb' },
 });
 
 export default TourDesign;

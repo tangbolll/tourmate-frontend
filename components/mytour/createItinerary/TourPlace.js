@@ -4,14 +4,14 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 
 const TourPlace = ({ selectedRegion = [] }) => {
-    router = useRouter();
+    const router = useRouter();
 
     const formatRegionText = () => {
         if (selectedRegion.length === 0) return '여행 장소를 선택하세요';
         
         const countryGroups = selectedRegion.reduce((acc, item) => {
             const country = item.country || '';
-            const region = item.region || '';
+            const region = item.name || ''; // 수정: name 속성을 사용
             
             if (!acc[country]) {
                 acc[country] = [];
@@ -21,20 +21,27 @@ const TourPlace = ({ selectedRegion = [] }) => {
             return acc;
         }, {});
         
-        return Object.entries(countryGroups).map(([country, regions]) => {
-            const regionList = regions.join(', ');
-            return `${country}(${regionList})`;
-        }).join(', ');
+        return Object.entries(countryGroups)
+            .map(([country, regions]) => {
+                const regionList = regions.join(', ');
+                return `${country}(${regionList})`;
+            })
+            .join(', ');
     };
 
     const handlePress = () => {
-        // router.back();
-        // TODO: 지역 선택 화면으로 이동 ?
+        // 지역 선택 페이지로 이동
+        router.push({
+            pathname: '/mytour/createItinerary/AllAreaTogglePage',
+            params: {
+                selectedRegions: JSON.stringify(selectedRegion),
+            },
+        });
     };
 
     return (
         <View style={styles.inputSection}>
-            <Text style={styles.heading}>여행장소</Text>
+            <Text style={styles.heading}>여행 장소</Text>
             <TouchableOpacity style={styles.inputContainer} onPress={handlePress}>
                 <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
                 <Text 
