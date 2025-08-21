@@ -114,6 +114,8 @@ const Chat = () => {
     const location = params.location || '위치 정보 없음';
     const participants = parseInt(params.participants) || 0;
     const maxParticipants = parseInt(params.maxParticipants) || 0;
+    const chatRoomId = params.chatRoomId; 
+    const roomName = params.roomName; 
     
     console.log('Chat 컴포넌트 파라미터:', { postId, location, participants, maxParticipants });
 
@@ -227,25 +229,48 @@ const Chat = () => {
     // 채팅방 정보 가져오기
     const fetchOrCreateChatRoom = async (accompanyId) => {
         try {
-            const url = `${API_URL}/api/accompany/${accompanyId}/chatroom`;
-            console.log('채팅방 조회/생성 API 호출:', url);
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-            });
-            
-            if (response.ok) {
-                const roomData = await response.json();
-                console.log('✅ 채팅방 데이터:', roomData);
-                setChatRoom(roomData);
-                return roomData;
-            } else {
-                throw new Error(`채팅방 조회/생성 실패: ${response.status}`);
+            // chatRoomId가 있으면 직접 조회
+            if (chatRoomId) {
+                const url = `${API_URL}/api/accompany/chatroom/${chatRoomId}`;
+                console.log('채팅방 직접 조회:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                });
+                
+                if (response.ok) {
+                    const roomData = await response.json();
+                    console.log('✅ 채팅방 데이터 (직접 조회):', roomData);
+                    setChatRoom(roomData);
+                    return roomData;
+                }
+            } 
+            // postId가 있으면 동행 ID로 조회/생성
+            else if (accompanyId) {
+                const url = `${API_URL}/api/accompany/${accompanyId}/chatroom`;
+                console.log('채팅방 조회/생성 API 호출:', url);
+                
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                    },
+                });
+                
+                if (response.ok) {
+                    const roomData = await response.json();
+                    console.log('✅ 채팅방 데이터 (동행 ID):', roomData);
+                    setChatRoom(roomData);
+                    return roomData;
+                }
             }
+            
+            throw new Error('채팅방 ID 또는 동행 ID가 필요합니다');
             
         } catch (error) {
             console.error('채팅방 조회/생성 오류:', error);
@@ -470,8 +495,9 @@ const Chat = () => {
     // 초기 데이터 로드
     useEffect(() => {
         const loadChatData = async () => {
-            if (!postId) {
-                setError('잘못된 동행 ID입니다.');
+            // chatRoomId나 postId 둘 중 하나는 있어야 함
+            if (!chatRoomId && !postId) {
+                setError('잘못된 접근입니다.');
                 setLoading(false);
                 return;
             }
@@ -480,13 +506,15 @@ const Chat = () => {
                 setLoading(true);
                 setError(null);
                 
-                console.log('🚀 채팅방 초기화 시작: postId =', postId);
+                console.log('🚀 채팅방 초기화 시작');
+                console.log('chatRoomId:', chatRoomId);
+                console.log('postId:', postId);
                 
-                // 1. 채팅방 정보 가져오기 (없으면 자동 생성)
+                // 1. 채팅방 정보 가져오기
                 const roomData = await fetchOrCreateChatRoom(postId);
                 
                 if (!roomData) {
-                    setError('채팅방을 생성할 수 없습니다.');
+                    setError('채팅방을 불러올 수 없습니다.');
                     return;
                 }
                 
@@ -505,8 +533,8 @@ const Chat = () => {
         };
 
         loadChatData();
-    }, [postId]);
-
+    }, [chatRoomId, postId]); 
+    
     // 메시지 전송 핸들러
     const handleSend = () => {
         if (!inputText.trim()) return;
