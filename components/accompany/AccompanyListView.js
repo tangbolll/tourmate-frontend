@@ -1,5 +1,6 @@
 import React, { memo, useCallback } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, RefreshControl } from 'react-native';
+import { router } from 'expo-router';
 import AccompanyListHeader from './AccompanyListHeader';
 import CalendarPopup from './CalendarPopup';
 import FilterPopup from './FilterPopup';

@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router'; // useRouter import는 올바름
 import AccompanyListView from '../../components/accompany/AccompanyListView';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
@@ -50,7 +50,7 @@ const AccompanyList = () => {
         travelLocation: '',
     });
 
-    const router = useRouter();
+    const router = useRouter(); // ✅ useRouter 훅으로 router 객체를 가져옴
     const currentUserId = "3";
 
     const updateLoadingState = (tab, isLoading) => {
@@ -318,7 +318,7 @@ const AccompanyList = () => {
         navigateToPost,
     };
 
-    return <AccompanyListView {...viewProps} />;
+    return <AccompanyListView {...viewProps} router={router} />; // ✅ router props 추가
 };
 
 export default AccompanyList;
