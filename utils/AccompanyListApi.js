@@ -4,42 +4,74 @@ import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
 
-// 기본 API URL을 가져오는 함수 (환경 설정에 따라)
-const getBaseURL = () => {
-    if (__DEV__) { // 개발 환경
-        if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080'; // 안드로이드 에뮬레이터는 '10.0.2.2'를 로컬호스트로 사용
+// 🔥 최적화: axios 인스턴스 생성 및 인터셉터 설정
+const api = axios.create({
+    baseURL: (() => {
+        if (__DEV__) {
+            return Platform.OS === 'android' ? 'http://10.0.2.2:8080' : Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
         }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
-    } else { // 운영(배포) 환경
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL';
-    }
-};
+    })(),
+    timeout: 20000, // 기본 타임아웃 10초
+});
 
-const API_URL = getBaseURL();
+// 🔥 최적화: 요청 인터셉터 - 디버그 로깅
+api.interceptors.request.use(
+    config => {
+        if (__DEV__) {
+            console.log(`🌐 API 요청 시작: ${config.method.toUpperCase()} ${config.url}`);
+            if (config.params) console.log('🔍 요청 파라미터:', config.params);
+            if (config.data) console.log('🔍 요청 데이터:', config.data);
+        }
+        return config;
+    },
+    error => Promise.reject(error)
+);
+
+// 🔥 최적화: 응답 인터셉터 - 디버그 로깅 및 에러 핸들링
+api.interceptors.response.use(
+    response => {
+        if (__DEV__) {
+            console.log(`✅ API 응답 성공: ${response.config.method.toUpperCase()} ${response.config.url}`);
+            console.log('🔍 응답 상태:', response.status);
+            console.log('🔍 응답 데이터:', response.data);
+        }
+        return response;
+    },
+    error => {
+        if (__DEV__) {
+            console.error(`❌ API 요청 실패: ${error.config?.url}`, {
+                message: error.message,
+                status: error.response?.status,
+                data: error.response?.data,
+            });
+        }
+        
+        // 특정 에러 코드에 대한 사용자 알림
+        if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
+            Alert.alert('네트워크 오류', '서버 응답 시간이 초과되었습니다.');
+        } else if (error.response?.status === 404) {
+            console.warn('⚠️ 리소스를 찾을 수 없습니다 (404)');
+        } else if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
+            Alert.alert(
+                '네트워크 연결 오류',
+                '서버에 연결할 수 없습니다.\n\n확인사항:\n1. 서버가 실행 중인지 확인\n2. IP 주소가 올바른지 확인\n3. 포트 번호가 맞는지 확인'
+            );
+        } else {
+            Alert.alert('오류', `요청 중 예상치 못한 오류가 발생했습니다: ${error.message}`);
+        }
+
+        return Promise.reject(error);
+    }
+);
 
 // 백엔드 데이터를 프론트엔드 형식으로 변환하는 함수
+// 🔥 최적화: 불필요한 디버그 로그 제거
 export const transformAccompanyData = (accompanyData) => {
-    if (!accompanyData) return [];
+    if (!accompanyData || !Array.isArray(accompanyData)) return [];
 
-    console.log('🔍 원본 백엔드 데이터 전체:', accompanyData);
-    console.log('🔍 배열 길이:', accompanyData.length);
-    
-    // 각 아이템의 id를 확인
-    accompanyData.forEach((item, index) => {
-        console.log(`🔍 아이템 ${index}: id=${item.id} (타입: ${typeof item.id}), title=${item.title}`);
-    });
-    
-    return accompanyData.map((item, index) => {
-        // id 변환 과정 상세 로그
-        const originalId = item.id;
+    return accompanyData.map((item) => {
         const transformedId = item.id?.toString() || Math.random().toString();
-        
-        console.log(`🔄 변환 ${index}: 원본 id=${originalId} → 변환된 id=${transformedId}`);
-        
-        if (!originalId) {
-            console.error(`❌ 경고! 아이템 ${index}의 id가 없습니다:`, item);
-        }
         
         return {
             id: transformedId,
@@ -62,81 +94,18 @@ export const transformAccompanyData = (accompanyData) => {
             hostId: item.userId || null,
             status: item.status || '상태 미정',
             likeCount: item.likeCount || 0,
-            userApplicationStatus: item.userApplicationStatus || null, // 새로 추가된 상태
+            userApplicationStatus: item.userApplicationStatus || null,
         };
     });
 };
 
-// API 에러 처리 공통 함수
-export const handleApiError = (error, apiName = 'API') => {
-    console.error(`❌ ${apiName} 오류:`, error);
-    
-    if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
-        Alert.alert(
-            '네트워크 연결 오류',
-            '서버에 연결할 수 없습니다.\n\n확인사항:\n1. 서버가 실행 중인지 확인\n2. IP 주소가 올바른지 확인\n3. 포트 번호가 맞는지 확인'
-        );
-    } else if (error.name === 'AbortError' || error.message.includes('시간이 초과')) {
-        // 타임아웃 에러는 Alert를 띄우지 않고 콘솔 로그만
-        console.warn(`⚠️ ${apiName} 타임아웃 발생 (재시도 로직으로 처리됨)`);
-    } else {
-        Alert.alert('오류', `${apiName} 요청 중 예상치 못한 오류가 발생했습니다: ${error.message}`);
-    }
-};
-
-// 재시도 로직이 포함된 fetch 함수
-const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 15000) => {
-    for (let attempt = 1; attempt <= maxRetries; attempt++) {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-
-        try {
-            console.log(`🔄 API 호출 시도 ${attempt}/${maxRetries}: ${url}`);
-            
-            const response = await fetch(url, {
-                ...options,
-                signal: controller.signal
-            });
-            
-            clearTimeout(timeoutId);
-
-            if (!response.ok) {
-                const errorText = await response.text();
-                throw new Error(`HTTP ${response.status}: ${response.statusText || errorText}`);
-            }
-
-            console.log(`✅ API 호출 성공 (시도 ${attempt}/${maxRetries})`);
-            return response;
-
-        } catch (error) {
-            clearTimeout(timeoutId);
-            
-            if (attempt === maxRetries) {
-                // 마지막 시도에서도 실패한 경우
-                if (error.name === 'AbortError') {
-                    throw new Error(`${url.includes('my-applications') ? '신청한 동행 목록' : 
-                                     url.includes('/my/') ? '내가 만든 동행' : 
-                                     '전체 피드'} API 서버 응답 시간이 초과되었습니다.`);
-                }
-                throw error;
-            }
-
-            // 재시도 전 잠시 대기
-            console.warn(`⚠️ 시도 ${attempt} 실패, ${1000 * attempt}ms 후 재시도...`);
-            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
-        }
-    }
-};
-
 // 1. 전체 피드 데이터 가져오기
 export const fetchAccompanyFeedApi = async (currentUserId) => {
-    const url = `${API_URL}/api/accompany/home?id=${currentUserId}`;
-    console.log('🌐 전체 피드 API 호출:', url);
-
     try {
-        const response = await fetchWithRetry(url);
-        const data = await response.json();
-        return transformAccompanyData(data.feed);
+        const response = await api.get('/api/accompany/home', {
+            params: { id: currentUserId },
+        });
+        return transformAccompanyData(response.data.feed);
     } catch (error) {
         throw error;
     }
@@ -144,13 +113,9 @@ export const fetchAccompanyFeedApi = async (currentUserId) => {
 
 // 2. 내가 만든 동행 데이터 가져오기
 export const fetchMyCreatedAccompanyApi = async (currentUserId) => {
-    const url = `${API_URL}/api/accompany/my/${currentUserId}`;
-    console.log('🌐 내가 만든 동행 API 호출:', url);
-
     try {
-        const response = await fetchWithRetry(url);
-        const data = await response.json();
-        return transformAccompanyData(data);
+        const response = await api.get(`/api/accompany/my/${currentUserId}`);
+        return transformAccompanyData(response.data);
     } catch (error) {
         throw error;
     }
@@ -158,186 +123,94 @@ export const fetchMyCreatedAccompanyApi = async (currentUserId) => {
 
 // 3. 신청한 동행 목록 데이터 가져오기
 export const fetchMyAppliedAccompanyApi = async (currentUserId) => {
-    const url = `${API_URL}/api/accompany/my-applications?id=${currentUserId}`;
-    console.log('🌐 신청한 동행 목록 API 호출:', url);
-
     try {
-        const response = await fetchWithRetry(url, {}, 3, 20000); // 신청한 동행은 3번 재시도, 20초 타임아웃
-        const data = await response.json();
-        return transformAccompanyData(data);
+        // 🔥 최적화: 타임아웃 재정의
+        const response = await api.get('/api/accompany/my-applications', {
+            params: { id: currentUserId },
+            timeout: 20000,
+        });
+        return transformAccompanyData(response.data);
     } catch (error) {
         throw error;
     }
 };
 
-// 4. 좋아요 추가/취소 API - 디버깅 로그 추가
+// 4. 좋아요 추가/취소 API
+// 🔥 최적화: 간결한 로직으로 변경
 export const toggleLikeApi = async (accompanyId, userId) => {
     const numericAccompanyId = Number(accompanyId);
-    
     if (isNaN(numericAccompanyId)) {
-        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
         throw new Error('Invalid accompanyId provided.');
     }
 
-    console.log(`🔍 toggleLikeApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
-
     try {
-        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like`;
-        console.log(`🌐 API 호출 URL: ${url}`);
-        console.log(`🌐 API 호출 파라미터: id=${userId}`);
-        
-        const response = await axios.post(url, null, {
-            params: {
-                id: userId
-            },
-            timeout: 10000 // 10초 타임아웃 추가
+        const response = await api.post(`/api/accompany/${numericAccompanyId}/like`, null, {
+            params: { id: userId },
         });
         
-        console.log(`✅ toggleLikeApi 응답 성공:`, {
-            status: response.status,
-            data: response.data,
-            headers: response.headers
-        });
-        
-        console.log(`🔍 토글 응답 데이터 상세 분석:`, {
-            liked: response.data.liked,
-            liked_type: typeof response.data.liked,
-            likeCount: response.data.likeCount,
-            likeCount_type: typeof response.data.likeCount,
-            전체_응답_키들: Object.keys(response.data)
-        });
-        
-        // ✅ 백엔드 응답 필드명에 맞춰 변환하고 유효성 검사 추가
-        const result = {
-            isLiked: Boolean(response.data.liked), // Boolean으로 확실히 변환
-            likeCount: Number(response.data.likeCount) || 0 // Number로 확실히 변환, fallback 0
+        return {
+            isLiked: Boolean(response.data.liked),
+            likeCount: Number(response.data.likeCount) || 0,
         };
-        
-        console.log(`🔍 최종 반환값:`, {
-            isLiked: result.isLiked,
-            isLiked_type: typeof result.isLiked,
-            likeCount: result.likeCount,
-            likeCount_type: typeof result.likeCount
-        });
-        
-        return result;
-        
     } catch (error) {
-        console.error(`❌ toggleLikeApi 에러 (ID: ${numericAccompanyId}):`, {
-            message: error.message,
-            status: error.response?.status,
-            statusText: error.response?.statusText,
-            data: error.response?.data,
-            url: error.config?.url,
-            method: error.config?.method,
-            params: error.config?.params
-        });
-        
-        handleApiError(error, `좋아요 토글 (ID: ${numericAccompanyId})`);
         throw error;
     }
 };
 
-// 5. 좋아요 상태 조회 API - 디버깅 로그 추가
+// 5. 좋아요 상태 조회 API
+// 🔥 최적화: 간결한 로직으로 변경
 export const getLikeStatusApi = async (accompanyId, userId) => {
-    // accompanyId를 명시적으로 Number 타입으로 변환
     const numericAccompanyId = Number(accompanyId);
-    
     if (isNaN(numericAccompanyId)) {
         console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
         return { isLiked: false, likeCount: 0 };
     }
-    
-    console.log(`🔍 getLikeStatusApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
-    
+
     try {
-        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like/status`;
-        console.log(`🌐 API 호출 URL: ${url}`);
-        console.log(`🌐 API 호출 파라미터: id=${userId}`);
-        
-        const response = await axios.get(url, {
-            params: {
-                id: userId
-            },
-            timeout: 10000 // 10초 타임아웃 추가
+        const response = await api.get(`/api/accompany/${numericAccompanyId}/like/status`, {
+            params: { id: userId },
         });
         
-        console.log(`✅ getLikeStatusApi 응답 성공:`, response.data);
-        console.log(`🔍 응답 데이터 타입 확인:`, {
-            liked: typeof response.data.liked,
-            likeCount: typeof response.data.likeCount,
-            전체_응답: response.data
-        });
-        
-        // ✅ 백엔드 응답 필드명에 맞춰 변환
         return {
-            isLiked: response.data.liked, // liked → isLiked로 변환
-            likeCount: response.data.likeCount
+            isLiked: response.data.liked,
+            likeCount: response.data.likeCount,
         };
-        
     } catch (error) {
-        console.error(`❌ getLikeStatusApi 에러 (ID: ${numericAccompanyId}):`, {
-            message: error.message,
-            status: error.response?.status,
-            data: error.response?.data,
-            url: error.config?.url
-        });
-        
-        // 404 에러인 경우 (동행이 존재하지 않음)
+        // 404 에러인 경우 예외적으로 처리
         if (error.response?.status === 404) {
-            console.warn(`⚠️ 동행 ID ${numericAccompanyId}를 찾을 수 없습니다.`);
             return { isLiked: false, likeCount: 0 };
         }
-        
-        // 다른 에러의 경우
-        handleApiError(error, `좋아요 상태 조회 (ID: ${numericAccompanyId})`);
-        return { isLiked: false, likeCount: 0 };
+        throw error;
     }
 };
 
-
-// 6. 여러 동행 포스트의 좋아요 상태를 한 번에 조회 - 수정된 버전
+// 6. 여러 동행 포스트의 좋아요 상태를 한 번에 조회
+// 🔥 최적화: Promise.all을 명시적으로 사용하여 병렬 처리
 export const getMultipleAccompanyLikesApi = async (accompanyIds, userId) => {
-    console.log('🔍 getMultipleAccompanyLikesApi 호출됨');
-    console.log('🔍 입력 매개변수:', { accompanyIds, userId });
-    
-    // undefined나 null 필터링하고 Number 타입으로 변환
     const validAccompanyIds = accompanyIds
         .filter(id => id !== undefined && id !== null && id !== '')
         .map(id => Number(id));
         
-    console.log('🔍 유효한 accompanyIds:', validAccompanyIds);
-    
     if (validAccompanyIds.length === 0) {
-        console.warn('⚠️ 유효한 accompanyId가 없어서 빈 객체 반환');
         return {};
     }
     
     try {
-        // 각 동행에 대해 좋아요 상태 조회
         const likeStatusPromises = validAccompanyIds.map(async (accompanyId) => {
-            console.log(`🔍 개별 좋아요 상태 조회: accompanyId=${accompanyId}, userId=${userId}`);
             const result = await getLikeStatusApi(accompanyId, userId);
-            console.log(`🔍 개별 응답 결과 (ID: ${accompanyId}):`, result);
             return { accompanyId, ...result };
         });
         
         const results = await Promise.all(likeStatusPromises);
-        console.log('🔍 모든 개별 응답 결과:', results);
         
-        // 결과를 객체로 변환 - isLiked 값만 추출
         const likedPostsMap = {};
-        results.forEach(({ accompanyId, isLiked, likeCount }) => {
-            likedPostsMap[accompanyId] = isLiked; // ✅ isLiked 값만 저장
-            console.log(`🔍 매핑 결과: ${accompanyId} -> ${isLiked} (좋아요 수: ${likeCount})`);
+        results.forEach(({ accompanyId, isLiked }) => {
+            likedPostsMap[accompanyId] = isLiked;
         });
         
-        console.log('✅ 최종 likedPostsMap:', likedPostsMap);
         return likedPostsMap;
-        
     } catch (error) {
-        console.error('❌ getMultipleAccompanyLikesApi 에러:', error);
-        handleApiError(error, '좋아요 상태 일괄 조회');
-        return {};
+        // 모든 에러는 인터셉터에서 처리되므로, 여기서는 단순히 에러를 던지거나 빈 객체 반환
+        return {}; 
     }
 };
