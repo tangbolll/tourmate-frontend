@@ -1,59 +1,101 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'expo-router';
-import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import GroupChatList from '../../components/accompany/GroupChatList';
 import ChatExitPopup from '../../components/accompany/ChatExitPopup';
-
-// 임시 데이터
-const dummyChats = [
-  {
-    id: '1',
-    photo: 'https://via.placeholder.com/50',
-    title: '공주 공산성에서 아경 같이 즐겨요',
-    message: '여러분 오늘 내로 OKR 업데이트 해주세요~!',
-    participants: 5,
-    timestamp: '17분 전',
-    unreadCount: 3,
-  },
-  {
-    id: '2',
-    photo: 'https://via.placeholder.com/50',
-    title: '화천 산천어 축제 가서 놀 사람',
-    message: '여러분 오늘 내로 OKR 업데이트 해주세요~!',
-    participants: 3,
-    timestamp: '1일 전',
-    unreadCount: 12,
-  },
-  {
-    id: '3',
-    photo: 'https://via.placeholder.com/50',
-    title: '비단가람은길 자전거 여행',
-    message: '여러분 오늘 내로 OKR 업데이트 해주세요~!',
-    participants: 3,
-    timestamp: '3월 6일',
-    unreadCount: 0,
-  },
-  {
-    id: '4',
-    photo: 'https://via.placeholder.com/50',
-    title: '공주 공산성에서 아경 같이 즐겨요',
-    message: '여러분 오늘 내로 OKR 업데이트 해주세요~!',
-    participants: 5,
-    timestamp: '2025.3.6',
-    unreadCount: 0,
-  },
-];
+import * as ChatApi from '../../utils/ChatApi';
 
 const GroupChats = () => {
-    const router = useRouter();
-    const [isPopupVisible, setPopupVisible] = useState(false);
-    const [selectedChat, setSelectedChat] = useState(null);
+  const router = useRouter();
+  const [isPopupVisible, setPopupVisible] = useState(false);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [chatRooms, setChatRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  
+  // 사용자 ID 
+  const currentUserId = "2";
 
-  const handleChatPress = (item) => {
-    // 채팅방 상세 페이지로 이동하는 로직
-    // router.push(`accompany/chat/${item.id}`);
-    console.log(`${item.title} 채팅방으로 이동`);
+  // 컴포넌트 마운트 시 채팅방 목록 로드
+  useEffect(() => {
+    console.log('Component mounted, loading chat rooms...');
+    console.log('Current User ID:', currentUserId);
+    loadChatRooms();
+  }, []);
+
+  // 채팅방 목록 로드 함수
+  const loadChatRooms = async () => {
+    try {
+      setLoading(true);
+      const data = await ChatApi.getMyChatRooms(currentUserId);
+      console.log('Setting chat rooms:', data);
+      setChatRooms(data);
+    } catch (error) {
+      Alert.alert('오류', '채팅방 목록을 불러오는데 실패했습니다.');
+      console.error('loadChatRooms error:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 새로고침 함수
+  const onRefresh = async () => {
+    try {
+      setRefreshing(true);
+      await loadChatRooms();
+    } catch (error) {
+      console.error('refresh error:', error);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // 채팅방 클릭 시 상세 정보 가져오고 이동
+  const handleChatPress = async (item) => {
+    try {
+      console.log(`채팅방 클릭: ${item.title} (ID: ${item.id})`);
+      
+      // 채팅방 상세 정보 가져오기
+      const chatRoomDetail = await ChatApi.getChatRoomById(item.id);
+      console.log('채팅방 상세 정보:', chatRoomDetail);
+      
+      // 채팅방 목록에서 접근하는 경우 - chatRoomId와 roomName 직접 전달
+      const queryParams = new URLSearchParams({
+        chatRoomId: item.id,
+        currentUserId: currentUserId,
+        roomName: chatRoomDetail.roomName || item.title,
+        location: chatRoomDetail.location || '위치 정보 없음',
+        participants: chatRoomDetail.participants ? chatRoomDetail.participants.length : item.participants,
+        maxParticipants: chatRoomDetail.maxParticipants || 0,
+        // postId는 전달하지 않음 (채팅방 리스트에서 접근 시)
+      }).toString();
+      
+      // Chat 컴포넌트로 이동
+      router.push(`/accompany/Chat?${queryParams}`);
+      
+      console.log(`${item.title} 채팅방으로 이동 완료`);
+      console.log('전달된 파라미터:', {
+        chatRoomId: item.id,
+        roomName: chatRoomDetail.roomName || item.title,
+        currentUserId: currentUserId
+      });
+      
+    } catch (error) {
+      console.error('채팅방 상세 정보 조회 실패:', error);
+      
+      // API 실패 시에도 기본 정보로 이동
+      const fallbackParams = new URLSearchParams({
+        chatRoomId: item.id,
+        currentUserId: currentUserId,
+        roomName: item.title,
+        location: '위치 정보 없음',
+        participants: item.participants || 0,
+        maxParticipants: 0
+      }).toString();
+      
+      router.push(`/accompany/Chat?${fallbackParams}`);
+    }
   };
 
   const handleChatSwipeLeft = (item) => {
@@ -61,17 +103,53 @@ const GroupChats = () => {
     setPopupVisible(true);
   };
 
-  const handleExitConfirm = () => {
-    // 채팅방 나가기 로직
-    console.log(`${selectedChat.title} 채팅방 나가기`);
-    setPopupVisible(false);
+  const handleExitConfirm = async () => {
+    if (!selectedChat) return;
+
+    try {
+      await ChatApi.exitChatRoom(selectedChat.id, currentUserId);
+      
+      // 성공 시 로컬 상태 업데이트
+      setChatRooms(prevChats => 
+        prevChats.filter(chat => chat.id !== selectedChat.id)
+      );
+      
+      Alert.alert('알림', '채팅방에서 나왔습니다.');
+      console.log(`${selectedChat.title} 채팅방 나가기 완료`);
+    } catch (error) {
+      Alert.alert('오류', '채팅방 나가기에 실패했습니다.');
+      console.error('exit chatroom error:', error);
+    } finally {
+      setPopupVisible(false);
+      setSelectedChat(null);
+    }
   };
+
+  // 로딩 중일 때 표시할 컴포넌트
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.backButton}
+            onPress={() => router.push('accompany')}
+          >
+            <Ionicons name="chevron-back" size={24} color="black" />
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>동행 그룹채팅</Text>
+          <View style={styles.headerRight} />
+        </View>
+        <View style={styles.loadingContainer}>
+          <Text>채팅방 목록을 불러오는 중...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
-        {/* onPress 이벤트 핸들러를 올바르게 수정 */}
         <TouchableOpacity 
           style={styles.backButton}
           onPress={() => router.push('accompany')}
@@ -84,21 +162,44 @@ const GroupChats = () => {
 
       {/* 채팅 목록 */}
       <FlatList
-        data={dummyChats}
-        renderItem={({ item }) => (
-          <GroupChatList
-            photo={item.photo}
-            title={item.title}
-            message={item.message}
-            participants={item.participants}
-            timestamp={item.timestamp}
-            unreadCount={item.unreadCount}
-            onPress={() => handleChatPress(item)}
-            // 스와이프 이벤트 핸들러 prop을 올바르게 전달
-            onSwipeLeft={() => handleChatSwipeLeft(item)}
-          />
-        )}
-        keyExtractor={(item) => item.id}
+        data={chatRooms}
+        renderItem={({ item }) => {
+          console.log('=== FlatList Rendering ===');
+          console.log('Item ID:', item.id);
+          console.log('Item Title:', item.title);
+          console.log('Item Participants:', item.participants);
+          console.log('Item Message:', item.message);
+          console.log('Item Timestamp:', item.timestamp);
+          console.log('========================');
+          
+          return (
+            <GroupChatList
+              photo={item.photo}
+              title={item.title}
+              message={item.message}
+              participants={item.participants}
+              timestamp={item.timestamp}
+              unreadCount={item.unreadCount}
+              onPress={() => handleChatPress(item)}
+              onSwipeLeft={() => handleChatSwipeLeft(item)}
+            />
+          );
+        }}
+        keyExtractor={(item, index) => {
+          const key = item.id ? item.id.toString() : index.toString();
+          console.log('KeyExtractor:', key);
+          return key;
+        }}
+        refreshing={refreshing}
+        onRefresh={onRefresh}
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>참여 중인 채팅방이 없습니다.</Text>
+          </View>
+        }
+        // 디버깅을 위해 추가
+        style={{ flex: 1 }}
+        contentContainerStyle={chatRooms.length === 0 ? { flex: 1 } : undefined}
       />
       
       {/* 채팅방 나가기 팝업 */}
@@ -135,6 +236,21 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     width: 34,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#888',
   },
 });
 
