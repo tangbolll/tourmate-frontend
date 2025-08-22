@@ -468,7 +468,7 @@ const AccompanyManagement = () => {
             </View>
 
             {/* 하단 버튼 영역 */}
-            <AccompanyBottomButton
+            {/* <AccompanyBottomButton
                 isHost={true}
                 accompanyStatus={accompanyStatus}
                 userApplicationStatus={userApplicationStatus}
@@ -477,7 +477,7 @@ const AccompanyManagement = () => {
                 isLiked={isLiked}
                 onLikeToggle={handleLikeToggle}
                 isLoading={isLikeLoading}
-            />
+            /> */}
 
             {/* 마감 확인 팝업 */}
             <CloseAlarmPopup 
