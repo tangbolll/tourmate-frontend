@@ -32,6 +32,7 @@ import {
     getChatAccessApi
 } from '../../utils/AccompanyPostApi';
 
+import { currentUserId } from '../../constants/testUserId';
 
 export default function AccompanyPost() {
     const params = useLocalSearchParams();
@@ -49,7 +50,6 @@ export default function AccompanyPost() {
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
 
-    const currentUserId = "2";
     const [isHost, setIsHost] = useState(false);
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);

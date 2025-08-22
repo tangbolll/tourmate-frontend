@@ -12,7 +12,7 @@ const api = axios.create({
         }
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL';
     })(),
-    timeout: 20000, // 기본 타임아웃 10초
+    timeout: 20000, // 기본 타임아웃 20초
 });
 
 // 🔥 최적화: 요청 인터셉터 - 디버그 로깅

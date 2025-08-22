@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { currentUserId } from '../../constants/testUserId';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -109,7 +110,7 @@ const Chat = () => {
     const router = useRouter();
 
     // URL 파라미터에서 데이터 추출
-    const currentUserId = params.currentUserId || 2;
+    //const currentUserId = params.currentUserId || 2;
     const postId = params.postId;
     const location = params.location || '위치 정보 없음';
     const participants = parseInt(params.participants) || 0;
