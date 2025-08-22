@@ -6,91 +6,93 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import SearchRegionHeader from '../../components/mytour/createItinerary/SearchRegionHeader';
 import SelectedRegions from '../../components/mytour/createItinerary/SelectedRegions';
 import AllAreaToggle from '../../components/mytour/createItinerary/AllAreaToggle';
-import CreateItineraryButton from '../../components/mytour/createItinerary/CreateItineraryButton';
+import ApplicationButton from '../../components/mytour/createItinerary/CompleteButton';
 
 const TourDesign = () => {
-  const router = useRouter();
-  const [searchText, setSearchText] = useState('');
-  const [selectedRegions, setSelectedRegions] = useState([]); // 선택 지역 상태
+    const router = useRouter();
+    const [searchText, setSearchText] = useState('');
+    const [selectedRegions, setSelectedRegions] = useState([]);
 
-  const handleSearchChange = (text) => setSearchText(text);
-  const handleBack = () => router.back();
+    const handleSearchChange = (text) => setSearchText(text);
+    const handleBack = () => router.back();
 
-  const handleRegionSelect = (key, country, regionName, code, parentCode) => {
-    setSelectedRegions(prev => {
-        // ❗️ 1. 비교할 때 parentCode도 함께 확인합니다.
-        const exists = prev.find(r => r.code === code && r.parentCode === parentCode);
+    const handleRegionSelect = (key, country, regionName, code, parentCode) => {
+        setSelectedRegions(prev => {
+            const exists = prev.find(r => r.code === code && r.parentCode === parentCode);
+            if (exists) {
+                return prev.filter(r => !(r.code === code && r.parentCode === parentCode));
+            } else {
+                return [...prev, { key, country, name: regionName, code, parentCode }];
+            }
+        });
+    };
 
-        if (exists) {
-            // ❗️ 2. 제거할 때도 parentCode를 함께 확인하여 정확도를 높입니다.
-            return prev.filter(r => !(r.code === code && r.parentCode === parentCode));
-        } else {
-            // 추가하는 로직은 기존과 동일합니다.
-            return [...prev, { key, country, name: regionName, code, parentCode }];
-        }
-    });
-};
+    const handleRemoveRegion = (regionKey) => {
+        setSelectedRegions(prev => prev.filter(r => r.key !== regionKey));
+    };
 
-  const handleRemoveRegion = (regionKey) => {
-    setSelectedRegions(prev => prev.filter(r => r.key !== regionKey));
-  };
+    const handleNext = () => {
+        console.log('선택된 지역:', selectedRegions);
+        router.push({
+        pathname: './createItinerary',
+        params: {
+            selectedRegions: JSON.stringify(selectedRegions),
+            currentTitle: '',
+            currentPeriod: '',
+        },
+        });
+    };
 
-  // 선택 완료 → CreateItinerary로 이동
-  const handleNext = () => {
-    console.log('선택된 지역:', selectedRegions); // ← 여기에서 선택된 지역 확인
-    router.push({
-      pathname: './createItinerary',
-      params: {
-        selectedRegions: JSON.stringify(selectedRegions),
-        currentTitle: '',  // 초기 제목 필요시
-        currentPeriod: '', // 초기 기간 필요시
-      },
-    });
-  };
+    const isNextButtonActive = selectedRegions.length > 0;
 
-  const isNextButtonActive = selectedRegions.length > 0;
-
-  return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaView style={styles.container}>
-        <SearchRegionHeader
-          searchText={searchText}
-          onSearchChange={handleSearchChange}
-          onBack={handleBack}
-        />
-
-        <View style={styles.contentContainer}>
-          {selectedRegions.length > 0 && (
-            <SelectedRegions
-              selectedRegions={selectedRegions}
-              onRemoveRegion={handleRemoveRegion}
+    return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
+        <SafeAreaView style={styles.container}>
+            <SearchRegionHeader
+            searchText={searchText}
+            onSearchChange={handleSearchChange}
+            onBack={handleBack}
             />
-          )}
-
-          <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
-            <AllAreaToggle
-              onRegionSelect={handleRegionSelect}
-              selectedRegions={selectedRegions}
-            />
-          </ScrollView>
-        </View>
-
+            <View style={styles.contentContainer}>
+            {selectedRegions.length > 0 && (
+                <SelectedRegions
+                selectedRegions={selectedRegions}
+                onRemoveRegion={handleRemoveRegion}
+                />
+            )}
+            <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* ✅ 검색어(searchText)를 AllAreaToggle 컴포넌트로 전달합니다. */}
+                <AllAreaToggle
+                searchText={searchText}
+                onRegionSelect={handleRegionSelect}
+                selectedRegions={selectedRegions}
+                />
+            </ScrollView>
+            </View>
+        </SafeAreaView>
         <View style={styles.floatingButtonContainer}>
-          <CreateItineraryButton
-            isActive={isNextButtonActive}
+            {/* ❗️ 이 버튼에는 검색어가 필요 없으므로 searchText prop을 삭제합니다. */}
+            <ApplicationButton
+            title="다음"
             onPress={handleNext}
-          />
+            closed={!isNextButtonActive}
+            />
         </View>
-      </SafeAreaView>
-    </GestureHandlerRootView>
-  );
+        </GestureHandlerRootView>
+    );
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb' },
-  contentContainer: { flex: 1 },
-  scrollContent: { flex: 1 },
-  floatingButtonContainer: { padding: 20, backgroundColor: '#f9fafb' },
+    container: { flex: 1, backgroundColor: '#fff' },
+    contentContainer: { flex: 1 },
+    scrollContent: { flex: 1 },
+    floatingButtonContainer: {
+        paddingTop: 12,
+        backgroundColor: '#f9fafb',
+        paddingBottom: 38,
+        borderTopColor: '#f0f0f0',
+        borderTopWidth: 1,
+    },
 });
 
 export default TourDesign;
