@@ -241,8 +241,8 @@ container: {
     elevation: 5,
     backgroundColor: '#fff',
     paddingHorizontal: 16,
-    paddingTop: 16, 
-    paddingBottom: 40, // 하단 패딩 확장
+    paddingTop: 12, 
+    paddingBottom: 48, // 하단 패딩 확장
     minHeight: 80, 
     position: 'absolute',
     width: '100%',

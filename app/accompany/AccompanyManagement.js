@@ -659,7 +659,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
     },
     emptyContainer: {
-        padding: 20,
+        padding: 80,
         alignItems: 'center',
     },
     emptyText: {
