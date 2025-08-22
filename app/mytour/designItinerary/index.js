@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, SafeAreaView, Alert, Text, ActivityIndicator } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import DesignItineraryHeader from '../../../components/mytour/designItinerary/designItineraryHeader';
 import DateSelectButtons from '../../../components/mytour/designItinerary/DateSelectButtons';
@@ -9,81 +9,155 @@ import MemberPopup from '../../../components/mytour/designItinerary/MemberPopup'
 import ItineraryWithSchedule from '../../../components/mytour/designItinerary/ItineraryWithSchedule';
 import Schedule from '../../../components/mytour/designItinerary/schedule/Schedule';
 import AddSchedule from '../../../components/mytour/designItinerary/AddSchedule/AddSchedule';
+import { createTour, updateTour, getTourDetails } from '../../../utils/MyTourApi';
+import { currentUserId } from '../../../constants/testUserId';
+
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => {
+            setDebouncedValue(value);
+        }, delay);
+        return () => {
+            clearTimeout(handler);
+        };
+    }, [value, delay]);
+    return debouncedValue;
+};
 
 export default function DesignItinerary() {
+    const { selectedRegions, itineraryTitle, periodData, tourId } = useLocalSearchParams();
     const router = useRouter();
-    const { selectedRegions, itineraryTitle, periodData } = useLocalSearchParams();
-    
-    // 전달받은 데이터들을 파싱
-    const regions = selectedRegions ? JSON.parse(selectedRegions) : [];
-    const title = itineraryTitle || '';
-    const period = periodData ? JSON.parse(periodData) : {};
-    
-    // 선택된 관광지 상태 관리
+
+    const [title, setTitle] = useState(itineraryTitle || '');
+    const [regions, setRegions] = useState(selectedRegions ? JSON.parse(selectedRegions) : []);
+    const [period, setPeriod] = useState(periodData ? JSON.parse(periodData) : {});
     const [selectedAttractions, setSelectedAttractions] = useState([]);
-    
-    // 선택된 날짜 상태 관리
     const [selectedDay, setSelectedDay] = useState(null);
-    
-    // 그리드 모드 상태 관리
     const [isGridMode, setIsGridMode] = useState(false);
-    
-    // AddSchedule 팝업 상태 - 중앙 집중식으로 관리
     const [showAddSchedulePopup, setShowAddSchedulePopup] = useState(false);
     const [schedulePopupData, setSchedulePopupData] = useState(null);
-    
-    // AI 일정 디자인 팝업 상태
     const [showAiPopup, setShowAiPopup] = useState(false);
-    
-    // 멤버 팝업 상태
     const [showMemberPopup, setShowMemberPopup] = useState(false);
-    
-    // 일정 데이터 상태
     const [scheduleData, setScheduleData] = useState({});
-    
-    // 임시 멤버 데이터
-    const [members, setMembers] = useState([
-        {
-            id: 'current_user',
-            name: '여라미',
-            gender: '여',
-            age: 22,
-            isUser: true,
-            tags: ['즉흥적인', '계획가', '유머러스']
-        },
-        {
-            id: 'member1',
-            name: '지백',
-            gender: '여',
-            age: 24,
-            isUser: false,
-            tags: ['무계획여행', '맛집탐방']
-        },
-        {
-            id: 'member2',
-            name: '주리를틀어라',
-            gender: '여',
-            age: 21,
-            isUser: false,
-            tags: ['힐링', '탐험', '맛집탐방']
-        }
-    ]);
-    
-    console.log('전달받은 데이터들:');
-    console.log('- 지역 데이터:', regions);
-    console.log('- 여행 제목:', title);
-    console.log('- 기간 데이터:', period);
-    console.log('- 기간 타입:', period.type);
-    
-    if (period.type === 'date') {
-        console.log('- 시작 날짜:', period.startDate);
-        console.log('- 종료 날짜:', period.endDate);
-    } else if (period.type === 'duration') {
-        console.log('- 숙박 기간:', period.nights + '박');
-        console.log('- 총 기간:', period.days + '일');
-    }
+    const [showActionButtons, setShowActionButtons] = useState(false);
+    const [members, setMembers] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    // 날짜 포맷팅 함수
+    const debouncedSelectedAttractions = useDebounce(selectedAttractions, 1000);
+    const debouncedScheduleData = useDebounce(scheduleData, 1000);
+
+    useEffect(() => {
+        const fetchTourData = async () => {
+            if (tourId) {
+                setLoading(true);
+                try {
+                    console.log(`기존 여행 데이터 불러오는 중... tourId: ${tourId}`);
+                    const data = await getTourDetails(tourId);
+                    if (data) {
+                        setTitle(data.title);
+                        setRegions(data.regions);
+                        setPeriod({
+                            type: data.periodType, // ✅ periodType으로 수정
+                            startDate: data.startDate,
+                            endDate: data.endDate,
+                            nights: data.nights,
+                            days: data.days
+                        });
+                        setSelectedAttractions(data.attractions || []);
+                        setScheduleData(data.schedule || {});
+                        setMembers(data.members || []);
+                        console.log("여행 데이터 불러오기 성공:", data);
+                    }
+                } catch (error) {
+                    console.error("여행 데이터 불러오기 실패:", error);
+                    Alert.alert("에러", "여행 정보를 불러오는데 실패했습니다.");
+                } finally {
+                    setLoading(false);
+                }
+            } else {
+                setTitle(itineraryTitle || '');
+                setRegions(selectedRegions ? JSON.parse(selectedRegions) : []);
+                setPeriod(periodData ? JSON.parse(periodData) : {});
+                setLoading(false);
+                console.log("새로운 여행 생성 페이지로 시작");
+            }
+        };
+
+        fetchTourData();
+    }, [tourId, selectedRegions, itineraryTitle, periodData]);
+
+    const handleConfirmItinerary = async () => {
+        try {
+            if (!tourId) {
+                const tourData = {
+                    title: title,
+                    startDate: period.startDate,
+                    endDate: period.endDate,
+                    nights: period.nights,
+                    days: period.days,
+                    regions: regions.map(r => r.key),
+                    attractions: selectedAttractions.map(a => a.id),
+                    schedule: scheduleData,
+                    members: members,
+                    userId: currentUserId
+                };
+                console.log("새 여행 생성 요청 데이터:", tourData);
+                const newTour = await createTour(tourData);
+                setTourId(newTour.id);
+                Alert.alert("성공", "새로운 여행 일정이 생성되었습니다.");
+            } else {
+                const tourData = {
+                    title: title,
+                    startDate: period.startDate,
+                    endDate: period.endDate,
+                    nights: period.nights,
+                    days: period.days,
+                    periodType: period.type,
+                    regions: regions.map(r => r.key),
+                    attractions: selectedAttractions.map(a => a.id),
+                    schedule: scheduleData,
+                    members: members,
+                    userId: currentUserId
+                };
+                console.log("여행 수정 요청 데이터 (확인 버튼):", tourData);
+                await updateTour(tourId, tourData);
+                Alert.alert("성공", "여행 일정이 저장되었습니다.");
+            }
+            setShowActionButtons(false);
+        } catch (error) {
+            console.error("일정 저장 실패:", error);
+            Alert.alert("에러", "일정 저장에 실패했습니다.");
+        }
+    };
+    
+    useEffect(() => {
+        const updateServer = async () => {
+            if (tourId) {
+                try {
+                    const tourData = {
+                        title: title,
+                        startDate: period.startDate,
+                        endDate: period.endDate,
+                        nights: period.nights,
+                        days: period.days,
+                        periodType: period.type,
+                        regions: regions.map(r => r.key),
+                        attractions: debouncedSelectedAttractions.map(a => a.id),
+                        schedule: debouncedScheduleData,
+                        members: members,
+                        userId: currentUserId
+                    };
+                    console.log("여행 수정 요청 (debounced):", tourData);
+                    await updateTour(tourId, tourData);
+                } catch (error) {
+                    console.error("자동 저장 실패:", error);
+                }
+            }
+        };
+        updateServer();
+    }, [debouncedSelectedAttractions, debouncedScheduleData, tourId]);
+
     const formatDateRange = () => {
         if (period.type === 'date' && period.startDate && period.endDate) {
             return {
@@ -100,26 +174,21 @@ export default function DesignItinerary() {
     };
 
     const handleBackPress = () => {
-        router.back();
+        router.push('/mytour');
     };
 
-    // 날짜 선택 핸들러
     const handleDaySelect = (dayNumber) => {
-        console.log('선택된 일차:', dayNumber);
         setSelectedDay(dayNumber);
         setIsGridMode(false);
     };
 
-    // 그리드 토글 핸들러
     const handleGridToggle = (gridMode) => {
-        console.log('그리드 모드:', gridMode);
         setIsGridMode(gridMode);
         if (gridMode) {
             setSelectedDay(null);
         }
     };
 
-    // 관광지 선택/해제 핸들러
     const handleAttractionToggle = (attraction) => {
         setSelectedAttractions(prev => {
             const isSelected = prev.some(item => item.id === attraction.id);
@@ -131,9 +200,6 @@ export default function DesignItinerary() {
         });
     };
 
-    // AI 일정 버튼 클릭 핸들러
-    const [showActionButtons, setShowActionButtons] = useState(false);
-    
     const handleAiItineraryPress = () => {
         setShowAiPopup(true);
     };
@@ -142,7 +208,6 @@ export default function DesignItinerary() {
         setShowActionButtons(true);
     };
 
-    // 멤버 아이콘 클릭 핸들러
     const handleMemberPress = () => {
         setShowMemberPopup(true);
     };
@@ -151,20 +216,15 @@ export default function DesignItinerary() {
         setShowMemberPopup(false);
     };
 
-    // 멤버 삭제 핸들러
     const handleMemberDelete = (memberToDelete) => {
         setMembers(prev => prev.filter(member => member.id !== memberToDelete.id));
     };
 
-    // 멤버 추가 핸들러
     const handleMemberAdd = (newMember) => {
         setMembers(prev => [...prev, newMember]);
     };
 
-    // 일정 추가 핸들러 - 통합 관리
     const handleAddSchedule = (selectedDay, selectedDate = null, selectedHour = null) => {
-        console.log('일정 추가 요청 - 선택된 날짜:', selectedDay, '선택된 시간:', selectedHour);
-        
         setSchedulePopupData({
             selectedDay: selectedDay,
             selectedDate: selectedDate,
@@ -174,10 +234,7 @@ export default function DesignItinerary() {
         setShowAddSchedulePopup(true);
     };
 
-    // 블록 클릭 핸들러 - 통합 관리
     const handleTimeBlockClick = (blockData) => {
-        console.log('블록 클릭:', blockData);
-        
         setSchedulePopupData({
             selectedDay: blockData.day || null,
             selectedDate: blockData.date || null,
@@ -187,62 +244,37 @@ export default function DesignItinerary() {
         setShowAddSchedulePopup(true);
     };
 
-    // AddSchedule 팝업 닫기 핸들러
     const handleCloseAddSchedulePopup = () => {
-        console.log('AddSchedule 팝업 닫기');
         setShowAddSchedulePopup(false);
         setSchedulePopupData(null);
     };
 
-    // 일정 추가 완료 핸들러
     const handleScheduleAdded = (newScheduleData) => {
-        console.log('새 일정 추가:', newScheduleData);
-        
-        // 일정 데이터를 상태에 저장
         setScheduleData(prev => {
-            // 날짜 또는 day 기반으로 키 생성
-            let dayKey;
-            if (newScheduleData.day) {
-                dayKey = `day${newScheduleData.day}`;
-            } else if (schedulePopupData?.selectedDay) {
-                dayKey = `day${schedulePopupData.selectedDay}`;
-            } else {
-                // 날짜 기반으로 day 계산
-                dayKey = `day1`; // 기본값
-            }
-            
+            const dayKey = `day${schedulePopupData?.selectedDay || newScheduleData.day || 1}`;
             const existingSchedules = prev[dayKey] || [];
             
-            // 새 일정에 고유 ID 추가
             const scheduleWithId = {
                 ...newScheduleData,
                 id: newScheduleData.id || Date.now().toString(),
-                day: schedulePopupData?.selectedDay || 1
+                day: schedulePopupData?.selectedDay || newScheduleData.day || 1
             };
             
-            console.log('일정 저장 완료:', scheduleWithId);
+            const updatedSchedules = [...existingSchedules, scheduleWithId];
             
             return {
                 ...prev,
-                [dayKey]: [...existingSchedules, scheduleWithId]
+                [dayKey]: updatedSchedules
             };
         });
-        
-        // 팝업 닫기
         handleCloseAddSchedulePopup();
     };
 
-    // 일정 삭제 핸들러
     const handleScheduleDelete = (scheduleId, day) => {
-        console.log('일정 삭제 요청:', scheduleId, day);
-        
         setScheduleData(prev => {
             const dayKey = `day${day}`;
             const existingSchedules = prev[dayKey] || [];
-            
             const updatedSchedules = existingSchedules.filter(schedule => schedule.id !== scheduleId);
-            console.log('삭제 후 남은 일정들:', updatedSchedules);
-            
             return {
                 ...prev,
                 [dayKey]: updatedSchedules
@@ -252,12 +284,9 @@ export default function DesignItinerary() {
 
     const dateInfo = formatDateRange();
 
-    // 현재 보여줄 컨텐츠 결정
     const renderMainContent = () => {
         if (selectedDay) {
-            // 날짜가 선택된 경우: Schedule 컴포넌트 표시
             const daySchedules = scheduleData[`day${selectedDay}`] || [];
-            
             return (
                 <Schedule 
                     selectedDay={selectedDay}
@@ -267,7 +296,6 @@ export default function DesignItinerary() {
                 />
             );
         } else if (isGridMode) {
-            // 그리드 모드인 경우: 일정 생성 블록이 있는 탭 표시
             return (
                 <ItineraryWithSchedule 
                     periodType={period.type}
@@ -283,7 +311,6 @@ export default function DesignItinerary() {
                 />
             );
         } else {
-            // 기본 상태: 일반 일정 표시
             return (
                 <ItineraryWithSchedule 
                     periodType={period.type}
@@ -300,6 +327,15 @@ export default function DesignItinerary() {
         }
     };
 
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#0000ff" />
+                <Text style={styles.loadingText}>여행 정보를 불러오는 중입니다...</Text>
+            </SafeAreaView>
+        );
+    }
+    
     return (
         <SafeAreaView style={styles.container}>
             <DesignItineraryHeader 
@@ -330,7 +366,7 @@ export default function DesignItinerary() {
                 selectedAttractions={selectedAttractions}
                 onAiItineraryPress={handleAiItineraryPress}
                 showActionButtons={showActionButtons}
-                onConfirmItinerary={() => setShowActionButtons(false)}
+                onConfirmItinerary={handleConfirmItinerary}
                 onGoBack={() => setShowActionButtons(false)}
             />
 
@@ -354,7 +390,6 @@ export default function DesignItinerary() {
                 />
             )}
 
-            {/* 중앙 집중식 AddSchedule 팝업 관리 */}
             {showAddSchedulePopup && schedulePopupData && (
                 <AddSchedule
                     visible={showAddSchedulePopup}
@@ -380,6 +415,17 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+    },
+    loadingText: {
+        marginTop: 10,
+        fontSize: 16,
+        color: '#666',
     },
     content: {
         flex: 1,
