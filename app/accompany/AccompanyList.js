@@ -4,6 +4,7 @@ import { useRouter, useFocusEffect } from 'expo-router'; // useRouter import는 
 import AccompanyListView from '../../components/accompany/AccompanyListView';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
+import { currentUserId } from '../../constants/testUserId';
 
 // 분리된 API 함수들을 import
 import {
@@ -51,7 +52,6 @@ const AccompanyList = () => {
     });
 
     const router = useRouter(); // ✅ useRouter 훅으로 router 객체를 가져옴
-    const currentUserId = "3";
 
     const updateLoadingState = (tab, isLoading) => {
         setLoadingStates(prev => ({ ...prev, [tab]: isLoading }));
@@ -318,7 +318,7 @@ const AccompanyList = () => {
         navigateToPost,
     };
 
-    return <AccompanyListView {...viewProps} router={router} />; // ✅ router props 추가
+    return <AccompanyListView {...viewProps} router={router} />;
 };
 
 export default AccompanyList;

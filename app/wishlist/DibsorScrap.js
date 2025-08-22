@@ -8,6 +8,7 @@ import {
     toggleLikeApi,
     handleApiError
 } from '../../utils/AccompanyListApi';
+import { currentUserId } from '../../constants/testUserId';
 
 const DibsorScrap = ({ router }) => {
     // 상태 관리
@@ -23,9 +24,6 @@ const DibsorScrap = ({ router }) => {
     // ✅ 데이터 로딩 상태
     const [dibsLoaded, setDibsLoaded] = useState(false);
     const [scrapLoaded, setScrapLoaded] = useState(false);
-
-    // 현재 사용자 ID (TODO: 실제 사용자 ID로 교체)
-    const currentUserId = "3"; 
 
     // 전체 동행 피드 데이터를 가져오는 함수
     const fetchAllAccompanyPosts = async () => {
@@ -206,8 +204,8 @@ const DibsorScrap = ({ router }) => {
                 onRefresh={onRefresh}
                 selectedTab={selectedTab}
                 loading={loading}
-                dibsList={dibsList} // ✅ 수정
-                scrapList={scrapList} // ✅ 수정
+                dibsList={dibsList}
+                scrapList={scrapList}
                 likedPosts={likedPosts}
                 handlePressLike={handlePressLike}
                 navigateToPost={navigateToPost}

@@ -13,10 +13,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton'; 
 import CloseAlarmPopup from '../../components/accompany/CloseAlarmPopup';
+
 import {
     toggleLikeApi, 
     getLikeStatusApi, 
 } from '../../utils/AccompanyPostApi';
+
 import { 
     acceptApplicationApi, 
     rejectApplicationApi, 
@@ -24,6 +26,8 @@ import {
     closeAccompanyApi, 
     getAccompanyManagementDataApi 
 } from '../../utils/AccompanyManagementApi';
+
+import { currentUserId } from '../../constants/testUserId';
 
 const AccompanyManagement = () => {
     const params = useLocalSearchParams();
@@ -33,7 +37,6 @@ const AccompanyManagement = () => {
     // 기본 상태
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const currentUserId = "2"; // 실제로는 로그인한 사용자 ID
     
     // 동행 관리 데이터
     const [accompanyData, setAccompanyData] = useState(null);

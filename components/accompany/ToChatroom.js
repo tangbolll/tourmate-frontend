@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { currentUserId } from '../../constants/testUserId'; // 현재 사용자 ID 가져오기
 
 const ToChatroom = ({ 
     postId, 
-    currentUserId = 2, 
     location, 
     participants, 
     maxParticipants, 
