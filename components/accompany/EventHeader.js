@@ -4,7 +4,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import ToChatroom from '../../components/accompany/ToChatroom'; 
 
-const EventHeader = ({ title, location, participants, maxParticipants, newApplication, onParticipantsClick, postId,  status, chatAccess }) => {
+const EventHeader = ({ title, location, participants, maxParticipants, newApplication, onParticipantsClick, postId, chatAccess }) => {
     return (
         <View style={styles.headerContainer}>
             <View style={styles.container}>
@@ -25,15 +25,11 @@ const EventHeader = ({ title, location, participants, maxParticipants, newApplic
                         <View style={styles.redDot} />
                     )}
                 </TouchableOpacity>
-                <ToChatroom 
-                    postId={postId} 
-                    location={location} 
-                    participants={participants} 
-                    maxParticipants={maxParticipants}
-                    status={status}
-                    chatAccess={chatAccess}  
-                    isDataLoading={false} 
-                />
+                    <ToChatroom 
+                        postId={postId} 
+                        chatAccess={chatAccess}  
+                        isDataLoading={false} 
+                    />
             </View>
         </View>
         </View>

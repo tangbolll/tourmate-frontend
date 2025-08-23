@@ -6,9 +6,6 @@ import { currentUserId } from '../../constants/testUserId'; // 현재 사용자 
 
 const ToChatroom = ({ 
     postId, 
-    location, 
-    participants, 
-    maxParticipants, 
     style,
     status,
     chatAccess, 
@@ -40,19 +37,16 @@ const ToChatroom = ({
         setIsNavigating(true);
         
         try {
-            const params = new URLSearchParams({
-                postId: postId.toString(),
-                location: location || '위치 정보 없음',
-                participants: participants?.toString() || '0',
-                maxParticipants: maxParticipants?.toString() || '0'
-            });
-            
-            router.push(`/accompany/Chat?${params.toString()}`);
-            
-        } catch (error) {
-            console.error('채팅방 이동 오류:', error);
-        } finally {
-            setIsNavigating(false);
+        const queryParams = new URLSearchParams({
+            postId: postId,
+        }).toString();
+        
+        router.push(`/accompany/Chat?${queryParams}`);
+
+    } catch (error) {
+        console.error('채팅방 이동 오류:', error);
+    } finally {
+        setIsNavigating(false);
         }
     };
 
