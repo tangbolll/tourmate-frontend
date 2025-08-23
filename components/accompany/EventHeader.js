@@ -71,9 +71,9 @@ const styles = StyleSheet.create({
         paddingHorizontal: 2,
     },
     redDot: {
-        width: 8,
-        height: 8,
-        borderRadius: 4,
+        width: 6,
+        height: 6,
+        borderRadius: 3,
         backgroundColor: 'red',
         marginLeft: 8,
     },

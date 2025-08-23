@@ -132,6 +132,21 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
         const backendData = await basicResponse.value.json();
         console.log('📋 기본 동행 데이터:', backendData);
 
+        console.log('📋 백엔드 응답 전체 구조:', {
+            전체데이터: backendData,
+            호스트관련: {
+                userId: backendData.userId,
+                hostId: backendData.hostId,
+                createdBy: backendData.createdBy,
+                nickname: backendData.nickname
+            },
+            신청관련: {
+                member: backendData.member,
+                applyMember: backendData.applyMember,
+                userApplicationStatus: backendData.userApplicationStatus
+            }
+        });
+
         // 2️⃣ 좋아요 상태 처리
         let likeData = { liked: false, likeCount: backendData.likeCount || 0 };
         
@@ -577,5 +592,47 @@ export const getChatAccessApi = async (postId, userId) => {
     } catch (error) {
         console.error('❌ 채팅 접근 권한 조회 오류:', error);
         return { canAccess: false, isCompleted: false };
+    }
+};
+
+// 동행 신청을 읽음으로 표시하는 함수
+export const markApplicationsViewedApi = async (accompanyId, hostId) => {
+    try {
+        // ✅ 백엔드와 일치하는 URL 경로 사용
+        const url = `${API_URL}/api/accompany/${accompanyId}/mark-applications-viewed?hostId=${hostId}`;
+        console.log('🌐 신청 읽음 표시 API 호출:', url);
+
+        const response = await fetch(url, {
+            method: 'POST',  // 백엔드가 POST 사용
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            if (response.status === 404) {
+                console.warn('⚠️ 읽음 표시 API 엔드포인트가 없습니다. 건너뜁니다.');
+                return { success: false, skipped: true };
+            }
+            
+            const errorText = await response.text();
+            console.error(`❌ 신청 읽음 표시 실패 (${response.status}):`, errorText);
+            throw new Error(`신청 읽음 표시에 실패했습니다. (${response.status})`);
+        }
+
+        const result = await response.text();
+        console.log('✅ 신청 읽음 표시 성공:', result);
+        return { success: true };
+
+    } catch (error) {
+        console.error('❌ 신청 읽음 표시 오류:', error);
+        
+        // 네트워크 에러는 무시하고 계속 진행
+        if (error.message.includes('Failed to fetch')) {
+            console.warn('⚠️ 네트워크 오류로 읽음 표시 실패, 건너뜁니다.');
+            return { success: false, skipped: true };
+        }
+        
+        throw error;
     }
 };
