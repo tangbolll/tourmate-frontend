@@ -598,23 +598,6 @@ export default function AccompanyPost() {
         }
     };
 
-    const members = postData ? [
-        {
-            name: postData.createdByName,
-            gender: '여',
-            age: '22',
-            isHost: true,
-            tags: ['호스트']
-        },
-        ...(postData.member || []).filter(userId => userId !== postData.createdBy).map(userId => ({
-            name: `참가자 ${userId}`,
-            gender: '미정',
-            age: '미정',
-            isHost: false,
-            tags: ['참가자']
-        }))
-    ] : [];
-
     // 로딩 상태
     if (loading) {
         return (
