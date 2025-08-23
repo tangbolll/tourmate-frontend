@@ -71,11 +71,11 @@ const styles = StyleSheet.create({
         paddingHorizontal: 2,
     },
     redDot: {
-        width: 6,
-        height: 6,
+        width: 5,
+        height: 5,
         borderRadius: 3,
         backgroundColor: 'red',
-        marginLeft: 8,
+        marginLeft: 6,
     },
     headerContainer: {
         width: '80%',
