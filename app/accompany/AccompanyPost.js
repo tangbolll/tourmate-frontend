@@ -137,22 +137,47 @@ export default function AccompanyPost() {
             // 병렬로 모든 데이터 호출
             const [backendData, chatAccessData] = await Promise.all([
                 fetchAccompanyDetailApi(id, currentUserId),
-                getChatAccessApi(id, currentUserId)  // 채팅 접근 권한도 함께 조회
+                getChatAccessApi(id, currentUserId)
             ]);
 
             const transformedData = transformAccompanyDetail(backendData);
             
             setPostData(transformedData);
-            setChatAccess(chatAccessData);  // 채팅 접근 권한 설정
+            setChatAccess(chatAccessData);
             
-            const hostStatus = transformedData.createdBy === currentUserId;
+            // ✅ 호스트 판별 로직 수정 - createdBy 또는 userId 사용
+            const hostStatus = String(transformedData.createdBy || transformedData.userId) === String(currentUserId);
+            
+            console.log('🔍 호스트 체크 상세:', {
+                transformedData_createdBy: transformedData.createdBy,
+                transformedData_userId: transformedData.userId,
+                currentUserId: currentUserId,
+                hostStatus: hostStatus,
+                타입체크: {
+                    createdBy_type: typeof transformedData.createdBy,
+                    userId_type: typeof transformedData.userId,
+                    currentUserId_type: typeof currentUserId
+                }
+            });
+            
             setIsHost(hostStatus);
             setClosed(['COMPLETED', 'CLOSED'].includes(transformedData.status));
             setIsLiked(transformedData.isLiked);
             setLikeCount(transformedData.likes);
 
+            // ✅ 호스트인 경우 읽지 않은 신청 조회
             if (hostStatus) {
-                await fetchUnreadApplications();
+                console.log('✅ 호스트 확인! 읽지 않은 신청 조회 시작');
+                try {
+                    const result = await getUnreadApplicationsApi(id, currentUserId);
+                    console.log('📍 읽지 않은 신청 결과:', result);
+                    setUnreadApplicationsCount(result.unreadCount);
+                    setHasNewApplications(result.unreadCount > 0);
+                } catch (err) {
+                    console.error('❌ 읽지 않은 신청 조회 실패:', err);
+                }
+            } else {
+                console.log('❌ 호스트가 아님');
             }
 
         } catch (err) {
