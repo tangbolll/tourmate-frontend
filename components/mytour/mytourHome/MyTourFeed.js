@@ -110,7 +110,7 @@ export default function MyTourFeed({
                 {/* 제목 */}
                 <Text 
                     style={styles.title}
-                    numberOfLines={2}
+                    numberOfLines={1}
                     ellipsizeMode="tail"
                 >
                     {title}

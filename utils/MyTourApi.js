@@ -154,16 +154,20 @@ export const updateTour = async (tourId, tourData) => {
     }
 };
 
+// ✅ 여행 상세 정보 조회 API 함수 - 경로 수정
 export const getTourDetails = async (tourId) => {
     try {
-        const response = await fetch(`${getBaseURL()}/myTour/${tourId}`);
+        // 경로를 다른 API들과 일치하게 수정
+        const response = await fetch(`${getBaseURL()}/api/myTour/${tourId}`);
         if (!response.ok) {
-            throw new Error('여행 상세 정보를 불러오는데 실패했습니다.');
+            const errorText = await response.text();
+            throw new Error(`여행 상세 정보를 불러오는데 실패했습니다. 오류: ${response.status} ${errorText}`);
         }
         const data = await response.json();
+        console.log('✅ 여행 상세 정보 조회 성공:', data);
         return data;
     } catch (error) {
-        console.error('API 호출 중 오류 발생:', error);
+        console.error('여행 상세 정보 조회 중 오류 발생:', error);
         throw error;
     }
 };

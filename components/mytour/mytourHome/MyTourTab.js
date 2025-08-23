@@ -166,18 +166,22 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
                                 {filteredAndSortedTours.map((tour) => {
                                     let locationString = '지역 정보 없음';
 
-                                    const area = tour.areaName?.[0];
+                                    // 백엔드 데이터 구조에 맞게 수정
+                                    const areas = tour.areaName || [];
                                     const sigungus = tour.sigunguName || [];
 
-                                    if (sigungus.length > 0) {
-                                        const firstSigungu = sigungus[0];
-                                        if (sigungus.length > 1) {
-                                            locationString = `${area} ${firstSigungu} 외 ${sigungus.length - 1}개 지역`;
+                                    if (areas.length > 0) {
+                                        const area = areas[0]; // 첫 번째 지역만 사용
+                                        if (sigungus.length > 0) {
+                                            const firstSigungu = sigungus[0];
+                                            if (sigungus.length > 1) {
+                                                locationString = `${area} ${firstSigungu} 외 ${sigungus.length - 1}개 지역`;
+                                            } else {
+                                                locationString = `${area} ${firstSigungu}`;
+                                            }
                                         } else {
-                                            locationString = `${area} ${firstSigungu}`;
+                                            locationString = area;
                                         }
-                                    } else if (area) {
-                                        locationString = area;
                                     }
 
                                     return (
@@ -188,9 +192,9 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
                                                 tourEndDate={tour.endDate}
                                                 title={tour.title}
                                                 location={locationString}
-                                                members={tour.members || []}
+                                                members={tour.participants || tour.members || []} // participants로 수정
                                                 isBookmarked={tour.isFavorite}
-                                                onPress={() => handleTourPress(tour.id)} // ✅ 수정된 핸들러 사용
+                                                onPress={() => handleTourPress(tour.id)}
                                                 onBookmarkPress={() => handleBookmarkPress(tour.id)}
                                                 isEditMode={isEditMode}
                                                 isSelected={selectedTours.includes(tour.id)}
