@@ -26,15 +26,31 @@ export default function TypeTestMain() {
             2분만에 알아보는 당신의 여행 성향
             </Text>
             <Text style={styles.description}>
-            맞춤형 동행과 여행정보를 추천받아 보세요 !
+            맞춤형 동행과 여행정보를 추천받아 보세요!
             </Text>
             
             <View style={styles.imageContainer}>
-                    <Image
-                    source={require('../../assets/typeTestIntro.png')} // 실제 이미지 경로로 변경
-                    style={styles.image}
-                    resizeMode="stretch"
+                <View style={[styles.imageWrapper, { zIndex: 3 }]}>
+                    <Image 
+                        source={require('../../assets/typeTest/IPER.png')} 
+                        style={styles.image}
+                        resizeMode="contain"
                     />
+                </View>
+                <View style={[styles.imageWrapper, { zIndex: 2 }]}>
+                    <Image 
+                        source={require('../../assets/typeTest/JPED.png')} 
+                        style={styles.image}
+                        resizeMode="contain"
+                    />
+                </View>
+                <View style={[styles.imageWrapper, { zIndex: 1 }]}>
+                    <Image 
+                        source={require('../../assets/typeTest/JAED.png')} 
+                        style={styles.image}
+                        resizeMode="contain"
+                    />
+                </View>
             </View>
             
             <TouchableOpacity style={styles.startButton} onPress={handleStartTest}>
@@ -76,14 +92,36 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         flexDirection: 'row',
-        justifyContent: 'space-around',
+        justifyContent: 'center',
         alignItems: 'center',
         width: '100%',
         marginBottom: 60,
+        marginLeft: 40,
+        height: 120,
+    },
+    imageWrapper: {
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        backgroundColor: '#ffffff',
+        borderWidth: 3,
+        borderColor: '#cccccc',
+        justifyContent: 'center',
+        alignItems: 'center',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+        elevation: 8,
+        marginLeft: -40,
     },
     image: {
-        width: 280,
-        height: 130,
+        width: 120,
+        height: 120,
+        borderRadius: 50,
     },
     startButton: {
         backgroundColor: '#000000',
