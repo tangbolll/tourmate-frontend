@@ -3,6 +3,8 @@ import {
     View, Text, StyleSheet, TextInput, TouchableOpacity,
     Animated, PanResponder, Dimensions, FlatList, ActivityIndicator, Platform
 } from 'react-native';
+// Note: These imports are for the React Native environment and will not resolve in a web browser.
+// The code is intended for an Expo/React Native project.
 import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import FloatingActionButtons from './FloatingActionButtons';
@@ -54,7 +56,7 @@ const BottomSheet = ({
         onStartShouldSetPanResponder: (evt, gestureState) => {
             const { pageY } = evt.nativeEvent;
             const handleY = panResponderHandleRef.current?._nativeTag || 0;
-            const isHandleArea = pageY >= handleY && pageY <= handleY + 40; // 핸들 영역에서만 작동하도록
+            const isHandleArea = pageY >= handleY && pageY <= handleY + 40;
             return isHandleArea && Math.abs(gestureState.dy) > 10;
         },
         onMoveShouldSetPanResponder: (evt, gestureState) => {
@@ -133,7 +135,7 @@ const BottomSheet = ({
             onPress={() => { setSelectedRegion(item); setSearchText(''); }}
         >
             <Text style={[styles.regionButtonText, selectedRegion?.key === item.key && styles.selectedRegionButtonText]}>
-                {item.key.replace('-', ' ')}
+                {item.key !== undefined && item.key !== null ? String(item.key).replace('-', ' ') : ''}
             </Text>
         </TouchableOpacity>
     );
@@ -238,7 +240,7 @@ const BottomSheet = ({
                     data={regions}
                     horizontal
                     renderItem={renderRegionButton}
-                    keyExtractor={(item) => item.key}
+                    keyExtractor={(item) => String(item.key)}
                     showsHorizontalScrollIndicator={false}
                     style={styles.regionList}
                     contentContainerStyle={styles.regionListContent}
@@ -251,7 +253,7 @@ const BottomSheet = ({
                 <FlatList
                     data={filteredAttractions}
                     renderItem={renderAttraction}
-                    keyExtractor={(item) => item.contentid}
+                    keyExtractor={(item) => String(item.contentid)}
                     nestedScrollEnabled
                     contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 320 }}
                 />
@@ -280,11 +282,11 @@ const styles = StyleSheet.create({
     aiButtonText: { color: '#999', fontSize: 14, fontWeight: '500' },
     aiButtonTextActive: { color: '#fff' },
     regionList: {
-        paddingVertical: 8, // ✅ 상하 패딩으로 변경
+        paddingVertical: 8,
     },
     regionListContent: {
         alignItems: 'center',
-        paddingHorizontal: 16, // ✅ 좌우 패딩을 컨테이너에 추가
+        paddingHorizontal: 16,
     },
     regionButton: {
         paddingHorizontal: 16,
