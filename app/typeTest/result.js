@@ -10,119 +10,173 @@ import {
     ScrollView,
 } from 'react-native';
 import { router } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 결과 타입 정의
-const resultTypes = {
-    'J-A-C-D': {
+const travelResults = {
+    'JACD': {
         title: '지적 탐험가',
         emoji: '✍️',
         tags: ['계획형', '모험형', '지식추구형', '활동형'],
-        description: '이 유형의 여행자는 철저한 사전 준비로 여행의 시작을 알립니다. 여행지의 역사, 문화, 지역적 특성은 물론, 방문할 장소의 운영 시간, 동선, 근처 식사 장소까지 모든 정보를 꼼꼼히 조사하고 일정표를 완벽하게 구성합니다.\n\n이들은 여행을 지식과 배움의 현장으로 바라봅니다. 잘 알려지지 않은 유적지나 박물관, 독립 서점, 전통 시장 등 문화적 맥락이 담긴 장소를 탐험하며, 깊이 있는 경험을 추구하죠.\n\n모든 걸 계획한 뒤, 현지 문화를 깊이 있게 탐험하며 바쁘게 움직이는 스타일. 여행은 나의 연구 프로젝트!'
+        description: '지식과 호기심이 이끄는 대로 걷는 나는 ',
+        detail: '출발 전부터 내 여행은 이미 시작돼요.운영 시간? 동선? 현지의 역사적 맥락? 전부 조사 완료! 완벽하게 짜인 일정표를 보고 있으면 그 자체로 설레거든요.\n\n근데 제 여행은 단순한 ‘관광’이 아니에요. 한 도시 안에서도 박물관, 독립 서점, 전통 시장, 유적지까지…이왕 가는 거, 문화의 깊이까지 제대로 파고들고 싶잖아요?\n\n도슨트 해설이 있다면 무조건 듣고, 오디오 가이드도 챙기고, 운 좋으면 현지 전문가가 진행하는 투어까지 싹 예약해요. 조금 빡빡해도 괜찮아요. 하루 종일 돌아다녀도 저는 오히려 신나요!\n\n나에겐 여행이 곧 연구 프로젝트예요. 돌아와서는 사진, 기록까지 정리하며 다음 여행을 설계하죠. ‘더 많이 보고, 더 많이 배우자’가 저의 모토랍니다.'
     },
-    'J-A-C-R': {
-        title: '느긋한 여정가',
+    'JACR': {
+        title: '느긋한 여행가',
         emoji: '🧘',
         tags: ['계획형', '모험형', '지식추구형', '휴식형'],
-        description: '이 유형의 여행자는 사전에 일정을 세밀하게 준비하되, 너무 촘촘하거나 빡빡하지 않은 일정을 선호합니다. 일정을 구성할 때 꼭 가야 할 장소와 여유 시간이 적절히 조화를 이루도록 설계합니다.\n\n이들은 낯선 곳을 탐험하는 데 주저하지 않지만, 그 목적은 자극적인 모험이 아닌 의미 있는 경험과 지식의 확장입니다.\n\n계획은 철저하지만 강박은 없습니다. 탐험은 좋아하지만 쫓기지 않습니다.'
+        description: '모든 순간을 내 방식대로 즐기는 나는 ',
+        detail: '일정을 계획하긴 하지만, 빡빡한 건 딱 질색이에요. 꼭 가보고 싶은 곳만 콕콕 집어서 넣고, 중간중간 여유 시간은 필수! 그래야 길 가다 발견한 예쁜 서점이나 작은 박물관도 놓치지 않거든요.\n\n모험? 당연히 좋아하죠. 근데 저는 스릴보단 의미 있는 경험을 더 추구해요. 버스를 타고 도시를 천천히 둘러보거나, 해설이 있는 유적지에 가서 오래 머물기도 해요. 흥미로운 전시 앞에선 시간 가는 줄도 모르고요.\n\n조용한 카페에서 쉬는 시간도, 그 자체로 제겐 여행의 일부예요. 느긋하지만 깊이 있게, 감성과 지식을 함께 담아가는 게 제 여행 스타일이에요. 완벽하게 계획하지만, 계획에 쫓기진 않아요. 여유로운 발걸음으로 차근차근, 저는 오늘도 의미 있는 여행을 떠납니다.'
     },
-    'J-A-E-D': {
+    'JAED': {
         title: '핫플 마스터',
         emoji: '📷',
         tags: ['계획형', '모험형', '감성추구형', '활동형'],
-        description: '이 유형의 여행자는 여행 전부터 철저한 조사를 시작합니다. "이번 여행에서 어떤 사진을 찍을까?", "어떤 콘텐츠를 만들 수 있을까?"가 핵심 키워드죠.\n\n이들에게 여행은 \'감성을 기록하는 수단\'입니다. 새로운 공간, 예쁜 배경, 이국적인 분위기 속에서 인생샷을 건지고, 사진이나 영상으로 남기는 데 큰 보람을 느낍니다.\n\n비주얼과 기록을 중요시하며, 계획성과 실행력을 모두 갖춘 이들은, 여행지를 누리는 동시에 콘텐츠로 남기는 여행 고수입니다.'
+        description: '여행은 내 감성을 채우고 기록하는 순간들의 연속! 나는 ',
+        detail: '이번 여행에선 어떤 사진을 찍고, 어떤 분위기를 남길 수 있을지 상상하면서 트렌디한 카페부터 SNS에 안 뜬 숨은 스팟까지 싹 다 찾아봐요. 일정표는 예쁘고 효율적으로 — 감성과 루트 모두 놓치지 않죠.\n\n저에겐 여행이 곧 콘텐츠! 예쁜 골목, 감성 조명, 이국적인 창가 자리에서 인생샷 한 장 남기면 그게 바로 행복이에요. 피드 꾸미기, 릴스용 영상도 자연스럽게 떠오르죠.\n\n가만히 있기보단 뛰어다니는 스타일이라, 하루에 몇 군데를 가든 거뜬해요. 전망대를 오르든, 버스를 갈아타든, 예쁜 곳이라면 어디든 갑니다. 그 순간을 놓치지 않기 위해 오늘도 빠르게, 감성 가득하게 움직여요.\n\n계획력, 체력, 감성까지 삼박자를 다 갖춘 나는, ‘핫플은 내가 책임질게!’라고 말할 수 있는 진짜 여행 마스터예요.'
     },
-    'J-A-E-R': {
-        title: '계획형 낭만주의자',
+    'JAER': {
+        title: '계획적인 낭만주의자',
         emoji: '🌅',
         tags: ['계획형', '모험형', '감성추구형', '휴식형'],
-        description: '이 유형의 여행자는 여행 전 꼼꼼한 계획을 세우면서도, 여행 내내 감성과 낭만을 최우선으로 여깁니다. 여행 일정은 치밀하지만, 빡빡한 스케줄로 쫓기기보다는 여유로운 흐름 속에서 여행지의 분위기와 정취를 깊이 느끼는 데 집중하죠.\n\n이들은 여행지의 색깔과 감성을 스스로 연출하는 \'무대 감독\' 같은 존재로, 각 순간이 아름다운 추억과 사진으로 남도록 세심하게 신경 씁니다.\n\n활동적이면서도 휴식과 감성의 균형을 유지하며, 계획과 자유로움을 적절히 조화시켜 낭만적인 여행을 완성하는 스타일입니다.'
+        description: '여유와 설렘을 모두 챙기는 나는 ',
+        detail: '여행 전엔 꼼꼼하게 조사하고, 예쁘고 감성적인 장소들을 골라 일정을 짜요. 하지만 계획대로만 움직이기보다는, 그날의 공기와 기분에 따라 천천히 걸으며 분위기를 느끼는 걸 더 좋아하죠.\n\n바다 앞에 앉아 멍 때리거나, 골목길의 카페에서 음악을 들으며 커피를 마시는 순간. 그게 바로 제가 여행에서 가장 사랑하는 시간이에요. 사진도, 영상도, 하나하나 감성을 담아 남기는 편이에요. 기억은 흐려지니까요.\n\n가고 싶은 장소는 미리 정해두지만, 현장에서 발길이 이끄는 대로 살짝 바꾸기도 해요. 즉흥적인 감정도 여행의 일부니까요. 그래서 저에게 여행은 감성과 현실 사이를 오가는 완벽한 균형 잡기예요.\n\n느릿하지만 단단하게, 감성도 일정도 놓치지 않는 저는 ‘내 삶의 무드를 내가 연출하는 낭만 감독’ 같은 여행자랍니다.'
     },
-    'J-P-C-D': {
-        title: '유적 수집가',
+    'JPCD': {
+        title: '지식 수집가',
         emoji: '🧠',
         tags: ['계획형', '안정형', '지식추구형', '활동형'],
-        description: '이 유형의 여행자는 여행 전 치밀한 계획을 세우며, 특히 역사적 유적지와 유명 관광지를 빠짐없이 방문하는 데 강한 집념을 보입니다.\n\n안정적인 여행 방식을 선호하여, 잘 알려진 관광지 위주로 일정을 짜되, 그 속에서도 각 유적지와 박물관에서 깊이 있는 이해와 체험을 추구합니다.\n\n이들에게 여행은 단순한 관광이 아니라, 역사와 문화를 체계적으로 수집하고 정리하는 작업과 같으며, 끊임없는 호기심과 열정으로 가득 찬 지적인 탐험입니다.'
+        description: '역사 속 퍼즐을 맞추듯 여행하는 나는 ',
+        detail: '여행 준비는 마치 작은 프로젝트처럼 시작돼요. 지도, 운영 시간, 동선, 근처 맛집까지 전부 체크하고 일정을 짜는 게 오히려 설레요. 특히 유적지나 박물관은 빠뜨릴 수 없죠. 도슨트나 해설 들으면서 “아~ 그래서 그게 그렇게 연결되는구나” 싶은 순간이 제일 짜릿하거든요.\n\n하루에 열 군데쯤은 돌아다녀야 제대로 여행한 느낌이 들어요. 정해진 루트 따라 착착 움직일 때 나만의 리듬이 생기고, 성취감도 꽤 크고요.\n\n다른 사람들에겐 과하다 싶을지도 모르지만, 저는 이렇게 여행을 통해 지식과 기록을 쌓아가는 게 제일 큰 재미예요. 여행은 그냥 떠나는 게 아니라, 배우고 정리하는 제 방식의 탐험이니까요.'
     },
-    'J-P-C-R': {
-        title: '느긋한 인문 여행자',
+    'JPCR': {
+        title: '사유하는 여행가',
         emoji: '📚',
         tags: ['계획형', '안정형', '지식추구형', '휴식형'],
-        description: '이 유형의 여행자는 여행 전 충분한 준비와 계획을 세우지만, 일정을 빡빡하게 짜기보다는 여유롭고 편안한 속도로 여행하는 것을 선호합니다.\n\n이들은 여행을 단순한 \'관광\'이 아닌 \'지식과 감성을 함께 채우는 소중한 시간\'으로 생각합니다.\n\n이들에게 여행은 \'느긋한 속도 속에서 지성과 휴식을 모두 누리는 인문학적 여정\'입니다.'
+        description: '모든 순간마다 생각이 깊어지는 나는 ',
+        detail: '일정을 세울 땐 미리 조사하고 준비도 철저히 하지만, 시간에 쫓기진 않아요. 유명한 유적지나 박물관은 꼭 들르지만, 천천히 걷고 오래 머무는 편이에요. 가끔은 카페에 앉아 여행지 관련 책을 펼치거나, 그냥 멍하니 풍경을 바라보는 시간도 정말 소중하거든요.\n\n휴식도, 배움도 빠질 수 없어요. 마음에 와닿는 문장 하나, 설명 하나에도 오래 생각이 머물고, 그 감정을 천천히 곱씹는 게 제 스타일이에요. 다 계획했지만, 흐름이 바뀌면 그에 맞춰 유연하게 움직이기도 해요. 결국 중요한 건 ‘깊이 있게 느끼는’ 거니까요.\n\n저에겐 여행이란, 지식을 쌓고 마음을 채우는 조용한 인문학 산책 같은 거예요.'
     },
-    'J-P-E-D': {
-        title: '효율적인 감성러',
+    'JPED': {
+        title: '트렌디한 여행가',
         emoji: '🗺️',
         tags: ['계획형', '안정형', '감성추구형', '활동형'],
-        description: '이 유형의 여행자는 여행 전 철저한 계획을 통해 동선을 최적화하며, 인기 있는 명소와 감성적인 포토 스팟을 빠짐없이 방문하는 데 열정을 쏟습니다.\n\n핫플레이스, SNS에서 인기 있는 카페와 예쁜 골목, 독특한 배경을 가진 장소들을 미리 조사해놓고, 하루 일정이 빽빽하게 짜여 있어도 체력과 열정을 바탕으로 빠르게 이동하며 모든 순간을 놓치지 않습니다.\n\n이들은 \'효율성과 감성\'을 동시에 추구하며, 여행을 \'최고의 콘텐츠\'로 완성하는 여행자라 할 수 있습니다.'
+        description: 'SNS에서 핫한 장소를 전략적으로 즐기는 나는 ',
+        detail: '여행을 떠나기 전, 인기 스팟부터 예쁜 골목까지 전부 검색하고 일정에 딱 맞게 정리해둬요. 효율적인 이동이 핵심이지만, 감성은 더 중요하죠. 그래서 이동하는 내내 사진 찍고, 영상도 틈틈이 남겨두는 편이에요. 예쁜 배경 앞에선 몇 번이고 각도를 바꿔가며 찍는 것도 즐겁고요.\n\n물론 일정은 빽빽하지만, 체력과 열정만큼은 자신 있어요. 예쁜 카페도, 유명한 거리도 절대 놓칠 수 없거든요. 이왕 떠나는 거, ‘기억에 남는 한 컷’을 남기고 싶은 마음이 크거든요.\n\n계획과 감성을 모두 챙기는 스타일이라, 제 여행엔 늘 콘텐츠가 넘쳐나요. 감각적인 순간들을 기록하면서, 저는 오늘도 가장 트렌디한 여행을 즐깁니다.'
     },
-    'J-P-E-R': {
-        title: '휴양 플래너',
+    'JPER': {
+        title: '감성적인 힐링러',
         emoji: '🧴',
         tags: ['계획형', '안정형', '감성추구형', '휴식형'],
-        description: '이 유형의 여행자는 여행 전 꼼꼼하게 계획을 세우고, 유명한 명소와 가이드북에 소개된 장소를 중심으로 일정을 구성합니다. 하지만 일정은 빡빡하지 않고, 충분한 여유와 휴식을 염두에 둔 느긋한 스타일이 특징입니다.\n\n계획에 따라 움직이지만, 휴식과 감성 체험을 최우선으로 생각해 자신만의 페이스를 유지합니다.\n\n이들에게 여행은 \'잘 짜인 일정 속에서 누리는 편안한 휴식과 감성적인 경험\'이며, 일상의 스트레스를 해소하고 마음의 평화를 찾는 소중한 시간이 됩니다.'
+        description: '잘 짜인 일정 속 여유를 즐기는 나는 ',
+        detail: '일정은 미리 꼼꼼히 짜두지만, 빽빽하게 움직이는 건 제 스타일이 아니에요. 유명한 명소도 좋지만, 그 공간에서 느긋하게 머물며 분위기를 음미하는 게 더 중요하거든요.\n\n카페 한 곳에 오래 앉아 풍경을 바라보거나, 조용한 동네를 천천히 산책하는 시간이 제겐 최고의 힐링이에요. 사진도 많지 않아도 괜찮아요. 마음에 남는 장면이 더 소중하니까요.\n\n저는 여행을 통해 감성도, 쉼도 함께 챙겨요. 계획은 철저히 하되, 그 안에서 여유를 즐기는 것 — 그게 제 여행의 진짜 매력이에요.'
     },
-    'I-A-C-D': {
-        title: '자유로운 학습자',
+    'IACD': {
+        title: '호기로운 방랑자',
         emoji: '🏕️',
         tags: ['무계획형', '모험형', '지식추구형', '활동형'],
-        description: '이 유형의 여행자는 계획보다는 즉흥을 중시하며, 현장에서 직접 체험하고 배우는 것을 최고의 가치로 여깁니다. 사전에 치밀한 준비 없이도 낯선 장소에 뛰어들어 그곳의 문화, 역사, 사람들과 자연스럽게 교감하는 자유로운 탐험가입니다.\n\n활동적인 성향 덕분에 하루 종일 걸어 다니며 몸소 체험하는 것을 멈추지 않고, 문화 유산과 전통, 예술을 접할 때마다 깊은 관심과 열정을 보입니다.\n\n이들에게 여행은 \'계획에 얽매이지 않고 자유롭게 배우고 성장하는 현장\'이며, 끊임없이 움직이고 탐색하며 자신만의 지식을 확장하는 교실과도 같습니다.'
+        description: '지도를 펼치기보다 걸음을 따라가는 나는 ',
+        detail: '여행 계획? 솔직히 저는 그날그날 기분 따라 움직이는 게 더 잘 맞아요. 발길 닿는 대로 걷다 보면, 지도엔 없는 재미있는 장소들이 불쑥불쑥 나타나거든요.\n\n로컬 마켓에서 주민들과 수다 떨고, 우연히 마주친 박물관에 들어가 몇 시간을 보내는 날도 있어요. 즉흥적이지만, 그 속에서 배움은 더 깊고 생생해요. 새로운 문화나 역사 이야기 앞에선 시간 가는 줄 모르고요.\n\n계획 없이 떠났지만, 돌아올 때쯤엔 가방보다 머릿속이 더 꽉 차 있어요. 저에게 여행은 살아 있는 교실 같아요 — 어디든, 누구와든 배울 준비가 되어 있는 자유로운 교실 말이에요.'
     },
-    'I-A-C-R': {
-        title: '방랑 지식인',
+    'IACR': {
+        title: '사색하는 방랑자',
         emoji: '🌿',
         tags: ['무계획형', '모험형', '지식추구형', '휴식형'],
-        description: '이 유형의 여행자는 미리 계획을 최소화하고, 현장에서 즉흥적으로 움직이며 여행의 진짜 매력을 찾아 나섭니다. 낯선 곳에서 새로운 지식과 문화를 자연스럽게 받아들이는 열린 마음을 가지고 있으며, 탐험과 휴식을 동시에 즐기는 균형 잡힌 스타일입니다.\n\n즉흥적인 일정 속에서도 자신만의 페이스를 유지하며, 새로운 만남과 우연한 경험을 통해 얻는 배움과 깨달음을 소중히 여깁니다.\n\n이들에게 여행은 \'계획에 얽매이지 않는 자유로움 속에서 지적 성장을 이루는 여정\'이며, 일상에서 벗어나 새로운 문화와 사상을 느긋하게 즐기는 지적인 방랑입니다.'
+        description: '발길 닿는 곳에서 생각을 쌓아가는 나는 ',
+        detail: '여행을 앞두고도 계획은 거의 안 짜요. 대신, 그날의 기분과 분위기에 따라 움직이는 게 저에겐 더 잘 맞죠. 유명한 명소보다 골목 어귀의 작은 박물관이나 동네 책방에 더 끌리는 편이에요.\n\n카페 구석에 앉아 책을 읽거나, 조용한 길을 천천히 걷는 시간은 제게 큰 위안이에요. 현지 문화를 직접 겪으며 느긋하게 흡수할 때, 저만의 생각도 자라나거든요.\n\n즉흥적이지만 성장은 분명해요. 저에게 여행은 조용히, 천천히 나를 채우는 깊이 있는 시간입니다.'
     },
-    'I-A-E-D': {
-        title: '감성 모험가',
+    'IAED': {
+        title: '감성적인 모험가',
         emoji: '🎒',
         tags: ['무계획형', '모험형', '감성추구형', '활동형'],
-        description: '이 유형의 여행자는 계획보다는 즉흥적이고 자유로운 움직임을 선호하며, 여행 중 마주치는 모든 순간을 감성적으로 경험하는 자유로운 영혼입니다.\n\n이들은 트렌디한 핫플레이스나 잘 알려진 관광지만 쫓기보다는, 로컬의 숨은 명소, 골목길, 자연 풍경 등 감성적인 요소가 담긴 장소를 찾아다니는 모험가입니다.\n\n이들에게 여행은 \'계획에 얽매이지 않고 감성과 자유를 마음껏 누리며, 모험과 기록을 동시에 즐기는 생생한 경험\'입니다.'
+        description: '순간의 느낌을 담는 ',
+        detail: '여행 루트요? 그건 발길 닿는 대로예요. 아침에 눈 뜨고 날씨 보고, 기분 따라 걷고 싶은 길을 정하죠. 계획 없이 떠나는 게 오히려 제 감성을 더 잘 자극해요.\n\n빈티지한 간판, 반쯤 열린 골목길, 노을빛에 반사된 창문 하나까지도 사진으로 남겨요. 감동은 늘 예상 못 한 순간에 찾아오니까요.\n\n온종일 여기저기 누비고, 때론 낯선 사람과 얘기하다가 의외의 장소를 발견하기도 해요. 모든 순간이 스토리가 되는 여행, 그게 제 방식이에요. 저에게 여행은 감성과 자유를 실컷 누리는, 살아 있는 순간들의 기록이에요.'
     },
-    'I-A-E-R': {
+    'IAER': {
         title: '탐험형 로맨티스트',
         emoji: '🪷',
         tags: ['무계획형', '모험형', '감성추구형', '휴식형'],
-        description: '이 유형의 여행자는 계획보다는 즉흥성을 중시하며, 낯선 장소에서 느긋하게 시간을 보내는 것을 즐깁니다. 숨겨진 명소나 잘 알려지지 않은 소박한 공간을 찾아다니며, 그곳에서 느껴지는 낭만과 감성을 만끽하는 로맨틱한 탐험가입니다.\n\n즉흥적인 일정 속에서도 마음이 가는 대로 움직이며, 새로운 경험과 감정을 소중하게 받아들입니다.\n\n이들에게 여행은 \'자유로운 탐험과 낭만이 어우러진 감성 충전의 시간\'이며, 삶의 여유와 아름다움을 여행지에서 느끼는 따뜻한 여정입니다.'
+        description: '감성 따라 걷는 나는 ',
+        detail: '계획 없이 훌쩍 떠나 낯선 도시를 느긋하게 거니는 게 좋아요. 관광지도 좋지만, 조용한 골목이나 햇살 좋은 벤치가 더 기억에 남더라고요.\n\n사진도 열심히 찍지만, 남들 다 찍는 뷰 말고 제 눈에 예쁜 순간들을 담아요. 카페에 앉아 멍하니 사람들 구경하다 보면, 그 도시의 분위기가 스며들죠.\n\n혼자 걷다가 발견한 작은 갤러리나 공원에서 보내는 시간이 제겐 진짜 힐링이에요. 자유롭게, 따뜻하게, 낭만 가득한 감성 여행이 제 스타일이에요.'
     },
-    'I-P-C-D': {
-        title: '가벼운 명소 탐험가',
+    'IPCD': {
+        title: '소풍하는 탐험가',
         emoji: '🔍',
         tags: ['무계획형', '안정형', '지식추구형', '활동형'],
-        description: '이 유형의 여행자는 계획보다는 즉흥적인 움직임을 선호하지만, 유명한 명소는 꼭 놓치지 않고 방문하는 균형 잡힌 탐험가입니다.\n\n유명 관광지나 박물관, 문화유적지를 방문할 때는 깊이 있는 학습보다는 가볍게 둘러보며 전체적인 분위기와 정보를 흡수하는 데 집중합니다.\n\n이들에게 여행은 \'가볍고 편안한 마음으로 주요 명소를 탐색하며 소소한 배움을 얻는 즐거운 여정\'입니다.'
+        description: '가볍게 떠나는 나는 ',
+        detail: '꼭 정해진 계획이 없어도, 유명한 명소는 빠뜨리지 않아요. 전체적인 분위기를 느끼며 툭툭 돌아다니는 게 제일 재밌죠.\n\n유적지나 박물관도 무겁게 공부하듯 보기보단, 가볍게 둘러보면서 흥미로운 부분만 쏙쏙! 지나치다 알게 되는 이야기들이 더 오래 기억에 남더라고요.\n\n걸어 다니는 것도 좋아해서, 발길 닿는 대로 이동하다 새로운 곳을 발견하는 게 제 맛이에요. 지식도 경험도 너무 부담 없이, 편안한 호기심으로 채워가는 게 제 여행 방식이에요.'
     },
-    'I-P-C-R': {
-        title: '여유로운 문화애호가',
+    'IPCR': {
+        title: '여유로운 로컬리스트',
         emoji: '🍵',
         tags: ['무계획형', '안정형', '지식추구형', '휴식형'],
-        description: '이 유형의 여행자는 계획에 크게 구애받지 않고, 현장에서 느긋하게 여행을 즐기며 현지의 문화를 온전히 흡수하는 스타일입니다.\n\n휴식을 충분히 취하면서도, 여행지에서 만나는 문화적 요소에 대한 호기심을 놓치지 않고, 작은 순간들 속에서 특별한 의미를 발견하는 데 능숙합니다.\n\n이들에게 여행은 \'느긋한 속도와 열린 마음으로 현지 문화를 깊이 음미하는 인문학적 힐링\'이며, 매 순간이 소중한 감성 체험의 연속입니다.'
+        description: '느긋하게 걷는 나는 ',
+        detail: '딱딱한 일정은 별로고, 그날 기분 따라 천천히 움직이는 걸 좋아해요. 소박한 카페, 작은 갤러리, 현지 시장 같은 곳에서 시간을 보내는 게 제일 힐링이죠.\n\n유명한 유적지도 좋지만, 현지인들과 자연스럽게 소통하며 그들의 일상을 느끼는 게 더 소중해요. 조용히 걸으며 주변을 살피고, 뜻밖의 작은 발견에 마음이 설레곤 해요.\n\n휴식과 호기심을 적절히 섞어 가볍게 지식을 쌓으면서, 느긋하게 문화를 만끽하는 게 제 여행 스타일이에요.'
     },
-    'I-P-E-D': {
-        title: '즉흥 감성 러버',
-        emoji: '💃',
+    'IPED': {
+        title: '자유로운 여행가',
+        emoji: '🌈',
         tags: ['무계획형', '안정형', '감성추구형', '활동형'],
-        description: '이 유형의 여행자는 계획에 크게 구애받지 않고, 즉흥적으로 떠나 다양한 감성적인 경험을 즐기는 자유로운 영혼입니다.\n\n핫플레이스, 감성 가득한 카페, 포토존 등을 자연스럽게 탐색하며, 그 순간순간을 인생샷으로 남기는 데 큰 즐거움을 느낍니다.\n\n이들에게 여행은 \'즉흥성과 감성, 활동성을 동시에 누리며 자유롭게 즐기는 생동감 넘치는 경험\'입니다.'
+        description: '즉흥적으로 떠나는 나는 ',
+        detail: '계획은 딱히 없지만, 감성 가득한 장소를 찾아다니며 사진 찍는 걸 좋아해요. 핫플, 예쁜 카페, 포토존 어디든 놓치지 않고 즐기려 노력하죠.\n\n하루 종일 바쁘게 움직여도 마음은 가볍고 여유로워요. 새로운 사람과 만남, 특별한 순간들을 통해 여행이 더 재미있어지니까요.\n\n즉흥적이고 자유로운 스타일로, 언제 어디서나 여행의 활력을 느끼는 편이에요.'
     },
-    'I-P-E-R': {
-        title: '무계획 힐링러',
+    'IPER': {
+        title: '즉흥적인 힐링 여행가',
         emoji: '☁️',
         tags: ['무계획형', '안정형', '감성추구형', '휴식형'],
-        description: '이 유형의 여행자는 사전 계획 없이 즉흥적으로 떠나, 익숙하고 편안한 공간에서 마음껏 힐링하는 것을 최우선으로 합니다.\n\n이들은 계획에 얽매이지 않고 자유롭게 흐르는 여행을 선호하며, \'분위기\'와 \'마음의 평화\'를 무엇보다 중요하게 생각하는 힐링 마니아입니다.\n\n이들에게 여행은 \'계획 없는 자유로움 속에서 나 자신과 온전히 마주하는 감성 충전의 시간\'입니다.'
+        description: '마음 가는 대로 떠나는 나는 ',
+        detail: '계획 없이도 익숙한 공간에서 편안하게 쉬는 걸 가장 좋아해요. 카페에 앉아 책 읽거나, 조용히 산책하며 자연을 느끼는 시간이 꼭 필요하죠.\n\n빡빡한 일정은 절대 안 맞고, 그날그날 기분에 따라 천천히 움직이는 편이에요. 여행이 곧 마음의 평화이고, 재충전하는 시간이라 생각하거든요.\n\n자유롭고 여유로운 페이스로, 내 안의 감성을 가득 채우는 여행 스타일입니다.'
     }
 };
 
+const typeImages = {
+    'IPCD': require('../../assets/typeTest/IPCD.png'),
+    'IPCR': require('../../assets/typeTest/IPCR.png'),
+    'IPED': require('../../assets/typeTest/IPED.png'),
+    'IPER': require('../../assets/typeTest/IPER.png'),
+    'IACD': require('../../assets/typeTest/IACD.png'),
+    'IACR': require('../../assets/typeTest/IACR.png'),
+    'IAED': require('../../assets/typeTest/IAED.png'),
+    'IAER': require('../../assets/typeTest/IAER.png'),
+    'JPCD': require('../../assets/typeTest/JPCD.png'),
+    'JPCR': require('../../assets/typeTest/JPCR.png'),
+    'JPED': require('../../assets/typeTest/JPED.png'),
+    'JPER': require('../../assets/typeTest/JPER.png'),
+    'JAED': require('../../assets/typeTest/JAED.png'),
+    'JAER': require('../../assets/typeTest/JAER.png'),
+    'JACD': require('../../assets/typeTest/JACD.png'),
+    'JACR': require('../../assets/typeTest/JACR.png'),
+};
+
 export default function Result() {
-    const [resultType, setResultType] = useState('J-A-C-R'); // 임시로 기본값 설정
+    const [travelType, setTravelType] = useState(null);
+    const [testAnswers, setTestAnswers] = useState([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // 실제로는 답변 데이터를 분석해서 결과 타입을 결정해야 함
-        // 예시: calculateResult() 함수로 답변 분석
-        // const answers = getAnswersFromStorage(); // AsyncStorage 등에서 답변 가져오기
-        // const calculatedType = calculateResult(answers);
-        // setResultType(calculatedType);
-    }, []);
+        const loadResults = async () => {
+            try {
+                const type = await AsyncStorage.getItem('travelTestResult');
+                const answers = await AsyncStorage.getItem('testAnswers');
+                
+                setTravelType(type);
+                if (answers) {
+                    setTestAnswers(JSON.parse(answers));
+                }
+            } catch (error) {
+                console.error('데이터 로드 오류:', error);
+            }
+        };
 
-    const result = resultTypes[resultType];
+        loadResults();
+    }, []); 
+
+    if (!travelType) {
+        return (
+            <View style={styles.container}>
+                <Text>결과를 불러오는 중입니다...</Text>
+            </View>
+        );
+    }
 
     const handleGoHome = () => {
         router.push('/');
@@ -130,83 +184,99 @@ export default function Result() {
 
     const handleSetProfile = async () => {
         try {
-        // 서버에 POST 요청 (아직 구현되지 않았으므로 로그만 출력)
-        console.log('프로필 설정 POST 요청:', {
-            travelType: resultType,
-            title: result.title,
-            tags: result.tags,
-            timestamp: new Date().toISOString()
-        });
-        
-        // (tabs)/index.js로 이동
-        router.push('/(tabs)');
+            // 서버에 POST 요청 (아직 구현되지 않았으므로 로그만 출력)
+            console.log('프로필 설정 POST 요청:', {
+                travelType: travelType,
+                title: travelResults[travelType].title,
+                tags: travelResults[travelType].tags,
+                timestamp: new Date().toISOString()
+            });
+            
+            // 결과를 AsyncStorage에 저장 (필요시)
+            //await AsyncStorage.setItem('userTravelType', travelType);
+            
+            // (tabs)/index.js로 이동
+            router.push('/(tabs)');
         } catch (error) {
-        console.error('프로필 설정 오류:', error);
+            console.error('프로필 설정 오류:', error);
         }
     };
 
+    const resultData = travelResults[travelType];
+    const resultImageSource = typeImages[travelType];
+    
+    if (!travelType) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={styles.loadingContainer}>
+                    <Text>결과를 찾을 수 없습니다.</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container}>
-        <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
-        
-        {/* 헤더 */}
-        <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-            <Text style={styles.backButtonText}>‹</Text>
-            </TouchableOpacity>
-            <Text style={styles.headerTitle}>여행 성향 테스트</Text>
-            <View style={styles.placeholder} />
-        </View>
-
-        {/* 진행률 바 (완료) */}
-        <View style={styles.progressContainer}>
-            <View style={[styles.progressBar, { width: '100%' }]} />
-        </View>
-
-        <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-            {/* 결과 이미지 */}
-            <View style={styles.imageContainer}>
-            <Image
-                source={require('../../assets/defaultProfile2.png')}
-                style={styles.resultImage}
-                resizeMode="contain"
-            />
-            </View>
-
-            {/* 결과 제목 */}
-            <Text style={styles.resultTitle}>
-            {result.emoji} {result.title}
-            </Text>
-
-            {/* 태그들 */}
-            <View style={styles.tagsContainer}>
-            {result.tags.map((tag, index) => (
-                <View key={index} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
-                </View>
-            ))}
-            </View>
-
-            {/* 결과 설명 */}
-            <Text style={styles.resultDescription}>
-            모든 순간을 내 발자취로 흘기는 나는 <Text style={styles.boldText}>{result.title}</Text>입니다.
-            </Text>
-
-            <Text style={styles.detailDescription}>
-            {result.description}
-            </Text>
-        </ScrollView>
-
-        {/* 하단 버튼들 */}
-        <View style={styles.bottomContainer}>
-            <TouchableOpacity style={styles.homeButton} onPress={handleGoHome}>
-            <Text style={styles.homeButtonText}>홈으로 가기</Text>
-            </TouchableOpacity>
+            <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
             
-            <TouchableOpacity style={styles.profileButton} onPress={handleSetProfile}>
-            <Text style={styles.profileButtonText}>프로필 설정하기</Text>
-            </TouchableOpacity>
-        </View>
+            {/* 헤더 */}
+            <View style={styles.header}>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <Text style={styles.backButtonText}>‹</Text>
+                </TouchableOpacity>
+                <Text style={styles.headerTitle}>여행 성향 테스트</Text>
+                <View style={styles.placeholder} />
+            </View>
+
+            {/* 진행률 바 (완료) */}
+            <View style={styles.progressContainer}>
+                <View style={[styles.progressBar, { width: '100%' }]} />
+            </View>
+
+            <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+                {/* 결과 이미지 */}
+                <View style={styles.imageContainer}>
+                    <Image
+                        source={resultImageSource}
+                        style={styles.resultImage}
+                        resizeMode="contain"
+                    />
+                </View>
+
+                {/* 결과 제목 */}
+                <Text style={styles.resultTitle}>
+                    {resultData.emoji} {resultData.title}
+                </Text>
+
+                {/* 태그들 */}
+                <View style={styles.tagsContainer}>
+                    {resultData.tags.map((tag, index) => (
+                        <View key={index} style={styles.tag}>
+                            <Text style={styles.tagText}>{tag}</Text>
+                        </View>
+                    ))}
+                </View>
+
+                {/* 결과 설명 */}
+                <Text style={styles.resultDescription}>
+                    {resultData.description}<Text style={styles.boldText}>{resultData.title}</Text>입니다.
+                </Text>
+
+                <Text style={styles.detailDescription}>
+                    {resultData.detail}
+                </Text>
+            </ScrollView>
+
+            {/* 하단 버튼들 */}
+            <View style={styles.bottomContainer}>
+                <TouchableOpacity style={styles.homeButton} onPress={handleGoHome}>
+                    <Text style={styles.homeButtonText}>홈으로 가기</Text>
+                </TouchableOpacity>
+                
+                <TouchableOpacity style={styles.profileButton} onPress={handleSetProfile}>
+                    <Text style={styles.profileButtonText}>프로필 설정하기</Text>
+                </TouchableOpacity>
+            </View>
         </SafeAreaView>
     );
 }
@@ -262,11 +332,10 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         alignItems: 'center',
-        marginVertical: 30,
     },
     resultImage: {
-        width: 200,
-        height: 150,
+        width: 300,
+        height: 300,
     },
     resultTitle: {
         fontSize: 24,
@@ -296,7 +365,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     resultDescription: {
-        fontSize: 16,
+        fontSize: 14.5,
         color: '#333333',
         textAlign: 'center',
         marginBottom: 20,
@@ -345,5 +414,10 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#ffffff',
         fontWeight: '500',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
 });
