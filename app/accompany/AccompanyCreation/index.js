@@ -16,6 +16,7 @@ import Step1 from './Step1';
 import Step2 from './Step2';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const getBaseURL = () => {
     if (__DEV__) { // 개발 환경
@@ -172,9 +173,17 @@ const handleSubmit = async () => {
         setIsLoading(true);
 
         try {
+            const userId = await AsyncStorage.getItem('userId');
+            if (!userId) {
+                Alert.alert("오류", "로그인 정보가 없습니다. 다시 로그인해주세요.");
+                setIsLoading(false);
+                router.replace('/auth/login');
+                return;
+            }
+
             // 백엔드 DTO에 맞는 데이터 객체 생성
             const accompanyData = {
-                userId: 2,
+                userId: parseInt(userId, 10),
                 title: title.trim(),
                 location: location.trim(),
                 meetPlace: meetLocation.trim(),
@@ -318,7 +327,7 @@ const handleSubmit = async () => {
                 <View style={styles.progressContainer}>
                     <View style={styles.progressBar}>
                         <View 
-                            style={[
+                            style={[ 
                                 styles.progress, 
                                 { width: currentStep === 1 ? '50%' : '100%' }
                             ]} 
@@ -343,7 +352,7 @@ const handleSubmit = async () => {
             
             <View style={styles.fixedButtonContainer}>
                 <TouchableOpacity 
-                    style={[
+                    style={[ 
                         styles.button, 
                         (currentStep === 1 && !isStep1Valid) || (currentStep === 2 && !isStep2Valid) 
                             ? styles.buttonDisabled 
@@ -352,7 +361,7 @@ const handleSubmit = async () => {
                     onPress={nextStep}
                     disabled={(currentStep === 1 && !isStep1Valid) || (currentStep === 2 && !isStep2Valid) || isLoading}
                 >
-                    <Text style={[
+                    <Text style={[ 
                         styles.buttonText,
                         (currentStep === 1 && !isStep1Valid) || (currentStep === 2 && !isStep2Valid) 
                             ? styles.buttonTextDisabled 

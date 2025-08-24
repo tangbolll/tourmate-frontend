@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import AccompanyListView from '../../components/accompany/AccompanyListView';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 분리된 API 함수들을 import
 import {
@@ -22,6 +23,7 @@ const AccompanyList = () => {
     const [likedPosts, setLikedPosts] = useState({});
     const [calendarVisible, setCalendarVisible] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     const [myAppliedAccompanyList, setMyAppliedAccompanyList] = useState([]);
     const [myCreatedAccompanyList, setMyCreatedAccompanyList] = useState([]);
@@ -50,7 +52,14 @@ const AccompanyList = () => {
     });
 
     const router = useRouter();
-    const currentUserId = "3";
+
+    useEffect(() => {
+        const getUserId = async () => {
+            const userId = await AsyncStorage.getItem('userId');
+            setCurrentUserId(userId);
+        };
+        getUserId();
+    }, []);
 
     // 로딩 상태 업데이트 헬퍼 함수
     const updateLoadingState = (tab, isLoading) => {

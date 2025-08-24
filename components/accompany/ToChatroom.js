@@ -5,7 +5,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 const ToChatroom = ({ 
     postId, 
-    currentUserId = 2, 
+    currentUserId, 
     location, 
     participants, 
     maxParticipants, 

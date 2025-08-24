@@ -21,6 +21,7 @@ import * as ImagePicker from 'expo-image-picker';
 import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const { width: screenWidth } = Dimensions.get('window');
 
@@ -58,7 +59,7 @@ const MessageBubble = ({ message, showSenderName, showTime, isFirstInGroup, isLa
             isMyMessage ? bubbleStyles.myMessageContainer : bubbleStyles.otherMessageContainer,
             isFirstInGroup ? {} : { marginTop: 2 }, // 연속 메시지는 간격 줄임
             style
-        ]}>
+        ]}> 
             {!isMyMessage && showSenderName && (
                 <Text style={bubbleStyles.senderName}>
                     {message.user?.name || '익명'}
@@ -109,7 +110,7 @@ const Chat = () => {
     const router = useRouter();
 
     // URL 파라미터에서 데이터 추출
-    const currentUserId = params.currentUserId || 2;
+    const [currentUserId, setCurrentUserId] = useState(params.currentUserId || null);
     const postId = params.postId;
     const location = params.location || '위치 정보 없음';
     const participants = parseInt(params.participants) || 0;
@@ -129,6 +130,16 @@ const Chat = () => {
     
     const scrollViewRef = useRef();
     const stompClientRef = useRef(null);
+
+    useEffect(() => {
+        const getUserId = async () => {
+            if (!currentUserId) {
+                const userId = await AsyncStorage.getItem('userId');
+                setCurrentUserId(userId);
+            }
+        };
+        getUserId();
+    }, []);
 
     // 날짜 포맷팅 함수들
     const formatTime = (dateString) => {

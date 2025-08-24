@@ -1,79 +1,135 @@
-
-import React from 'react';
-import { View, Text, TouchableOpacity, Image, Alert } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
+import React, { useState } from 'react';
+import { useRouter } from 'expo-router';
+import { SafeAreaView, View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import axios from 'axios';
+import { useAuth } from '@/context/AuthContext';
 
-const KAKAO_CLIENT_ID = 'REDACTED_KAKAO_REST_API_KEY';
-const KAKAO_REDIRECT_URI = Linking.createURL('/auth/kakao-redirect', { scheme: 'http', port: 8081 }); // Use Linking.createURL for deep linking
 const BACKEND_URL = 'http://localhost:8080'; // Your backend URL
 
 const LoginScreen = () => {
+  const { signIn } = useAuth();
+  const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
   const handleLogin = async () => {
+    if (!email || !password) {
+        Alert.alert('오류', '이메일과 비밀번호를 모두 입력해주세요.');
+        return;
+    }
+
     try {
-      // 1. Construct the Kakao OAuth URL
-      const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${KAKAO_CLIENT_ID}&redirect_uri=${KAKAO_REDIRECT_URI}`;
+        const response = await axios.post(`${BACKEND_URL}/api/auth/login`, {
+            email,
+            password,
+        });
 
-      // 2. Open the URL in a web browser for authentication
-      const result = await WebBrowser.openAuthSessionAsync(
-        kakaoAuthUrl,
-        KAKAO_REDIRECT_URI
-      );
-
-      if (result.type === 'success' && result.url) {
-        const url = new URL(result.url);
-        const code = url.searchParams.get('code');
-
-        if (code) {
-          console.log("Authorization Code:", code);
-          // 3. Send the authorization code to your backend
-          const response = await axios.get(`${BACKEND_URL}/login/oauth2/code/kakao?code=${code}`);
-          const jwtToken = response.headers.authorization; // Assuming JWT is in Authorization header
-
-          if (jwtToken) {
-            console.log("JWT Token:", jwtToken);
-            Alert.alert("로그인 성공", `JWT 토큰: ${jwtToken}`);
-            // TODO: Store JWT token securely (e.g., AsyncStorage) and navigate to main app
-          } else {
-            Alert.alert("로그인 실패", "백엔드로부터 JWT 토큰을 받지 못했습니다.");
-          }
+        if (response.status === 200 && response.data.token) {
+            const { token, userId } = response.data;
+            await signIn(token, userId);
+            Alert.alert('성공', '로그인되었습니다.');
         } else {
-          Alert.alert("로그인 실패", "카카오로부터 인증 코드를 받지 못했습니다.");
+            Alert.alert('로그인 실패', '서버에서 오류가 발생했습니다.');
         }
-      } else if (result.type === 'cancel') {
-        Alert.alert("로그인 취소", "카카오 로그인이 취소되었습니다.");
-      } else {
-        Alert.alert("로그인 실패", "카카오 로그인에 실패했습니다.");
-      }
-
     } catch (error) {
-      console.error("Kakao Login Failed:", error);
-      Alert.alert("로그인 실패", `카카오 로그인 중 오류 발생: ${error.message}`);
+        console.error("Login Failed:", error.response?.data || error.message);
+        Alert.alert('로그인 실패', `이메일 또는 비밀번호가 일치하지 않습니다.`);
     }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="flex-1 justify-center items-center p-5">
-        <Text className="text-3xl font-bold mb-10">TourMate</Text>
-        <Text className="text-lg text-gray-600 mb-20">소셜 로그인으로 간편하게 시작하세요</Text>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.innerContainer}>
+        <Text style={styles.title}>TourMate</Text>
+        <Text style={styles.subtitle}>로그인하여 여행을 시작하세요</Text>
         
+        <TextInput
+          style={styles.input}
+          placeholder="이메일"
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
+
+        <TextInput
+          style={styles.input}
+          placeholder="비밀번호"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
+
         <TouchableOpacity
           onPress={handleLogin}
-          className="bg-[#FEE500] w-full py-3 rounded-md flex-row justify-center items-center"
+          style={styles.loginButton}
         >
-          <Image 
-            source={{ uri: 'https://www.kakaocorp.com/page/favicon.ico' }} 
-            className="w-6 h-6 mr-2"
-          />
-          <Text className="text-black text-lg font-semibold">카카오로 로그인</Text>
+          <Text style={styles.loginButtonText}>로그인</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          onPress={() => router.replace('/auth/register')}
+          style={styles.registerButton}
+        >
+          <Text style={styles.registerButtonText}>일반 회원가입</Text>
         </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 };
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  innerContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  title: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: '#666',
+    marginBottom: 40,
+  },
+  input: {
+    width: '100%',
+    height: 50,
+    borderColor: '#ddd',
+    borderWidth: 1,
+    borderRadius: 5,
+    paddingHorizontal: 15,
+    marginBottom: 15,
+    fontSize: 16,
+  },
+  loginButton: {
+    width: '100%',
+    height: 50,
+    backgroundColor: '#3498db',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: 5,
+    marginTop: 10,
+  },
+  loginButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  registerButton: {
+    marginTop: 20,
+  },
+  registerButtonText: {
+    color: '#3498db',
+    fontSize: 16,
+  },
+});
 
 export default LoginScreen;

@@ -1,60 +1,68 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchUserProfileApi } from '../../utils/ProfileApi';
 
 const defaultProfile = require('../../assets/defaultProfile1.png');
 
-// 목 데이터
-const mockUserData = {
-    userPhoto: null, // null이면 defaultProfile 사용
-    userNickname: '생귤탱귤김탱볼',
-    userAge: '22세',
-    userSex: '여',
-    userType: '#계획적인 모험가',
-};
+export function ProfileHeader({ onLogout }) {
+    const [userData, setUserData] = useState(null);
 
-export function ProfileHeader() {
-    const { userPhoto, userNickname, userAge, userSex, userType } = mockUserData;
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const userId = await AsyncStorage.getItem('userId');
+                if (userId) {
+                    const data = await fetchUserProfileApi(userId);
+                    setUserData(data);
+                }
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
+    if (!userData) {
+        // You can return a loading spinner or a placeholder here
+        return null;
+    }
+
+    const { profileImage, nickname, age, gender, tags } = userData;
     
     return (
         <View style={styles.headerContainer}>
-            {/* 프로필 이미지와 수정 아이콘 */}
             <View style={styles.profileImageContainer}>
                 <Image 
-                    source={userPhoto ? { uri: userPhoto } : defaultProfile}
+                    source={profileImage ? { uri: profileImage } : defaultProfile}
                     style={styles.profileImage}
                 />
             </View>
             
-            {/* 프로필 정보 */}
             <View style={styles.profileInfoContainer}>
-                {/* 내 프로필 헤더와 수정 아이콘 */}
                 <View style={styles.profileHeader}>
                     <Text style={styles.profileTitle}>내 프로필</Text>
-                    <TouchableOpacity style={styles.editButton}>
-                        <Ionicons name="pencil" size={18} color="#666" />
-                    </TouchableOpacity>
-                </View>
-                
-                {/* 사용자 기본 정보 */}
-                <View style={styles.userBasicInfo}>
-                    <View style={styles.userAllInfo}>
-                        <Text style={styles.userNickname}>{userNickname}</Text>
-                        <Text style={styles.userMeta}>· {userSex} · {userAge}</Text>
+                    <View style={styles.headerIcons}>
+                        <TouchableOpacity style={styles.editButton}>
+                            <Ionicons name="pencil" size={18} color="#666" />
+                        </TouchableOpacity>
+                        <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
+                            <Text style={styles.logoutButtonText}>로그아웃</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
                 
-                {/* 사용자 타입 */}
-                <Text style={styles.userType}>{userType}</Text>
+                <View style={styles.userBasicInfo}>
+                    <View style={styles.userAllInfo}>
+                        <Text style={styles.userNickname}>{nickname}</Text>
+                        <Text style={styles.userMeta}>· {gender} · {age}세</Text>
+                    </View>
+                </View>
+                
+                <Text style={styles.userType}>{tags?.join(' ')}</Text>
             </View>
-        </View>
-    );
-}
-
-export default function ProfileHome() {
-    return (
-        <View style={styles.container}>
-            <ProfileHeader />
         </View>
     );
 }
@@ -97,8 +105,20 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
         color: '#000',
     },
+    headerIcons: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
     editButton: {
         padding: 4,
+    },
+    logoutButton: {
+        padding: 4,
+        marginLeft: 8,
+    },
+    logoutButtonText: {
+        color: '#FF6347',
+        fontSize: 14,
     },
     userBasicInfo: {
         marginBottom: 6,
