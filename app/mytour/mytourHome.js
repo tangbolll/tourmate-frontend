@@ -1,26 +1,17 @@
-import React, { useState, useEffect } from 'react'; // ❗️ useEffect 추가
+import React, { useState, useEffect } from 'react';
 import {
     View,
     StyleSheet,
     SafeAreaView,
     Platform,
-    ActivityIndicator, // ❗️ ActivityIndicator 추가
-    Text               // ❗️ Text 추가
+    ActivityIndicator,
+    Text
 } from 'react-native';
 import Constants from 'expo-constants';
 import BookmarkedTab from '../../components/mytour/mytourHome/BookMarkedTab';
 import MyTourTab from '../../components/mytour/mytourHome/MyTourTab';
-
-const userId = 1;
-
-const getBaseURL = () => {
-    if (__DEV__) {
-        if (Platform.OS === 'android') return 'http://10.0.2.2:8080';
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-    }
-};
+import { fetchMyTours } from '../../utils/MyTourApi';
+import { currentUserId } from '../../constants/testUserId';
 
 export default function MyTourHome() {
     const [tours, setTours] = useState([]);
@@ -28,20 +19,6 @@ export default function MyTourHome() {
     const [error, setError] = useState(null);
 
 useEffect(() => {
-    const fetchMyTours = async () => {
-        try {
-            const url = `${getBaseURL()}/api/myTour/list?userId=${userId}`;
-            const response = await fetch(url);
-            if (!response.ok) throw new Error('데이터 불러오기 실패');
-            const data = await response.json();
-            console.log('서버 응답:', data, Array.isArray(data));
-            setTours(Array.isArray(data) ? data : []);
-        } catch (e) {
-            setError(e.message);
-        } finally {
-            setIsLoading(false);
-        }
-    };
     fetchMyTours();
 }, []);
 
@@ -54,9 +31,6 @@ useEffect(() => {
             )
         );
     };
-
-
-
 
     // --- 로딩 및 에러 처리 UI ---
     if (isLoading) {
@@ -99,7 +73,7 @@ const styles = StyleSheet.create({
     myTourSection: {
         flex: 1,
     },
-    // ❗️ 로딩/에러 화면을 위한 스타일 추가
+    // 로딩/에러 화면을 위한 스타일 추가
     centered: {
         flex: 1,
         justifyContent: 'center',
