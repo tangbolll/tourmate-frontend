@@ -68,7 +68,7 @@ const LoginScreen = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.replace('/auth/register')}
+          onPress={() => router.push('/auth/register')}
           style={styles.registerButton}
         >
           <Text style={styles.registerButtonText}>일반 회원가입</Text>

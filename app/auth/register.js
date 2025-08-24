@@ -1,61 +1,50 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StyleSheet } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, Alert, ScrollView, StyleSheet, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import axios from 'axios';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
-const BACKEND_URL = 'http://localhost:8080'; // Your backend URL
+const BACKEND_URL = 'http://localhost:8080';
 
 const RegisterScreen = () => {
   const router = useRouter();
 
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMismatchMessage, setPasswordMismatchMessage] = useState('');
   const [email, setEmail] = useState('');
-  const [emailChecked, setEmailChecked] = useState(false); // New state
-  const [emailAvailable, setEmailAvailable] = useState(false); // New state
-  const [emailCheckMessage, setEmailCheckMessage] = useState(''); // New state
-  const [nickname, setNickname] = useState('');
+  const [emailChecked, setEmailChecked] = useState(false);
+  const [emailAvailable, setEmailAvailable] = useState(false);
+  const [emailCheckMessage, setEmailCheckMessage] = useState('');
   const [phoneNumber, setPhoneNumber] = useState('');
   const [firstname, setFirstname] = useState('');
   const [lastname, setLastname] = useState('');
-  const [gender, setGender] = useState('');
-  const [age, setAge] = useState('');
-  const [tags, setTags] = useState('');
-  const [preference, setPreference] = useState('');
 
-  const handleRegister = async () => {
-    // Add this check
+  const handleNext = () => {
+    if (!lastname || !firstname || !email || !password || !confirmPassword || !phoneNumber) {
+      Alert.alert('필수 정보 누락', '모든 필수 정보를 입력해주세요.');
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert('비밀번호 불일치', '비밀번호와 비밀번호 확인이 일치하지 않습니다.');
+      return;
+    }
     if (!emailChecked || !emailAvailable) {
       Alert.alert('이메일 확인 필요', '이메일 중복 확인을 해주세요.');
       return;
     }
-    try {
-      const requestBody = {
+
+    router.push({
+      pathname: '/auth/register-details',
+      params: { // Use params for URL parameters
         password,
         email,
-        nickname,
         phoneNumber,
         firstname,
         lastname,
-        gender,
-        age: age ? parseInt(age) : null,
-        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-        preference: preference ? preference.split(',').map(pref => pref.trim()) : [],
-      };
-
-      const response = await axios.post(`${BACKEND_URL}/api/auth/register`, requestBody);
-
-      if (response.status === 201) {
-        Alert.alert("회원가입 성공", "성공적으로 회원가입되었습니다. 로그인 해주세요.");
-        router.replace('/auth/login');
-      } else {
-        Alert.alert("회원가입 실패", "회원가입 중 오류가 발생했습니다.");
-      }
-
-    } catch (error) {
-      console.error("Registration Failed:", error.response?.data || error.message);
-      Alert.alert("회원가입 실패", `오류 발생: ${error.response?.data?.message || error.message}`);
-    }
+      },
+    });
   };
 
   const handleEmailCheck = async () => {
@@ -65,7 +54,7 @@ const RegisterScreen = () => {
     }
     try {
       const response = await axios.get(`${BACKEND_URL}/api/auth/check-email?email=${email}`);
-      const isTaken = response.data; // Backend returns boolean
+      const isTaken = response.data;
 
       setEmailChecked(true);
       setEmailAvailable(!isTaken);
@@ -79,27 +68,61 @@ const RegisterScreen = () => {
     }
   };
 
+  const isNextButtonDisabled = (
+    !lastname ||
+    !firstname ||
+    !email ||
+    !password ||
+    !confirmPassword ||
+    !phoneNumber ||
+    password !== confirmPassword ||
+    !emailChecked ||
+    !emailAvailable
+  );
+
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContainer}>
-        <View style={styles.header}>
-          <Text style={styles.title}>회원가입</Text>
-          <Text style={styles.subtitle}>새로운 계정을 만들어보세요</Text>
-        </View>
+      <View style={styles.header}> {/* Fixed header */}
+        <TouchableOpacity onPress={() => router.back()}>
+          <Ionicons name="arrow-back" size={24} color="black" />
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>회원가입</Text>
+        <View style={{ width: 24 }} /> {/* Spacer */}
+      </View>
+      <ScrollView contentContainerStyle={styles.scrollContainer} style={styles.scrollView}>
+        <View style={styles.form}> {/* Added marginTop to push content below header */}
+          <View style={styles.nameRow}>
+            <View style={[styles.inputGroup, styles.nameInputGroup]}>
+              <Text style={styles.label}>성</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="성을 입력하세요"
+                value={lastname}
+                onChangeText={setLastname}
+              />
+            </View>
 
-        <View style={styles.form}>
-          
+            <View style={[styles.inputGroup, styles.nameInputGroup]}>
+              <Text style={styles.label}>이름</Text>
+              <TextInput
+                style={styles.input}
+                placeholder="이름을 입력하세요"
+                value={firstname}
+                onChangeText={setFirstname} // Fixed syntax error here
+              />
+            </View>
+          </View>
 
           <View style={styles.inputGroup}>
             <Text style={styles.label}>이메일</Text>
-            <View style={styles.emailInputContainer}> {/* New container for input and button */}
+            <View style={styles.emailInputContainer}>
               <TextInput
-                style={[styles.input, styles.emailInput]} // Add emailInput style
+                style={[styles.input, styles.emailInput]}
                 placeholder="이메일 주소를 입력하세요"
                 value={email}
                 onChangeText={(text) => {
                   setEmail(text);
-                  setEmailChecked(false); // Reset check status on change
+                  setEmailChecked(false);
                   setEmailAvailable(false);
                   setEmailCheckMessage('');
                 }}
@@ -108,38 +131,17 @@ const RegisterScreen = () => {
               />
               <TouchableOpacity
                 style={styles.checkButton}
-                onPress={handleEmailCheck} // New handler
-                disabled={!email} // Disable if email is empty
+                onPress={handleEmailCheck}
+                disabled={!email}
               >
                 <Text style={styles.checkButtonText}>중복 확인</Text>
               </TouchableOpacity>
             </View>
-            {emailCheckMessage ? ( // Display message if exists
+            {emailCheckMessage ? (
               <Text style={[styles.emailMessage, emailAvailable ? styles.emailAvailable : styles.emailTaken]}>
                 {emailCheckMessage}
               </Text>
             ) : null}
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>비밀번호</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="비밀번호를 입력하세요"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>닉네임</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="닉네임을 입력하세요"
-              value={nickname}
-              onChangeText={setNickname}
-            />
           </View>
 
           <View style={styles.inputGroup}>
@@ -153,88 +155,58 @@ const RegisterScreen = () => {
             />
           </View>
 
-          <View style={styles.nameRow}> {/* New style for horizontal layout */}
-            <View style={[styles.inputGroup, styles.nameInputGroup]}> {/* Apply flex to individual input groups */}
-              <Text style={styles.label}>성</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="성을 입력하세요"
-                value={lastname}
-                onChangeText={setLastname}
-              />
-            </View>
-
-            <View style={[styles.inputGroup, styles.nameInputGroup]}> {/* Apply flex to individual input groups */}
-              <Text style={styles.label}>이름</Text>
-              <TextInput
-                style={styles.input}
-                placeholder="이름을 입력하세요"
-                value={firstname}
-                onChangeText={setFirstname}
-              />
-            </View>
-          </View>
-
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>성별</Text>
-            <View style={styles.genderSelectionContainer}> {/* New container for gender buttons */}
-              <TouchableOpacity
-                style={[styles.genderButton, gender === 'MALE' && styles.genderButtonSelected]}
-                onPress={() => setGender('MALE')}
-              >
-                <Text style={[styles.genderButtonText, gender === 'MALE' && styles.genderButtonTextSelected]}>남</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={[styles.genderButton, gender === 'FEMALE' && styles.genderButtonSelected]}
-                onPress={() => setGender('FEMALE')}
-              >
-                <Text style={[styles.genderButtonText, gender === 'FEMALE' && styles.genderButtonTextSelected]}>여</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>나이</Text>
+            <Text style={styles.label}>비밀번호</Text>
             <TextInput
               style={styles.input}
-              placeholder="나이를 입력하세요"
-              value={age}
-              onChangeText={setAge}
-              keyboardType="numeric"
-            />
-          </View>
-
-          
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>태그</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="쉼표로 구분하여 입력하세요"
-              value={tags}
-              onChangeText={setTags}
+              placeholder="비밀번호를 입력하세요"
+              value={password}
+              onChangeText={(text) => {
+                setPassword(text);
+                if (confirmPassword && text !== confirmPassword) {
+                  setPasswordMismatchMessage('비밀번호가 일치하지 않습니다.');
+                } else {
+                  setPasswordMismatchMessage('');
+                }
+              }}
+              secureTextEntry
             />
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>선호도</Text>
+            <Text style={styles.label}>비밀번호 확인</Text>
             <TextInput
               style={styles.input}
-              placeholder="쉼표로 구분하여 입력하세요"
-              value={preference}
-              onChangeText={setPreference}
+              placeholder="비밀번호를 다시 입력하세요"
+              value={confirmPassword}
+              onChangeText={(text) => {
+                setConfirmPassword(text);
+                if (password && text !== password) {
+                  setPasswordMismatchMessage('비밀번호가 일치하지 않습니다.');
+                } else {
+                  setPasswordMismatchMessage('');
+                }
+              }}
+              secureTextEntry
             />
+            {passwordMismatchMessage ? (
+              <Text style={styles.errorMessage}>{passwordMismatchMessage}</Text>
+            ) : null}
           </View>
 
-          <TouchableOpacity onPress={handleRegister} style={styles.registerButton}>
-            <Text style={styles.registerButtonText}>회원가입</Text>
-          </TouchableOpacity>
+          {/* Next button moved outside ScrollView and fixed at bottom */}
 
-          <TouchableOpacity onPress={() => router.replace('/auth/login')} style={styles.loginLink}>
-            <Text style={styles.loginLinkText}>이미 계정이 있으신가요? 로그인</Text>
-          </TouchableOpacity>
         </View>
       </ScrollView>
+      <View style={[styles.fixedBottomButton]}> {/* Wrapped in a View */}
+        <TouchableOpacity
+          onPress={handleNext}
+          style={[styles.registerButton, isNextButtonDisabled && styles.disabledButton]}
+          disabled={isNextButtonDisabled}
+        >
+          <Text style={[styles.registerButtonText, isNextButtonDisabled && styles.disabledButtonText]}>다음</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -242,28 +214,43 @@ const RegisterScreen = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: '#F5F5F5',
+  },
+  scrollView: {
+    flex: 1, // Ensure ScrollView takes remaining space
+    paddingTop: 60, // Space for the absolute header (adjust as needed)
+    paddingBottom: 80, // Space for the fixed bottom button
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'center',
     padding: 20,
   },
   header: {
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 30,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    backgroundColor: 'white',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+    position: 'absolute', // Added for fixed header
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 1, // Ensure it's above content
+  },
+  backButton: {
   },
   title: {
-    fontSize: 32,
+    fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 10,
   },
   subtitle: {
-    fontSize: 16,
-    color: '#666',
   },
   form: {
     width: '100%',
+    marginTop: 60, // Added marginTop to push content below header
   },
   inputGroup: {
     marginBottom: 15,
@@ -288,10 +275,10 @@ const styles = StyleSheet.create({
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
-    marginTop: 20,
+    // Removed marginTop: 20, as it's now fixed
   },
   registerButtonText: {
-    color: '#fff',
+    color: 'black', // Changed to black for debugging
     fontSize: 18,
     fontWeight: 'bold',
   },
@@ -299,7 +286,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     alignItems: 'center',
   },
-    loginLinkText: {
+  loginLinkText: {
     color: '#3498db',
     fontSize: 16,
   },
@@ -344,19 +331,19 @@ const styles = StyleSheet.create({
   emailInputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15, // Adjust as needed
+    marginBottom: 15,
   },
   emailInput: {
-    flex: 1, // Take up remaining space
-    marginRight: 10, // Space between input and button
+    flex: 1,
+    marginRight: 10,
   },
   checkButton: {
-    backgroundColor: '#28a745', // Green color for check button
+    backgroundColor: '#28a745',
     padding: 15,
     borderRadius: 8,
     alignItems: 'center',
     justifyContent: 'center',
-    minWidth: 100, // Ensure button has a minimum width
+    minWidth: 100,
   },
   checkButtonText: {
     color: '#fff',
@@ -364,7 +351,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   emailMessage: {
-    marginTop: -10, // Adjust to position below input
+    marginTop: -10,
     marginBottom: 10,
     fontSize: 14,
     paddingLeft: 5,
@@ -374,6 +361,37 @@ const styles = StyleSheet.create({
   },
   emailTaken: {
     color: 'red',
+  },
+  dobInputContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  dobInput: {
+    marginRight: 10,
+  },
+  disabledButton: {
+    backgroundColor: '#A0A0A0',
+  },
+  disabledButtonText: {
+    color: '#E0E0E0',
+  },
+  errorMessage: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 4,
+    paddingLeft: 5,
+  },
+  fixedBottomButton: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 20, // Match screen padding
+    paddingVertical: 10, // Adjust as needed
+    backgroundColor: 'white', // Background for the fixed button area
+    borderTopWidth: 1,
+    borderTopColor: '#E0E0E0',
+    zIndex: 1, // Ensure it's above content
   },
 });
 

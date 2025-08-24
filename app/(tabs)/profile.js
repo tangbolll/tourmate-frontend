@@ -180,10 +180,6 @@ export default function ProfileHome() {
         }
     }, [handleCreateFolder]);
 
-    const handleLogout = () => {
-        signOut();
-    };
-
     const renderTabContent = useCallback(() => {
         switch (activeTab) {
             case 'board':
@@ -200,7 +196,7 @@ export default function ProfileHome() {
 
     return (
         <View style={styles.container}>
-            <ProfileHeader onLogout={handleLogout} />
+            <ProfileHeader />
             <PostTabHeader 
                 activeTab={activeTab}
                 onTabPress={handleTabPress} 
