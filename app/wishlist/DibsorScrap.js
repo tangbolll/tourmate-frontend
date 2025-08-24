@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView } from 'react-native';
 import SelectDibsOrScrap from '../../components/wishlist/SelectDibsOrScrap';
 import DibsScrapListView from '../../components/wishlist/DibsorScrapListView';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
     fetchAccompanyFeedApi, 
     getMultipleAccompanyLikesApi, 
@@ -19,16 +20,23 @@ const DibsorScrap = ({ router }) => {
     const [scrapList, setScrapList] = useState([]);
     const [likedPosts, setLikedPosts] = useState({});
     const [allAccompanyPosts, setAllAccompanyPosts] = useState([]); // 전체 동행 포스트
+    const [currentUserId, setCurrentUserId] = useState(null);
     
     // 데이터 로딩 상태
     const [dibsLoaded, setDibsLoaded] = useState(false);
     const [scrapLoaded, setScrapLoaded] = useState(false);
 
-    // 현재 사용자 ID (실제 앱에서는 상태관리나 컨텍스트에서 가져와야 함)
-    const currentUserId = "3"; // TODO: 실제 사용자 ID로 교체
+    useEffect(() => {
+        const getUserId = async () => {
+            const userId = await AsyncStorage.getItem('userId');
+            setCurrentUserId(userId);
+        };
+        getUserId();
+    }, []);
 
     // 찜 데이터 로드 (좋아요한 동행 포스트만 필터링)
     const fetchDibsData = useCallback(async () => {
+        if (!currentUserId) return;
         try {
             setLoading(true);
             
@@ -102,7 +110,7 @@ const DibsorScrap = ({ router }) => {
                         color: '#FFE4E1',
                     },
                     content: {
-                        leftText: '광안리 해변에서의 하루.\n새벽 6시부터 일출을 보며...',
+                        leftText: '광안리 해변에서의 하루.\n새벽 6시부터 일출을 보며...', 
                     },
                     likeCount: 18,
                     scrapCount: 32,
@@ -122,7 +130,7 @@ const DibsorScrap = ({ router }) => {
                         color: '#F3E5F5',
                     },
                     content: {
-                        leftText: '자갈치 시장에서 만난 사람들...',
+                        leftText: '자갈치 시장에서 만난 사람들...', 
                     },
                     likeCount: 15,
                     scrapCount: 28,
@@ -142,7 +150,7 @@ const DibsorScrap = ({ router }) => {
                         color: '#E8F5E8',
                     },
                     content: {
-                        leftText: '송도 해수욕장의 케이블카...',
+                        leftText: '송도 해수욕장의 케이블카...', 
                     },
                     likeCount: 22,
                     scrapCount: 41,
@@ -162,7 +170,7 @@ const DibsorScrap = ({ router }) => {
                         color: '#FFF8E1',
                     },
                     content: {
-                        leftText: '태종대 절벽에서 바라본 바다...',
+                        leftText: '태종대 절벽에서 바라본 바다...', 
                     },
                     likeCount: 31,
                     scrapCount: 55,
@@ -182,7 +190,7 @@ const DibsorScrap = ({ router }) => {
                         color: '#E1F5FE',
                     },
                     content: {
-                        leftText: '알록달록한 감천문화마을...',
+                        leftText: '알록달록한 감천문화마을...', 
                     },
                     likeCount: 28,
                     scrapCount: 43,
@@ -202,19 +210,19 @@ const DibsorScrap = ({ router }) => {
 
     // 컴포넌트 마운트 시 찜 데이터 로드 (첫 로딩만)
     useEffect(() => {
-        if (!dibsLoaded) {
+        if (!dibsLoaded && currentUserId) {
             fetchDibsData();
         }
-    }, []);
+    }, [currentUserId, dibsLoaded, fetchDibsData]);
 
     // 탭 변경 시 데이터 로드
     useEffect(() => {
-        if (selectedTab === '찜' && !dibsLoaded) {
+        if (selectedTab === '찜' && !dibsLoaded && currentUserId) {
             fetchDibsData();
         } else if (selectedTab === '스크랩' && !scrapLoaded) {
             fetchScrapData();
         }
-    }, [selectedTab, dibsLoaded, scrapLoaded, fetchDibsData, fetchScrapData]);
+    }, [selectedTab, dibsLoaded, scrapLoaded, fetchDibsData, fetchScrapData, currentUserId]);
 
     // 새로고침 핸들러
     const onRefresh = useCallback(async () => {
@@ -234,6 +242,7 @@ const DibsorScrap = ({ router }) => {
 
     // 좋아요 핸들러 - 실제 API 연동
     const handlePressLike = useCallback(async (postId) => {
+        if (!currentUserId) return;
         try {
             console.log('🔍 좋아요 토글 시작:', postId);
             

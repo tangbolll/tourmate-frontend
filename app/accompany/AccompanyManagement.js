@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton'; 
 import CloseAlarmPopup from '../../components/accompany/CloseAlarmPopup';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
     toggleLikeApi, 
     getLikeStatusApi, 
@@ -33,7 +34,7 @@ const AccompanyManagement = () => {
     // 기본 상태
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const currentUserId = "2"; // 실제로는 로그인한 사용자 ID
+    const [currentUserId, setCurrentUserId] = useState(null);
     
     // 동행 관리 데이터
     const [accompanyData, setAccompanyData] = useState(null);
@@ -57,33 +58,13 @@ const AccompanyManagement = () => {
     const applicantScrollRef = useRef(null);
     const companionScrollRef = useRef(null);
 
-    // // 동행 관리 데이터 로드
-    // const fetchAccompanyManagementData = async () => {
-    //     try {
-    //         setLoading(true);
-    //         setError(null);
-            
-    //         const data = await getAccompanyManagementDataApi(postId, currentUserId);
-            
-    //         setAccompanyData(data.accompanyInfo);
-    //         setApplicants(data.applicants || []);
-    //         setParticipants(data.participants || []);
-            
-    //         // 동행 상태 설정
-    //         setAccompanyStatus(data.accompanyInfo.status || 'RECRUITING');
-            
-    //         // 좋아요 정보 설정
-    //         setIsLiked(data.accompanyInfo.isLiked || false);
-    //         setLikeCount(data.accompanyInfo.likeCount || data.accompanyInfo.likes || 0);
-            
-    //     } catch (err) {
-    //         console.error('❌ 동행 관리 데이터 로드 오류:', err);
-    //         setError(err.message || '데이터를 불러오지 못했습니다.');
-    //         Alert.alert('오류', '동행 관리 정보를 불러오지 못했습니다.');
-    //     } finally {
-    //         setLoading(false);
-    //     }
-    // };
+    useEffect(() => {
+        const getUserId = async () => {
+            const userId = await AsyncStorage.getItem('userId');
+            setCurrentUserId(userId);
+        };
+        getUserId();
+    }, []);
 
     // 좋아요 토글 함수
     const handleLikeToggle = useCallback(async () => {
@@ -199,6 +180,7 @@ const AccompanyManagement = () => {
 
     // 데이터 로드 후 ID 타입 확인을 위한 로깅 추가
     const fetchAccompanyManagementData = async () => {
+        if (!currentUserId) return;
         try {
             setLoading(true);
             setError(null);
@@ -363,13 +345,13 @@ const AccompanyManagement = () => {
 
     // 초기 데이터 로드
     useEffect(() => {
-        if (postId) {
+        if (postId && currentUserId) {
             fetchAccompanyManagementData();
-        } else {
+        } else if (postId === undefined) {
             setError('잘못된 동행 ID입니다.');
             setLoading(false);
         }
-    }, [postId]);
+    }, [postId, currentUserId]);
 
     // 로딩 상태
     if (loading) {

@@ -1,26 +1,8 @@
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { StyleSheet } from 'react-native';
-import React, { createContext, useContext, useEffect, useState } from 'react';
-
-const AuthContext = createContext(null);
-
-function AuthProvider({ children }) {
-    // For now, we'll use a simple state to represent the user.
-    // Replace this with your actual authentication logic.
-    const [user, setUser] = useState(null);
-
-    return (
-        <AuthContext.Provider
-            value={{
-                signIn: () => setUser({ name: 'Test User' }), // Mock sign-in
-                signOut: () => setUser(null),
-                user,
-            }}>
-            {children}
-        </AuthContext.Provider>
-    );
-}
+import { StyleSheet, Text } from 'react-native';
+import React, { useEffect } from 'react';
+import { AuthProvider, useAuth } from '@/context/AuthContext';
 
 export default function RootLayout() {
     return (
@@ -33,17 +15,32 @@ export default function RootLayout() {
 }
 
 function RootLayoutNav() {
-    const { user } = useContext(AuthContext); // Get user from AuthContext
+    const { user, loading } = useAuth();
+    const segments = useSegments();
+    const router = useRouter();
+
+    useEffect(() => {
+        // Only navigate if loading is false (auth status has been determined)
+        if (!loading) {
+            const inAuthGroup = segments[0] === 'auth';
+
+            if (user && inAuthGroup) {
+                router.replace('/(tabs)');
+            } else if (!user && !inAuthGroup) {
+                router.replace('/auth/login');
+            }
+        }
+    }, [user, segments, loading]); // Add loading to dependency array
+
+    // Optionally, render a loading screen while auth status is being determined
+    if (loading) {
+        return <Text>Loading...</Text>; // Or a more sophisticated splash screen
+    }
 
     return (
         <Stack screenOptions={{ headerShown: false }}>
-            {user ? (
-                // Authenticated user: show main app tabs
-                <Stack.Screen name="(tabs)" />
-            ) : (
-                // Unauthenticated user: show login screen
-                <Stack.Screen name="auth/login" />
-            )}
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen name="auth/login" />
         </Stack>
     );
 }
