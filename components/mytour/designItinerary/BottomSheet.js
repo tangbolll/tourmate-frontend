@@ -100,31 +100,34 @@ const BottomSheet = ({
     }, [showActionButtons]);
 
     useEffect(() => {
-        if (!selectedRegion) return;
+    if (!selectedRegion?.key || !selectedRegion?.sigungu?.[0]?.key) return;
 
-        const fetchAttractions = async () => {
-            setIsLoading(true); setError(null); setAttractions([]);
-            try {
-                const url = `${getBaseURL()}/api/myTour/tourInfo/${selectedRegion.parentCode}?sigunguCode=${selectedRegion.code}`;
-                const response = await fetch(url);
+    const fetchAttractions = async () => {
+    setIsLoading(true); setError(null); setAttractions([]);
+    try {
+        const promises = selectedRegion.sigungu.map(async (s) => {
+            const url = `${getBaseURL()}/api/myTour/tourInfo/${selectedRegion.key}?sigunguCode=${s.key}`;
+            const response = await fetch(url);
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            const data = await response.json();
+            let items = data?.response?.body?.items?.item || [];
+            if (!Array.isArray(items)) items = [items];
+            return items.filter(item => item.contenttypeid === '12');
+        });
 
-                if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                const data = await response.json();
-                let items = data?.response?.body?.items?.item || [];
-                if (!Array.isArray(items)) items = [items];
+        const results = await Promise.all(promises);
+        setAttractions(results.flat()); // 여러 배열 합치기
 
-                const filteredItems = items.filter(item => item.contenttypeid === '12');
+    } catch (e) {
+        setError(e);
+        console.error(e);
+    } finally {
+        setIsLoading(false);
+    }
+};
 
-                setAttractions(filteredItems);
-
-            } catch (e) {
-                setError(e); console.error(e);
-            } finally {
-                setIsLoading(false);
-            }
-        };
-        fetchAttractions();
-    }, [selectedRegion]);
+    fetchAttractions();
+}, [selectedRegion]);
 
     const filteredAttractions = !searchText ? attractions : attractions.filter(a => a.title?.toLowerCase().includes(searchText.toLowerCase()));
     const isAttractionSelected = (id) => selectedAttractions.some(a => a.contentid === id);
