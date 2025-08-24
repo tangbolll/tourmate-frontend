@@ -4,9 +4,12 @@ import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchUserProfileApi } from '../../utils/ProfileApi';
 
+import { useRouter } from 'expo-router';
+
 const defaultProfile = require('../../assets/defaultProfile1.png');
 
-export function ProfileHeader({ onLogout }) {
+export function ProfileHeader() { // onLogout prop 제거
+    const router = useRouter(); // useRouter 훅 사용
     const [userData, setUserData] = useState(null);
 
     useEffect(() => {
@@ -26,7 +29,6 @@ export function ProfileHeader({ onLogout }) {
     }, []);
 
     if (!userData) {
-        // You can return a loading spinner or a placeholder here
         return null;
     }
 
@@ -46,10 +48,14 @@ export function ProfileHeader({ onLogout }) {
                     <Text style={styles.profileTitle}>내 프로필</Text>
                     <View style={styles.headerIcons}>
                         <TouchableOpacity style={styles.editButton}>
-                            <Ionicons name="pencil" size={18} color="#666" />
+                            <Ionicons name="pencil" size={22} color="#666" />
                         </TouchableOpacity>
-                        <TouchableOpacity onPress={onLogout} style={styles.logoutButton}>
-                            <Text style={styles.logoutButtonText}>로그아웃</Text>
+                        {/* 설정 아이콘 버튼 추가 */}
+                        <TouchableOpacity 
+                            onPress={() => router.push('/profile/settings')} 
+                            style={styles.settingsButton}
+                        >
+                            <Ionicons name="reorder-three" size={28} color="#666" />
                         </TouchableOpacity>
                     </View>
                 </View>
@@ -112,13 +118,9 @@ const styles = StyleSheet.create({
     editButton: {
         padding: 4,
     },
-    logoutButton: {
+    settingsButton: {
         padding: 4,
         marginLeft: 8,
-    },
-    logoutButtonText: {
-        color: '#FF6347',
-        fontSize: 14,
     },
     userBasicInfo: {
         marginBottom: 6,
