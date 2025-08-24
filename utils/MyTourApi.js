@@ -130,8 +130,9 @@ export const createTour = async (tourData) => {
 
 // ✅ 여행 일정 수정 API 함수
 export const updateTour = async (tourId, tourData) => {
+
+    // 기존 updateTour 호출
     const url = `${getBaseURL()}/api/myTour/${tourId}`;
-    
     try {
         const response = await fetch(url, {
             method: 'PUT',
@@ -145,7 +146,7 @@ export const updateTour = async (tourId, tourData) => {
             const errorText = await response.text();
             throw new Error(`여행 수정 실패. 오류: ${response.status} ${errorText}`);
         }
-        
+
         const updatedTour = await response.json();
         console.log('✅ 여행 수정 완료:', updatedTour);
         return updatedTour;
@@ -155,6 +156,7 @@ export const updateTour = async (tourId, tourData) => {
         throw error;
     }
 };
+
 
 // ✅ 여행 상세 정보 조회 API 함수 - 경로 수정
 export const getTourDetails = async (tourId) => {

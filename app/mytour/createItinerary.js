@@ -51,29 +51,42 @@ export default function CreateItinerary() {
         console.log("현재 선택된 regions state:", regions);
 
         try {
-            // 백엔드 DTO에 맞게 데이터 가공
-            const selectedAreaCodes = [...new Set(regions.map(r => Number(r.parentCode)))];
-            const selectedSigunguCodes = regions.map(r => Number(r.code));
+            // 1️⃣ 지역별로 묶어서 Map 생성 (areaCode 기준)
+            const regionMap = new Map();
 
-            const selectedAreaNames = selectedAreaCodes.map(code => {
-                const regionObject = regions.find(r => Number(r.parentCode) === code);
-                return regionObject ? regionObject.country : '';
+            regions.forEach(r => {
+                const areaCode = Number(r.parentCode);
+                const areaName = r.country || '';
+
+                if (!regionMap.has(areaCode)) {
+                    regionMap.set(areaCode, {
+                        areaCode,
+                        areaName,
+                        sigungu: []
+                    });
+                }
+
+                // sigungu 추가
+                regionMap.get(areaCode).sigungu.push({
+                    key: Number(r.code),
+                    name: r.name
+                });
             });
-            const selectedSigunguNames = regions.map(r => r.name);
 
+            // 2️⃣ Map → 배열로 변환
+            const regionsPayload = Array.from(regionMap.values());
+
+            // 3️⃣ 기간 정보 처리
             const startDate = periodData.startDate?.trim() ? periodData.startDate : null;
             const endDate = periodData.endDate?.trim() ? periodData.endDate : null;
             const nightCount = periodData.nights ? Number(periodData.nights) : null;
             const dayCount = periodData.days ? Number(periodData.days) : null;
 
-            // 서버로 전송할 페이로드 구성
+            // 4️⃣ 서버로 전송할 payload 구성
             const payload = {
                 title: itineraryTitle || getTitle(),
-                areaCode: selectedAreaCodes,
-                sigunguCode: selectedSigunguCodes,
+                regions: regionsPayload,   // ✅ DTO 구조에 맞춘 regions
                 periodType: periodData.type === 'date' ? 1 : 2,
-                areaName: selectedAreaNames,
-                sigunguName: selectedSigunguNames,
                 startDate,
                 endDate,
                 nightCount,
