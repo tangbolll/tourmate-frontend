@@ -30,12 +30,7 @@ const AttractionCard = ({
                 {/* 제목 + 펼치기 버튼 */}
                 <View style={styles.attractionHeader}>
                     <View style={styles.attractionInfo}>
-                        <Text style={styles.attractionName}>{attraction.name}</Text>
-                        {/* 제목 옆에 관광타입 표시 */}
-                        {attraction.typeName && (
-                            <Text style={styles.attractionType}>{attraction.typeName}</Text>
-                        )}
-                    
+                        <Text style={styles.attractionName}>{attraction.name}</Text>                    
                     </View>
                     
                     <TouchableOpacity
@@ -53,10 +48,7 @@ const AttractionCard = ({
                 {/* 펼침 상태 */}
                 {isExpanded && attraction.detailInfo && (
                 <View style={styles.attractionDetails}>
-                    {/* 카드 내부 최상단에 관광타입 표시 */}
-                    {attraction.typeName && (
-                        <Text style={styles.detailsType}>{attraction.typeName}</Text>
-                    )}
+                    
                     <View style={styles.detailsContent}>
                     <View style={styles.textContent}>
                     {/* 소개글 */}
