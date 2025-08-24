@@ -3,16 +3,7 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform } from '
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import BookmarkedEvent from './BookMarkedEvent';
 import Constants from 'expo-constants';
-
-
-const getBaseURL = () => {
-    if (__DEV__) {
-        if (Platform.OS === 'android') return 'http://10.0.2.2:8080';
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-    }
-};
+import { handleBookmarkPress } from '../../../utils/MyTourApi';
 
 
 export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate }) {
@@ -26,26 +17,6 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate 
         // 이벤트 상세 페이지로 이동하는 로직
         console.log('Event pressed:', event);
     };
-
-    const handleBookmarkPress = async (event) => {
-        console.log('handleBookmarkPress called', event.id); 
-    try {
-        const userId = 1; // 로그인 유저 ID
-        const response = await fetch(
-            `${getBaseURL()}/api/myTour/${event.id}/favorite?userId=${userId}`,
-            { method: 'POST' }
-        );
-
-        if (!response.ok) throw new Error('즐겨찾기 업데이트 실패');
-
-        // 상태 업데이트
-        if (onBookmarkUpdate) onBookmarkUpdate(event.id);
-
-        console.log('✅ 즐겨찾기 토글 완료:', event.id);
-    } catch (error) {
-        console.error('Bookmark update error:', error);
-    }
-};
 
     return (
         <View style={styles.container}>
@@ -131,8 +102,6 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         paddingVertical: 8,
         backgroundColor: '#fff',
-        // borderBottomWidth: 1,
-        // borderBottomColor: '#f0f0f0',
     },
     titleContainer: {
         marginLeft: 8,
