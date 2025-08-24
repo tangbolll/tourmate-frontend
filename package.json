@@ -28,6 +28,7 @@
     "@stomp/stompjs": "^7.1.1",
     "axios": "^1.11.0",
     "date-fns": "^4.1.0",
+    "dayjs": "^1.11.13",
     "expo": "53.0.16",
     "expo-blur": "~14.1.5",
     "expo-clipboard": "^7.1.5",
