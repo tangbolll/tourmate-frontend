@@ -24,12 +24,20 @@ export default function AllAreaToggle({ onRegionSelect, selectedRegions = [], se
     const defaultImage = require('../../../assets/defaultBackground.png');
 
     const getBaseURL = () => {
-        if (__DEV__) {
-        if (Platform.OS === 'android') return 'http://10.0.2.2:8080';
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-        } else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+    // 개발 모드일 때
+    if (__DEV__) {
+        if (Platform.OS === 'android') {
+        return 'http://10.0.2.2:8080';
         }
+        if (Platform.OS === 'web') {
+        return 'http://localhost:8080';
+        }
+        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+    } 
+    // 배포(프로덕션) 모드일 때
+    else {
+        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+    }
     };
 
     const API_URL = getBaseURL();

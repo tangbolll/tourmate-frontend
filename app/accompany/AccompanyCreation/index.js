@@ -18,17 +18,22 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-const getBaseURL = () => {
-    if (__DEV__) { // 개발 환경
+    const getBaseURL = () => {
+    // 개발 모드일 때
+    if (__DEV__) {
         if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080'; // 안드로이드 에뮬레이터는 '10.0.2.2'를 로컬호스트로 사용
+        return 'http://10.0.2.2:8080';
         }
-        // iOS 시뮬레이터, 웹, 또는 안드로이드 실기기 개발 시 app.json의 DEV URL 사용
+        if (Platform.OS === 'web') {
+        return 'http://localhost:8080';
+        }
         return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } else { // 운영(배포) 환경
+    } 
+    // 배포(프로덕션) 모드일 때
+    else {
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
-};
+    };
 
 const AccompanyCreation = () => {
 
