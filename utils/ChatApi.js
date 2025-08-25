@@ -16,7 +16,6 @@ const getBaseURL = () => {
     }
 };
 const API_URL = getBaseURL();
-import { currentUserId } from '../constants/testUserId';
 
 const formatTime = (dateString) => {
     if (!dateString) return '';
@@ -296,7 +295,7 @@ export const fetchOrCreateChatRoom = async (accompanyIdOrChatRoomId, isChatRoomI
 };
 
 
-// 기존 메시지 불러오기
+// 기존 메시지 불러오기 - ✅ currentUserId를 매개변수로 받도록 수정
 export const fetchMessages = async (roomId, currentUserId) => {
     try {
         const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
@@ -338,8 +337,8 @@ export const fetchMessages = async (roomId, currentUserId) => {
         }
     };
 
-// 동행 게시물 정보 조회
-export const getAccompanyPostInfo = async (accompanyId) => {
+// 동행 게시물 정보 조회 - ✅ currentUserId를 매개변수로 받도록 수정
+export const getAccompanyPostInfo = async (accompanyId, currentUserId) => {
     try {
         const url = `${API_URL}/api/accompany/AccompanyPost?postId=${accompanyId}&userId=${currentUserId}`;
         console.log('🌐 동행 게시물 API 호출 (올바른 엔드포인트):', url);

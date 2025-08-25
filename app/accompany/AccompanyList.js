@@ -5,7 +5,7 @@ import AccompanyListView from '../../components/accompany/AccompanyListView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { currentUserId } from '../../constants/testUserId';
+import { useAuth } from '../../context/AuthContext';
 
 // 분리된 API 함수들을 import
 import {
@@ -30,7 +30,9 @@ const AccompanyList = () => {
     const [myAppliedAccompanyList, setMyAppliedAccompanyList] = useState([]);
     const [myCreatedAccompanyList, setMyCreatedAccompanyList] = useState([]);
     const [feedList, setFeedList] = useState([]);
-    
+
+    const { currentUserId } = useAuth();
+
     const [loadingStates, setLoadingStates] = useState({
         feed: false,
         mine: false,

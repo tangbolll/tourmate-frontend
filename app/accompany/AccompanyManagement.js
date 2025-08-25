@@ -26,10 +26,10 @@ import {
     closeAccompanyApi, 
     getAccompanyManagementDataApi 
 } from '../../utils/AccompanyManagementApi';
-
-import { currentUserId } from '../../constants/testUserId';
+import { useAuth } from '../../context/AuthContext';
 
 const AccompanyManagement = () => {
+    const { currentUserId } = useAuth();
     const params = useLocalSearchParams();
     const router = useRouter();
     const { postId } = params;
@@ -59,14 +59,6 @@ const AccompanyManagement = () => {
     
     const applicantScrollRef = useRef(null);
     const companionScrollRef = useRef(null);
-
-    useEffect(() => {
-        const getUserId = async () => {
-            const userId = await AsyncStorage.getItem('userId');
-            setCurrentUserId(userId);
-        };
-        getUserId();
-    }, []);
 
     // 좋아요 토글 함수
     const handleLikeToggle = useCallback(async () => {

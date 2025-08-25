@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import GroupChatList from '../../components/accompany/GroupChatList';
 import ChatExitPopup from '../../components/accompany/ChatExitPopup';
 import * as ChatApi from '../../utils/ChatApi';
-import { currentUserId } from '../../constants/testUserId';
+import { useAuth } from '../../context/AuthContext';
 
 const GroupChats = () => {
     const router = useRouter();
@@ -14,6 +14,7 @@ const GroupChats = () => {
     const [chatRooms, setChatRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const { currentUserId } = useAuth();
 
     // 컴포넌트 마운트 시 채팅방 목록 로드
     useEffect(() => {

@@ -9,9 +9,10 @@ import {
     toggleLikeApi,
     handleApiError
 } from '../../utils/AccompanyListApi';
-import { currentUserId } from '../../constants/testUserId';
+import { useAuth } from '../../context/AuthContext';
 
 const DibsorScrap = ({ router }) => {
+    const { currentUserId } = useAuth();
     // 상태 관리
     const [selectedTab, setSelectedTab] = useState('찜');
     const [refreshing, setRefreshing] = useState(false);
@@ -36,14 +37,6 @@ const DibsorScrap = ({ router }) => {
             return [];
         }
     };
-  
-      useEffect(() => {
-        const getUserId = async () => {
-            const userId = await AsyncStorage.getItem('userId');
-            setCurrentUserId(userId);
-        };
-        getUserId();
-    }, []);
 
     // 찜 데이터 로드 (좋아요한 동행 포스트만 필터링)
     const fetchDibsData = useCallback(async () => {
