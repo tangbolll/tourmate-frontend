@@ -7,15 +7,24 @@ import {
     TouchableOpacity,
     ScrollView,
     Dimensions,
+    Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import SaveButton from "./SaveButton";
+import SaveButton from './SaveButton'; // SaveButton 컴포넌트 경로 확인
 
 const { width } = Dimensions.get('window');
+// 148:100 비율을 유지하기 위한 상수
+const POSTCARD_RATIO = 100 / 148;
 
 const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
+    // 백엔드 명세에 따라 'Line', 'Plain', 'Image' 탭을 1, 2, 3으로 매핑
+    const tabs = {
+        Line: 1,
+        Plain: 2,
+        Image: 3,
+    };
     const [selectedTab, setSelectedTab] = useState('Line');
-    const [selectedDesign, setSelectedDesign] = useState(null);
+    const [selectedDesign, setSelectedDesign] = useState(null); // 선택된 디자인의 ID
 
     const handleDesignSelect = (designId) => {
         setSelectedDesign(designId);
@@ -23,15 +32,9 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
 
     const handleSavePress = () => {
         if (selectedDesign && onPostcardSelect) {
-            // 선택된 디자인 정보를 부모 컴포넌트로 전달
-            const selectedDesignData = {
-                id: selectedDesign,
-                tab: selectedTab,
-                color: getDesignData().find(d => d.id === selectedDesign)?.color
-            };
-            
-            console.log('Selected design:', selectedDesignData);
-            onPostcardSelect(selectedDesignData);
+            // 선택된 디자인의 ID(번호)를 부모 컴포넌트로 전달
+            onPostcardSelect(selectedDesign);
+            console.log('선택된 엽서 디자인 번호:', selectedDesign);
         }
     };
 
@@ -43,21 +46,18 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
 
     // 각 탭별 디자인 데이터
     const getDesignData = () => {
-        const baseDesigns = [
-            { id: 'design1', color: '#FFE4E1' }, // 연한 핑크
-            { id: 'design2', color: '#E1F5FE' }, // 연한 블루
-            { id: 'design3', color: '#F3E5F5' }, // 연한 보라
-            { id: 'design4', color: '#E8F5E8' }, // 연한 그린
-            { id: 'design5', color: '#FFF8E1' }, // 연한 노랑
-        ];
+        const designs = [];
+        const startIndex = (tabs[selectedTab] - 1) * 5 + 1;
+        const endIndex = startIndex + 4;
         
-        return baseDesigns.map(design => ({
-            ...design,
-            id: `${selectedTab.toLowerCase()}_${design.id}`
-        }));
+        for (let i = startIndex; i <= endIndex; i++) {
+            designs.push({ id: i });
+        }
+        
+        return designs;
     };
-
-    const renderPostcardDesign = (design, index) => {
+    
+    const renderPostcardDesign = (design) => {
         const isSelected = selectedDesign === design.id;
         
         return (
@@ -66,7 +66,7 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                 <TouchableOpacity
                     style={[
                         styles.checkButton,
-                        isSelected && styles.checkButtonSelected
+                        isSelected && styles.checkButtonSelected,
                     ]}
                     onPress={() => handleDesignSelect(design.id)}
                 >
@@ -74,35 +74,16 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                         <Feather name="check" size={16} color="#fff" />
                     )}
                 </TouchableOpacity>
-                
-                {/* 엽서 디자인 */}
+
+                {/* 엽서 이미지 디자인 */}
                 <TouchableOpacity
-                    style={[styles.postcardDesign, { backgroundColor: design.color }]}
+                    style={[styles.postcardDesign, isSelected && styles.postcardDesignSelected]}
                     onPress={() => handleDesignSelect(design.id)}
                 >
-                    <Text style={styles.postcardTitle}>Postcard</Text>
-                    <View style={styles.postcardContent}>
-                        <View style={styles.postcardLeft} />
-                        <View style={styles.postcardRight}>
-                            {selectedTab === 'Line' && (
-                                <>
-                                    <View style={styles.line} />
-                                    <View style={styles.line} />
-                                    <View style={styles.line} />
-                                    <View style={styles.line} />
-                                </>
-                            )}
-                            {selectedTab === 'Plain' && (
-                                <View style={styles.plainArea} />
-                            )}
-                            {selectedTab === 'Image' && (
-                                <View style={styles.imageArea}>
-                                    <Text style={styles.imageText}>Image</Text>
-                                </View>
-                            )}
-                        </View>
-                    </View>
-                    <Text style={styles.postcardBottom}>This side for message</Text>
+                    <Image
+                        source={require(`../../assets/postCard/1.png`)} // 일단 1.png로 통일
+                        style={styles.postcardImage}
+                    />
                 </TouchableOpacity>
             </View>
         );
@@ -113,7 +94,7 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
             {/* 헤더 */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>엽서 선택</Text>
-                <TouchableOpacity 
+                <TouchableOpacity
                     style={styles.closeButton}
                     onPress={handleClose}
                 >
@@ -123,22 +104,24 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
 
             {/* 탭 메뉴 */}
             <View style={styles.tabContainer}>
-                {['Line', 'Plain', 'Image'].map((tab) => (
+                {Object.keys(tabs).map((tab) => (
                     <TouchableOpacity
                         key={tab}
                         style={[
                             styles.tabButton,
-                            selectedTab === tab && styles.tabButtonActive
+                            selectedTab === tab && styles.tabButtonActive,
                         ]}
                         onPress={() => {
                             setSelectedTab(tab);
                             setSelectedDesign(null); // 탭 변경 시 선택 초기화
                         }}
                     >
-                        <Text style={[
-                            styles.tabText,
-                            selectedTab === tab && styles.tabTextActive
-                        ]}>
+                        <Text
+                            style={[
+                                styles.tabText,
+                                selectedTab === tab && styles.tabTextActive,
+                            ]}
+                        >
                             {tab}
                         </Text>
                     </TouchableOpacity>
@@ -146,8 +129,11 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
             </View>
 
             {/* 엽서 디자인 목록 */}
-            <ScrollView style={styles.designList} showsVerticalScrollIndicator={false}>
-                {getDesignData().map((design, index) => renderPostcardDesign(design, index))}
+            <ScrollView
+                style={styles.designList}
+                showsVerticalScrollIndicator={false}
+            >
+                {getDesignData().map((design) => renderPostcardDesign(design))}
             </ScrollView>
 
             {/* 저장 버튼 */}
@@ -221,12 +207,11 @@ const styles = StyleSheet.create({
     postcardContainer: {
         position: 'relative',
         marginBottom: 16,
-        marginLeft: 30,
     },
     checkButton: {
         position: 'absolute',
         top: 8,
-        left: -35,
+        right: 8,
         width: 24,
         height: 24,
         borderRadius: 12,
@@ -243,62 +228,24 @@ const styles = StyleSheet.create({
     },
     postcardDesign: {
         width: '100%',
-        height: 200,
-        padding: 16,
+        // 148:100 비율에 맞춰 높이 계산
+        height: (width - 32) * POSTCARD_RATIO, 
+        borderRadius: 8,
+        overflow: 'hidden',
         elevation: 2,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.1,
         shadowRadius: 4,
     },
-    postcardTitle: {
-        fontSize: 12,
-        fontWeight: '600',
-        color: '#333',
-        marginBottom: 8,
-        textAlign: 'center',
+    postcardDesignSelected: {
+        borderWidth: 3,
+        borderColor: '#000',
     },
-    postcardContent: {
-        flex: 1,
-        flexDirection: 'row',
-        gap: 8,
-    },
-    postcardLeft: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        borderRadius: 4,
-    },
-    postcardRight: {
-        flex: 1,
-        justifyContent: 'center',
-        gap: 4,
-    },
-    line: {
-        height: 1,
-        backgroundColor: '#999',
-        marginVertical: 2,
-    },
-    plainArea: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        borderRadius: 4,
-    },
-    imageArea: {
-        flex: 1,
-        backgroundColor: 'rgba(255, 255, 255, 0.7)',
-        borderRadius: 4,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    imageText: {
-        fontSize: 10,
-        color: '#666',
-    },
-    postcardBottom: {
-        fontSize: 8,
-        color: '#666',
-        textAlign: 'center',
-        marginTop: 4,
+    postcardImage: {
+        width: '100%',
+        height: '100%',
+        resizeMode: 'cover',
     },
     saveButtonContainer: {
         paddingHorizontal: 16,

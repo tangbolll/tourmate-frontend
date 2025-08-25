@@ -1,7 +1,6 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import PostcardTemplate from './PostcardTemplate';
 import PostcardOverlay from './PostcardOverlay';
 
 const PostcardSelectionArea = ({ 
@@ -26,8 +25,12 @@ const PostcardSelectionArea = ({
                 disabled={!isEditMode || isSaved}
             >
                 {selectedPostcard ? (
+                    // 엽서가 선택되면 해당 이미지 경로를 사용하여 이미지 렌더링
                     <View style={styles.postcardContainer}>
-                        <PostcardTemplate template={selectedPostcard} />
+                        <Image
+                            source={require('../../assets/postCard/1.png')}
+                            style={styles.postcardImage}
+                        />
                         <PostcardOverlay
                             isVisible={isOverlayVisible}
                             onClose={onOverlayClose}
@@ -37,6 +40,7 @@ const PostcardSelectionArea = ({
                         />
                     </View>
                 ) : (
+                    // 엽서가 선택되지 않았을 때 플레이스홀더 표시
                     <View style={styles.postcardPlaceholder}>
                         <Feather 
                             name="file-text" 
@@ -79,6 +83,10 @@ const styles = StyleSheet.create({
         width: '100%',
         height: '100%',
         position: 'relative',
+    },
+    postcardImage: {
+        width: '100%',
+        height: '100%',
     },
     postcardPlaceholder: {
         alignItems: 'center',
