@@ -28,7 +28,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         paddingHorizontal: 16,
         paddingTop: 50,
-        paddingBottom: 10,
         backgroundColor: '#fff',
     },
     logo: {

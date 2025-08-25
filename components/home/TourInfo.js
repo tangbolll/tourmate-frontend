@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
@@ -7,9 +8,10 @@ const TourInfo = ({ tourData }) => {
     const renderMemberImages = () => {
         if (!members || members.length === 0) {
         return (
-            <View style={styles.defaultAvatar}>
-            <Text style={styles.defaultAvatarText}>?</Text>
-            </View>
+            <Image 
+            source={require('../../assets/defaultProfile2.png')} 
+            style={styles.defaultAvatar}
+            />
         );
         }
         
@@ -38,6 +40,7 @@ const TourInfo = ({ tourData }) => {
     };
 
     const handleMoreOptionsPress = () => {
+        router.push(`/mytour/designItinerary?tourId=${tourData.id}`);
         console.log('더 많은 옵션');
     };
 
