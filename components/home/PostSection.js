@@ -1,122 +1,180 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     StyleSheet,
-    ScrollView,
     FlatList,
+    RefreshControl,
+    ActivityIndicator,
+    Alert,
 } from 'react-native';
 import Post from './Post';
+import { fetchPostcardFeedApi } from '../../utils/HomePostApi';
 
 const PostSection = () => {
-    // 목 데이터
-    const mockPosts = [
-        {
-        id: '1',
-        profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-        postcardName: '부산의 바다',
-        userName: '추리를봐야',
-        location: '부산',
-        date: '2021.03.06',
-        postcardImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-        timeAgo: '5시간 전',
-        likeCount: 23,
-        bookmarkCount: 46,
-        },
-        {
-        id: '3',
-        profileImage: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face',
-        postcardName: '경주 불국사',
-        userName: '문화탐방',
-        location: '경주',
-        date: '2021.03.04',
-        postcardImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-        timeAgo: '12시간 전',
-        likeCount: 92,
-        bookmarkCount: 34,
-        },
-        {
-        id: '4',
-        profileImage: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
-        postcardName: '강릉 바다',
-        userName: '바다사랑',
-        location: '강릉',
-        date: '2021.03.03',
-        postcardImage: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop',
-        timeAgo: '1일 전',
-        likeCount: 68,
-        bookmarkCount: 25,
-        },
-        {
-        id: '5',
-        profileImage: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=150&h=150&fit=crop&crop=face',
-        postcardName: '서울 남산타워',
-        userName: '서울투어',
-        location: '서울',
-        date: '2021.03.02',
-        postcardImage: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?w=400&h=300&fit=crop',
-        timeAgo: '2일 전',
-        likeCount: 234,
-        bookmarkCount: 112,
-        },
-        {
-        id: '6',
-        profileImage: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face',
-        postcardName: '전주 한옥마을',
-        userName: '한옥사랑',
-        location: '전주',
-        date: '2021.03.01',
-        postcardImage: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-        timeAgo: '3일 전',
-        likeCount: 145,
-        bookmarkCount: 67,
-        },
-        {
-        id: '7',
-        profileImage: 'https://images.unsplash.com/photo-1507591064344-4c6ce005b128?w=150&h=150&fit=crop&crop=face',
-        postcardName: '속초 해변',
-        userName: '동해바다',
-        location: '속초',
-        date: '2021.02.28',
-        postcardImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-        timeAgo: '4일 전',
-        likeCount: 76,
-        bookmarkCount: 29,
-        },
-        {
-        id: '8',
-        profileImage: 'https://images.unsplash.com/photo-1489424731084-a5d8b219a5bb?w=150&h=150&fit=crop&crop=face',
-        postcardName: '대구 팔공산',
-        userName: '산행러',
-        location: '대구',
-        date: '2021.02.27',
-        postcardImage: 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=300&fit=crop',
-        timeAgo: '5일 전',
-        likeCount: 54,
-        bookmarkCount: 18,
-        },
-    ];
+    const [posts, setPosts] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
+    const [currentPage, setCurrentPage] = useState(0);
+    const [hasMoreData, setHasMoreData] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
+
+    // 초기 데이터 로드
+    const loadInitialData = async () => {
+        setLoading(true);
+        try {
+            const result = await fetchPostcardFeedApi(0, 20);
+            
+            if (result.success) {
+                const { content, totalPages, last } = result.data;
+                setPosts(content || []);
+                setCurrentPage(0);
+                setHasMoreData(!last && totalPages > 1);
+            } else {
+                Alert.alert('오류', result.error);
+                setPosts([]);
+            }
+        } catch (error) {
+            console.error('초기 데이터 로드 오류:', error);
+            Alert.alert('오류', '데이터를 불러오는 중 오류가 발생했습니다.');
+            setPosts([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 새로고침
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        try {
+            const result = await fetchPostcardFeedApi(0, 20);
+            
+            if (result.success) {
+                const { content, totalPages, last } = result.data;
+                setPosts(content || []);
+                setCurrentPage(0);
+                setHasMoreData(!last && totalPages > 1);
+            } else {
+                Alert.alert('오류', result.error);
+            }
+        } catch (error) {
+            console.error('새로고침 오류:', error);
+            Alert.alert('오류', '새로고침 중 오류가 발생했습니다.');
+        } finally {
+            setRefreshing(false);
+        }
+    };
+
+    // 더 많은 데이터 로드 (무한 스크롤)
+    const loadMoreData = async () => {
+        if (!hasMoreData || loadingMore) return;
+
+        setLoadingMore(true);
+        try {
+            const nextPage = currentPage + 1;
+            const result = await fetchPostcardFeedApi(nextPage, 20);
+            
+            if (result.success) {
+                const { content, last } = result.data;
+                setPosts(prevPosts => [...prevPosts, ...(content || [])]);
+                setCurrentPage(nextPage);
+                setHasMoreData(!last);
+            } else {
+                Alert.alert('오류', result.error);
+            }
+        } catch (error) {
+            console.error('추가 데이터 로드 오류:', error);
+        } finally {
+            setLoadingMore(false);
+        }
+    };
+
+    // 게시물 데이터 업데이트 (좋아요, 북마크 등)
+    const handleDataUpdate = (postcardId, actionType, newValue) => {
+        setPosts(prevPosts => 
+            prevPosts.map(post => 
+                post.postcardId === postcardId 
+                    ? {
+                        ...post,
+                        [actionType === 'like' ? 'likeCount' : 'scrapCount']: 
+                            actionType === 'like' 
+                                ? (newValue ? post.likeCount + 1 : post.likeCount - 1)
+                                : (newValue ? post.scrapCount + 1 : post.scrapCount - 1)
+                    }
+                    : post
+            )
+        );
+    };
+
+    useEffect(() => {
+        loadInitialData();
+    }, []);
 
     const renderPost = ({ item }) => (
-        <Post postData={item} />
+        <Post 
+            postData={item} 
+            onDataUpdate={handleDataUpdate}
+        />
     );
+
+    const renderFooter = () => {
+        if (!loadingMore) return null;
+        
+        return (
+            <View style={styles.footerLoader}>
+                <ActivityIndicator size="small" color="#666" />
+                <Text style={styles.footerText}>더 많은 엽서를 불러오는 중...</Text>
+            </View>
+        );
+    };
+
+    const renderEmpty = () => (
+        <View style={styles.emptyContainer}>
+            <Text style={styles.emptyText}>아직 등록된 엽서가 없습니다.</Text>
+            <Text style={styles.emptySubText}>첫 번째 여행 엽서를 만들어보세요!</Text>
+        </View>
+    );
+
+    if (loading) {
+        return (
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#666" />
+                <Text style={styles.loadingText}>엽서를 불러오는 중...</Text>
+            </View>
+        );
+    }
 
     return (
         <View style={styles.container}>
-        {/* 타이틀 */}
-        <View style={styles.titleContainer}>
-            <Text style={styles.title}>다른 유저의 여행엽서 엿보기</Text>
-        </View>
+            {/* 타이틀 */}
+            <View style={styles.titleContainer}>
+                <Text style={styles.title}>다른 유저의 여행엽서 엿보기</Text>
+            </View>
 
-        {/* 포스트 리스트 */}
-        <FlatList
-            data={mockPosts}
-            renderItem={renderPost}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            contentContainerStyle={styles.postList}
-            scrollEventThrottle={16}
-        />
+            {/* 포스트 리스트 */}
+            <FlatList
+                data={posts}
+                renderItem={renderPost}
+                keyExtractor={(item) => item.postcardId?.toString() || Math.random().toString()}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={posts.length === 0 ? styles.emptyList : styles.postList}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={['#666']}
+                        tintColor="#666"
+                    />
+                }
+                onEndReached={loadMoreData}
+                onEndReachedThreshold={0.3}
+                ListFooterComponent={renderFooter}
+                ListEmptyComponent={renderEmpty}
+                scrollEventThrottle={16}
+                removeClippedSubviews={true}
+                maxToRenderPerBatch={5}
+                windowSize={10}
+            />
         </View>
     );
 };
@@ -140,6 +198,49 @@ const styles = StyleSheet.create({
     postList: {
         paddingTop: 8,
         paddingBottom: 32,
+    },
+    emptyList: {
+        flexGrow: 1,
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: '#fff',
+    },
+    loadingText: {
+        marginTop: 16,
+        fontSize: 16,
+        color: '#666',
+    },
+    footerLoader: {
+        padding: 20,
+        alignItems: 'center',
+    },
+    footerText: {
+        marginTop: 8,
+        fontSize: 14,
+        color: '#666',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingHorizontal: 20,
+        paddingVertical: 60,
+    },
+    emptyText: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#333',
+        marginBottom: 8,
+        textAlign: 'center',
+    },
+    emptySubText: {
+        fontSize: 14,
+        color: '#666',
+        textAlign: 'center',
+        lineHeight: 20,
     },
 });
 
