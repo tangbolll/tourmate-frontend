@@ -1,6 +1,6 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
-import { currentUserId } from '../constants/testUserId';
+import { useAuth } from '../context/AuthContext';
 
 // API 기본 URL을 가져오는 헬퍼 함수
 export const getBaseURL = () => {
@@ -210,30 +210,15 @@ export const deleteTravelSchedules = async (scheduleIds) => {
     }
 };
 
-<<<<<<< HEAD
-// 즐겨찾기 토글 직접 사용 핸들러 (예시)
-export const handleBookmarkPress = async (event, onBookmarkUpdate) => {
-    try {
-        const userId = currentUserId;
-=======
 // 즐겨찾기 토글 API 함수
 export const handleBookmarkPress = async (event) => {
         console.log('handleBookmarkPress called', event.id); 
     try {
         const userId = currentUserId; // 로그인 유저 ID
->>>>>>> 12df9d79c33c8f010a38eae4cec6bb747cf93ab2
         const response = await fetch(
             `${getBaseURL()}/api/myTour/${event.id}/favorite?userId=${userId}`,
             { method: 'POST' }
         );
-<<<<<<< HEAD
-        if (!response.ok) throw new Error('즐겨찾기 업데이트 실패');
-        if (onBookmarkUpdate) onBookmarkUpdate(event.id);
-    } catch (error) {
-        console.error('Bookmark update error:', error);
-    }
-};
-=======
 
         if (!response.ok) throw new Error('즐겨찾기 업데이트 실패');
 
@@ -245,4 +230,3 @@ export const handleBookmarkPress = async (event) => {
         console.error('Bookmark update error:', error);
     }
 };
->>>>>>> 12df9d79c33c8f010a38eae4cec6bb747cf93ab2
