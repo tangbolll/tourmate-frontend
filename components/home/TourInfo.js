@@ -57,7 +57,7 @@ const TourInfo = ({ tourData }) => {
             style={styles.moreButton}
             onPress={handleMoreOptionsPress}
             >
-            <Text style={styles.moreButtonText}>여행시간표</Text>
+            <Text style={styles.moreButtonText}>여행시간표 바로가기</Text>
             </TouchableOpacity>
         </View>
         </View>
