@@ -9,22 +9,28 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true); // Add loading state
+    const [currentUserId, setCurrentUserId] = useState(null); // ✅ 추가
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const checkAuth = async () => {
             try {
                 const token = await AsyncStorage.getItem('jwtToken');
-                if (token) {
+                const userId = await AsyncStorage.getItem('userId'); // ✅ 추가
+                
+                if (token && userId) {
                     setUser({ authenticated: true });
+                    setCurrentUserId(userId); // ✅ 추가
                 } else {
                     setUser(null);
+                    setCurrentUserId(null); // ✅ 추가
                 }
             } catch (e) {
                 console.error("Failed to check auth status:", e);
                 setUser(null);
+                setCurrentUserId(null); // ✅ 추가
             } finally {
-                setLoading(false); // Set loading to false after check
+                setLoading(false);
             }
         };
         checkAuth();
@@ -35,6 +41,7 @@ export function AuthProvider({ children }) {
             await AsyncStorage.setItem('jwtToken', token);
             await AsyncStorage.setItem('userId', String(userId));
             setUser({ authenticated: true });
+            setCurrentUserId(String(userId)); // ✅ 추가
         } catch (e) {
             console.error("Failed to sign in:", e);
         }
@@ -45,6 +52,7 @@ export function AuthProvider({ children }) {
             await AsyncStorage.removeItem('jwtToken');
             await AsyncStorage.removeItem('userId');
             setUser(null);
+            setCurrentUserId(null); // ✅ 추가
         } catch (e) {
             console.error("Failed to sign out:", e);
         }
@@ -56,7 +64,8 @@ export function AuthProvider({ children }) {
                 signIn,
                 signOut,
                 user,
-                loading, // Export loading state
+                currentUserId, // ✅ 추가
+                loading,
             }}>
             {children}
         </AuthContext.Provider>

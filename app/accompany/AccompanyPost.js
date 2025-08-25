@@ -33,9 +33,10 @@ import {
     getChatAccessApi
 } from '../../utils/AccompanyPostApi';
 
-import { currentUserId } from '../../constants/testUserId';
+import { useAuth } from '../../context/AuthContext';
 
 export default function AccompanyPost() {
+    const { currentUserId } = useAuth();
     const params = useLocalSearchParams();
     const router = useRouter();
     const { postId } = params;

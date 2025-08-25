@@ -22,7 +22,7 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { currentUserId } from '../../constants/testUserId';
+import { useAuth } from '../../context/AuthContext';
 import {
     fetchOrCreateChatRoom,
     fetchMessages,
@@ -105,7 +105,8 @@ const Chat = () => {
     const router = useRouter();
     const postId = params.postId;
     const chatRoomId = params.chatRoomId;
-    
+    const { currentUserId } = useAuth();
+
     // 상태로 관리
     const [chatRoom, setChatRoom] = useState(null);
     const [accompanyInfo, setAccompanyInfo] = useState(null);

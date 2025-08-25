@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { currentUserId } from '../../constants/testUserId'; // 현재 사용자 ID 가져오기
+import { useAuth } from '../../context/AuthContext';
 
 const ToChatroom = ({ 
     postId, 
@@ -11,6 +11,7 @@ const ToChatroom = ({
     chatAccess, 
     isDataLoading = false  
 }) => {
+    const { currentUserId } = useAuth();
     const router = useRouter();
     const [isNavigating, setIsNavigating] = useState(false);
 
