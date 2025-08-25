@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
     View, Text, StyleSheet, TextInput, TouchableOpacity,
     Animated, PanResponder, Dimensions, FlatList, ActivityIndicator, Platform
@@ -38,10 +38,9 @@ const BottomSheet = ({
     onConfirmItinerary, onRecommendAgain, onGoBack
 }) => {
     const [searchText, setSearchText] = useState('');
-    const [selectedRegion, setSelectedRegion] = useState(regions[0] || null);
     const [expandedSections, setExpandedSections] = useState({});
     const [sheetHeight, setSheetHeight] = useState(0);
-    const [attractions, setAttractions] = useState([]);
+
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState(null);
     const [detailMap, setDetailMap] = useState({});
@@ -51,6 +50,22 @@ const BottomSheet = ({
     const panResponderHandleRef = useRef(null);
 
     const heights = [screenHeight * 0.9, screenHeight * 0.5, screenHeight * 0.2];
+
+    // 1. regions 데이터를 '경기도 수원시' 형태의 단일 배열로 가공
+    const flatRegionList = useMemo(() => {
+        if (!regions) return [];
+        return regions.flatMap(region =>
+            region.sigungu.map(sgg => ({
+                displayName: `${region.name} ${sgg.name}`, // 예: '경기도 수원시'
+                regionKey: region.key,                     // API 요청에 필요한 지역 코드
+                sigunguKey: sgg.key,                       // API 요청에 필요한 시군구 코드
+                uniqueKey: `${region.key}-${sgg.key}`      // FlatList key로 사용할 고유 값
+            }))
+        );
+    }, [regions]);
+
+    const [selectedLocation, setSelectedLocation] = useState(flatRegionList[0] || null);
+    const [attractions, setAttractions] = useState([]);
 
     const panResponder = PanResponder.create({
         onStartShouldSetPanResponder: (evt, gestureState) => {
@@ -100,45 +115,38 @@ const BottomSheet = ({
     }, [showActionButtons]);
 
     useEffect(() => {
-        if (!selectedRegion) return;
+        if (!selectedLocation) return;
 
         const fetchAttractions = async () => {
-            setIsLoading(true); setError(null); setAttractions([]);
+            setIsLoading(true);
+            setError(null);
+            setAttractions([]); // attractions state를 초기화
             try {
-                const url = `${getBaseURL()}/api/myTour/tourInfo/${selectedRegion.parentCode}?sigunguCode=${selectedRegion.code}`;
+                const { regionKey, sigunguKey } = selectedLocation;
+                const url = `${getBaseURL()}/api/myTour/tourInfo/${regionKey}?sigunguCode=${sigunguKey}`;
                 const response = await fetch(url);
-
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
                 let items = data?.response?.body?.items?.item || [];
                 if (!Array.isArray(items)) items = [items];
-
-                const filteredItems = items.filter(item => item.contenttypeid === '12');
-
-                setAttractions(filteredItems);
-
+                
+                setAttractions(items.filter(item => item.contenttypeid === '12'));
             } catch (e) {
-                setError(e); console.error(e);
+                setError(e);
+                console.error(e);
             } finally {
                 setIsLoading(false);
             }
         };
+
         fetchAttractions();
-    }, [selectedRegion]);
+    }, [selectedLocation]);
 
-    const filteredAttractions = !searchText ? attractions : attractions.filter(a => a.title?.toLowerCase().includes(searchText.toLowerCase()));
+    const filteredAttractions = !searchText
+    ? attractions
+    : attractions.filter(a => a.title?.toLowerCase().includes(searchText.toLowerCase()));
+
     const isAttractionSelected = (id) => selectedAttractions.some(a => a.contentid === id);
-
-    const renderRegionButton = ({ item }) => (
-        <TouchableOpacity
-            style={[styles.regionButton, selectedRegion?.key === item.key && styles.selectedRegionButton]}
-            onPress={() => { setSelectedRegion(item); setSearchText(''); }}
-        >
-            <Text style={[styles.regionButtonText, selectedRegion?.key === item.key && styles.selectedRegionButtonText]}>
-                {item.key !== undefined && item.key !== null ? String(item.key).replace('-', ' ') : ''}
-            </Text>
-        </TouchableOpacity>
-    );
 
     const renderAttraction = ({ item }) => (
         <AttractionCard
@@ -237,10 +245,28 @@ const BottomSheet = ({
                 </View>
 
                 <FlatList
-                    data={regions}
+                    data={flatRegionList}
                     horizontal
-                    renderItem={renderRegionButton}
-                    keyExtractor={(item) => String(item.key)}
+                    renderItem={({ item }) => (
+                        <TouchableOpacity
+                            style={[
+                                styles.regionButton,
+                                selectedLocation?.uniqueKey === item.uniqueKey && styles.selectedRegionButton
+                            ]}
+                            onPress={() => {
+                                setSelectedLocation(item);
+                                setSearchText('');
+                            }}
+                        >
+                            <Text style={[
+                                styles.regionButtonText,
+                                selectedLocation?.uniqueKey === item.uniqueKey && styles.selectedRegionButtonText
+                            ]}>
+                                {item.displayName}
+                            </Text>
+                        </TouchableOpacity>
+                    )}
+                    keyExtractor={(item) => item.uniqueKey}
                     showsHorizontalScrollIndicator={false}
                     style={styles.regionList}
                     contentContainerStyle={styles.regionListContent}
