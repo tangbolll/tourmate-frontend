@@ -9,9 +9,9 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 const EditPostFloatingButtons = ({
     onDelete,
     onDownload,
-    onLock,
+    onFavorite,
     onEdit,
-    isLocked = false,
+    isFavorite,
     style,
     }) => {
     return (
@@ -37,11 +37,11 @@ const EditPostFloatingButtons = ({
         {/* 잠금/잠금해제 버튼 */}
         <TouchableOpacity
             style={styles.button}
-            onPress={onLock}
+            onPress={onFavorite}
             activeOpacity={0.8}
         >
             <Icon 
-            name={isLocked ? "lock" : "lock-open"} 
+            name={isFavorite ? "lock" : "lock-open"} 
             size={24} 
             color="#000" 
             />
