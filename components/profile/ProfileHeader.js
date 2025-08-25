@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
+import useUserStore from '../../context/userStore';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -8,25 +9,9 @@ import { useRouter } from 'expo-router';
 
 const defaultProfile = require('../../assets/defaultProfile1.png');
 
-export function ProfileHeader() { // onLogout prop 제거
+export function ProfileHeader() { // Removed userData prop
     const router = useRouter(); // useRouter 훅 사용
-    const [userData, setUserData] = useState(null);
-
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const userId = await AsyncStorage.getItem('userId');
-                if (userId) {
-                    const data = await fetchUserProfileApi(userId);
-                    setUserData(data);
-                }
-            } catch (error) {
-                console.error('Error fetching user data:', error);
-            }
-        };
-
-        fetchUserData();
-    }, []);
+    const { userData } = useUserStore(); // Get userData from Zustand store
 
     if (!userData) {
         return null;

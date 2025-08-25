@@ -1,36 +1,46 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchUserProfileApi, updateUserProfileApi, checkNicknameApi } from '../../utils/ProfileApi';
+import useUserStore from '../../context/userStore';
 
 const defaultProfile = require('../../assets/defaultProfile1.png');
 
-const InputField = ({ label, value, onChangeText, placeholder, keyboardType, editable = true, feedback }) => (
+const InputField = ({ label, value, onChangeText, placeholder, keyboardType, editable = true, feedback, subLabel, labelComponent }) => (
   <View style={styles.inputContainer}>
-    <Text style={styles.label}>{label}</Text>
+    <View style={styles.labelRow}>
+      <Text style={styles.label}>{label}</Text>
+      {labelComponent}
+    </View>
     <TextInput
       style={[styles.input, !editable && styles.inputDisabled]}
       value={value}
       onChangeText={onChangeText}
       placeholder={placeholder}
+      placeholderTextColor={'gray'}
       keyboardType={keyboardType}
       editable={editable}
     />
+    {subLabel ? <Text style={styles.inputSubLabel}>{subLabel}</Text> : null}
     {feedback ? <Text style={styles.errorText}>{feedback}</Text> : null}
   </View>
 );
 
 const ProfileEditScreen = () => {
   const router = useRouter();
-  const [userData, setUserData] = useState(null);
+  const { userData, setUserData } = useUserStore(); // Use Zustand store
+  const [originalUserData, setOriginalUserData] = useState(null); // New state to store original data
 
   // Form state
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
+  const [nicknameChecked, setNicknameChecked] = useState(false); // New state
+  const [nicknameAvailable, setNicknameAvailable] = useState(false); // New state
+  const [nicknameCheckMessage, setNicknameCheckMessage] = useState(''); // New state
   const [tags, setTags] = useState([]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [dob, setDob] = useState('');
@@ -38,6 +48,7 @@ const ProfileEditScreen = () => {
   
   // Feedback state
   const [nicknameFeedback, setNicknameFeedback] = useState('');
+  const [tagsFeedback, setTagsFeedback] = useState(''); // New state for tags feedback
   const [formFeedback, setFormFeedback] = useState({ message: '', type: '' });
 
   useEffect(() => {
@@ -46,7 +57,8 @@ const ProfileEditScreen = () => {
         const userId = await AsyncStorage.getItem('userId');
         if (userId) {
           const data = await fetchUserProfileApi(userId);
-          setUserData(data);
+          setUserData(data); // Update Zustand store
+          setOriginalUserData(data); // Set original data
           setEmail(data.email || '');
           const fullName = `${data.lastname || ''}${data.firstname || ''}`;
           setName(fullName);
@@ -67,22 +79,36 @@ const ProfileEditScreen = () => {
 
   const handleSave = async () => {
     setNicknameFeedback('');
+    setTagsFeedback(''); // Clear tags feedback
     setFormFeedback({ message: '', type: '' });
 
     try {
-      if (userData && userData.nickname !== nickname) {
-        const isDuplicate = await checkNicknameApi(nickname);
-        if (isDuplicate) {
-          setNicknameFeedback('중복되는 별명이어서 사용할 수 없습니다.');
+      // No need to check for nickname duplication here, it's handled by the check button
+      // Ensure nickname is checked and available if it has changed
+      if (originalUserData && originalUserData.nickname !== nickname) {
+        if (!nicknameChecked || !nicknameAvailable) {
+          setNicknameFeedback('닉네임 중복 확인을 해주세요.');
           return;
         }
       }
 
+      // Validate tags
+      const actualTags = tags.filter(tag => tag.trim() !== ''); // Filter non-empty tags for validation
+      if (actualTags.length > 4) {
+        setTagsFeedback('태그는 최대 4개까지 설정 가능합니다.');
+        return;
+      }
+
       const userId = await AsyncStorage.getItem('userId');
-      const updatedData = { nickname, tags };
+      const updatedData = { nickname, tags: actualTags }; // Filter before sending to backend
       await updateUserProfileApi(userId, updatedData);
+      // After successful update, fetch the latest user data and update the store
+      const updatedUserData = await fetchUserProfileApi(userId);
+      setUserData(updatedUserData); // Update Zustand store with latest data
+      setOriginalUserData(updatedUserData); // Update original data to reflect saved changes
       
       setFormFeedback({ message: '프로필이 성공적으로 업데이트되었습니다.', type: 'success' });
+      setNicknameCheckMessage(''); // Clear nickname check message after successful save
 
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -96,6 +122,65 @@ const ProfileEditScreen = () => {
     // Example: router.push('/account/delete-confirm');
   };
 
+  const handleNicknameCheck = useCallback(async () => {
+    if (!nickname) {
+      setNicknameCheckMessage('닉네임을 입력해주세요.');
+      setNicknameChecked(false);
+      setNicknameAvailable(false);
+      return;
+    }
+
+    // Check if the nickname is the user's current nickname
+    if (originalUserData && nickname === originalUserData.nickname) {
+      setNicknameCheckMessage('현재 사용 중인 별명입니다.');
+      setNicknameChecked(true);
+      setNicknameAvailable(true);
+      return;
+    }
+
+    try {
+      const isDuplicate = await checkNicknameApi(nickname);
+      setNicknameChecked(true);
+      setNicknameAvailable(!isDuplicate);
+      setNicknameCheckMessage(isDuplicate ? '이미 사용 중인 닉네임입니다.' : '사용 가능한 닉네임입니다.');
+    } catch (error) {
+      console.error("Nickname check failed:", error.response?.data || error.message);
+      setNicknameChecked(false);
+      setNicknameAvailable(false);
+      setNicknameCheckMessage('닉네임 확인 중 오류가 발생했습니다.');
+      // Alert.alert('오류', '닉네임 확인 중 오류가 발생했습니다.'); // Removed Alert as per previous instructions
+    }
+  }, [nickname]);
+
+  // Check if there are any changes
+  const canSave = useMemo(() => {
+    if (!originalUserData) return false; // No original data yet
+
+    const originalNickname = originalUserData.nickname || '';
+    const originalTags = originalUserData.tags ? originalUserData.tags.sort().join(' ') : '';
+    const currentTags = tags.filter(tag => tag.trim() !== '').sort().join(' ');
+
+    const nicknameHasChanged = originalNickname !== nickname;
+    const tagsHaveChanged = originalTags !== currentTags;
+
+    // If nickname changed, it must be checked and available
+    if (nicknameHasChanged && (!nicknameChecked || !nicknameAvailable)) {
+      return false;
+    }
+
+    // If nickname hasn't changed, but tags have, it's savable
+    if (!nicknameHasChanged && tagsHaveChanged) {
+      return true;
+    }
+
+    // If nickname has changed and is valid, and tags may or may not have changed, it's savable
+    if (nicknameHasChanged && nicknameChecked && nicknameAvailable) {
+      return true;
+    }
+
+    return false; // No changes or invalid state
+  }, [nickname, tags, originalUserData, nicknameChecked, nicknameAvailable]);
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -103,9 +188,13 @@ const ProfileEditScreen = () => {
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>프로필 수정</Text>
-        <TouchableOpacity onPress={handleSave}>
-          <Text style={styles.saveText}>저장</Text>
-        </TouchableOpacity>
+        {canSave ? ( // Conditionally render save button or a placeholder
+          <TouchableOpacity onPress={handleSave}>
+            <Text style={styles.saveText}>저장</Text>
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.saveButtonPlaceholder} /> // Placeholder to maintain spacing
+        )}
       </View>
       <ScrollView contentContainerStyle={styles.content}>
         <TouchableOpacity style={styles.profileImageContainer}>
@@ -117,8 +206,57 @@ const ProfileEditScreen = () => {
 
         <InputField label="이메일" value={email} editable={false} />
         <InputField label="이름" value={name} editable={false} />
-        <InputField label="별명" value={nickname} onChangeText={setNickname} placeholder="별명을 입력하세요" feedback={nicknameFeedback} />
-        <InputField label="태그" value={tags.join(' ')} onChangeText={(text) => setTags(text.split(' '))} placeholder="태그를 입력하세요 (스페이스로 구분)" />
+        <View style={styles.inputContainer}>
+          <Text style={styles.label}>별명</Text>
+          <View style={styles.nicknameInputContainer}>
+            <TextInput
+              style={[styles.input, styles.nicknameInput, nicknameFeedback && styles.inputError]} // Apply error style if feedback exists
+              value={nickname}
+              onChangeText={(text) => {
+                setNickname(text);
+                setNicknameChecked(false);
+                setNicknameAvailable(false);
+                setNicknameCheckMessage('');
+              }}
+              placeholder="별명을 입력하세요"
+              placeholderTextColor={'gray'}
+            />
+            <TouchableOpacity
+              style={[styles.checkButtonInside, !nickname && styles.disabledCheckButton]}
+              onPress={handleNicknameCheck}
+              disabled={!nickname}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.checkButtonInsideText}>중복 확인</Text>
+            </TouchableOpacity>
+          </View>
+          {nicknameCheckMessage ? (
+            <Text style={[styles.emailMessage, nicknameAvailable ? styles.emailAvailable : styles.emailTaken]}>
+              {nicknameCheckMessage}
+            </Text>
+          ) : null}
+          {nicknameFeedback ? <Text style={styles.errorText}>{nicknameFeedback}</Text> : null}
+        </View>
+        <InputField
+          label="태그"
+          labelComponent={<Text style={styles.tagLimitText}>최대 4개까지 설정 가능</Text>} // New label component
+          value={tags.join(' ')}
+          onChangeText={(text) => {
+            const newTags = text.split(' '); // Keep empty strings for now
+            setTags(newTags); // Update the state with all parts, including empty ones
+
+            // Validation for max 4 tags should be based on non-empty tags
+            const actualTags = newTags.filter(tag => tag.trim() !== '');
+            if (actualTags.length > 4) {
+              setTagsFeedback('태그는 최대 4개까지 설정 가능합니다.');
+            } else {
+              setTagsFeedback('');
+            }
+          }}
+          placeholder="#무계획형 #모험형 #지식추구형 #활동형" // Updated placeholder
+          subLabel="태그할 키워드를 띄어쓰기로 구분해주세요." // New subLabel
+          feedback={tagsFeedback}
+        />
         <InputField label="휴대폰번호" value={phoneNumber} editable={false} />
         <InputField label="생년월일" value={dob} editable={false} />
         <InputField label="성별" value={gender} editable={false} />
@@ -223,7 +361,68 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9E9E9E',
     textDecorationLine: 'underline',
-  }
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  tagLimitText: {
+    fontSize: 12,
+    color: '#333',
+    marginLeft: 8,
+  },
+  inputSubLabel: {
+    fontSize: 12,
+    color: '#333',
+    marginTop: 4,
+    paddingLeft: 4,
+  },
+  saveButtonPlaceholder: {
+    width: 40, // Approximate width of the "저장" text
+  },
+  // New styles for nickname input with button inside
+  nicknameInputContainer: {
+    flexDirection: 'row', // To place button next to input
+    alignItems: 'center',
+    position: 'relative', // For absolute positioning of button
+  },
+  nicknameInput: {
+    flex: 1, // Take up available space
+    paddingRight: 100, // Space for the button
+  },
+  checkButtonInside: {
+    position: 'absolute',
+    right: 8,
+    backgroundColor: 'black', // Changed to black
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkButtonInsideText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  disabledCheckButton: {
+    backgroundColor: '#B1B1B1', // Gray for disabled
+  },
+  emailMessage: {
+    marginTop: 4,
+    fontSize: 12,
+    paddingLeft: 4,
+  },
+  emailAvailable: {
+    color: 'green',
+  },
+  emailTaken: {
+    color: 'red',
+  },
+  inputError: { // Style for input when there's an error feedback
+    borderColor: 'red',
+  },
 });
 
 export default ProfileEditScreen;

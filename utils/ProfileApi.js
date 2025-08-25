@@ -17,6 +17,7 @@ const getBaseURL = () => {
     }
 };
 const API_URL = getBaseURL();
+console.log("API_URL being used:", API_URL);
 
 
 // ------------------  Login  ------------------

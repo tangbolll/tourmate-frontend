@@ -1,5 +1,6 @@
 import { useRouter } from 'expo-router';
 import React, { useState, useCallback, useEffect } from 'react';
+import useUserStore from '../../context/userStore';
 import { View, StyleSheet, Alert, Text } from 'react-native';
 import { ProfileHeader } from '../../components/profile/ProfileHeader';
 import PostTabHeader from '../../components/profile/PostTabHeader';
@@ -29,7 +30,7 @@ export default function ProfileHome() {
     const [selectPopupVisible, setSelectPopupVisible] = useState(false);
     const [popupMode, setPopupMode] = useState('create');
     const [editingFolder, setEditingFolder] = useState(null);
-    const [userData, setUserData] = useState(null);
+    const { userData, setUserData } = useUserStore();
 
     useEffect(() => {
         const fetchUserData = async () => {
@@ -196,7 +197,7 @@ export default function ProfileHome() {
 
     return (
         <View style={styles.container}>
-            <ProfileHeader />
+            <ProfileHeader userData={userData} />
             <PostTabHeader 
                 activeTab={activeTab}
                 onTabPress={handleTabPress} 
