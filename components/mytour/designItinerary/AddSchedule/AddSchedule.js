@@ -27,14 +27,17 @@ const AddSchedule = ({
     onScheduleAdded,
     selectedDay,
     selectedDate,
-    selectedHour,
+    // --- 💡 1. Props 이름 변경 ---
+    hour,      // 기존: selectedHour
+    minute,    // minute 추가
+    // ---------------------------
     periodType,
     startDate,
     endDate,
     days,
     existingSchedule,
     onScheduleDelete,
-    currentTourId // Add this prop to get the travel ID
+    currentTourId
 }) => {
     const [category, setCategory] = useState('숙소');
     const [title, setTitle] = useState('');
@@ -60,6 +63,7 @@ const AddSchedule = ({
     const popupTitle = isEditMode ? '일정 수정' : '일정 추가';
     const isSaveEnabled = title.trim() && location.trim() && currentSelectedDate;
 
+    // 키보드 관련 로직 (변경 없음)
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
             setKeyboardHeight(event.endCoordinates.height);
@@ -81,6 +85,7 @@ const AddSchedule = ({
         }
     }, [memoFocused, keyboardHeight]);
 
+    // 날짜 계산 로직 (변경 없음)
     const availableDates = useMemo(() => {
         const dateList = [];
         if (periodType === 'date' && startDate && endDate) {
@@ -103,27 +108,31 @@ const AddSchedule = ({
         return dateList;
     }, [periodType, startDate, endDate, days]);
 
+    // --- 💡 2. 컴포넌트 상태 초기화 로직 수정 ---
     useEffect(() => {
         if (visible) {
-            console.log('AddSchedule popup opened');
             if (existingSchedule) {
-                console.log('Edit mode - setting existing schedule data');
-                setCategory(existingSchedule.category || '숙소');
+                // 수정 모드 로직 (timeSlot 파싱 추가)
+                setCategory(existingSchedule.tag || '숙소');
                 setTitle(existingSchedule.title || '');
-                setStartTime(existingSchedule.startTime || '07:30');
-                setEndTime(existingSchedule.endTime || '08:30');
+                if (existingSchedule.timeSlot) {
+                    const [start, end] = existingSchedule.timeSlot.split(' ~ ');
+                    setStartTime(start || '07:30');
+                    setEndTime(end || '08:30');
+                }
                 setLocation(existingSchedule.location || '');
                 setMemo(existingSchedule.memo || '');
                 setCurrentSelectedDate(existingSchedule.date || '');
                 setMemoHeight(existingSchedule.memo ? Math.max(40, existingSchedule.memo.split('\n').length * 20 + 20) : 40);
             } else {
-                console.log('Add mode - setting default values');
+                // 추가 모드 로직
                 setCategory('숙소');
                 setTitle('');
                 setLocation('');
                 setMemo('');
                 setMemoHeight(40);
 
+                // 날짜 설정 로직
                 if (selectedDate) {
                     setCurrentSelectedDate(selectedDate);
                 } else if (selectedDay && availableDates.length > 0) {
@@ -134,20 +143,27 @@ const AddSchedule = ({
                 } else if (availableDates.length > 0) {
                     setCurrentSelectedDate(availableDates[0].value);
                 }
-                if (selectedHour !== undefined && selectedHour !== null) {
-                    const hourString = selectedHour.toString().padStart(2, '0');
-                    setStartTime(`${hourString}:00`);
-                    const endHour = (selectedHour + 1) % 24;
-                    const endHourString = endHour.toString().padStart(2, '0');
-                    setEndTime(`${endHourString}:00`);
+                
+                // ⭐ 핵심 수정: hour와 minute Props를 사용하여 시간 상태 설정
+                if (hour !== undefined && minute !== undefined) {
+                    const initialHour = String(hour).padStart(2, '0');
+                    const initialMinute = String(minute).padStart(2, '0');
+                    const endHour = (hour + 1) % 24;
+                    const endHourString = String(endHour).padStart(2, '0');
+                    
+                    setStartTime(`${initialHour}:${initialMinute}`);
+                    setEndTime(`${endHourString}:${initialMinute}`);
                 } else {
                     setStartTime('07:30');
                     setEndTime('08:30');
                 }
             }
         }
-    }, [visible, existingSchedule, selectedDay, selectedDate, selectedHour, availableDates]);
+    // --- 💡 3. 의존성 배열 수정 ---
+    }, [visible, existingSchedule, selectedDay, selectedDate, hour, minute, availableDates]);
 
+    // ... 나머지 핸들러 및 렌더링 로직은 기존과 동일합니다 ...
+    
     useEffect(() => {
         if (!visible) {
             setShowDateDropdown(false);
@@ -158,21 +174,13 @@ const AddSchedule = ({
     }, [visible]);
 
     const handleSave = () => {
-        if (!title.trim()) {
-            Alert.alert('알림', '일정 제목을 입력해주세요.');
-            return;
-        }
-        if (!location.trim()) {
-            Alert.alert('알림', '위치를 입력해주세요.');
-            return;
-        }
-        if (!currentSelectedDate) {
-            Alert.alert('알림', '날짜를 선택해주세요.');
+        if (!title.trim() || !location.trim() || !currentSelectedDate) {
+            Alert.alert('알림', '제목, 위치, 날짜는 필수 입력 항목입니다.');
             return;
         }
 
         const scheduleData = {
-            id: existingSchedule?.id || Date.now().toString(),
+            id: existingSchedule?.id || null, // 새 일정은 id를 null로 보냄
             category,
             title: title.trim(),
             startTime,
@@ -180,27 +188,22 @@ const AddSchedule = ({
             location: location.trim(),
             memo: memo.trim(),
             date: currentSelectedDate,
-            travelId: currentTourId // Pass the travel ID
+            travelId: currentTourId
         };
-        console.log('저장할 일정 데이터:', scheduleData);
-        onScheduleAdded && onScheduleAdded(scheduleData);
+        onScheduleAdded(scheduleData);
         onClose();
     };
 
     const handleDelete = () => {
         if (!existingSchedule) return;
         Alert.alert(
-            '일정 삭제',
-            '정말로 이 일정을 삭제하시겠습니까?',
+            '일정 삭제', '정말로 이 일정을 삭제하시겠습니까?',
             [
                 { text: '취소', style: 'cancel' },
                 {
-                    text: '삭제',
-                    style: 'destructive',
+                    text: '삭제', style: 'destructive',
                     onPress: () => {
-                        const dayToDelete = selectedDay || existingSchedule.day;
-                        console.log('삭제할 일정:', existingSchedule.id, '삭제할 날짜:', dayToDelete);
-                        onScheduleDelete && onScheduleDelete(existingSchedule.id, dayToDelete);
+                        onScheduleDelete(existingSchedule.id);
                         onClose();
                     }
                 }
@@ -218,7 +221,7 @@ const AddSchedule = ({
             onClose();
         }
     };
-
+    
     return (
         <Modal
             visible={visible}
@@ -239,7 +242,6 @@ const AddSchedule = ({
                         }
                     ]}
                     activeOpacity={1}
-                    onPress={() => {}}
                 >
                     <ScheduleHeader
                         title={popupTitle}
@@ -303,6 +305,7 @@ const AddSchedule = ({
     );
 };
 
+
 const commonStyles = StyleSheet.create({
     overlay: {
         flex: 1,
@@ -315,7 +318,7 @@ const commonStyles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 16,
         width: '100%',
-        height: '60%',
+        maxHeight: '70%', // 높이 제한 추가
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
@@ -326,7 +329,7 @@ const commonStyles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: 16,
         paddingBottom: 20,
-        flex: 1,
+        flexGrow: 1, // ScrollView가 content를 채우도록
     },
     section: {
         marginBottom: 16,
