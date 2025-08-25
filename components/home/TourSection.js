@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import TourInfo from './TourInfo';
 import TourItinerary from './TourItinerary'; 
 import FindTour from './FindTour';
-import { getMyToursBriefApi, getCurrentTourStatus } from '../../utils/HomeApi';
+import { getMyToursBriefApi, getCurrentTourStatus } from '../../utils/HomeTourApi';
 import { useAuth } from '../../context/AuthContext';
 
 const TourSection = () => {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -8,13 +8,37 @@ import {
     TextInput,
     Alert,
     ScrollView,
+    ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { submitReportApi } from '../../utils/HomePostApi';
+import { fetchUserProfileApi } from '../../utils/ProfileApi';
+import { useAuth } from '../../context/AuthContext';
 
-const Report = ({ visible, onClose, onSubmit }) => {
-    const user = '주리를 틀어라' // 추후 유저정보 넣기
+const Report = ({ visible, onClose, onSubmit, postcardId }) => {
+    const { currentUserId } = useAuth();
+    const [userData, setUserData] = useState(null);
     const [selectedReason, setSelectedReason] = useState('');
     const [customReason, setCustomReason] = useState('');
+    const [isLoading, setIsLoading] = useState(false);
+
+    // 사용자 데이터 가져오기
+    useEffect(() => {
+        const fetchUserData = async () => {
+            if (!currentUserId || !visible) return;
+            
+            try {
+                const data = await fetchUserProfileApi(currentUserId);
+                setUserData(data);
+            } catch (error) {
+                console.error('Error fetching user data:', error);
+                // 에러가 발생해도 기본값으로 진행
+                setUserData({ nickname: '알 수 없음' });
+            }
+        };
+
+        fetchUserData();
+    }, [currentUserId, visible]);
 
     const getFormattedDate = () => {
         const date = new Date();
@@ -31,116 +55,181 @@ const Report = ({ visible, onClose, onSubmit }) => {
         { id: 'custom', label: '기타' },
     ];
 
-    const handleSubmit = () => {
+    const handleSubmit = async () => {
         if (!selectedReason) {
-        Alert.alert('알림', '신고 사유를 선택해주세요.');
-        return;
+            Alert.alert('알림', '신고 사유를 선택해주세요.');
+            return;
         }
 
         if (selectedReason === 'custom' && !customReason.trim()) {
-        Alert.alert('알림', '기타 사유를 입력해주세요.');
-        return;
+            Alert.alert('알림', '기타 사유를 입력해주세요.');
+            return;
         }
 
+        if (!postcardId) {
+            Alert.alert('오류', '신고할 게시물 정보가 없습니다.');
+            return;
+        }
+
+        setIsLoading(true);
+
         const reportData = {
-        reason: selectedReason,
-        customReason: selectedReason === 'custom' ? customReason : '',
-        timestamp: new Date().toISOString(),
+            reason: selectedReason,
+            customReason: selectedReason === 'custom' ? customReason : '',
+            timestamp: new Date().toISOString(),
+            reporterId: currentUserId,
+            reporterName: userData?.nickname || '알 수 없음',
         };
 
-        onSubmit(reportData);
-        
-        // 상태 초기화
-        setSelectedReason('');
-        setCustomReason('');
+        try {
+            const result = await submitReportApi(postcardId, reportData);
+            
+            if (result.success) {
+                Alert.alert(
+                    '신고 완료', 
+                    '신고가 정상적으로 접수되었습니다.',
+                    [
+                        {
+                            text: '확인',
+                            onPress: () => {
+                                // 상태 초기화
+                                setSelectedReason('');
+                                setCustomReason('');
+                                
+                                // 부모 컴포넌트에 성공 알림
+                                if (onSubmit) {
+                                    onSubmit(reportData);
+                                }
+                                
+                                onClose();
+                            }
+                        }
+                    ]
+                );
+            } else {
+                Alert.alert('신고 실패', result.error);
+            }
+        } catch (error) {
+            console.error('신고 처리 중 예상치 못한 오류:', error);
+            Alert.alert('오류', '예상치 못한 오류가 발생했습니다. 다시 시도해주세요.');
+        } finally {
+            setIsLoading(false);
+        }
     };
 
     const handleClose = () => {
+        if (isLoading) {
+            Alert.alert('알림', '신고 처리 중입니다. 잠시만 기다려주세요.');
+            return;
+        }
+        
         setSelectedReason('');
         setCustomReason('');
         onClose();
     };
 
+    const user = userData?.nickname || '알 수 없음';
+
     return (
         <Modal
-        visible={visible}
-        transparent={true}
-        animationType="fade"
-        onRequestClose={handleClose}
+            visible={visible}
+            transparent={true}
+            animationType="fade"
+            onRequestClose={handleClose}
         >
-        <View style={styles.modalContainer}>
-            <View style={styles.modalContent}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {/* 헤더 */}
-                <View style={styles.header}>
-                <Text style={styles.headerTitle}>신고</Text>
-                <TouchableOpacity onPress={handleClose} style={styles.closeButton}>
-                    <Ionicons name="close" size={24} color="#333" />
-                </TouchableOpacity>
-                </View>
-
-                {/* 신고자 정보 */}
-                <View style={styles.reporterInfo}>
-                <Text style={styles.reporterLabel}>작성자 : {user}</Text>
-                <Text style={styles.reportDate}>작성일시 : {(getFormattedDate())}</Text>
-                </View>
-
-                {/* 신고 사유 */}
-                <View style={styles.reasonSection}>
-                <Text style={styles.sectionTitle}>사유 선택</Text>
-                <Text style={styles.sectionSubtitle}>
-                    신고 사유를 선택해주시면 관리자가 검토 후 처리합니다.
-                </Text>
-
-                <View style={styles.reasonList}>
-                    {reportReasons.map((reason) => (
-                    <TouchableOpacity
-                        key={reason.id}
-                        style={styles.reasonItem}
-                        onPress={() => setSelectedReason(reason.id)}
-                    >
-                        <View style={[
-                        styles.radioButton,
-                        selectedReason === reason.id && styles.radioButtonSelected
-                        ]}>
-                        {selectedReason === reason.id && (
-                            <View style={styles.radioButtonInner} />
-                        )}
+            <View style={styles.modalContainer}>
+                <View style={styles.modalContent}>
+                    <ScrollView showsVerticalScrollIndicator={false}>
+                        {/* 헤더 */}
+                        <View style={styles.header}>
+                            <Text style={styles.headerTitle}>신고</Text>
+                            <TouchableOpacity 
+                                onPress={handleClose} 
+                                style={styles.closeButton}
+                                disabled={isLoading}
+                            >
+                                <Ionicons name="close" size={24} color="#333" />
+                            </TouchableOpacity>
                         </View>
-                        <Text style={styles.reasonText}>{reason.label}</Text>
-                    </TouchableOpacity>
-                    ))}
-                </View>
 
-                {/* 기타 사유 입력 */}
-                {selectedReason === 'custom' && (
-                    <View style={styles.customReasonSection}>
-                    <TextInput
-                        style={styles.customReasonInput}
-                        placeholder="신고 사유를 구체적으로 입력해주세요."
-                        placeholderTextColor={333}
-                        value={customReason}
-                        onChangeText={setCustomReason}
-                        multiline
-                        numberOfLines={4}
-                        textAlignVertical="top"
-                    />
+                        {/* 신고자 정보 */}
+                        <View style={styles.reporterInfo}>
+                            <Text style={styles.reporterLabel}>신고자 : {user}</Text>
+                            <Text style={styles.reportDate}>신고일시 : {getFormattedDate()}</Text>
+                        </View>
+
+                        {/* 신고 사유 */}
+                        <View style={styles.reasonSection}>
+                            <Text style={styles.sectionTitle}>사유 선택</Text>
+                            <Text style={styles.sectionSubtitle}>
+                                신고 사유를 선택해주시면 관리자가 검토 후 처리합니다.
+                            </Text>
+
+                            <View style={styles.reasonList}>
+                                {reportReasons.map((reason) => (
+                                    <TouchableOpacity
+                                        key={reason.id}
+                                        style={styles.reasonItem}
+                                        onPress={() => setSelectedReason(reason.id)}
+                                        disabled={isLoading}
+                                    >
+                                        <View style={[
+                                            styles.radioButton,
+                                            selectedReason === reason.id && styles.radioButtonSelected
+                                        ]}>
+                                            {selectedReason === reason.id && (
+                                                <View style={styles.radioButtonInner} />
+                                            )}
+                                        </View>
+                                        <Text style={styles.reasonText}>{reason.label}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+
+                            {/* 기타 사유 입력 */}
+                            {selectedReason === 'custom' && (
+                                <View style={styles.customReasonSection}>
+                                    <TextInput
+                                        style={styles.customReasonInput}
+                                        placeholder="신고 사유를 구체적으로 입력해주세요."
+                                        placeholderTextColor="#999"
+                                        value={customReason}
+                                        onChangeText={setCustomReason}
+                                        multiline
+                                        numberOfLines={4}
+                                        textAlignVertical="top"
+                                        editable={!isLoading}
+                                    />
+                                </View>
+                            )}
+                        </View>
+                    </ScrollView>
+
+                    {/* 버튼 */}
+                    <View style={styles.buttonSection}>
+                        <TouchableOpacity 
+                            style={[styles.cancelButton, isLoading && styles.disabledButton]} 
+                            onPress={handleClose}
+                            disabled={isLoading}
+                        >
+                            <Text style={[styles.cancelButtonText, isLoading && styles.disabledText]}>
+                                취소
+                            </Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity 
+                            style={[styles.submitButton, isLoading && styles.disabledButton]} 
+                            onPress={handleSubmit}
+                            disabled={isLoading}
+                        >
+                            {isLoading ? (
+                                <ActivityIndicator color="#fff" size="small" />
+                            ) : (
+                                <Text style={styles.submitButtonText}>신고</Text>
+                            )}
+                        </TouchableOpacity>
                     </View>
-                )}
                 </View>
-            </ScrollView>
-
-            {/* 버튼 */}
-            <View style={styles.buttonSection}>
-                <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
-                <Text style={styles.cancelButtonText}>취소</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.submitButton} onPress={handleSubmit}>
-                <Text style={styles.submitButtonText}>신고</Text>
-                </TouchableOpacity>
             </View>
-            </View>
-        </View>
         </Modal>
     );
 };
@@ -278,6 +367,12 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#fff',
         fontWeight: 'bold',
+    },
+    disabledButton: {
+        opacity: 0.5,
+    },
+    disabledText: {
+        color: '#999',
     },
 });
 

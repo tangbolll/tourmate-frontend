@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getTourScheduleDetailApi } from '../../utils/HomeApi';
+import { getTourScheduleDetailApi } from '../../utils/HomeTourApi';
 
 const TourItinerary = ({ travelId }) => {
     const [isExpanded, setIsExpanded] = useState(false);
