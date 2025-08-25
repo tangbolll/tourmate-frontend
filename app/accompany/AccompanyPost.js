@@ -68,14 +68,6 @@ export default function AccompanyPost() {
     const [comments, setComments] = useState([]);
     const [replyingTo, setReplyingTo] = useState(null);
 
-    useEffect(() => {
-        const getUserId = async () => {
-            const userId = await AsyncStorage.getItem('userId');
-            setCurrentUserId(userId);
-        };
-        getUserId();
-    }, []);
-
     // userApplicationStatus로 신청 여부 계산하는 헬퍼 함수
     const isUserApplied = (status) => {
         return status && ['PENDING', 'ACCEPTED'].includes(status);

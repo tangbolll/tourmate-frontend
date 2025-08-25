@@ -26,7 +26,6 @@ const AccompanyList = () => {
     const [likedPosts, setLikedPosts] = useState({});
     const [calendarVisible, setCalendarVisible] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
-    const [currentUserId, setCurrentUserId] = useState(null);
 
     const [myAppliedAccompanyList, setMyAppliedAccompanyList] = useState([]);
     const [myCreatedAccompanyList, setMyCreatedAccompanyList] = useState([]);
@@ -54,15 +53,6 @@ const AccompanyList = () => {
     });
 
     const router = useRouter();
-
-    useEffect(() => {
-        const getUserId = async () => {
-            const userId = await AsyncStorage.getItem('userId');
-            setCurrentUserId(userId);
-        };
-        getUserId();
-    }, []);
-
 
     const updateLoadingState = (tab, isLoading) => {
         setLoadingStates(prev => ({ ...prev, [tab]: isLoading }));
