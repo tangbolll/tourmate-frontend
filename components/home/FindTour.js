@@ -4,7 +4,7 @@ import { router } from 'expo-router';
 
 const FindTour = () => {
     const handleAccompanyPress = () => {
-        router.push('/(tab)/accompany');
+        router.push('/accompany');
     };
 
     const handleTourDesignPress = () => {
