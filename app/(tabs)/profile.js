@@ -1,6 +1,6 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { View, StyleSheet, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useState, useCallback, useEffect } from 'react';
+import { View, StyleSheet, Alert, Text } from 'react-native';
 import { ProfileHeader } from '../../components/profile/ProfileHeader';
 import PostTabHeader from '../../components/profile/PostTabHeader';
 import PostBoardTab from '../../components/profile/PostBoardTab';
@@ -8,6 +8,9 @@ import { PostDirectoryTab } from '../../components/profile/PostDirectoryTab';
 import AddPostFloatingButton from '../../components/profile/AddPostFloatingButton';
 import CreatePostDirectoryPopup from '../../components/profile/CreatePostDirectoryPopup';
 import SelectPostDirectoryPopup from '../../components/profile/SelectPostDirectoryPopup';
+import { useAuth } from '@/context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { fetchUserProfileApi } from '../../utils/ProfileApi';
 
 import { 
     createPostcardWithNewFolderApi, 
@@ -18,6 +21,7 @@ import {
 } from '../../utils/PostCardApi';
 
 export default function ProfileHome() {
+    const { signOut } = useAuth();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('board');
     const [folders, setFolders] = useState([]); // 폴더 목록 상태 추가
@@ -25,12 +29,30 @@ export default function ProfileHome() {
     const [selectPopupVisible, setSelectPopupVisible] = useState(false);
     const [popupMode, setPopupMode] = useState('create');
     const [editingFolder, setEditingFolder] = useState(null);
+    const [userData, setUserData] = useState(null);
+
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const userId = await AsyncStorage.getItem('userId');
+                if (userId) {
+                    const data = await fetchUserProfileApi(userId);
+                    setUserData(data);
+                }
+            } catch (error) {
+                console.error('Error fetching user data in ProfileHome:', error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
 
     // 💡 참고: 실제 사용자 이메일은 로그인 세션 등에서 가져와야 합니다.
-    const userEmail = "333@naver.com"; 
+    const userEmail = userData?.email; 
 
     // 폴더 목록을 서버에서 불러오는 함수
     const fetchFolders = useCallback(async () => {
+        if (!userEmail) return; // userEmail이 없으면 호출하지 않음
         try {
             const fetchedFolders = await getFoldersByUserApi(userEmail);
             setFolders(fetchedFolders);
@@ -43,7 +65,11 @@ export default function ProfileHome() {
     // 컴포넌트 마운트 시 폴더 목록 불러오기
     useEffect(() => {
         fetchFolders();
-    }, [fetchFolders]);
+    }, [fetchFolders, userEmail]); // userEmail을 의존성 배열에 추가
+
+    // if (!userData) {
+    //     return <View style={[styles.container, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}><Text>Loading profile...</Text></View>; // 로딩 스피너 또는 플레이스홀더
+    // }
 
     // 폴더 생성/수정 팝업 열기
     const handleCreateFolder = useCallback(() => {
@@ -64,9 +90,6 @@ export default function ProfileHome() {
         const params = {};
         if (folderData.folderId) {
             params.directoryId = String(folderData.folderId);
-        }
-        if (folderData.title) {
-            params.directoryName = folderData.title;
         }
         // 이 부분은 API 응답 형태에 맞춰 수정될 수 있습니다.
         if (folderData.startDate) {

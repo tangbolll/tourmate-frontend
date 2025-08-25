@@ -15,6 +15,7 @@ import MemberPopup from '../../components/accompany/MemberPopup';
 import AccompanyManagement from './AccompanyManagement';
 import EventHeader from '../../components/accompany/EventHeader';
 import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 분리된 API 함수 임포트
 import {
@@ -49,7 +50,6 @@ export default function AccompanyPost() {
 
     const [showMoreMenu, setShowMoreMenu] = useState(false);
     const [showDeletePopup, setShowDeletePopup] = useState(false);
-
     const [isHost, setIsHost] = useState(false);
     const [showAlarmPopup, setShowAlarmPopup] = useState(false);
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
@@ -67,6 +67,14 @@ export default function AccompanyPost() {
     // 댓글 상태 관리 (답글 포함)
     const [comments, setComments] = useState([]);
     const [replyingTo, setReplyingTo] = useState(null);
+
+    useEffect(() => {
+        const getUserId = async () => {
+            const userId = await AsyncStorage.getItem('userId');
+            setCurrentUserId(userId);
+        };
+        getUserId();
+    }, []);
 
     // userApplicationStatus로 신청 여부 계산하는 헬퍼 함수
     const isUserApplied = (status) => {
@@ -130,6 +138,7 @@ export default function AccompanyPost() {
 
     // 동행 상세 정보를 가져오는 함수
     const fetchAccompanyDetail = async (id) => {
+        if (!currentUserId) return;
         try {
             setLoading(true);
             setError(null);
@@ -512,10 +521,10 @@ export default function AccompanyPost() {
 
     // postId를 사용하여 데이터 로드
     useEffect(() => {
-        if (postId) {
+        if (postId && currentUserId) {
             fetchAccompanyDetail(postId);
             fetchComments(postId);
-        } else {
+        } else if (postId === undefined) {
             setError('잘못된 동행 ID입니다.');
             setLoading(false);
         }
@@ -643,7 +652,7 @@ export default function AccompanyPost() {
                     <ScrollView
                         ref={scrollViewRef}
                         style={styles.scrollView}
-                        contentContainerStyle={[
+                        contentContainerStyle={[ 
                             styles.scrollContent,
                             { paddingBottom: keyboardVisible ? 0 : 100 }
                         ]}
@@ -804,7 +813,7 @@ export default function AccompanyPost() {
                     <AlarmPopup
                         alarmText={
                             <Text style={styles.alarmPopupText}>
-                                동행을 마감하시겠습니까?{'\n'}마감된 동행은 다시 되돌릴 수 없습니다.
+                                {`동행을 마감하시겠습니까?\n마감된 동행은 다시 되돌릴 수 없습니다.`}
                             </Text>
                         }
                         onClose={handleCloseAlarmPopupHost}
@@ -820,8 +829,8 @@ export default function AccompanyPost() {
                         alarmText={
                             <Text style={styles.alarmPopupText}>
                                 {isUserApplied(postData?.userApplicationStatus)
-                                    ? `동행 신청이 완료되었습니다.${'\n'}호스트가 수락하거나 거절하면 알림이 발송됩니다.${'\n'}수락되기 전까지 신청을 취소할 수 있습니다.`
-                                    : `동행 신청이 취소되었습니다.${'\n'}다시 신청하시려면 아래 버튼을 눌러주세요.`}
+                                    ? `동행 신청이 완료되었습니다.\n호스트가 수락하거나 거절하면 알림이 발송됩니다.\n수락되기 전까지 신청을 취소할 수 있습니다.`
+                                    : `동행 신청이 취소되었습니다.\n다시 신청하시려면 아래 버튼을 눌러주세요.`}
                             </Text>
                         }
                         onClose={handleCloseAlarmPopup}
@@ -832,7 +841,7 @@ export default function AccompanyPost() {
                     <AlarmPopup
                         alarmText={
                             <Text style={styles.alarmPopupText}>
-                                정말 이 동행을 삭제하시겠습니까?{'\n'}삭제된 게시물은 복구할 수 없습니다.
+                                {`정말 이 동행을 삭제하시겠습니까?\n삭제된 게시물은 복구할 수 없습니다.`}
                             </Text>
                         }
                         onClose={() => setShowDeletePopup(false)}

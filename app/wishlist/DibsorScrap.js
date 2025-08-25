@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import SelectDibsOrScrap from '../../components/wishlist/SelectDibsOrScrap';
 import DibsScrapListView from '../../components/wishlist/DibsorScrapListView';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
     fetchAccompanyFeedApi, 
     getMultipleAccompanyLikesApi, 
@@ -20,7 +21,6 @@ const DibsorScrap = ({ router }) => {
     const [dibsList, setDibsList] = useState([]);
     const [scrapList, setScrapList] = useState([]);
     const [likedPosts, setLikedPosts] = useState({});
-
     // ✅ 데이터 로딩 상태
     const [dibsLoaded, setDibsLoaded] = useState(false);
     const [scrapLoaded, setScrapLoaded] = useState(false);
@@ -36,10 +36,19 @@ const DibsorScrap = ({ router }) => {
             return [];
         }
     };
+  
+      useEffect(() => {
+        const getUserId = async () => {
+            const userId = await AsyncStorage.getItem('userId');
+            setCurrentUserId(userId);
+        };
+        getUserId();
+    }, []);
 
     // 찜 데이터 로드 (좋아요한 동행 포스트만 필터링)
     const fetchDibsData = useCallback(async () => {
         if (loading) return;
+      
         try {
             setLoading(true);
             
@@ -89,12 +98,127 @@ const DibsorScrap = ({ router }) => {
             // TODO: 실제 스크랩 API 호출로 대체
             console.log('🔍 스크랩 데이터 로딩 시작 (더미 데이터 사용)...');
             const dummyScrapData = [
-                { id: 'postcard1', image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop', title: '부산 해운대', location: '부산', date: '2021.03.04', author: '주리를 들어라', authorDate: '부산 · 2021.03.04', design: { type: 'Line', color: '#E1F5FE' }, content: { leftText: '오늘은 부산으로 즐겁여행을 떠났다.\n\n늘 그렇듯 00 게스트하우스를 예약했다.\n도착해서 먼저볼 대화시간이 적인 게스트하우스...\n게스트들의 연결대가 다양했다.' }, likeCount: 24, scrapCount: 47, isLiked: false, isScrapped: true },
-                { id: 'postcard2', image: 'https://images.unsplash.com/photo-1534274867514-d5b47ef22043?w=400&h=300&fit=crop', title: '부산 광안리', location: '부산', date: '2021.03.05', author: '주리를 들어라', authorDate: '부산 · 2021.03.05', design: { type: 'Plain', color: '#FFE4E1' }, content: { leftText: '광안리 해변에서의 하루.\n새벽 6시부터 일출을 보며...' }, likeCount: 18, scrapCount: 32, isLiked: true, isScrapped: true },
-                { id: 'postcard3', image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop', title: '부산 자갈치', location: '부산', date: '2021.03.05', author: '주리를 들어라', authorDate: '부산 · 2021.03.05', design: { type: 'Image', color: '#F3E5F5' }, content: { leftText: '자갈치 시장에서 만난 사람들...' }, likeCount: 15, scrapCount: 28, isLiked: false, isScrapped: true },
-                { id: 'postcard4', image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop', title: '부산 송도', location: '부산', date: '2021.03.06', author: '주리를 들어라', authorDate: '부산 · 2021.03.06', design: { type: 'Line', color: '#E8F5E8' }, content: { leftText: '송도 해수욕장의 케이블카...' }, likeCount: 22, scrapCount: 41, isLiked: true, isScrapped: true },
-                { id: 'postcard5', image: 'https://images.unsplash.com/photo-1617085222613-49c7a5a8e5cb?w=400&h=300&fit=crop', title: '부산 태종대', location: '부산', date: '2021.03.06', author: '주리를 들어라', authorDate: '부산 · 2021.03.06', design: { type: 'Plain', color: '#FFF8E1' }, content: { leftText: '태종대 절벽에서 바라본 바다...' }, likeCount: 31, scrapCount: 55, isLiked: false, isScrapped: true },
-                { id: 'postcard6', image: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400&h=300&fit=crop', title: '부산 감천문화마을', location: '부산', date: '2021.03.06', author: '주리를 들어라', authorDate: '부산 · 2021.03.06', design: { type: 'Image', color: '#E1F5FE' }, content: { leftText: '알록달록한 감천문화마을...' }, likeCount: 28, scrapCount: 43, isLiked: true, isScrapped: true }
+
+                {
+                    id: 'postcard1',
+                    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
+                    title: '부산 해운대',
+                    location: '부산',
+                    date: '2021.03.04',
+                    author: '주리를 들어라',
+                    authorDate: '부산 · 2021.03.04',
+                    design: {
+                        type: 'Line',
+                        color: '#E1F5FE',
+                    },
+                    content: {
+                        leftText: '오늘은 부산으로 즐겁여행을 떠났다.\n\n늘 그렇듯 00 게스트하우스를 예약했다.\n도착해서 먼저볼 대화시간이 적인 게스트하우스...\n게스트들의 연결대가 다양했다.',
+                    },
+                    likeCount: 24,
+                    scrapCount: 47,
+                    isLiked: false,
+                    isScrapped: true,
+                },
+                {
+                    id: 'postcard2',
+                    image: 'https://images.unsplash.com/photo-1534274867514-d5b47ef22043?w=400&h=300&fit=crop',
+                    title: '부산 광안리',
+                    location: '부산',
+                    date: '2021.03.05',
+                    author: '주리를 들어라',
+                    authorDate: '부산 · 2021.03.05',
+                    design: {
+                        type: 'Plain',
+                        color: '#FFE4E1',
+                    },
+                    content: {
+                        leftText: '광안리 해변에서의 하루.\n새벽 6시부터 일출을 보며...', 
+                    },
+                    likeCount: 18,
+                    scrapCount: 32,
+                    isLiked: true,
+                    isScrapped: true,
+                },
+                {
+                    id: 'postcard3',
+                    image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
+                    title: '부산 자갈치',
+                    location: '부산',
+                    date: '2021.03.05',
+                    author: '주리를 들어라',
+                    authorDate: '부산 · 2021.03.05',
+                    design: {
+                        type: 'Image',
+                        color: '#F3E5F5',
+                    },
+                    content: {
+                        leftText: '자갈치 시장에서 만난 사람들...', 
+                    },
+                    likeCount: 15,
+                    scrapCount: 28,
+                    isLiked: false,
+                    isScrapped: true,
+                },
+                {
+                    id: 'postcard4',
+                    image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop',
+                    title: '부산 송도',
+                    location: '부산',
+                    date: '2021.03.06',
+                    author: '주리를 들어라',
+                    authorDate: '부산 · 2021.03.06',
+                    design: {
+                        type: 'Line',
+                        color: '#E8F5E8',
+                    },
+                    content: {
+                        leftText: '송도 해수욕장의 케이블카...', 
+                    },
+                    likeCount: 22,
+                    scrapCount: 41,
+                    isLiked: true,
+                    isScrapped: true,
+                },
+                {
+                    id: 'postcard5',
+                    image: 'https://images.unsplash.com/photo-1617085222613-49c7a5a8e5cb?w=400&h=300&fit=crop',
+                    title: '부산 태종대',
+                    location: '부산',
+                    date: '2021.03.06',
+                    author: '주리를 들어라',
+                    authorDate: '부산 · 2021.03.06',
+                    design: {
+                        type: 'Plain',
+                        color: '#FFF8E1',
+                    },
+                    content: {
+                        leftText: '태종대 절벽에서 바라본 바다...', 
+                    },
+                    likeCount: 31,
+                    scrapCount: 55,
+                    isLiked: false,
+                    isScrapped: true,
+                },
+                {
+                    id: 'postcard6',
+                    image: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400&h=300&fit=crop',
+                    title: '부산 감천문화마을',
+                    location: '부산',
+                    date: '2021.03.06',
+                    author: '주리를 들어라',
+                    authorDate: '부산 · 2021.03.06',
+                    design: {
+                        type: 'Image',
+                        color: '#E1F5FE',
+                    },
+                    content: {
+                        leftText: '알록달록한 감천문화마을...', 
+                    },
+                    likeCount: 28,
+                    scrapCount: 43,
+                    isLiked: true,
+                    isScrapped: true,
+                }
             ];
             
             setScrapList(dummyScrapData);
@@ -107,16 +231,24 @@ const DibsorScrap = ({ router }) => {
         } finally {
             setLoading(false);
         }
-    }, [loading]);
+    }, []);
+
+    // 컴포넌트 마운트 시 찜 데이터 로드 (첫 로딩만)
+    useEffect(() => {
+        if (!dibsLoaded && currentUserId) {
+            fetchDibsData();
+        }
+    }, [currentUserId, dibsLoaded, fetchDibsData]);
+
 
     // 탭 변경 시 데이터 로드
     useEffect(() => {
-        if (selectedTab === '찜' && !dibsLoaded) {
+        if (selectedTab === '찜' && !dibsLoaded && currentUserId) {
             fetchDibsData();
         } else if (selectedTab === '스크랩' && !scrapLoaded) {
             fetchScrapData();
         }
-    }, [selectedTab, dibsLoaded, scrapLoaded, fetchDibsData, fetchScrapData]);
+    }, [selectedTab, dibsLoaded, scrapLoaded, fetchDibsData, fetchScrapData, currentUserId]);
 
     // 새로고침 핸들러
     const onRefresh = useCallback(async () => {
@@ -136,11 +268,14 @@ const DibsorScrap = ({ router }) => {
 
     // 좋아요 핸들러 - 실제 API 연동
     const handlePressLike = useCallback(async (postId) => {
+//         if (!currentUserId) return; 
+
         const currentLikeStatus = likedPosts[postId];
         setLikedPosts(prev => ({
             ...prev,
             [postId]: !currentLikeStatus
         }));
+
 
         try {
             const result = await toggleLikeApi(postId, currentUserId);
