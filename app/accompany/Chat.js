@@ -120,16 +120,6 @@ const Chat = () => {
     const scrollViewRef = useRef();
     const stompClientRef = useRef(null);
 
-    useEffect(() => {
-        const getUserId = async () => {
-            if (!currentUserId) {
-                const userId = await AsyncStorage.getItem('userId');
-                setCurrentUserId(userId);
-            }
-        };
-        getUserId();
-    }, []);
-
     // 날짜 포맷팅 함수들
     const formatTime = (dateString) => {
         if (!dateString) return '';
