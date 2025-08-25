@@ -11,6 +11,9 @@ const getBaseURL = () => {
         if (Platform.OS === 'android') {
             return 'http://10.0.2.2:8080';
         }
+        if (Platform.OS === 'web') {
+            return 'http://localhost:8080';
+        }
         return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
     } else {
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD;

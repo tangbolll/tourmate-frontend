@@ -11,6 +11,8 @@ import BookmarkedTab from '../../components/mytour/mytourHome/BookMarkedTab';
 import MyTourTab from '../../components/mytour/mytourHome/MyTourTab';
 import TourDesignButton from '../../components/mytour/mytourHome/TourDesignButton';
 import { fetchMyTours } from '../../utils/MyTourApi';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 
 export default function MyTourHome() {
     const router = useRouter();
@@ -21,7 +23,7 @@ export default function MyTourHome() {
 
     useEffect(() => {
         const loadMyTours = async () => {
-            const userId = 1;
+            const userId = await AsyncStorage.getItem('userId');
             
             try {
                 const data = await fetchMyTours(userId);

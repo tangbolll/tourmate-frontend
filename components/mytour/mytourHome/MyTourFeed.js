@@ -121,7 +121,7 @@ export default function MyTourFeed({
                     {/* 위치 */}
                     <View style={styles.infoRow}>
                         <MaterialIcons name="location-pin" size={16} color="black" />
-                        <Text style={styles.infoText}>{location}</Text>
+                        <Text style={styles.infoText}numberOfLines={1}>{location}</Text>
                     </View>
 
                     {/* 멤버 */}

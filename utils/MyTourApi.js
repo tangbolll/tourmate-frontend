@@ -1,15 +1,29 @@
 import { Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { useAuth } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API 기본 URL을 가져오는 헬퍼 함수
 export const getBaseURL = () => {
     if (__DEV__) {
-        if (Platform.OS === 'android') return 'http://10.0.2.2:8080';
+        if (Platform.OS === 'android') {
+            return 'http://10.0.2.2:8080';
+        }
+        if (Platform.OS === 'web') {
+            return 'http://localhost:8080';
+        }
         return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
     } else {
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
+};
+
+const getAuthHeaders = async () => {
+    const token = await AsyncStorage.getItem('jwtToken');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
 };
 
 // ==================== 여행(MyTour) 관련 API ====================
@@ -18,7 +32,8 @@ export const getBaseURL = () => {
 export const fetchMyTours = async (userId) => {
     const url = `${getBaseURL()}/api/myTour/list?userId=${userId}`;
     try {
-        const response = await fetch(url);
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
@@ -31,7 +46,8 @@ export const fetchMyTours = async (userId) => {
 export const toggleTourFavorite = async (tourId, userId) => {
     const url = `${getBaseURL()}/api/myTour/${tourId}/favorite?userId=${userId}`;
     try {
-        const response = await fetch(url, { method: 'POST' });
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { method: 'POST', headers });
         if (!response.ok) throw new Error(await response.text());
         return true;
     } catch (error) {
@@ -43,9 +59,10 @@ export const toggleTourFavorite = async (tourId, userId) => {
 // 여러 여행 삭제 (배치)
 export const deleteMyTours = async (tourIds) => {
     try {
+        const headers = await getAuthHeaders();
         const results = await Promise.allSettled(
             tourIds.map(tourId =>
-                fetch(`${getBaseURL()}/api/myTour/${tourId}`, { method: 'DELETE' })
+                fetch(`${getBaseURL()}/api/myTour/${tourId}`, { method: 'DELETE', headers })
                     .then(r => r.ok ? `여행 삭제 성공 (ID: ${tourId})`
                         : r.text().then(tx => { throw new Error(tx); }))
             )
@@ -62,9 +79,10 @@ export const deleteMyTours = async (tourIds) => {
 export const createTour = async (tourData) => {
     const url = `${getBaseURL()}/api/myTour/create`;
     try {
+        const headers = await getAuthHeaders();
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(tourData),
         });
         if (!response.ok) throw new Error(await response.text());
@@ -79,9 +97,10 @@ export const createTour = async (tourData) => {
 export const updateTour = async (tourId, tourData) => {
     const url = `${getBaseURL()}/api/myTour/${tourId}`;
     try {
+        const headers = await getAuthHeaders();
         const response = await fetch(url, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(tourData),
         });
         if (!response.ok) throw new Error(await response.text());
@@ -95,7 +114,8 @@ export const updateTour = async (tourId, tourData) => {
 // 여행 상세 정보 조회
 export const getTourDetails = async (tourId) => {
     try {
-        const response = await fetch(`${getBaseURL()}/api/myTour/${tourId}`);
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${getBaseURL()}/api/myTour/${tourId}`, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
@@ -110,7 +130,8 @@ export const getTourDetails = async (tourId) => {
 export const getAllSchedulesByTravel = async (travelId) => {
     const url = `${getBaseURL()}/api/travelSchedule/travel/${travelId}`;
     try {
-        const response = await fetch(url);
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
@@ -123,9 +144,10 @@ export const getAllSchedulesByTravel = async (travelId) => {
 export const createTravelSchedule = async (scheduleData) => {
     const url = `${getBaseURL()}/api/travelSchedule/create`;
     try {
+        const headers = await getAuthHeaders();
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(scheduleData),
         });
         if (!response.ok) throw new Error(await response.text());
@@ -140,7 +162,8 @@ export const createTravelSchedule = async (scheduleData) => {
 export const getTravelScheduleDetails = async (scheduleId) => {
     const url = `${getBaseURL()}/api/travelSchedule/${scheduleId}`;
     try {
-        const response = await fetch(url);
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
@@ -153,7 +176,8 @@ export const getTravelScheduleDetails = async (scheduleId) => {
 export const deleteTravelSchedule = async (scheduleId) => {
     const url = `${getBaseURL()}/api/travelSchedule/${scheduleId}`;
     try {
-        const response = await fetch(url, { method: 'DELETE' });
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { method: 'DELETE', headers });
         if (!response.ok) throw new Error(await response.text());
         return true;
     } catch (error) {
@@ -166,9 +190,10 @@ export const deleteTravelSchedule = async (scheduleId) => {
 export const updateTravelSchedule = async (scheduleId, scheduleData) => {
     const url = `${getBaseURL()}/api/travelSchedule/${scheduleId}`;
     try {
+        const headers = await getAuthHeaders();
         const response = await fetch(url, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(scheduleData),
         });
         if (!response.ok) throw new Error(await response.text());
@@ -183,7 +208,8 @@ export const updateTravelSchedule = async (scheduleId, scheduleData) => {
 export const getSchedulesByDate = async (travelId, date) => {
     const url = `${getBaseURL()}/api/travelSchedule/scheduleByDate?travelId=${travelId}&date=${date}`;
     try {
-        const response = await fetch(url);
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
@@ -195,9 +221,10 @@ export const getSchedulesByDate = async (travelId, date) => {
 // 여러 스케줄 삭제 (배치)
 export const deleteTravelSchedules = async (scheduleIds) => {
     try {
+        const headers = await getAuthHeaders();
         const results = await Promise.allSettled(
             scheduleIds.map(scheduleId =>
-                fetch(`${getBaseURL()}/api/travelSchedule/${scheduleId}`, { method: 'DELETE' })
+                fetch(`${getBaseURL()}/api/travelSchedule/${scheduleId}`, { method: 'DELETE', headers })
                     .then(r => r.ok ? `여행 스케줄 삭제 성공 (ID: ${scheduleId})`
                         : r.text().then(tx => { throw new Error(tx); }))
             )
@@ -212,12 +239,13 @@ export const deleteTravelSchedules = async (scheduleIds) => {
 
 // 즐겨찾기 토글 API 함수
 export const handleBookmarkPress = async (event) => {
-        console.log('handleBookmarkPress called', event.id); 
+        console.log('handleBookmarkPress called', event.id);
     try {
         const userId = currentUserId; // 로그인 유저 ID
+        const headers = await getAuthHeaders();
         const response = await fetch(
             `${getBaseURL()}/api/myTour/${event.id}/favorite?userId=${userId}`,
-            { method: 'POST' }
+            { method: 'POST', headers }
         );
 
         if (!response.ok) throw new Error('즐겨찾기 업데이트 실패');
