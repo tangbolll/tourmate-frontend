@@ -13,11 +13,12 @@ import MyTourHeader from './MyTourHeader';
 import MyTourFeed from './MyTourFeed';
 import { toggleTourFavorite, deleteMyTours } from '../../../utils/MyTourApi';
 import dayjs from 'dayjs';
-import { currentUserId } from '../../../constants/testUserId';
+import { useAuth } from '../../../context/AuthContext';
 
 const { width } = Dimensions.get('window');
 
 export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
+    const { currentUserId } = useAuth();
     const router = useRouter();
     const [sortType, setSortType] = useState('latest');
     const [tours, setTours] = useState([]);

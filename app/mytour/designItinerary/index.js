@@ -24,7 +24,7 @@ import {
     deleteTravelSchedules,
     getSchedulesByDate,
 } from '../../../utils/MyTourApi';
-import { currentUserId } from '../../../constants/testUserId';
+import { useAuth } from '../../../context/AuthContext';
 
 // 디바운스 기능을 위한 커스텀 훅
 const useDebounce = (value, delay) => {
@@ -39,6 +39,7 @@ const useDebounce = (value, delay) => {
 export default function DesignItinerary() {
     const { selectedRegions, itineraryTitle, periodData, tourId } = useLocalSearchParams();
     const router = useRouter();
+    const { currentUserId } = useAuth();
 
     // 상태 관리
     const [title, setTitle] = useState('');
