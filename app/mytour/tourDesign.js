@@ -1,35 +1,28 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, SafeAreaView } from 'react-native';
+import { View, StyleSheet, SafeAreaView, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
 import SearchRegionHeader from '../../components/mytour/createItinerary/SearchRegionHeader';
 import SelectedRegions from '../../components/mytour/createItinerary/SelectedRegions';
-import BottomSheet from '../../components/mytour/createItinerary/BottomSheet';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import AllAreaToggle from '../../components/mytour/createItinerary/AllAreaToggle';
+import ApplicationButton from '../../components/mytour/createItinerary/CompleteButton';
 
 const TourDesign = () => {
     const router = useRouter();
     const [searchText, setSearchText] = useState('');
     const [selectedRegions, setSelectedRegions] = useState([]);
-    const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(true);
-    const [sheetHeight, setSheetHeight] = useState(0.6); // 0.6 = 60%
 
-    const handleSearchChange = (text) => {
-        setSearchText(text);
-    };
+    const handleSearchChange = (text) => setSearchText(text);
+    const handleBack = () => router.back();
 
-    const handleBack = () => {
-        console.log('뒤로 가기');
-        // Expo Router 뒤로가기
-        router.back();
-    };
-
-    const handleRegionSelect = (regionKey, country, region) => {
+    const handleRegionSelect = (key, country, regionName, code, parentCode) => {
         setSelectedRegions(prev => {
-            const exists = prev.find(r => r.key === regionKey);
+            const exists = prev.find(r => r.code === code && r.parentCode === parentCode);
             if (exists) {
-                return prev.filter(r => r.key !== regionKey);
+                return prev.filter(r => !(r.code === code && r.parentCode === parentCode));
             } else {
-                return [...prev, { key: regionKey, country, region }];
+                return [...prev, { key, country, name: regionName, code, parentCode }];
             }
         });
     };
@@ -38,77 +31,67 @@ const TourDesign = () => {
         setSelectedRegions(prev => prev.filter(r => r.key !== regionKey));
     };
 
-    const handleCreateTrip = () => {
+    const handleNext = () => {
+        console.log('선택된 지역:', selectedRegions);
         router.push({
-            pathname: 'mytour/createItinerary',
-            params: {
-                selectedRegions: JSON.stringify(selectedRegions)
-            }
+        pathname: './createItinerary',
+        params: {
+            selectedRegions: JSON.stringify(selectedRegions),
+            currentTitle: '',
+            currentPeriod: '',
+        },
         });
     };
 
-    // 하나 이상의 지역이 선택되었는지 확인
-    const isCreateButtonActive = selectedRegions.length > 0;
+    const isNextButtonActive = selectedRegions.length > 0;
 
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaView style={styles.container}>
-            {/* 상단 헤더 */}
-            <SearchRegionHeader 
-                searchText={searchText}
-                onSearchChange={handleSearchChange}
-                onBack={handleBack}
+            <SearchRegionHeader
+            searchText={searchText}
+            onSearchChange={handleSearchChange}
+            onBack={handleBack}
             />
-            
-            {/* 지도 영역 */}
-            <View style={styles.mapContainer}>
-                <View style={styles.mapPlaceholder}>
-                    <Text style={styles.mapPlaceholderText}>지도 영역</Text>
-                </View>
-                
-            </View>
-
-            {/* 바텀 시트 */}
-            <BottomSheet
-                isOpen={isBottomSheetOpen}
-                onClose={() => setIsBottomSheetOpen(false)}
-                onHeightChange={setSheetHeight}
+            <View style={styles.contentContainer}>
+            {selectedRegions.length > 0 && (
+                <SelectedRegions
                 selectedRegions={selectedRegions}
-                onRegionSelect={handleRegionSelect}
                 onRemoveRegion={handleRemoveRegion}
-                isCreateButtonActive={isCreateButtonActive}
-                handleCreateTrip={handleCreateTrip}
-            />
+                />
+            )}
+            <ScrollView style={styles.scrollContent} showsVerticalScrollIndicator={false}>
+                {/* ✅ 검색어(searchText)를 AllAreaToggle 컴포넌트로 전달합니다. */}
+                <AllAreaToggle
+                searchText={searchText}
+                onRegionSelect={handleRegionSelect}
+                selectedRegions={selectedRegions}
+                />
+            </ScrollView>
+            </View>
         </SafeAreaView>
+        <View style={styles.floatingButtonContainer}>
+            {/* ❗️ 이 버튼에는 검색어가 필요 없으므로 searchText prop을 삭제합니다. */}
+            <ApplicationButton
+            title="다음"
+            onPress={handleNext}
+            closed={!isNextButtonActive}
+            />
+        </View>
         </GestureHandlerRootView>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
+    container: { flex: 1, backgroundColor: '#fff' },
+    contentContainer: { flex: 1 },
+    scrollContent: { flex: 1 },
+    floatingButtonContainer: {
+        paddingTop: 12,
         backgroundColor: '#f9fafb',
-    },
-    mapContainer: {
-        flex: 1,
-        position: 'relative',
-    },
-    mapPlaceholder: {
-        flex: 1,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#f3f4f6',
-    },
-    mapPlaceholderText: {
-        fontSize: 18,
-        color: '#6b7280',
-    },
-    selectedRegionsOverlay: {
-        position: 'absolute',
-        top: 20,
-        left: 0,
-        right: 0,
-        zIndex: 50,
+        paddingBottom: 38,
+        borderTopColor: '#f0f0f0',
+        borderTopWidth: 1,
     },
 });
 

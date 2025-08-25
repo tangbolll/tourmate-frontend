@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { memo, useCallback } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, RefreshControl } from 'react-native';
 import AccompanyListHeader from './AccompanyListHeader';
 import CalendarPopup from './CalendarPopup';
@@ -9,6 +9,9 @@ import AccompanyCard from './AccompanyCard';
 import AccompanyTabToggle from './AccompanyTabToggle';
 import AccompanyFeed from './AccompanyFeed';
 import CreateAccompanyButton from './CreateAccompanyButton';
+
+// React.memo를 사용하여 props가 변경되지 않으면 리렌더링되지 않도록 최적화
+const MemoizedAccompanyFeed = memo(AccompanyFeed);
 
 const AccompanyListView = ({
     refreshing,
@@ -29,13 +32,8 @@ const AccompanyListView = ({
     showCards,
     setShowCards,
     myAppliedAccompanyList,
-    myCreatedAccompanyList,
-    feedList,
     selectedTab,
     setSelectedTab,
-    fetchMyCreatedAccompanyData,
-    fetchAccompanyFeedData,
-    fetchMyAppliedAccompanyData,
     loading,
     filteredPosts,
     likedPosts,
@@ -43,59 +41,40 @@ const AccompanyListView = ({
     navigateToPost,
     router,
 }) => {
+    // 🔥 최적화: 개발 단계에서 사용하던 불필요한 디버그용 useEffect 제거
 
-    // 🔍 디버깅: 컴포넌트가 렌더링될 때마다 데이터 상태 확인
-    useEffect(() => {
-        console.log('🔍 AccompanyListView 렌더링됨');
-        console.log('🔍 selectedTab:', selectedTab);
-        console.log('🔍 filteredPosts 길이:', filteredPosts?.length || 0);
-        console.log('🔍 filteredPosts ID들:', filteredPosts?.map(post => `${post.id} (${typeof post.id})`));
-        console.log('🔍 loading 상태:', loading);
-        console.log('🔍 현재 likedPosts 상태 변경됨:', likedPosts);
-        console.log('🔍 likedPosts 키 목록:', Object.keys(likedPosts));
-        console.log('🔍 likedPosts 값 목록:', Object.values(likedPosts));
-        
-        // 각 키-값 쌍 상세 출력
-        Object.entries(likedPosts).forEach(([key, value]) => {
-            console.log(`🔍 likedPosts[${key}] = ${value} (타입: ${typeof value})`);
-        });
-    });
-
-    const handlePressDM = () => {
-        // 여기서 navigation.navigate를 직접 호출
+    const handlePressDM = useCallback(() => {
         console.log('DM 버튼 클릭');
         router.push('/accompany/GroupChats');
-    };
+    }, [router]);
 
-    // 🔥 수정된 getDisplayTags 함수 - 성별(항상 표시) + 정의된 카테고리만 표시
-    const getDisplayTags = (tags) => {
+    // 🔥 최적화: useCallback을 사용하여 함수를 메모이제이션
+    const handleSelectTab = useCallback((tab) => {
+        console.log(`🔄 탭 변경: ${selectedTab} → ${tab}`);
+        setSelectedTab(tab);
+    }, [setSelectedTab, selectedTab]);
+
+    // getDisplayTags 함수도 useCallback으로 감싸서 불필요한 재생성 방지
+    const getDisplayTags = useCallback((tags) => {
         if (!tags || !Array.isArray(tags)) return [];
         
-        // 성별 관련 태그들
         const genderTags = ['남성', '여성', '성별무관', 'ALL'];
-        
-        // 연령 관련 태그들 (제외할 태그들)
         const ageTags = ['10대', '20대', '30대', '40대', '50대', '60대', '나이무관'];
-        
-        // 허용되는 카테고리 태그들만 정의 (사용자 커스텀 태그 제외)
         const allowedCategoryTags = [
             '투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '액티비티', '힐링', '역사유적', '박물관/미술관'
         ];
         
-        // 성별 태그 찾기 (항상 표시)
         const genderTag = tags.find(tag => genderTags.includes(tag));
         const displayedGenderTags = genderTag ? [genderTag] : [];
         
-        // 허용된 카테고리 태그만 필터링 (성별, 연령 태그 제외)
         const categoryTags = tags.filter(tag => 
             !genderTags.includes(tag) && 
             !ageTags.includes(tag) &&
-            allowedCategoryTags.includes(tag)  // 허용된 카테고리만 포함
+            allowedCategoryTags.includes(tag)
         );
         
-        // 성별 + 허용된 카테고리 태그만 반환
         return [...displayedGenderTags, ...categoryTags];
-    };
+    }, []);
 
     const renderFeedItems = () => {
         if (loading) {
@@ -112,7 +91,7 @@ const AccompanyListView = ({
                 emptyMessage = '아직 생성한 동행이 없습니다.\n새로운 동행을 만들어보세요!';
             } else if (selectedTab === 'applied') {
                 emptyMessage = '아직 신청한 동행이 없습니다.';
-            } else { // 'feed' 탭
+            } else {
                 emptyMessage = '표시할 동행이 없습니다.\n필터를 조정해보세요.';
             }
             return (
@@ -123,39 +102,17 @@ const AccompanyListView = ({
         }
 
         return filteredPosts.map((post, index) => {
-            // 🔍 각 포스트별 디버깅 정보
             const isLiked = !!likedPosts[post.id];
-            console.log(`🔍 포스트 ${index}: id=${post.id}, liked=${isLiked}, title=${post.title}`);
             
+            // 🔥 최적화: MemoizedAccompanyFeed 컴포넌트 사용
             return (
-                <AccompanyFeed
-                    key={post.id || `post-${index}`} // id가 없을 경우 대체 키 사용
+                <MemoizedAccompanyFeed
+                    key={post.id || `post-${index}`}
                     {...post}
-                    id={post.id}
-                    date={post.date}
-                    title={post.title}
-                    tags={getDisplayTags(post.tags)} // tags 배열을 다시 전달
-                    location={post.location}
-                    participants={post.participants}
-                    maxParticipants={post.maxParticipants}
-                    imageUrl={post.imageUrl}
+                    tags={getDisplayTags(post.tags)}
                     liked={isLiked}
-                    onPressLike={() => {
-                        console.log(`🔥 좋아요 버튼 클릭: postId=${post.id}`);
-                        if (post.id) {
-                            handlePressLike(post.id);
-                        } else {
-                            console.error('❌ 좋아요 클릭 실패: post.id가 없음', post);
-                        }
-                    }}
-                    onPress={() => {
-                        console.log(`🔗 포스트 클릭: postId=${post.id}`);
-                        if (post.id) {
-                            navigateToPost(post.id);
-                        } else {
-                            console.error('❌ 포스트 클릭 실패: post.id가 없음', post);
-                        }
-                    }}
+                    onPressLike={() => handlePressLike(post.id)}
+                    onPress={() => navigateToPost(post.id)}
                 />
             );
         });
@@ -172,7 +129,6 @@ const AccompanyListView = ({
                 setSearchText={setSearchText}
             />
 
-            {/* 필터 팝업 및 캘린더 팝업 (기존 위치 유지) */}
             <FilterPopup
                 visible={showFilterPopup}
                 onClose={handleCloseFilterPopup}
@@ -215,13 +171,7 @@ const AccompanyListView = ({
                                 <AccompanyCard
                                     key={item.id || `card-${index}`}
                                     {...item}
-                                    onPress={() => {
-                                        console.log(`🔗 카드 클릭: itemId=${item.id}`);
-                                        console.log(`🔗 userApplicationstatus:, ${item.userApplicationStatus}`);
-                                        if (item.id) {
-                                            navigateToPost(item.id);
-                                        }
-                                    }}
+                                    onPress={() => navigateToPost(item.id)}
                                     userApplicationStatus={item.userApplicationStatus}
                                 />
                             ))
@@ -236,28 +186,14 @@ const AccompanyListView = ({
 
             <AccompanyTabToggle
                 selectedTab={selectedTab}
-                onSelectTab={(tab) => {
-                    console.log(`🔄 탭 변경: ${selectedTab} → ${tab}`);
-                    setSelectedTab(tab);
-                    if (tab === 'mine') {
-                        fetchMyCreatedAccompanyData();
-                    } else if (tab === 'applied') {
-                        fetchMyAppliedAccompanyData();
-                    } else {
-                        fetchAccompanyFeedData();
-                    }
-                }}
+                onSelectTab={handleSelectTab} // 🔥 최적화: 간결해진 핸들러 함수 전달
             />
 
-            {/* 🔥 동행 피드 영역에만 스크롤뷰 적용 */}
             <ScrollView
                 refreshControl={
                     <RefreshControl
                         refreshing={refreshing}
-                        onRefresh={() => {
-                            console.log('🔄 새로고침 시작');
-                            onRefresh();
-                        }}
+                        onRefresh={onRefresh}
                         colors={['#000']}
                         tintColor={'#000'}
                     />
@@ -283,7 +219,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-        position: 'relative',
     },
     feedScrollViewContent: {
         paddingBottom: 50,

@@ -22,21 +22,16 @@ import SockJS from 'sockjs-client';
 import { Client } from '@stomp/stompjs';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { currentUserId } from '../../constants/testUserId';
+import {
+    fetchOrCreateChatRoom,
+    fetchMessages,
+    getWebSocketURL,
+    getAccompanyPostInfo 
+} from '../../utils/ChatApi';
+
 
 const { width: screenWidth } = Dimensions.get('window');
-
-const getBaseURL = () => {
-    if (__DEV__) {
-        if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080';
-        }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-    }
-};
-
-const API_URL = getBaseURL();
 
 // 날짜 구분선 컴포넌트
 const DateSeparator = ({ date }) => {
@@ -108,18 +103,12 @@ const MessageBubble = ({ message, showSenderName, showTime, isFirstInGroup, isLa
 const Chat = () => {
     const params = useLocalSearchParams();
     const router = useRouter();
-
-    // URL 파라미터에서 데이터 추출
-    const [currentUserId, setCurrentUserId] = useState(params.currentUserId || null);
     const postId = params.postId;
-    const location = params.location || '위치 정보 없음';
-    const participants = parseInt(params.participants) || 0;
-    const maxParticipants = parseInt(params.maxParticipants) || 0;
+    const chatRoomId = params.chatRoomId;
     
-    console.log('Chat 컴포넌트 파라미터:', { postId, location, participants, maxParticipants });
-
-    // 상태 관리
+    // 상태로 관리
     const [chatRoom, setChatRoom] = useState(null);
+    const [accompanyInfo, setAccompanyInfo] = useState(null);
     const [messages, setMessages] = useState([]);
     const [inputText, setInputText] = useState('');
     const [showActions, setShowActions] = useState(false);
@@ -235,77 +224,6 @@ const Chat = () => {
         return grouped;
     };
 
-    // 채팅방 정보 가져오기
-    const fetchOrCreateChatRoom = async (accompanyId) => {
-        try {
-            const url = `${API_URL}/api/accompany/${accompanyId}/chatroom`;
-            console.log('채팅방 조회/생성 API 호출:', url);
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                },
-            });
-            
-            if (response.ok) {
-                const roomData = await response.json();
-                console.log('✅ 채팅방 데이터:', roomData);
-                setChatRoom(roomData);
-                return roomData;
-            } else {
-                throw new Error(`채팅방 조회/생성 실패: ${response.status}`);
-            }
-            
-        } catch (error) {
-            console.error('채팅방 조회/생성 오류:', error);
-            throw error;
-        }
-    };
-
-    // 기존 메시지 불러오기
-    const fetchMessages = async (roomId) => {
-        try {
-            const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
-            console.log('🌐 메시지 조회 API 호출:', url);
-            
-            const response = await fetch(url, {
-                method: 'GET',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-            });
-            
-            if (response.ok) {
-                const messagesData = await response.json();
-                console.log('✅ 메시지 데이터:', messagesData);
-                
-                // 백엔드 응답을 프론트엔드 형식으로 변환
-                const transformedMessages = messagesData.map(msg => ({
-                    id: msg.id || msg.roomId + '_' + msg.sendTime,
-                    user: {
-                        name: msg.senderNickname || `사용자${msg.senderId}`,
-                        isSelf: msg.senderId === currentUserId,
-                    },
-                    text: msg.content,
-                    time: formatTime(msg.sendTime),
-                    sendTime: msg.sendTime
-                }));
-                
-                // 시간순 정렬
-                transformedMessages.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
-                
-                setMessages(transformedMessages);
-            } else {
-                throw new Error(`메시지 조회 실패: ${response.status}`);
-            }
-        } catch (error) {
-            console.error('❌ 메시지 조회 오류:', error);
-            throw error;
-        }
-    };
-
     // 웹소켓 연결 useEffect
     useEffect(() => {
         if (!chatRoom?.id || !currentUserId) {
@@ -314,8 +232,8 @@ const Chat = () => {
         }
 
         console.log('🔌 웹소켓 연결 시작...');
-        
-        const socket = new SockJS(`${API_URL}/ws`);
+
+        const socket = new SockJS(getWebSocketURL());
         const stompClient = new Client({
             webSocketFactory: () => socket,
             reconnectDelay: 5000,
@@ -481,43 +399,70 @@ const Chat = () => {
     // 초기 데이터 로드
     useEffect(() => {
         const loadChatData = async () => {
-            if (!postId) {
-                setError('잘못된 동행 ID입니다.');
-                setLoading(false);
-                return;
-            }
+    if (!chatRoomId && !postId) {
+        setError('잘못된 접근입니다.');
+        setLoading(false);
+        return;
+    }
 
+    try {
+        setLoading(true);
+        setError(null);
+        
+        console.log('🚀 채팅방 초기화 시작');
+        console.log('📝 파라미터:', { chatRoomId, postId });
+        
+        let roomData;
+        
+        // 1. 채팅방 정보 가져오기
+        if (chatRoomId) {
+            roomData = await fetchOrCreateChatRoom(chatRoomId, true);
+        } else if (postId) {
+            roomData = await fetchOrCreateChatRoom(postId, false);
+        }
+        
+        if (!roomData) {
+            setError('채팅방을 불러올 수 없습니다.');
+            return;
+        }
+        
+        console.log('🏠 채팅방 데이터:', roomData);
+        setChatRoom(roomData);
+        
+        // 2. 동행 게시물 정보 가져오기
+        const accompanyIdToUse = roomData.accompanyId || postId;
+        console.log('🎯 동행 ID:', accompanyIdToUse);
+        
+        if (accompanyIdToUse) {
             try {
-                setLoading(true);
-                setError(null);
-                
-                console.log('🚀 채팅방 초기화 시작: postId =', postId);
-                
-                // 1. 채팅방 정보 가져오기 (없으면 자동 생성)
-                const roomData = await fetchOrCreateChatRoom(postId);
-                
-                if (!roomData) {
-                    setError('채팅방을 생성할 수 없습니다.');
-                    return;
-                }
-                
-                // 2. 기존 메시지 목록 가져오기
-                await fetchMessages(roomData.id);
-                
-                console.log('✅ 채팅방 초기화 완료');
-                
+                const postInfo = await getAccompanyPostInfo(accompanyIdToUse);
+                console.log('📋 동행 정보:', postInfo);
+                setAccompanyInfo(postInfo);
             } catch (error) {
-                console.error('❌ 채팅 데이터 로드 실패:', error);
-                setError('채팅방을 불러올 수 없습니다.');
-                Alert.alert('오류', '채팅방 연결에 실패했습니다.');
-            } finally {
-                setLoading(false);
+                console.error('동행 정보 조회 실패:', error);
+                // 동행 정보 조회 실패해도 계속 진행
             }
-        };
+        }
+        
+        // 3. 기존 메시지 목록 가져오기
+        const messages = await fetchMessages(roomData.id, currentUserId);
+        console.log('💬 메시지 개수:', messages.length);
+        setMessages(messages);
+        
+        console.log('✅ 채팅방 초기화 완료');
+        
+    } catch (error) {
+        console.error('❌ 채팅 데이터 로드 실패:', error);
+        setError('채팅방을 불러올 수 없습니다.');
+        Alert.alert('오류', '채팅방 연결에 실패했습니다.');
+    } finally {
+        setLoading(false);
+    }
+}; 
 
         loadChatData();
-    }, [postId]);
-
+    }, [chatRoomId, postId]);
+    
     // 메시지 전송 핸들러
     const handleSend = () => {
         if (!inputText.trim()) return;
@@ -573,27 +518,33 @@ const Chat = () => {
     return (
         <SafeAreaView style={styles.container}>
             {/* 헤더 부분 */}
-            <View style={styles.header}>
-                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                    <Feather name="chevron-left" size={24} color="black" />
-                </TouchableOpacity>
-                
-                <View style={styles.headerContent}>
-                    <View style={styles.headerLocationRow}>
-                        <Icon name="map-pin" size={12} color="black" style={styles.icon} />
-                        <Text style={styles.locationText}>{location}</Text>
-                        <Ionicons name="person" size={12} color="black" style={[styles.icon, { marginLeft: 12 }]} />
-                        <Text style={styles.participantsText}>{participants}명 / {maxParticipants}명</Text>
-                    </View>
-                    <View style={styles.headerTitleRow}>
-                        <TouchableOpacity onPress={handleViewPost}>
-                            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-                                {chatRoom?.roomName || `동행 ${postId} 채팅방`}
-                            </Text>
-                        </TouchableOpacity>
-                    </View>
+        <View style={styles.header}>
+            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                <Feather name="chevron-left" size={24} color="black" />
+            </TouchableOpacity>
+            
+            <View style={styles.headerContent}>
+                <View style={styles.headerLocationRow}>
+                    <Icon name="map-pin" size={12} color="black" style={styles.icon} />
+                    <Text style={styles.locationText}>
+                        {accompanyInfo?.location || chatRoom?.location || '위치 정보 없음'}
+                    </Text>
+                    <Ionicons name="person" size={12} color="black" style={[styles.icon, { marginLeft: 12 }]} />
+                    <Text style={styles.participantsText}>
+                        {/* 🔧 participants 처리 방식 변경 */}
+                        {Array.isArray(chatRoom?.participants) ? chatRoom.participants.length : (chatRoom?.participantCount || 0)}명 / {accompanyInfo?.maxParticipants || chatRoom?.maxParticipants || '?'}명
+                    </Text>
                 </View>
+                <View style={styles.headerTitleRow}>
+                    <TouchableOpacity onPress={handleViewPost}>
+                        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+                    {accompanyInfo?.title || '테스트 제목'}
+                    </Text>
+                </TouchableOpacity>
             </View>
+        </View>
+
+        </View>
 
             {/* 공지사항 */}
             <View style={styles.announcementWrapper}>
@@ -601,7 +552,7 @@ const Chat = () => {
                     <Feather name="volume-2" size={20} color="black" />
                     <Text style={styles.announcementLabel}> 안내</Text>
                     <Text style={styles.announcementText}>
-                        동행 {postId}번의 채팅방입니다.{"\n"}서로를 존중하며 즐거운 대화를 나눠주세요!
+                        동행 채팅방입니다.{"\n"}서로를 존중하며 즐거운 대화를 나눠주세요!
                     </Text>
                 </View>
             </View>
@@ -614,7 +565,7 @@ const Chat = () => {
             >
                 {groupedMessages.length === 0 ? (
                     <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>동행 {postId}번 채팅방이 생성되었습니다!</Text>
+                        <Text style={styles.emptyText}>동행 채팅방이 생성되었습니다!</Text>
                         <Text style={styles.emptySubText}>첫 번째 메시지를 보내보세요!</Text>
                     </View>
                 ) : (
@@ -885,11 +836,11 @@ const styles = StyleSheet.create({
     connectionText: {
         fontSize: 8,
     },
-    headerTitle: {
+        headerTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         marginRight: 4,
-        flex: 1,
+        color: 'black',
     },
     announcementWrapper: {
         paddingHorizontal: 8,
@@ -920,7 +871,6 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 8,
     },
-    // 날짜 구분선 스타일 추가
     dateSeparatorContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -981,10 +931,12 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#E5E7EB',
         backgroundColor: 'white',
+        marginBottom: Platform.OS === 'ios' ? -40 : 0,
     },
     addButton: {
         padding: 6,
         marginRight: 4,
+        marginBottom: 30,
     },
     inputWrapper: {
         flex: 1,
@@ -997,6 +949,7 @@ const styles = StyleSheet.create({
         paddingRight: 4,
         marginRight: 8,
         backgroundColor: 'white',
+        marginBottom: 30,
     },
     input: {
         flex: 1,

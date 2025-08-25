@@ -1,136 +1,210 @@
-import React, { useState, useMemo } from 'react';
-import { 
-    View, 
-    ScrollView, 
-    StyleSheet, 
-    Dimensions 
+import React, { useState, useMemo, useEffect } from 'react';
+import {
+    View,
+    ScrollView,
+    StyleSheet,
+    Dimensions,
+    Text,
+    TouchableOpacity,
+    Alert
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import MyTourHeader from './MyTourHeader';
 import MyTourFeed from './MyTourFeed';
-import TourDesignButton from './TourDesignButton';
+import { toggleTourFavorite, deleteMyTours } from '../../../utils/MyTourApi';
 import dayjs from 'dayjs';
+import { currentUserId } from '../../../constants/testUserId';
 
 const { width } = Dimensions.get('window');
 
 export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
-    const router = useRouter(); // Expo Router 사용
+    const router = useRouter();
     const [sortType, setSortType] = useState('latest');
-    const [tours, setTours] = useState(mytours);
+    const [tours, setTours] = useState([]);
     const [activeFilters, setActiveFilters] = useState({
         travelPeriod: '',
         travelLocation: '',
     });
+    const [isEditMode, setIsEditMode] = useState(false);
+    const [selectedTours, setSelectedTours] = useState([]);
 
-    React.useEffect(() => {
-        setTours(mytours);
+    useEffect(() => {
+        setTours(Array.isArray(mytours) ? mytours : []);
     }, [mytours]);
 
     const filteredAndSortedTours = useMemo(() => {
-        let filteredTours = [...tours];
-        
-        if (activeFilters.travelLocation) {
-            filteredTours = filteredTours.filter(tour => 
-                tour.location.toLowerCase().includes(activeFilters.travelLocation.toLowerCase())
-            );
-        }
-        
-        if (activeFilters.travelPeriod) {
-            // 선택된 기간과 투어 기간이 겹치는지 확인
-            const [startDateStr, endDateStr] = activeFilters.travelPeriod.split(' ~ ');
-            const filterStartDate = dayjs(startDateStr, 'YYYY.MM.DD');
-            const filterEndDate = dayjs(endDateStr, 'YYYY.MM.DD');
-            
-            filteredTours = filteredTours.filter(tour => {
-                const tourStartDate = dayjs(tour.tourStartDate);
-                const tourEndDate = dayjs(tour.tourEndDate);
-                
-                // 기간이 겹치는지 확인
-                return (
-                    (tourStartDate.isSameOrBefore(filterEndDate) && tourEndDate.isSameOrAfter(filterStartDate))
-                );
+        let filteredTours = Array.isArray(tours) ? [...tours] : [];
+
+        filteredTours.sort((a, b) => {
+            if (sortType === 'latest') {
+                return dayjs(b.endDate).diff(dayjs(a.endDate));
+            } else if (sortType === 'oldest') {
+                return dayjs(a.startDate).diff(dayjs(b.startDate));
+            }
+            return 0;
+        });
+
+        return filteredTours;
+    }, [tours, sortType]);
+
+    const handleSortChange = (newSortType) => setSortType(newSortType);
+    const handleFilterPress = () => console.log('필터 버튼 클릭');
+    const handleFilterApply = (appliedFilters) => setActiveFilters(appliedFilters);
+    
+    // ✅ 피드 클릭 핸들러 수정: 일정 수정 페이지로 이동
+    const handleTourPress = (tourId) => {
+        if (!isEditMode) {
+            console.log('투어 상세 페이지로 이동:', tourId);
+            router.push({
+                pathname: '/mytour/designItinerary',
+                params: { tourId: tourId }
             });
         }
-        
-        // 정렬 적용
-        if (sortType === 'latest') {
-            // 최신 여행순 (종료일 기준 내림차순)
-            return filteredTours.sort((a, b) => 
-                new Date(b.tourEndDate) - new Date(a.tourEndDate)
-            );
-        } else if (sortType === 'oldest') {
-            // 지난 여행순 (시작일 기준 오름차순)
-            return filteredTours.sort((a, b) => 
-                new Date(a.tourStartDate) - new Date(b.tourStartDate)
+    };
+    
+    const handleBookmarkPress = async (tourId) => {
+        try {
+            await toggleTourFavorite(tourId, currentUserId);
+            
+            if (onBookmarkUpdate) {
+                onBookmarkUpdate(tourId);
+            }
+        } catch (error) {
+            console.error('Bookmark update error:', error);
+        }
+    };
+
+    const handleTourSelection = (tourId) => {
+        setSelectedTours(prevSelected => {
+            if (prevSelected.includes(tourId)) {
+                return prevSelected.filter(id => id !== tourId);
+            } else {
+                return [...prevSelected, tourId];
+            }
+        });
+    };
+
+    const handleDeleteSelected = async () => {
+        if (selectedTours.length > 0) {
+            Alert.alert(
+                "여행 삭제",
+                `선택된 여행 ${selectedTours.length}개를 삭제하시겠습니까?`,
+                [
+                    {
+                        text: "취소",
+                        onPress: () => console.log("삭제 취소"),
+                        style: "cancel"
+                    },
+                    { 
+                        text: "삭제", 
+                        onPress: async () => {
+                            try {
+                                await deleteMyTours(selectedTours);
+                                
+                                setTours(prevTours => prevTours.filter(tour => !selectedTours.includes(tour.id)));
+                                setSelectedTours([]);
+                                setIsEditMode(false);
+                                
+                                Alert.alert("삭제 완료", "선택한 여행이 성공적으로 삭제되었습니다.");
+                            } catch (error) {
+                                console.error('여행 삭제 에러:', error);
+                                Alert.alert("삭제 실패", "여행 삭제 중 오류가 발생했습니다.");
+                            }
+                        },
+                        style: "destructive"
+                    }
+                ]
             );
         }
-        
-        return filteredTours;
-    }, [tours, sortType, activeFilters]);
-
-    const handleSortChange = (newSortType) => {
-        setSortType(newSortType);
-        console.log('정렬 방식 변경:', newSortType);
     };
-
-    const handleFilterPress = () => {
-        console.log('필터 버튼 클릭');
-    };
-
-    const handleFilterApply = (appliedFilters) => {
-        setActiveFilters(appliedFilters);
-        console.log('필터 적용됨:', appliedFilters);
-    };
-
-    const handleTourPress = (tourId) => {
-        console.log('투어 상세 페이지로 이동:', tourId);
-        // 투어 상세 페이지로 네비게이션
-    };
-
-    const handleBookmarkToggle = (tourId) => {
-        const updatedTours = tours.map(tour => 
-            tour.id === tourId 
-                ? { ...tour, isBookmarked: !tour.isBookmarked }
-                : tour
-        );
-        setTours(updatedTours);
-        
-        if (onBookmarkUpdate) {
-            onBookmarkUpdate(updatedTours);
+    
+    const handleEditButtonPress = () => {
+        if (isEditMode) {
+            setIsEditMode(false);
+            setSelectedTours([]);
+        } else {
+            setIsEditMode(true);
         }
     };
 
     return (
         <View style={styles.container}>
-            {/* 헤더 고정 */}
-            <MyTourHeader 
+            <MyTourHeader
                 onSortChange={handleSortChange}
                 onFilterPress={handleFilterPress}
                 onFilterApply={handleFilterApply}
             />
-            
-            {/* 스크롤 가능한 컨텐츠 영역 */}
+
+            <View style={styles.summaryContainer}>
+                <Text style={styles.tourCountText}>여행 {tours.length}</Text>
+                <View style={styles.editButtonsContainer}>
+                    {isEditMode && (
+                        <TouchableOpacity 
+                            onPress={handleDeleteSelected}
+                            disabled={selectedTours.length === 0}
+                        >
+                            <Text style={[styles.deleteButtonText, selectedTours.length === 0 && styles.disabledText]}>삭제</Text>
+                        </TouchableOpacity>
+                    )}
+                    <TouchableOpacity onPress={handleEditButtonPress}>
+                        <Text style={styles.editButtonText}>{isEditMode ? '취소' : '편집'}</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+
             <View style={styles.scrollableSection}>
-                <ScrollView 
+                <ScrollView
                     style={styles.scrollContainer}
                     contentContainerStyle={styles.contentContainer}
                     showsVerticalScrollIndicator={false}
                 >
                     <View style={styles.feedContainer}>
-                        {filteredAndSortedTours.map((tour) => (
-                            <MyTourFeed
-                                key={tour.id}
-                                imageUrl={tour.imageUrl}
-                                tourStartDate={tour.tourStartDate}
-                                tourEndDate={tour.tourEndDate}
-                                title={tour.title}
-                                location={tour.location}
-                                members={tour.members}
-                                isBookmarked={tour.isBookmarked}
-                                onPress={() => handleTourPress(tour.id)}
-                                onBookmarkPress={() => handleBookmarkToggle(tour.id)}
-                            />
-                        ))}
+                        {filteredAndSortedTours.length === 0 ? (
+                            <Text style={styles.noDataText}>여행 목록이 없습니다.</Text>
+                        ) : (
+                            <View style={styles.gridContainer}>
+                                {filteredAndSortedTours.map((tour) => {
+                                    let locationString = '지역 정보 없음';
+
+                                    // 백엔드 데이터 구조에 맞게 수정
+                                    const areas = tour.areaName || [];
+                                    const sigungus = tour.sigunguName || [];
+
+                                    if (areas.length > 0) {
+                                        const area = areas[0]; // 첫 번째 지역만 사용
+                                        if (sigungus.length > 0) {
+                                            const firstSigungu = sigungus[0];
+                                            if (sigungus.length > 1) {
+                                                locationString = `${area} ${firstSigungu} 외 ${sigungus.length - 1}개 지역`;
+                                            } else {
+                                                locationString = `${area} ${firstSigungu}`;
+                                            }
+                                        } else {
+                                            locationString = area;
+                                        }
+                                    }
+
+                                    return (
+                                        <View key={tour.id} style={styles.feedItem}>
+                                            <MyTourFeed
+                                                imageUrl={tour.imageUrl || null}
+                                                tourStartDate={tour.startDate}
+                                                tourEndDate={tour.endDate}
+                                                title={tour.title}
+                                                location={locationString}
+                                                members={tour.participants || tour.members || []} // participants로 수정
+                                                isBookmarked={tour.isFavorite}
+                                                onPress={() => handleTourPress(tour.id)}
+                                                onBookmarkPress={() => handleBookmarkPress(tour.id)}
+                                                isEditMode={isEditMode}
+                                                isSelected={selectedTours.includes(tour.id)}
+                                                onSelect={() => handleTourSelection(tour.id)}
+                                            />
+                                        </View>
+                                    );
+                                })}
+                            </View>
+                        )}
                     </View>
                 </ScrollView>
             </View>
@@ -141,25 +215,66 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#fff', 
+    },
+    summaryContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: 16,
+        paddingVertical: 10,
+        backgroundColor: '#fff',
+    },
+    tourCountText: {
+        fontSize: 14,
+        color: '#666',
+    },
+    editButtonsContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    deleteButtonText: {
+        fontSize: 14,
+        color: '#FF3B30',
+        fontWeight: 'bold',
+        marginRight: 15,
+    },
+    disabledText: {
+        color: '#ccc',
+    },
+    editButtonText: {
+        fontSize: 14,
+        color: '#007BFF',
+        fontWeight: 'bold',
     },
     scrollableSection: {
         flex: 1,
-        position: 'relative',
     },
     scrollContainer: {
         flex: 1,
     },
     contentContainer: {
         flexGrow: 1,
-        paddingBottom: 80, 
+        paddingHorizontal: 16,
+        paddingTop: 10,
+        paddingBottom: 160,
     },
     feedContainer: {
+        flex: 1,
+    },
+    gridContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
         justifyContent: 'space-between',
-        paddingHorizontal: 16,
-        paddingTop: 16,
-        backgroundColor: '#fff',
+        paddingTop: 10,
+    },
+    feedItem: {
+        width: (width - 48) / 2,
+    },
+    noDataText: {
+        flex: 1,
+        textAlign: 'center',
+        marginTop: 50,
+        fontSize: 16,
+        color: '#888',
     },
 });

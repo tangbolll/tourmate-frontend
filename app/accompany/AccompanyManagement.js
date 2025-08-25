@@ -18,6 +18,7 @@ import {
     toggleLikeApi, 
     getLikeStatusApi, 
 } from '../../utils/AccompanyPostApi';
+
 import { 
     acceptApplicationApi, 
     rejectApplicationApi, 
@@ -25,6 +26,8 @@ import {
     closeAccompanyApi, 
     getAccompanyManagementDataApi 
 } from '../../utils/AccompanyManagementApi';
+
+import { currentUserId } from '../../constants/testUserId';
 
 const AccompanyManagement = () => {
     const params = useLocalSearchParams();
@@ -34,7 +37,6 @@ const AccompanyManagement = () => {
     // 기본 상태
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [currentUserId, setCurrentUserId] = useState(null);
     
     // 동행 관리 데이터
     const [accompanyData, setAccompanyData] = useState(null);
@@ -447,7 +449,7 @@ const AccompanyManagement = () => {
             </View>
 
             {/* 하단 버튼 영역 */}
-            <AccompanyBottomButton
+            {/* <AccompanyBottomButton
                 isHost={true}
                 accompanyStatus={accompanyStatus}
                 userApplicationStatus={userApplicationStatus}
@@ -456,7 +458,7 @@ const AccompanyManagement = () => {
                 isLiked={isLiked}
                 onLikeToggle={handleLikeToggle}
                 isLoading={isLikeLoading}
-            />
+            /> */}
 
             {/* 마감 확인 팝업 */}
             <CloseAlarmPopup 
@@ -638,7 +640,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
     },
     emptyContainer: {
-        padding: 20,
+        padding: 80,
         alignItems: 'center',
     },
     emptyText: {

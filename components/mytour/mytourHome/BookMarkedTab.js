@@ -1,7 +1,19 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Platform } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import BookmarkedEvent from './BookMarkedEvent';
+import Constants from 'expo-constants';
+
+
+const getBaseURL = () => {
+    if (__DEV__) {
+        if (Platform.OS === 'android') return 'http://10.0.2.2:8080';
+        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+    } else {
+        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+    }
+};
+
 
 export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate }) {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -15,13 +27,25 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate 
         console.log('Event pressed:', event);
     };
 
-    const handleBookmarkPress = (event) => {
-        // 북마크 토글 로직 - 즐겨찾기 탭에서 해제시 제거
-        if (onBookmarkUpdate) {
-            onBookmarkUpdate(event.id);
-        }
-        console.log('Bookmark toggled:', event);
-    };
+    const handleBookmarkPress = async (event) => {
+        console.log('handleBookmarkPress called', event.id); 
+    try {
+        const userId = 1; // 로그인 유저 ID
+        const response = await fetch(
+            `${getBaseURL()}/api/myTour/${event.id}/favorite?userId=${userId}`,
+            { method: 'POST' }
+        );
+
+        if (!response.ok) throw new Error('즐겨찾기 업데이트 실패');
+
+        // 상태 업데이트
+        if (onBookmarkUpdate) onBookmarkUpdate(event.id);
+
+        console.log('✅ 즐겨찾기 토글 완료:', event.id);
+    } catch (error) {
+        console.error('Bookmark update error:', error);
+    }
+};
 
     return (
         <View style={styles.container}>
@@ -53,19 +77,38 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate 
                             contentContainerStyle={styles.scrollContent}
                             style={styles.scrollView}
                         >
-                            {bookmarkedEvents.map((event, index) => (
-                                <BookmarkedEvent
-                                    key={event.id || index}
-                                    tourStartDate={event.tourStartDate}
-                                    tourEndDate={event.tourEndDate}
-                                    title={event.title}
-                                    location={event.location}
-                                    imageUrl={event.imageUrl}
-                                    isBookmarked={event.isBookmarked}
-                                    onPress={() => handleEventPress(event)}
-                                    onBookmarkPress={() => handleBookmarkPress(event)}
-                                />
-                            ))}
+                            {bookmarkedEvents.map((event, index) => {
+                                // 기본값
+                                let locationString = '지역 정보 없음';
+
+                                const area = event.areaName?.[0];            // 예: "광주"
+                                const sigungus = event.sigunguName || [];    // 예: ["광산구", "남구"]
+
+                                if (sigungus.length > 0) {
+                                    const firstSigungu = sigungus[0];
+                                    if (sigungus.length > 1) {
+                                        locationString = `${area} ${firstSigungu} 외 ${sigungus.length - 1}개 지역`;
+                                    } else {
+                                        locationString = `${area} ${firstSigungu}`;
+                                    }
+                                } else if (area) {
+                                    locationString = area;
+                                }
+
+                                return (
+                                    <BookmarkedEvent
+                                        key={event.id || index}
+                                        tourStartDate={event.startDate ?? '날짜 없음'}
+                                        tourEndDate={event.endDate ?? '날짜 없음'}
+                                        title={event.title}
+                                        location={locationString} // 최종 문자열 전달
+                                        imageUrl={event.imageUrl || null}
+                                        isBookmarked={event.isBookmarked}
+                                        onPress={() => handleEventPress(event)}
+                                        onBookmarkPress={() => handleBookmarkPress(event)}
+                                    />
+                                );
+                            })}
                         </ScrollView>
                     ) : (
                         <View style={styles.emptyContainer}>

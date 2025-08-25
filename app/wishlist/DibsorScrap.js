@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Alert } from 'react-native';
 import SelectDibsOrScrap from '../../components/wishlist/SelectDibsOrScrap';
 import DibsScrapListView from '../../components/wishlist/DibsorScrapListView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
     fetchAccompanyFeedApi, 
     getMultipleAccompanyLikesApi, 
-    toggleLikeApi 
+    toggleLikeApi,
+    handleApiError
 } from '../../utils/AccompanyListApi';
+import { currentUserId } from '../../constants/testUserId';
 
 const DibsorScrap = ({ router }) => {
     // 상태 관리
@@ -15,18 +17,27 @@ const DibsorScrap = ({ router }) => {
     const [refreshing, setRefreshing] = useState(false);
     const [loading, setLoading] = useState(false);
     
-    // 데이터 상태
+    // ✅ 데이터 상태: 초기값을 빈 배열로 설정하여 'TypeError' 방지
     const [dibsList, setDibsList] = useState([]);
     const [scrapList, setScrapList] = useState([]);
     const [likedPosts, setLikedPosts] = useState({});
-    const [allAccompanyPosts, setAllAccompanyPosts] = useState([]); // 전체 동행 포스트
-    const [currentUserId, setCurrentUserId] = useState(null);
-    
-    // 데이터 로딩 상태
+    // ✅ 데이터 로딩 상태
     const [dibsLoaded, setDibsLoaded] = useState(false);
     const [scrapLoaded, setScrapLoaded] = useState(false);
 
-    useEffect(() => {
+    // 전체 동행 피드 데이터를 가져오는 함수
+    const fetchAllAccompanyPosts = async () => {
+        try {
+            const allPosts = await fetchAccompanyFeedApi(currentUserId);
+            return allPosts;
+        } catch (error) {
+            console.error('❌ 전체 동행 피드 로드 실패:', error);
+            handleApiError(error, '전체 피드 로드');
+            return [];
+        }
+    };
+  
+      useEffect(() => {
         const getUserId = async () => {
             const userId = await AsyncStorage.getItem('userId');
             setCurrentUserId(userId);
@@ -36,47 +47,58 @@ const DibsorScrap = ({ router }) => {
 
     // 찜 데이터 로드 (좋아요한 동행 포스트만 필터링)
     const fetchDibsData = useCallback(async () => {
-        if (!currentUserId) return;
+        if (loading) return;
+      
         try {
             setLoading(true);
             
             // 1. 전체 동행 피드 데이터 가져오기
             console.log('🔍 전체 동행 피드 데이터 로딩 시작...');
             const allPosts = await fetchAccompanyFeedApi(currentUserId);
-            setAllAccompanyPosts(allPosts);
             
             // 2. 모든 포스트의 좋아요 상태 조회
-            console.log('🔍 좋아요 상태 조회 시작...');
+            console.log('🔍 좋아요 상태 일괄 조회 시작...');
             const accompanyIds = allPosts.map(post => post.id);
+            if (accompanyIds.length === 0) {
+                setDibsList([]);
+                setLikedPosts({});
+                setDibsLoaded(true);
+                return;
+            }
+            
             const likesMap = await getMultipleAccompanyLikesApi(accompanyIds, currentUserId);
-            setLikedPosts(likesMap);
             
             // 3. 좋아요한 포스트만 필터링하여 찜 목록 설정
-            const likedAccompanyPosts = allPosts.filter(post => likesMap[post.id] === true);
-            console.log('🔍 좋아요한 동행 포스트:', likedAccompanyPosts);
+            // ⭐ 이 부분이 가장 중요합니다. likesMap[post.id]가 undefined일 수 있으므로 명시적 비교를 사용해야 합니다.
+            // 또는 boolean 값으로 명확하게 변환하여 사용하는 것이 좋습니다.
+            const likedAccompanyPosts = allPosts.filter(post => !!likesMap[post.id]); // ✅ Boolean 값으로 명확히 변환
             
             setDibsList(likedAccompanyPosts);
+            setLikedPosts(likesMap);
             setDibsLoaded(true);
+
+            console.log('✅ 찜 데이터 로드 완료:', likedAccompanyPosts.length, '개');
             
         } catch (error) {
             console.error('❌ 찜 데이터 로드 실패:', error);
-            // 에러 시 빈 배열로 설정
             setDibsList([]);
+            Alert.alert('오류', '찜 목록을 불러오는 중 오류가 발생했습니다.');
         } finally {
             setLoading(false);
         }
-    }, [currentUserId]);
+    }, [currentUserId, loading]);
+
 
     // 스크랩 데이터 로드 (기존 엽서 데이터 유지)
     const fetchScrapData = useCallback(async () => {
+        if (loading) return;
         try {
             setLoading(true);
-            // TODO: 실제 스크랩 API 호출로 대체
-            // const response = await api.getScrapList();
-            // setScrapList(response.data);
             
-            // 임시 더미 엽서 데이터 (기존 유지)
+            // TODO: 실제 스크랩 API 호출로 대체
+            console.log('🔍 스크랩 데이터 로딩 시작 (더미 데이터 사용)...');
             const dummyScrapData = [
+
                 {
                     id: 'postcard1',
                     image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
@@ -201,8 +223,11 @@ const DibsorScrap = ({ router }) => {
             
             setScrapList(dummyScrapData);
             setScrapLoaded(true);
+            console.log('✅ 스크랩 데이터 로드 완료.');
         } catch (error) {
-            console.error('스크랩 데이터 로드 실패:', error);
+            console.error('❌ 스크랩 데이터 로드 실패:', error);
+            setScrapList([]);
+            Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
         } finally {
             setLoading(false);
         }
@@ -214,6 +239,7 @@ const DibsorScrap = ({ router }) => {
             fetchDibsData();
         }
     }, [currentUserId, dibsLoaded, fetchDibsData]);
+
 
     // 탭 변경 시 데이터 로드
     useEffect(() => {
@@ -229,10 +255,10 @@ const DibsorScrap = ({ router }) => {
         setRefreshing(true);
         try {
             if (selectedTab === '찜') {
-                // 찜 탭에서는 데이터를 다시 로드하고 상태 초기화
-                setDibsLoaded(false);
+                setDibsLoaded(false); // 강제 재로드
                 await fetchDibsData();
             } else {
+                setScrapLoaded(false); // 강제 재로드
                 await fetchScrapData();
             }
         } finally {
@@ -242,20 +268,17 @@ const DibsorScrap = ({ router }) => {
 
     // 좋아요 핸들러 - 실제 API 연동
     const handlePressLike = useCallback(async (postId) => {
-        if (!currentUserId) return;
+//         if (!currentUserId) return; 
+
+        const currentLikeStatus = likedPosts[postId];
+        setLikedPosts(prev => ({
+            ...prev,
+            [postId]: !currentLikeStatus
+        }));
+
+
         try {
-            console.log('🔍 좋아요 토글 시작:', postId);
-            
-            // 낙관적 업데이트 (UI 먼저 변경)
-            const currentLikeStatus = likedPosts[postId] || false;
-            setLikedPosts(prev => ({
-                ...prev,
-                [postId]: !currentLikeStatus
-            }));
-            
-            // API 호출
             const result = await toggleLikeApi(postId, currentUserId);
-            console.log('🔍 좋아요 토글 결과:', result);
             
             // API 응답으로 상태 동기화
             setLikedPosts(prev => ({
@@ -265,16 +288,16 @@ const DibsorScrap = ({ router }) => {
             
             // 찜 목록 업데이트 (좋아요 해제 시 목록에서 제거)
             if (selectedTab === '찜') {
-                if (!result.isLiked) {
-                    // 좋아요 해제 시 찜 목록에서 제거
-                    setDibsList(prev => prev.filter(item => item.id !== postId));
-                }
-                // 좋아요 수 업데이트
-                setDibsList(prev => prev.map(item => 
-                    item.id === postId 
-                        ? { ...item, likeCount: result.likeCount }
-                        : item
-                ));
+                setDibsList(prev => {
+                    // 좋아요 수 업데이트
+                    const updatedList = prev.map(item => 
+                        item.id === postId 
+                            ? { ...item, likeCount: result.likeCount }
+                            : item
+                    );
+                    // 좋아요 취소된 아이템 제거
+                    return updatedList.filter(item => result.isLiked || item.id !== postId);
+                });
             }
             
         } catch (error) {
@@ -282,7 +305,7 @@ const DibsorScrap = ({ router }) => {
             // 에러 시 원래 상태로 복원
             setLikedPosts(prev => ({
                 ...prev,
-                [postId]: !prev[postId]
+                [postId]: currentLikeStatus
             }));
         }
     }, [likedPosts, currentUserId, selectedTab]);
@@ -296,8 +319,6 @@ const DibsorScrap = ({ router }) => {
 
     // 엽서 클릭 핸들러
     const handlePostcardPress = useCallback((postcardId) => {
-        console.log('엽서 클릭:', postcardId);
-        // TODO: 엽서 상세 페이지로 이동
         if (router) {
             router.push(`/postcard/${postcardId}`);
         }
@@ -313,37 +334,18 @@ const DibsorScrap = ({ router }) => {
                 }}
             />
             
-            {selectedTab === '찜' && (
-                <DibsScrapListView
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                    selectedTab={selectedTab}
-                    setSelectedTab={setSelectedTab}
-                    loading={loading}
-                    dibsList={dibsList}
-                    scrapList={scrapList}
-                    likedPosts={likedPosts}
-                    handlePressLike={handlePressLike}
-                    navigateToPost={navigateToPost}
-                    onPostcardPress={handlePostcardPress}
-                />
-            )}
-            
-            {selectedTab === '스크랩' && (
-                <DibsScrapListView
-                    refreshing={refreshing}
-                    onRefresh={onRefresh}
-                    selectedTab={selectedTab}
-                    setSelectedTab={setSelectedTab}
-                    loading={loading}
-                    dibsList={dibsList}
-                    scrapList={scrapList}
-                    likedPosts={likedPosts}
-                    handlePressLike={handlePressLike}
-                    navigateToPost={navigateToPost}
-                    onPostcardPress={handlePostcardPress}
-                />
-            )}
+            <DibsScrapListView
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                selectedTab={selectedTab}
+                loading={loading}
+                dibsList={dibsList}
+                scrapList={scrapList}
+                likedPosts={likedPosts}
+                handlePressLike={handlePressLike}
+                navigateToPost={navigateToPost}
+                onPostcardPress={handlePostcardPress}
+            />
         </SafeAreaView>
     );
 };
@@ -352,11 +354,6 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#fff',
-    },
-    emptyScrapContainer: {
-        flex: 1,
-        backgroundColor: '#fff',
-        // 엽서 리스트 구현 시 이 스타일 수정
     },
 });
 
