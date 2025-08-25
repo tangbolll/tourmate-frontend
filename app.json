@@ -9,13 +9,19 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.tourmate.tourmate"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "",
         "backgroundColor": "#ffffff"
-      }
+      },
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.RECORD_AUDIO"
+      ],
+      "package": "com.anonymous.tourmatefrontend"
     },
     "web": {
       "bundler": "metro",
@@ -39,13 +45,26 @@
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
         }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "extraMavenRepos": [
+              "https://devrepo.kakao.com/nexus/content/groups/public/"
+            ],
+            "manifestApplicationAttributes": {
+              "com.kakao.sdk.AppKey": "bf2ed7b5e3276022c9ad3ce91414cdb8"
+            }
+          }
+        }
       ]
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "API_BASE_URL_DEV": "http://192.168.0.47:8080",
+      "API_BASE_URL_DEV": "http://192.168.35.230:8080",
       "API_BASE_URL_PROD": "https://api.your-production-domain.com"
     }
   }

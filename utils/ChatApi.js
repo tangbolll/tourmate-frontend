@@ -17,6 +17,16 @@ const getBaseURL = () => {
 };
 const API_URL = getBaseURL();
 
+const formatTime = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString('ko-KR', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: true 
+    });
+};
+
 // 내가 속한 채팅방 목록 가져오기
 export const getMyChatRooms = async (userId) => {
     try {
@@ -233,6 +243,164 @@ export const sendMessage = async (chatRoomId, userId, message) => {
         throw error;
     }
 };
+
+// 채팅방 정보 가져오기
+export const fetchOrCreateChatRoom = async (accompanyIdOrChatRoomId, isChatRoomId = false) => {
+    try {
+        // chatRoomId로 직접 조회하는 경우
+        if (isChatRoomId) {
+            const url = `${API_URL}/api/accompany/chatroom/${accompanyIdOrChatRoomId}`;
+            console.log('채팅방 직접 조회:', url);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+            
+            if (response.ok) {
+                const roomData = await response.json();
+                console.log('✅ 채팅방 데이터 (직접 조회):', roomData);
+                return roomData;
+            }
+        } 
+        // accompanyId로 조회/생성하는 경우
+        else {
+            const url = `${API_URL}/api/accompany/${accompanyIdOrChatRoomId}/chatroom`;
+            console.log('채팅방 조회/생성 API 호출:', url);
+            
+            const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json',
+                },
+            });
+            
+            if (response.ok) {
+                const roomData = await response.json();
+                console.log('✅ 채팅방 데이터 (동행 ID):', roomData);
+                return roomData;
+            }
+        }
+        
+        throw new Error('채팅방 조회/생성 실패');
+        
+    } catch (error) {
+        console.error('채팅방 조회/생성 오류:', error);
+        throw error;
+    }
+};
+
+
+// 기존 메시지 불러오기 - ✅ currentUserId를 매개변수로 받도록 수정
+export const fetchMessages = async (roomId, currentUserId) => {
+    try {
+        const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
+        console.log('🌐 메시지 조회 API 호출:', url);
+
+        const response = await fetch(url, {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+            });
+            
+            if (response.ok) {
+                const messagesData = await response.json();
+                console.log('✅ 메시지 데이터:', messagesData);
+                
+                // 백엔드 응답을 프론트엔드 형식으로 변환
+                const transformedMessages = messagesData.map(msg => ({
+                    id: msg.id || msg.roomId + '_' + msg.sendTime,
+                    user: {
+                        name: msg.senderNickname || `사용자${msg.senderId}`,
+                        isSelf: String(msg.senderId) === String(currentUserId),
+                    },
+                    text: msg.content,
+                    time: formatTime(msg.sendTime),
+                    sendTime: msg.sendTime
+                }));
+                
+                // 시간순 정렬
+                transformedMessages.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
+                
+                return transformedMessages;
+            } else {
+                throw new Error(`메시지 조회 실패: ${response.status}`);
+            }
+        } catch (error) {
+            console.error('❌ 메시지 조회 오류:', error);
+            throw error;
+        }
+    };
+
+// 동행 게시물 정보 조회 - ✅ currentUserId를 매개변수로 받도록 수정
+export const getAccompanyPostInfo = async (accompanyId, currentUserId) => {
+    try {
+        const url = `${API_URL}/api/accompany/AccompanyPost?postId=${accompanyId}&userId=${currentUserId}`;
+        console.log('🌐 동행 게시물 API 호출 (올바른 엔드포인트):', url);
+        
+        const response = await fetch(url, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        });
+
+        console.log('📡 응답 상태:', response.status, response.statusText);
+
+        if (response.ok) {
+            const backendData = await response.json();
+            console.log('📋 백엔드 원본 데이터 (올바른 엔드포인트):', backendData);
+            
+            // 🔧 다른 페이지와 동일한 변환 로직 사용
+            const transformedData = transformAccompanyDetailForChat(backendData);
+            
+            console.log('✅ 변환된 데이터:', transformedData);
+            return transformedData;
+            
+        } else {
+            const errorText = await response.text();
+            console.error('❌ API 오류 응답:', errorText);
+            throw new Error(`동행 정보 조회 실패: ${response.status} - ${errorText}`);
+        }
+    } catch (error) {
+        console.error('❌ 동행 정보 조회 오류:', error);
+        throw error;
+    }
+};
+
+//  transformAccompanyDetail 채팅용
+const transformAccompanyDetailForChat = (backendData) => {
+    if (!backendData) return null;
+
+    console.log('🔄 데이터 변환 시작:', backendData);
+
+
+    const transformed = {
+        id: backendData.id?.toString() || '1',
+        title: backendData.title || '제목 없음',
+        location: backendData.location || '위치 미정',
+        
+        // 🔧 member 처리 방식을 다른 페이지와 동일하게
+        members: backendData.member ? Array.from(backendData.member).map(p => p.userId?.toString()) : [],
+        applicants: backendData.applyMember ? Array.from(backendData.applyMember).map(a => a.userId?.toString()) : [],
+        
+        // 🔧 participants 계산 로직을 다른 페이지와 동일하게  
+        currentParticipants: backendData.currentParticipants || (backendData.member ? backendData.member.size : 1),
+        maxParticipants: backendData.maxRecruit || 0,
+
+        createdByName: backendData.nickname || '알 수 없음',
+    };
+
+    console.log('✅ 변환 완료:', transformed);
+    return transformed;
+};
+
+
 
 // WebSocket URL 가져오기
 export const getWebSocketURL = () => {

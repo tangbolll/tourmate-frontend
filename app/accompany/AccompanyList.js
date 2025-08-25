@@ -2,9 +2,10 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router'; // useRouter import는 올바름
 import AccompanyListView from '../../components/accompany/AccompanyListView';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
-import { currentUserId } from '../../constants/testUserId';
+import { useAuth } from '../../context/AuthContext';
 
 // 분리된 API 함수들을 import
 import {
@@ -29,7 +30,9 @@ const AccompanyList = () => {
     const [myAppliedAccompanyList, setMyAppliedAccompanyList] = useState([]);
     const [myCreatedAccompanyList, setMyCreatedAccompanyList] = useState([]);
     const [feedList, setFeedList] = useState([]);
-    
+
+    const { currentUserId } = useAuth();
+
     const [loadingStates, setLoadingStates] = useState({
         feed: false,
         mine: false,
@@ -51,7 +54,7 @@ const AccompanyList = () => {
         travelLocation: '',
     });
 
-    const router = useRouter(); // ✅ useRouter 훅으로 router 객체를 가져옴
+    const router = useRouter();
 
     const updateLoadingState = (tab, isLoading) => {
         setLoadingStates(prev => ({ ...prev, [tab]: isLoading }));

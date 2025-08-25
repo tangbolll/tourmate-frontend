@@ -13,13 +13,14 @@ import { Ionicons } from '@expo/vector-icons';
 
 // API 함수 및 상수 임포트
 import { createTour } from '../../utils/MyTourApi';
-import { currentUserId } from '../../constants/testUserId';
 import CompleteButton from '../../components/mytour/createItinerary/CompleteButton';
 import ItineraryTitleInput from '../../components/mytour/createItinerary/ItineraryTitleInput';
 import TourPlace from '../../components/mytour/createItinerary/TourPlace';
 import TourPeriod from '../../components/mytour/createItinerary/TourPeriod';
+import { useAuth } from '../../context/AuthContext';
 
 export default function CreateItinerary() {
+    const { currentUserId } = useAuth();
     const router = useRouter();
     const { selectedRegions, currentTitle, currentPeriod } = useLocalSearchParams();
 
