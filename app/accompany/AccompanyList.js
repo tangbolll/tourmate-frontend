@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router'; // useRouter import는 올바름
 import AccompanyListView from '../../components/accompany/AccompanyListView';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import { currentUserId } from '../../constants/testUserId';
@@ -25,6 +26,7 @@ const AccompanyList = () => {
     const [likedPosts, setLikedPosts] = useState({});
     const [calendarVisible, setCalendarVisible] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
+    const [currentUserId, setCurrentUserId] = useState(null);
 
     const [myAppliedAccompanyList, setMyAppliedAccompanyList] = useState([]);
     const [myCreatedAccompanyList, setMyCreatedAccompanyList] = useState([]);
@@ -51,7 +53,16 @@ const AccompanyList = () => {
         travelLocation: '',
     });
 
-    const router = useRouter(); // ✅ useRouter 훅으로 router 객체를 가져옴
+    const router = useRouter();
+
+    useEffect(() => {
+        const getUserId = async () => {
+            const userId = await AsyncStorage.getItem('userId');
+            setCurrentUserId(userId);
+        };
+        getUserId();
+    }, []);
+
 
     const updateLoadingState = (tab, isLoading) => {
         setLoadingStates(prev => ({ ...prev, [tab]: isLoading }));
