@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
 
 const defaultImage = require('../../../assets/defaultBackground.png');
 const { width } = Dimensions.get('window');
@@ -15,7 +16,11 @@ export default function MyTourFeed({
     members = [],
     isBookmarked = false,
     onPress,
-    onBookmarkPress
+    onBookmarkPress,
+    // ✅ 편집 모드 관련 prop 추가
+    isEditMode,
+    isSelected,
+    onSelect
 }) {
     // 날짜 포맷팅 함수
     const formatDate = (dateString) => {
@@ -44,21 +49,36 @@ export default function MyTourFeed({
     };
 
     const handleCardPress = () => {
-        // 상세 페이지로 이동
-        if (onPress) {
+        if (isEditMode) {
+            if (onSelect) {
+                onSelect();
+            }
+        } else if (onPress) {
             onPress();
         }
     };
 
-    const handleBookmarkPress = () => {
-        // 북마크 토글
+    const handleBookmarkPress = (event) => {
+        event.stopPropagation(); // ✅ 카드 클릭 이벤트가 전파되지 않도록 막습니다.
+        console.log("1단계: MyTourFeed의 별 버튼 클릭됨!"); 
         if (onBookmarkPress) {
             onBookmarkPress();
         }
     };
 
     return (
-        <TouchableOpacity onPress={handleCardPress} style={styles.card}>
+        <TouchableOpacity onPress={handleCardPress} style={[styles.card, isSelected && styles.selectedCard]}>
+            {/* ✅ 편집 모드일 때만 체크박스 표시 */}
+            {isEditMode && (
+                <View style={styles.checkboxContainer}>
+                    <MaterialCommunityIcons
+                        name={isSelected ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"}
+                        size={24}
+                        color={isSelected ? "#007BFF" : "white"}
+                    />
+                </View>
+            )}
+
             {/* 이미지 영역 */}
             <View style={styles.imageContainer}>
                 <Image 
@@ -77,20 +97,20 @@ export default function MyTourFeed({
             <View style={styles.contentContainer}>
                 {/* 날짜 + 북마크 한 줄 */}
                 <View style={styles.dateRow}>
-                <Text style={styles.date}>{getDateRange()}</Text>
-                <TouchableOpacity onPress={handleBookmarkPress}>
-                    <MaterialIcons 
-                    name={isBookmarked ? "star" : "star-border"} 
-                    size={24} 
-                    color={isBookmarked ? "#FFD700" : "#ccc"} 
-                    />
-                </TouchableOpacity>
+                    <Text style={styles.date}>{getDateRange()}</Text>
+                    <TouchableOpacity onPress={handleBookmarkPress}>
+                        <MaterialIcons 
+                            name={isBookmarked ? "star" : "star-border"} 
+                            size={24} 
+                            color={isBookmarked ? "#FFD700" : "#ccc"} 
+                        />
+                    </TouchableOpacity>
                 </View>
 
                 {/* 제목 */}
                 <Text 
                     style={styles.title}
-                    numberOfLines={2}
+                    numberOfLines={1}
                     ellipsizeMode="tail"
                 >
                     {title}
@@ -122,14 +142,12 @@ export default function MyTourFeed({
 
 const styles = StyleSheet.create({
     card: {
-        width: (width - 48) / 2, // 양쪽 마진 16씩, 두 개가 들어가도록
+        width: (width - 48) / 2,
         backgroundColor: '#fff',
         borderRadius: 12,
         borderWidth: 1,
         borderColor: '#e0e0e0',
         marginBottom: 16,
-        marginLeft: 4,
-        marginRight: 4,
         shadowColor: '#000',
         shadowOffset: {
             width: 0,
@@ -139,7 +157,12 @@ const styles = StyleSheet.create({
         shadowRadius: 3.84,
         elevation: 5,
         overflow: 'hidden',
-        position: 'relative', // 북마크 버튼 위치를 위해 추가
+        position: 'relative',
+    },
+    // ✅ 선택되었을 때 스타일 추가
+    selectedCard: {
+        borderColor: '#007BFF',
+        borderWidth: 2,
     },
     imageContainer: {
         width: '100%',
@@ -171,7 +194,6 @@ const styles = StyleSheet.create({
     date: {
         fontSize: 12,
         color: '#666',
-        // marginBottom: 4,
     },
     title: {
         fontSize: 14,
@@ -202,5 +224,12 @@ const styles = StyleSheet.create({
         bottom: 8,
         right: 8,
         padding: 4,
+    },
+    // ✅ 체크박스 스타일 추가
+    checkboxContainer: {
+        position: 'absolute',
+        top: 8,
+        left: 8,
+        zIndex: 1,
     },
 });

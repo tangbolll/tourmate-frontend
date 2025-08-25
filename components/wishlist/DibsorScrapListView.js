@@ -16,7 +16,8 @@ const DibsScrapListView = ({
     selectedTab,
     setSelectedTab,
     loading,
-    dibsList,
+    // ✅ props로 명시적으로 dibsList와 scrapList를 받도록 수정
+    dibsList, 
     scrapList,
     likedPosts,
     handlePressLike,
@@ -24,34 +25,25 @@ const DibsScrapListView = ({
     onPostcardPress
 }) => {
 
-    // 태그 필터링 함수 - 성별 + 카테고리만 표시 (연령, 사용자정의 태그 제외)
-    const filterTags = (tags) => {
-        if (!tags || !Array.isArray(tags)) return [];
-        
-        // 성별 관련 태그들
-        const genderTags = ['남자만', '여자만', '성별무관'];
-        
-        // 기본 카테고리 태그들 (연령 관련 태그 제외)
-        const categoryTags = [
-            '투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '액티비티', '힐링', '역사유적', '박물관/미술관'
-        ];
-        
-        // 연령 관련 태그들 (제외할 태그들)
-        const ageTags = ['10대', '20대', '30대', '40대', '50대', '60대+', '전연령'];
-        
-        return tags.filter(tag => {
-            // 성별 태그이거나 기본 카테고리 태그인 경우만 포함
-            // 연령 태그는 제외
-            return genderTags.includes(tag) || (categoryTags.includes(tag) && !ageTags.includes(tag));
-        });
-    };
-
-    // 현재 탭에 따른 데이터 선택
+    // ✅ getCurrentTabData() 함수에서 props로 받은 변수를 사용하도록 수정
     const getCurrentTabData = () => {
         return selectedTab === '찜' ? dibsList : scrapList;
     };
 
-    // 피드 아이템 렌더링
+    const filterTags = (tags) => {
+        if (!tags || !Array.isArray(tags)) return [];
+        
+        const genderTags = ['남자만', '여자만', '성별무관'];
+        const categoryTags = [
+            '투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '액티비티', '힐링', '역사유적', '박물관/미술관'
+        ];
+        const ageTags = ['10대', '20대', '30대', '40대', '50대', '60대+', '전연령'];
+        
+        return tags.filter(tag => {
+            return genderTags.includes(tag) || (categoryTags.includes(tag) && !ageTags.includes(tag));
+        });
+    };
+
     const renderFeedItems = () => {
         if (loading) {
             return (
@@ -63,7 +55,8 @@ const DibsScrapListView = ({
 
         const currentData = getCurrentTabData();
         
-        if (currentData.length === 0) {
+        // ✅ currentData가 유효한 배열인지 먼저 확인
+        if (!currentData || !Array.isArray(currentData) || currentData.length === 0) {
             return (
                 <View style={styles.emptyState}>
                     <Text style={styles.emptyStateText}>
@@ -82,7 +75,7 @@ const DibsScrapListView = ({
                 id={post.id}
                 date={post.date}
                 title={post.title}
-                tags={filterTags(post.tags)} // 태그 필터링 적용
+                tags={filterTags(post.tags)}
                 location={post.location}
                 participants={post.participants}
                 maxParticipants={post.maxParticipants}
@@ -102,8 +95,8 @@ const DibsScrapListView = ({
                         <RefreshControl
                             refreshing={refreshing}
                             onRefresh={onRefresh}
-                            colors={['#000']} // Android
-                            tintColor={'#000'} // iOS
+                            colors={['#000']}
+                            tintColor={'#000'}
                         />
                     }
                     contentContainerStyle={styles.scrollViewContent}
@@ -113,6 +106,7 @@ const DibsScrapListView = ({
             )}
             
             {selectedTab === '스크랩' && (
+                // PostcardGridView로 scrapList를 전달
                 <PostcardGridView
                     refreshing={refreshing}
                     onRefresh={onRefresh}

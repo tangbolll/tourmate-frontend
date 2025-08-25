@@ -20,11 +20,11 @@ const Intro = ({ message, photos }) => {
 
     const getDisplayPhotos = () => {
         if (!photos) {
-            return [defaultPhoto, defaultPhoto];
+            return []; // 사진 데이터가 없을 경우 빈 배열 반환
         }
         
         if (Array.isArray(photos) && photos.length === 0) {
-            return [defaultPhoto, defaultPhoto];
+            return []; // 배열이지만 비어있는 경우 빈 배열 반환
         }
         
         if (Array.isArray(photos)) {
@@ -34,11 +34,6 @@ const Intro = ({ message, photos }) => {
                 photo !== 'undefined' && 
                 photo !== 'null'
             );
-            
-            if (validPhotos.length === 0) {
-                return [defaultPhoto, defaultPhoto];
-            }
-            
             return validPhotos;
         }
         
@@ -46,7 +41,7 @@ const Intro = ({ message, photos }) => {
             return [photos]; // 단일 이미지도 배열로 반환
         }
         
-        return [defaultPhoto, defaultPhoto];
+        return []; // 모든 유효성 검사를 통과하지 못하면 빈 배열 반환
     };
 
     const displayPhotos = getDisplayPhotos();
@@ -68,30 +63,32 @@ const Intro = ({ message, photos }) => {
                 <Text style={styles.text}>{message}</Text>
             </View>
 
-            {/* 이미지 (가로 스크롤뷰 적용) */}
-            <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.imageScrollContainer}
-            >
-                {displayPhotos.map((photo, index) => (
-                    <TouchableWithoutFeedback 
-                        key={index} 
-                        onPress={() => handleImagePress(photo)}
-                    >
-                        <View style={styles.imageBox}>
-                            <Image 
-                                source={typeof photo === 'string' ? { uri: photo } : photo} 
-                                style={styles.image} 
-                                resizeMode="cover" 
-                                onError={(error) => {
-                                    console.log('Image load error:', error);
-                                }}
-                            />
-                        </View>
-                    </TouchableWithoutFeedback>
-                ))}
-            </ScrollView>
+            {/* 이미지가 있을 경우에만 스크롤뷰를 렌더링 */}
+            {displayPhotos.length > 0 && (
+                <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    contentContainerStyle={styles.imageScrollContainer}
+                >
+                    {displayPhotos.map((photo, index) => (
+                        <TouchableWithoutFeedback 
+                            key={index} 
+                            onPress={() => handleImagePress(photo)}
+                        >
+                            <View style={styles.imageBox}>
+                                <Image 
+                                    source={typeof photo === 'string' ? { uri: photo } : photo} 
+                                    style={styles.image} 
+                                    resizeMode="cover" 
+                                    onError={(error) => {
+                                        console.log('Image load error:', error);
+                                    }}
+                                />
+                            </View>
+                        </TouchableWithoutFeedback>
+                    ))}
+                </ScrollView>
+            )}
 
             {/* 사진 확대 모달 */}
             <Modal
