@@ -11,9 +11,10 @@ import Constants from 'expo-constants';
 import BookmarkedTab from '../../components/mytour/mytourHome/BookMarkedTab';
 import MyTourTab from '../../components/mytour/mytourHome/MyTourTab';
 import { fetchMyTours } from '../../utils/MyTourApi';
-import { currentUserId } from '../../constants/testUserId';
+import { useAuth } from '../../context/AuthContext';
 
 export default function MyTourHome() {
+    const { currentUserId } = useAuth();
     const [tours, setTours] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);

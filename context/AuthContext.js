@@ -9,26 +9,26 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
     const [user, setUser] = useState(null);
-    const [currentUserId, setCurrentUserId] = useState(null); // ✅ 추가
+    const [currentUserId, setCurrentUserId] = useState(null); 
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const checkAuth = async () => {
             try {
                 const token = await AsyncStorage.getItem('jwtToken');
-                const userId = await AsyncStorage.getItem('userId'); // ✅ 추가
+                const userId = await AsyncStorage.getItem('userId');
                 
                 if (token && userId) {
                     setUser({ authenticated: true });
-                    setCurrentUserId(userId); // ✅ 추가
+                    setCurrentUserId(userId); 
                 } else {
                     setUser(null);
-                    setCurrentUserId(null); // ✅ 추가
+                    setCurrentUserId(null);
                 }
             } catch (e) {
                 console.error("Failed to check auth status:", e);
                 setUser(null);
-                setCurrentUserId(null); // ✅ 추가
+                setCurrentUserId(null);
             } finally {
                 setLoading(false);
             }
@@ -41,7 +41,7 @@ export function AuthProvider({ children }) {
             await AsyncStorage.setItem('jwtToken', token);
             await AsyncStorage.setItem('userId', String(userId));
             setUser({ authenticated: true });
-            setCurrentUserId(String(userId)); // ✅ 추가
+            setCurrentUserId(String(userId));
         } catch (e) {
             console.error("Failed to sign in:", e);
         }
@@ -52,7 +52,7 @@ export function AuthProvider({ children }) {
             await AsyncStorage.removeItem('jwtToken');
             await AsyncStorage.removeItem('userId');
             setUser(null);
-            setCurrentUserId(null); // ✅ 추가
+            setCurrentUserId(null);
         } catch (e) {
             console.error("Failed to sign out:", e);
         }
@@ -64,7 +64,7 @@ export function AuthProvider({ children }) {
                 signIn,
                 signOut,
                 user,
-                currentUserId, // ✅ 추가
+                currentUserId,
                 loading,
             }}>
             {children}
