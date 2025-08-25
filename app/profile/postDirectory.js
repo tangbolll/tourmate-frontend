@@ -1,114 +1,84 @@
-import React, { useState, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Text } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Text, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { Feather } from '@expo/vector-icons';
 import PostDirectoryHeader from '../../components/profile/PostDirectoryHeader';
 import PostDirectoryFooter from '../../components/profile/PostDirectoryFooter';
-import { Feather } from '@expo/vector-icons';
 
-// 목 데이터 - 선택된 디렉토리의 엽서들
-const mockPostcards = [
-    {
-        id: 1,
-        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-        title: '부산 해운대',
-        date: '2021.03.04',
-    },
-    {
-        id: 2,
-        image: 'https://images.unsplash.com/photo-1534274867514-d5b47ef22043?w=400&h=300&fit=crop',
-        title: '부산 광안리',
-        date: '2021.03.05',
-    },
-    {
-        id: 3,
-        image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
-        title: '부산 자갈치',
-        date: '2021.03.05',
-    },
-    {
-        id: 4,
-        image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop',
-        title: '부산 송도',
-        date: '2021.03.06',
-    },
-    {
-        id: 5,
-        image: 'https://images.unsplash.com/photo-1617085222613-49c7a5a8e5cb?w=400&h=300&fit=crop',
-        title: '부산 태종대',
-        date: '2021.03.06',
-    },
-    {
-        id: 6,
-        image: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400&h=300&fit=crop',
-        title: '부산 감천문화마을',
-        date: '2021.03.06',
-    },
-    {
-        id: 7,
-        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-        title: '부산 해운대 야경',
-        date: '2021.03.04',
-    },
-    {
-        id: 8,
-        image: 'https://images.unsplash.com/photo-1534274867514-d5b47ef22043?w=400&h=300&fit=crop',
-        title: '부산 광안대교',
-        date: '2021.03.05',
-    },
-    {
-        id: 9,
-        image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
-        title: '부산 남포동',
-        date: '2021.03.05',
-    },
-    {
-        id: 10,
-        image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop',
-        title: '부산 용두산공원',
-        date: '2021.03.06',
-    },
-    {
-        id: 11,
-        image: 'https://images.unsplash.com/photo-1617085222613-49c7a5a8e5cb?w=400&h=300&fit=crop',
-        title: '부산 국제시장',
-        date: '2021.03.06',
-    },
-    {
-        id: 12,
-        image: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400&h=300&fit=crop',
-        title: '부산 벡스코',
-        date: '2021.03.06',
-    },
-];
+import {
+    getPostcardsByFolderApi, // 특정 폴더의 엽서 목록을 불러오는 API
+    deletePostcardApi, // 엽서 삭제 API
+    handleApiError, // API 오류 처리
+} from '../../utils/PostCardApi';
 
 export default function PostDirectory() {
-    const router = useRouter();
+    const router = useRouter(); 
     const params = useLocalSearchParams();
     
     // URL 파라미터에서 디렉토리 정보 가져오기
+    const directoryId = params.directoryId || null;
     const directoryTitle = params.title || 'Busan';
     const startDate = params.startDate || '2021.03.04';
     const endDate = params.endDate || '2021.03.06';
-    
+
+    // 엽서 데이터 상태
+    const [postcards, setPostcards] = useState([]);
     // 선택 모드와 선택된 엽서들 상태 관리
     const [isSelectMode, setIsSelectMode] = useState(false);
     const [selectedPostcards, setSelectedPostcards] = useState(new Set());
+    // 로딩 상태 관리
+    const [isLoading, setIsLoading] = useState(true);
+
+    // 디렉토리 ID가 변경될 때마다 엽서 데이터를 불러오는 useEffect
+    useEffect(() => {
+        const fetchPostcards = async () => {
+            if (!directoryId) {
+                console.log('디렉토리 ID가 없어 엽서 데이터를 불러오지 않습니다.');
+                setIsLoading(false);
+                return;
+            }
+
+            try {
+                setIsLoading(true);
+                console.log(`✅ 디렉토리 ID ${directoryId}의 엽서 데이터 불러오기 시도`);
+                const data = await getPostcardsByFolderApi(directoryId);
+                console.log('✅ 엽서 데이터 불러오기 성공:', data);
+
+                const formattedPostcards = data.map(pc => ({
+                    id: pc.postcardId,
+                    image: pc.imageUrl,
+                    title: pc.content || '제목 없음',
+                    date: pc.dateCreated ? pc.dateCreated.split('T')[0] : '날짜 없음',
+                }));
+                setPostcards(formattedPostcards);
+            } catch (error) {
+                console.error('❌ 엽서 데이터 불러오기 실패:', error);
+                handleApiError(error, '엽서 데이터 불러오기');
+                Alert.alert('오류', '엽서 데이터를 불러오는 데 실패했습니다.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        fetchPostcards();
+    }, [directoryId]);
+
 
     // 뒤로가기 처리
     const handleBackPress = useCallback(() => {
-        router.back();
-    }, [router]);
+        // 선택 모드일 경우 취소, 아니면 뒤로가기
+        if (isSelectMode) {
+            setIsSelectMode(false);
+            setSelectedPostcards(new Set());
+        } else {
+            router.back();
+        }
+    }, [isSelectMode, router]);
 
-    // 선택 모드 활성화
-    const handleSelectPress = useCallback(() => {
-        setIsSelectMode(true);
-        setSelectedPostcards(new Set());
-    }, []);
-
-    // 선택 모드 취소
-    const handleCancelPress = useCallback(() => {
-        setIsSelectMode(false);
-        setSelectedPostcards(new Set());
+    // 선택 모드 토글
+    const handleSelectToggle = useCallback(() => {
+        setIsSelectMode(prev => !prev);
+        setSelectedPostcards(new Set()); // 선택 모드 진입/해제 시 선택 초기화
     }, []);
 
     // 엽서 선택/해제 처리
@@ -116,6 +86,7 @@ export default function PostDirectory() {
         if (!isSelectMode) {
             // 선택 모드가 아니면 엽서 상세 페이지로 이동
             console.log('엽서 상세 페이지로 이동:', postcardId);
+            // TODO: 상세 페이지로 이동하는 라우팅 로직 구현
             return;
         }
 
@@ -134,7 +105,6 @@ export default function PostDirectory() {
     // 엽서 추가 버튼 클릭 처리
     const handleAddPostcardPress = useCallback(() => {
         if (isSelectMode) {
-            // 선택 모드에서는 동작하지 않음
             return;
         }
 
@@ -142,34 +112,64 @@ export default function PostDirectory() {
         router.push({
             pathname: 'profile/writePost',
             params: {
-                directoryId: params.directoryId || 'temp-id',
+                directoryId: directoryId,
                 directoryName: directoryTitle,
                 startDate: startDate,
                 endDate: endDate,
             }
         });
-    }, [isSelectMode, router, params.directoryId, directoryTitle, startDate, endDate]);
+    }, [isSelectMode, router, directoryId, directoryTitle, startDate, endDate]);
 
     // 푸터 액션 처리
-    const handleDelete = useCallback(() => {
-        console.log('선택된 엽서 삭제:', Array.from(selectedPostcards));
-        // 삭제 로직 구현
-        setSelectedPostcards(new Set());
-        setIsSelectMode(false);
+    const handleDelete = useCallback(async () => {
+        if (selectedPostcards.size === 0) {
+            Alert.alert('알림', '삭제할 엽서를 선택해주세요.');
+            return;
+        }
+
+        Alert.alert(
+            '삭제 확인',
+            `선택한 엽서 ${selectedPostcards.size}개를 정말로 삭제하시겠습니까?`,
+            [
+                { text: '취소', style: 'cancel' },
+                {
+                    text: '삭제',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const idsToDelete = Array.from(selectedPostcards);
+                            console.log('선택된 엽서 삭제:', idsToDelete);
+
+                            await Promise.all(idsToDelete.map(id => deletePostcardApi(id)));
+
+                            setPostcards(prev => prev.filter(pc => !selectedPostcards.has(pc.id)));
+                            setSelectedPostcards(new Set());
+                            setIsSelectMode(false);
+                            Alert.alert('삭제 완료', '선택한 엽서가 성공적으로 삭제되었습니다.');
+                        } catch (error) {
+                            console.error('❌ 엽서 삭제 오류:', error);
+                            handleApiError(error, '엽서 삭제');
+                        }
+                    }
+                }
+            ]
+        );
     }, [selectedPostcards]);
 
     const handleDownload = useCallback(() => {
         console.log('선택된 엽서 다운로드:', Array.from(selectedPostcards));
-        // 다운로드 로직 구현
+        Alert.alert('다운로드', '다운로드 기능이 준비중입니다.');
     }, [selectedPostcards]);
 
     const handleShare = useCallback(() => {
-        console.log('선택된 엽서 공유:', Array.from(selectedPostcards));
+        const selectedPostcardsData = postcards.filter(postcard => selectedPostcards.has(postcard.id));
         
-        // 선택된 엽서들의 정보를 공유 페이지로 전달
-        const selectedPostcardsData = mockPostcards.filter(postcard => 
-            selectedPostcards.has(postcard.id)
-        );
+        if (selectedPostcardsData.length === 0) {
+            Alert.alert('알림', '공유할 엽서를 선택해주세요.');
+            return;
+        }
+
+        console.log('선택된 엽서 공유:', selectedPostcardsData);
         
         router.push({
             pathname: 'profile/sharePost',
@@ -180,8 +180,26 @@ export default function PostDirectory() {
                 endDate: endDate,
             }
         });
-    }, [selectedPostcards, router, directoryTitle, startDate, endDate]);
+    }, [selectedPostcards, postcards, router, directoryTitle, startDate, endDate]);
 
+
+    if (isLoading) {
+        return (
+            <View style={styles.container}>
+                <PostDirectoryHeader
+                    title={directoryTitle}
+                    startDate={startDate}
+                    endDate={endDate}
+                    onBackPress={handleBackPress}
+                    showActionButton={false}
+                />
+                <View style={styles.loadingContainer}>
+                    <Text style={styles.loadingText}>엽서를 불러오는 중...</Text>
+                </View>
+            </View>
+        );
+    }
+    
     return (
         <View style={styles.container}>
             {/* 헤더 */}
@@ -190,9 +208,8 @@ export default function PostDirectory() {
                 startDate={startDate}
                 endDate={endDate}
                 onBackPress={handleBackPress}
-                onSelectPress={handleSelectPress}
-                onCancelPress={handleCancelPress}
-                showActionButton={true}
+                onSelectPress={handleSelectToggle} // 토글 함수 연결
+                isSelectMode={isSelectMode} // 현재 모드 전달
             />
 
             {/* 엽서 그리드 */}
@@ -202,7 +219,7 @@ export default function PostDirectory() {
                 contentContainerStyle={styles.scrollContent}
             >
                 <View style={styles.grid}>
-                    {mockPostcards.map((postcard) => (
+                    {postcards.map((postcard) => (
                         <TouchableOpacity
                             key={postcard.id}
                             style={styles.postcardContainer}
@@ -297,23 +314,28 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         padding: 16,
+        // 왼쪽 정렬 및 간격 유지
         justifyContent: 'space-between',
+        alignContent: 'flex-start', // 상단부터 차곡차곡 쌓이도록
     },
     postcardContainer: {
         width: '31%',
         marginBottom: 12,
-        aspectRatio: 1,
+        // 비율 148:100 = 1.48
+        aspectRatio: 1.48,
     },
     imageContainer: {
-        width: 148 * 0.75,
-        height: 100 * 0.75,
+        width: '100%',
+        height: '100%',
         position: 'relative',
         overflow: 'hidden',
         backgroundColor: '#f0f0f0',
+        borderRadius: 8,
     },
     postcardImage: {
         width: '100%',
         height: '100%',
+        borderRadius: 8,
     },
     checkContainer: {
         position: 'absolute',
@@ -335,12 +357,12 @@ const styles = StyleSheet.create({
         backgroundColor: '#555',
         borderColor: '#555',
     },
-    // 엽서 추가 버튼 스타일
-    // addPostcardContainer: {
-    //     borderWidth: 2,
-    //     borderColor: '#ddd',
-    //     borderStyle: 'dashed',
-    // },
+    addPostcardContainer: {
+        borderWidth: 2,
+        borderColor: '#ddd',
+        borderStyle: 'dashed',
+        borderRadius: 8,
+    },
     addPostcardContainerDisabled: {
         opacity: 0.5,
     },
@@ -362,5 +384,14 @@ const styles = StyleSheet.create({
     },
     addPostcardTextDisabled: {
         color: '#ccc',
+    },
+    loadingContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    loadingText: {
+        fontSize: 16,
+        color: '#666',
     },
 });
