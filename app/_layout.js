@@ -22,11 +22,12 @@ function RootLayoutNav() {
     useEffect(() => {
         // Only navigate if loading is false (auth status has been determined)
         if (!loading) {
-            const inAuthGroup = segments[0] === 'auth';
+            const isAuthGroup = segments[0] === 'auth';
+            const isTermsAndPoliciesGroup = segments[0] === 'profile' && segments[1] === 'terms-and-policies';
 
-            if (user && inAuthGroup) {
-                router.replace('/(tabs)');
-            } else if (!user && !inAuthGroup) {
+            const isPublicRoute = isAuthGroup || isTermsAndPoliciesGroup;
+
+            if (!user && !isPublicRoute) {
                 router.replace('/auth/login');
             }
         }
@@ -41,6 +42,9 @@ function RootLayoutNav() {
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="auth/login" />
+            <Stack.Screen name="auth/terms-agreement" />
+            <Stack.Screen name="auth/register" />
+            <Stack.Screen name="auth/register-details" />
         </Stack>
     );
 }

@@ -12,12 +12,13 @@ import {
 } from 'react-native';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { checkEmailApi } from '../../utils/ProfileApi';
 
 const RegisterScreen = () => {
     const router = useRouter();
+    const { marketingConsent } = useLocalSearchParams();
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
     
     // Form states
@@ -71,6 +72,7 @@ const RegisterScreen = () => {
                 phoneNumber,
                 firstname,
                 lastname,
+                marketingConsent,
             },
         });
     };

@@ -76,7 +76,6 @@ const SettingsScreen = () => {
         </Section>
 
         <Section title="알림설정">
-          <SettingItem label="알림설정" isNav onPress={() => { /* Navigate to Notification Detail Settings */ }} />
           <ToggleItem
             label="앱 푸쉬알림"
             description="앱의 모든 알람을 푸쉬알림으로 받을 수 있어요"
@@ -114,7 +113,7 @@ const SettingsScreen = () => {
         </Section>
         
         <View style={styles.singleItemContainer}>
-            <SettingItem label="약관 및 정책" isNav onPress={() => { /* Navigate to Terms */ }} />
+            <SettingItem label="약관 및 정책" isNav onPress={() => router.push('/profile/terms-and-policies')} />
         </View>
         
         <View style={styles.singleItemContainer}>

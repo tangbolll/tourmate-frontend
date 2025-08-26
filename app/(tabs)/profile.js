@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import React, { useState, useCallback, useEffect } from 'react';
-import { View, StyleSheet, Alert, Text, Button } from 'react-native';
+import useUserStore from '../../context/userStore';
+import { View, StyleSheet, Alert, Text } from 'react-native';
 import { ProfileHeader } from '../../components/profile/ProfileHeader';
 import PostTabHeader from '../../components/profile/PostTabHeader';
 import PostBoardTab from '../../components/profile/PostBoardTab';
@@ -32,8 +33,63 @@ export default function ProfileHome() {
     const [selectPopupVisible, setSelectPopupVisible] = useState(false);
     const [popupMode, setPopupMode] = useState('create');
     const [editingFolder, setEditingFolder] = useState(null);
-    const [userData, setUserData] = useState(null);
+    const { userData, setUserData } = useUserStore();
 
+    useEffect(() => {
+        const fetchUserData = async () => {
+            try {
+                const userId = await AsyncStorage.getItem('userId');
+                if (userId) {
+                    const data = await fetchUserProfileApi(userId);
+                    setUserData(data);
+                }
+            } catch (error) {
+                console.error('Error fetching user data in ProfileHome:', error);
+            }
+        };
+
+        fetchUserData();
+    }, []);
+
+    // 💡 참고: 실제 사용자 이메일은 로그인 세션 등에서 가져와야 합니다.
+    const userEmail = userData?.email; 
+
+    // 폴더 목록을 서버에서 불러오는 함수
+    const fetchFolders = useCallback(async () => {
+        if (!userEmail) return; // userEmail이 없으면 호출하지 않음
+        try {
+            const fetchedFolders = await getFoldersByUserApi(userEmail);
+            setFolders(fetchedFolders);
+            console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", fetchedFolders);
+        } catch (error) {
+            handleApiError(error, '폴더 목록 조회');
+        }
+    }, [userEmail]);
+
+    // 컴포넌트 마운트 시 폴더 목록 불러오기
+    useEffect(() => {
+        fetchFolders();
+    }, [fetchFolders, userEmail]); // userEmail을 의존성 배열에 추가
+
+    // if (!userData) {
+    //     return <View style={[styles.container, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}><Text>Loading profile...</Text></View>; // 로딩 스피너 또는 플레이스홀더
+    // }
+
+    // 폴더 생성/수정 팝업 열기
+    const handleCreateFolder = useCallback(() => {
+        setPopupMode('create');
+        setEditingFolder(null);
+        setCreatePopupVisible(true);
+    }, []);
+
+    // 폴더 수정 팝업 열기
+    const handleEditFolder = useCallback((folderData) => {
+        setPopupMode('edit');
+        setEditingFolder(folderData);
+        setCreatePopupVisible(true);
+    }, []);
+
+    // WritePost 페이지로 네비게이션
     const navigateToWritePost = useCallback((folderData) => {
         const params = {};
         
@@ -239,7 +295,7 @@ export default function ProfileHome() {
 
     return (
         <View style={styles.container}>
-            <ProfileHeader />
+            <ProfileHeader userData={userData} />
             <PostTabHeader 
                 activeTab={activeTab}
                 onTabPress={handleTabPress} 
