@@ -13,7 +13,7 @@ const ScheduleDateInput = ({
         if (!currentSelectedDate) {
             return '날짜 선택';
         }
-        const selectedDateObj = availableDates.find(date => date.value === currentSelectedDate);
+                const selectedDateObj = availableDates.find(date => date.value === currentSelectedDate);
         const label = selectedDateObj ? selectedDateObj.label : currentSelectedDate;
         return label;
     };

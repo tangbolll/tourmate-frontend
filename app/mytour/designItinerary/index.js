@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, SafeAreaView, Alert, Text, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Alert, Text, ActivityIndicator, Platform, Modal, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import dayjs from 'dayjs';
 
@@ -60,6 +60,8 @@ export default function DesignItinerary() {
     const [isDataLoaded, setIsDataLoaded] = useState(false);
     const [currentTourId, setCurrentTourId] = useState(tourId);
     const [scheduleLoading, setScheduleLoading] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [scheduleToDelete, setScheduleToDelete] = useState(null);
 
     // 디바운스된 값들 (자동 저장용 모두 복구)
     const debouncedSelectedAttractions = useDebounce(selectedAttractions, 2000);
@@ -264,6 +266,7 @@ export default function DesignItinerary() {
         console.log(`[Delete Flow] Starting deletion for schedule ID: ${scheduleId}`);
         setScheduleLoading(true);
         try {
+            console.log(`[Delete Flow] About to call deleteTravelSchedule with ID: ${scheduleId}`);
             const deleteResult = await deleteTravelSchedule(scheduleId);
             console.log(`[Delete Flow] deleteTravelSchedule API call result: ${deleteResult}`); // Should be true
 
@@ -286,14 +289,23 @@ export default function DesignItinerary() {
     };
 
     const handleScheduleDelete = (scheduleId) => {
-        Alert.alert("일정 삭제", "이 일정을 삭제하시겠습니까?", [
-            { text: "취소", style: "cancel" },
-            {
-                text: "삭제",
-                onPress: () => performDeleteSchedule(scheduleId),
-                style: "destructive"
-            }
-        ]);
+        console.log(`[Delete Flow] handleScheduleDelete called with scheduleId: ${scheduleId}`);
+        if (Platform.OS === 'web') {
+            setScheduleToDelete(scheduleId);
+            setShowConfirmModal(true);
+        } else {
+            Alert.alert("일정 삭제", "이 일정을 삭제하시겠습니까?", [
+                { text: "취소", style: "cancel" },
+                {
+                    text: "삭제",
+                    onPress: () => {
+                        console.log(`[Delete Flow] "삭제" button pressed for schedule ID: ${scheduleId}`);
+                        performDeleteSchedule(scheduleId);
+                    },
+                    style: "destructive"
+                }
+            ]);
+        }
     };
 
     // 그 외 핸들링
@@ -329,13 +341,21 @@ export default function DesignItinerary() {
         if (!currentTourId) {
             return Alert.alert("알림", "먼저 여행을 저장한 후 일정을 추가할 수 있습니다.");
         }
-        const dateForDay = date || (period.startDate ? dayjs(period.startDate).add(day - 1, 'day').format('YYYY-MM-DD') : null);
+                const dateForDay = date || (period.startDate ? dayjs(period.startDate).add(day - 1, 'day').format('YYYY-MM-DD') : null);
+        console.log(`[handleAddSchedule] day: ${day}, date: ${date}, period.startDate: ${period.startDate}, calculated dateForDay: ${dateForDay}`);
         setSchedulePopupData({ selectedDay: day, selectedDate: dateForDay, selectedHour: hour, existingSchedule: null });
         setShowAddSchedulePopup(true);
     };
     const handleTimeBlockClick = (blockData) => {
-        setSchedulePopupData(blockData);
-        setShowAddSchedulePopup(true);
+        const popupData = {
+            selectedDay: blockData.day,
+            selectedDate: blockData.date, // 💡 `date`를 `selectedDate`로 매핑
+            hour: blockData.hour,
+            minute: blockData.minute,
+            existingSchedule: blockData.existingSchedule
+        };
+        setSchedulePopupData(popupData);
+        setShowAddSchedulePopup(true);
     };
     const handleCloseAddSchedulePopup = () => {
         setShowAddSchedulePopup(false);
@@ -459,6 +479,40 @@ export default function DesignItinerary() {
                 />
             )}
 
+            {showConfirmModal && (
+                <Modal
+                    transparent={true}
+                    animationType="fade"
+                    visible={showConfirmModal}
+                    onRequestClose={() => setShowConfirmModal(false)}
+                >
+                    <View style={styles.modalOverlay}>
+                        <View style={styles.modalContainer}>
+                            <Text style={styles.modalTitle}>일정 삭제</Text>
+                            <Text style={styles.modalMessage}>이 일정을 삭제하시겠습니까?</Text>
+                            <View style={styles.modalButtonContainer}>
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.modalCancelButton]}
+                                    onPress={() => setShowConfirmModal(false)}
+                                >
+                                    <Text style={styles.modalButtonText}>취소</Text>
+                                </TouchableOpacity>
+                                <TouchableOpacity
+                                    style={[styles.modalButton, styles.modalDeleteButton]}
+                                    onPress={() => {
+                                        performDeleteSchedule(scheduleToDelete);
+                                        setShowConfirmModal(false);
+                                        setScheduleToDelete(null);
+                                    }}
+                                >
+                                    <Text style={styles.modalButtonText}>삭제</Text>
+                                </TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+                </Modal>
+            )}
+
             {(scheduleLoading || loading) && (
                 <View style={styles.loadingOverlay}>
                     <ActivityIndicator size="large" color="#fff" />
@@ -493,7 +547,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#fff',
     },
-    loadingOverlay: {
+        loadingOverlay: {
         position: 'absolute',
         top: 0,
         left: 0,
@@ -503,5 +557,50 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         zIndex: 1000,
+    },
+    modalOverlay: {
+        flex: 1,
+        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    modalContainer: {
+        width: 300,
+        backgroundColor: '#fff',
+        borderRadius: 10,
+        padding: 20,
+        alignItems: 'center',
+    },
+    modalTitle: {
+        fontSize: 18,
+        fontWeight: 'bold',
+        marginBottom: 10,
+    },
+    modalMessage: {
+        fontSize: 16,
+        textAlign: 'center',
+        marginBottom: 20,
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-around',
+        width: '100%',
+    },
+    modalButton: {
+        paddingVertical: 10,
+        paddingHorizontal: 20,
+        borderRadius: 5,
+        minWidth: 100,
+        alignItems: 'center',
+    },
+    modalCancelButton: {
+        backgroundColor: '#ccc',
+    },
+    modalDeleteButton: {
+        backgroundColor: '#ff4d4d',
+    },
+    modalButtonText: {
+        color: '#fff',
+        fontWeight: 'bold',
     },
 });

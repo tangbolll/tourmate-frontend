@@ -51,6 +51,9 @@ const AddSchedule = ({
     const [memoFocused, setMemoFocused] = useState(false);
     const scrollViewRef = useRef(null);
 
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [scheduleToDelete, setScheduleToDelete] = useState(null);
+
     // --- 💡 1. 위치 검색 관련 State 추가 ---
     const [searchResults, setSearchResults] = useState([]);
     const [showSearchResults, setShowSearchResults] = useState(false);
@@ -178,6 +181,7 @@ const AddSchedule = ({
 
     // --- 💡 3. 위치 검색 핸들러 함수 수정 ---
     const handleMeetLocationSearch = async (query) => {
+        console.log('Searching for:', query);
         setLocation(query); // ❌ 오류 수정: setMeetLocationInput -> setLocation
 
         if (query.trim().length < 2) {
@@ -203,6 +207,7 @@ const AddSchedule = ({
             }
 
             const data = await response.json();
+            console.log('Search results:', data.documents);
             setSearchResults(data.documents || []);
         } catch (error) {
             console.error('카카오맵 API 호출 에러:', error);
@@ -235,16 +240,37 @@ const AddSchedule = ({
     };
 
     const handleDelete = () => {
-        if (!existingSchedule) return;
-        const deleteAction = () => onScheduleDelete(existingSchedule.id);
+        // --- 디버깅 코드 추가 ---
+        console.log('handleDelete 함수 실행됨');                 // 1. 함수가 호출되는지 확인
+        console.log('onDelete 프롭:', onDelete);               // 2. onDelete가 함수인지 확인
+        console.log('extraTimeId 프롭:', extraTimeId);         // 3. extraTimeId 값이 있는지 확인
+        // ----------------------
 
-        Alert.alert(
-            '일정 삭제', '정말로 이 이정을 삭제하시겠습니까?',
-            [
-                { text: '취소', style: 'cancel' },
-                { text: '삭제', style: 'destructive', onPress: deleteAction }
-            ]
-        );
+        if (onDelete && extraTimeId) { // 👈 여기가 문제일 가능성이 높습니다.
+            console.log('조건문 통과! 확인 창을 띄웁니다.');
+
+            if (Platform.OS === 'web') {
+                if (window.confirm('정말로 이 여유시간을 삭제하시겠습니까?')) {
+                    onDelete(extraTimeId);
+                }
+            } else {
+                Alert.alert(
+                    '여유시간 삭제',
+                    '정말로 이 여유시간을 삭제하시겠습니까?',
+                    [
+                        { text: '취소', style: 'cancel' },
+                        { 
+                            text: '삭제', 
+                            style: 'destructive', 
+                            onPress: () => onDelete(extraTimeId) 
+                        }
+                    ]
+                );
+            }
+        } else {
+            // --- 문제 발생 시 이 메시지가 보일 것입니다 ---
+            console.error('오류: onDelete 프롭이나 extraTimeId가 전달되지 않았습니다!');
+        }
     };
 
     const handleMemoFocus = () => setMemoFocused(true);
