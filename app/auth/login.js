@@ -46,7 +46,7 @@ const LoginScreen = () => {
         </TouchableOpacity>
 
         <TouchableOpacity
-          onPress={() => router.push('/auth/register')}
+          onPress={() => router.push('/auth/terms-agreement')}
           style={styles.registerButton}
         >
           <Text style={styles.registerButtonText}>회원가입</Text>

@@ -16,16 +16,19 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { 
     checkNicknameApi, 
-    registerUserApi 
+    registerUserApi, 
+    handleLoginApi 
 } from '../../utils/ProfileApi';
+import { useAuth } from '../../context/AuthContext';
 
 const RegisterDetailsScreen = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
     const [isKeyboardVisible, setKeyboardVisible] = useState(false);
+    const { signIn } = useAuth();
 
     // Data from first registration page
-    const { password, email, phoneNumber, firstname, lastname } = params;
+    const { password, email, phoneNumber, firstname, lastname, marketingConsent } = params;
 
     // States for second registration page
     const [nickname, setNickname] = useState('');
@@ -92,11 +95,18 @@ const RegisterDetailsScreen = () => {
                 gender,
                 age: calculatedAge,
                 dob: dobText,
+                marketingConsent,
             };
 
             await registerUserApi(requestBody);
-            Alert.alert("회원가입 성공", "성공적으로 회원가입되었습니다. 로그인 해주세요.");
-            router.replace('/auth/login');
+            const loginResult = await handleLoginApi(email, password);
+            if (loginResult.success) {
+                await signIn(loginResult.token, loginResult.userId);
+                router.replace('/auth/registration-success');
+            } else {
+                Alert.alert('로그인 실패', loginResult.message);
+            }
+            
 
         } catch (error) {
             console.error("Registration Failed:", error);

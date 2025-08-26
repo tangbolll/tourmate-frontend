@@ -23,10 +23,9 @@ console.log("API_URL being used:", API_URL);
 // ------------------  Login  ------------------
 
 // 로그인 함수
-export const handleLoginApi = async (email, password, signIn) => {
+export const handleLoginApi = async (email, password) => {
   if (!email || !password) {
-    Alert.alert('오류', '이메일과 비밀번호를 모두 입력해주세요.');
-    return;
+    return { success: false, message: '이메일과 비밀번호를 모두 입력해주세요.' };
   }
 
   try {
@@ -37,14 +36,13 @@ export const handleLoginApi = async (email, password, signIn) => {
 
     if (response.status === 200 && response.data.token) {
       const { token, userId } = response.data;
-      await signIn(token, userId);
-      Alert.alert('성공', '로그인되었습니다.');
+      return { success: true, token, userId };
     } else {
-      Alert.alert('로그인 실패', '서버에서 오류가 발생했습니다.');
+      return { success: false, message: '서버에서 오류가 발생했습니다.' };
     }
   } catch (error) {
     console.error("Login Failed:", error.response?.data || error.message);
-    Alert.alert('로그인 실패', `이메일 또는 비밀번호가 일치하지 않습니다.`);
+    return { success: false, message: `이메일 또는 비밀번호가 일치하지 않습니다.` };
   }
 };
 

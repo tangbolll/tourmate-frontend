@@ -113,7 +113,7 @@ const SettingsScreen = () => {
         </Section>
         
         <View style={styles.singleItemContainer}>
-            <SettingItem label="약관 및 정책" isNav onPress={() => { /* Navigate to Terms */ }} />
+            <SettingItem label="약관 및 정책" isNav onPress={() => router.push('/profile/terms-and-policies')} />
         </View>
         
         <View style={styles.singleItemContainer}>
