@@ -260,23 +260,37 @@ export default function DesignItinerary() {
     };
 
     // 일정 삭제 핸들러 - 팝업창에서
+    const performDeleteSchedule = async (scheduleId) => {
+        console.log(`[Delete Flow] Starting deletion for schedule ID: ${scheduleId}`);
+        setScheduleLoading(true);
+        try {
+            const deleteResult = await deleteTravelSchedule(scheduleId);
+            console.log(`[Delete Flow] deleteTravelSchedule API call result: ${deleteResult}`); // Should be true
+
+            if (deleteResult) {
+                console.log("[Delete Flow] API call successful. Current scheduleData BEFORE refresh:", JSON.stringify(scheduleData, null, 2));
+                await fetchTourData();
+                console.log("[Delete Flow] Data refreshed successfully. Current scheduleData AFTER refresh:", JSON.stringify(scheduleData, null, 2));
+            } else {
+                console.warn("[Delete Flow] deleteTravelSchedule returned false/falsy. Not refreshing data.");
+                Alert.alert('알림', '삭제 요청은 성공했으나, 서버에서 문제가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error("[Delete Flow] Error during deletion process:", error);
+            Alert.alert('오류', `일정 삭제에 실패했습니다: ${error.message || error}`);
+        } finally {
+            setScheduleLoading(false);
+            handleCloseAddSchedulePopup();
+            console.log("[Delete Flow] Deletion process finished.");
+        }
+    };
+
     const handleScheduleDelete = (scheduleId) => {
         Alert.alert("일정 삭제", "이 일정을 삭제하시겠습니까?", [
             { text: "취소", style: "cancel" },
             {
                 text: "삭제",
-                onPress: async () => {
-                    setScheduleLoading(true);
-                    try {
-                        await deleteTravelSchedule(scheduleId);
-                        await fetchTourData();
-                    } catch (error) {
-                        Alert.alert('오류', '일정 삭제에 실패했습니다.');
-                    } finally {
-                        setScheduleLoading(false);
-                        handleCloseAddSchedulePopup();
-                    }
-                },
+                onPress: () => performDeleteSchedule(scheduleId),
                 style: "destructive"
             }
         ]);
@@ -437,7 +451,7 @@ export default function DesignItinerary() {
                     {...schedulePopupData}
                     onClose={handleCloseAddSchedulePopup}
                     onScheduleAdded={handleScheduleAdded}
-                    onScheduleDelete={handleScheduleDelete}
+                    onScheduleDelete={performDeleteSchedule}
                     currentTourId={currentTourId}
                     periodType={period.type}
                     startDate={period.startDate}
