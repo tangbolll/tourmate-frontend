@@ -6,7 +6,15 @@ module.exports = function (api) {
             "nativewind/babel",  // NativeWind 설정을 presets에 추가
         ],
         plugins: [
-            // 여기에 필요한 다른 플러그인들을 추가할 수 있습니다
+            [
+                'module-resolver',
+                {
+                    root: ['./'],
+                    alias: {
+                        '@': './',
+                    },
+                },
+            ],
         ],
     };
 };

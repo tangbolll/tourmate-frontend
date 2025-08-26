@@ -1,0 +1,136 @@
+import React from 'react';
+import { Tabs } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { FontAwesome6 } from '@expo/vector-icons';
+import { Text, View, StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+export default function AppLayout() {
+    return (
+        <GestureHandlerRootView style={styles.container}>
+        <Tabs
+            screenOptions={{
+                tabBarShowLabel: true,
+                tabBarStyle: {
+                    position: 'absolute',
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 80,
+                    paddingBottom: 10,
+                    borderTopWidth: 0,
+                    borderTopLeftRadius: 20,
+                    borderTopRightRadius: 20,
+                    shadowColor: '#000',
+                    shadowOffset: { width: 0, height: -3 },
+                    shadowOpacity: 0.1,
+                    shadowRadius: 4,
+                    elevation: 5,
+                    backgroundColor: 'white'
+                },
+                headerShown: false,
+            }}
+        >
+            {/* 동행 */}
+            <Tabs.Screen
+                name="accompany"
+                options={{
+                    tabBarLabel: ({ focused }) => (
+                        <Text style={{
+                            fontSize: 11,
+                            color: focused ? '#000' : '#999',
+                            fontWeight: focused ? 'bold' : 'normal'
+                        }}>동행</Text>
+                    ),
+                    tabBarIcon: ({ focused }) => (
+                        <Ionicons name="people" size={24} color={focused ? '#000' : '#ccc'} />
+                    ),
+                }}
+            />
+            
+            {/* 찜 */}
+            <Tabs.Screen
+                name="wishlist"
+                options={{
+                    tabBarLabel: ({ focused }) => (
+                        <Text style={{
+                            fontSize: 11,
+                            color: focused ? '#000' : '#999',
+                            fontWeight: focused ? 'bold' : 'normal'
+                        }}>찜</Text>
+                    ),
+                    tabBarIcon: ({ focused }) => (
+                        <Ionicons name="heart" size={24} color={focused ? '#000' : '#ccc'} />
+                    ),
+                }}
+            />
+            
+            {/* 홈 */}
+            <Tabs.Screen name="index" options={{
+                // tabBarLabel: ({ focused }) => (
+                //     <Text style={{
+                //         fontSize: 11,
+                //         color: focused ? '#000' : '#999',
+                //         fontWeight: focused ? 'bold' : 'normal'
+                //     }}>홈</Text>
+                // ),
+                tabBarLabel: () => null, // 홈 탭은 라벨을 숨김
+                tabBarActiveTintColor: '#000',
+                tabBarIcon: ({ focused }) => (
+                    <View style={{
+                        width: 56,
+                        height: 56,
+                        borderRadius: 28,
+                        backgroundColor: focused ? '#000' : '#ccc',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        marginBottom: 16,
+                    }}>
+                        <Ionicons name="home" size={28} color="#fff" />
+                    </View>
+                ),
+            }} />
+            
+            {/* 내 여행 */}
+            <Tabs.Screen
+                name="mytour"
+                options={{
+                    tabBarLabel: ({ focused }) => (
+                        <Text style={{
+                            fontSize: 11,
+                            color: focused ? '#000' : '#999',
+                            fontWeight: focused ? 'bold' : 'normal'
+                        }}>내 여행</Text>
+                    ),
+                    tabBarIcon: ({ focused }) => (
+                        <FontAwesome6 name="plane-up" size={22} color={focused ? '#000' : '#ccc'} />
+                    ),
+                }}
+            />
+            
+            {/* 프로필 */}
+            <Tabs.Screen
+                name="profile"
+                options={{
+                    tabBarLabel: ({ focused }) => (
+                        <Text style={{
+                            fontSize: 11,
+                            color: focused ? '#000' : '#999',
+                            fontWeight: focused ? 'bold' : 'normal'
+                        }}>프로필</Text>
+                    ),
+                    tabBarIcon: ({ focused }) => (
+                        <Ionicons name="person" size={24} color={focused ? '#000' : '#ccc'} />
+                    ),
+                }}
+            />
+        </Tabs>
+        </GestureHandlerRootView>
+    );
+}
+
+const styles = StyleSheet.create({
+    container: {
+        flex: 1,
+    },
+});
