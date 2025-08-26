@@ -74,7 +74,13 @@ export default function BookmarkedEvent({
                     {/* 장소 */}
                     <View style={styles.locationRow}>
                         <Icon name="map-marker" size={14} color="#fff" />
-                        <Text style={styles.location}>{location}</Text>
+                        <Text
+                            style={styles.location}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                        >
+                            {location}
+                        </Text>
                     </View>
                 </View>
             </ImageBackground>

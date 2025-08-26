@@ -14,10 +14,17 @@ import MyTourFeed from './MyTourFeed';
 import { toggleTourFavorite, deleteMyTours } from '../../../utils/MyTourApi';
 import dayjs from 'dayjs';
 import { useAuth } from '../../../context/AuthContext';
+import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';     // isSameOrAfter 플러그인 불러오기
+import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';   // isSameOrBefore 플러그인도 필요합니다.
+
+dayjs.extend(isSameOrAfter);     // dayjs에 isSameOrAfter 플러그인 기능 추가
+dayjs.extend(isSameOrBefore);    // dayjs에 isSameOrBefore 플러그인 기능 추가
+
 
 const { width } = Dimensions.get('window');
 
-export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
+
+export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDeleted }) {
     const { currentUserId } = useAuth();
     const router = useRouter();
     const [sortType, setSortType] = useState('latest');
@@ -26,6 +33,7 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
         travelPeriod: '',
         travelLocation: '',
     });
+    const isFilterActive = !!(activeFilters.travelPeriod || activeFilters.travelLocation);
     const [isEditMode, setIsEditMode] = useState(false);
     const [selectedTours, setSelectedTours] = useState([]);
 
@@ -36,6 +44,62 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
     const filteredAndSortedTours = useMemo(() => {
         let filteredTours = Array.isArray(tours) ? [...tours] : [];
 
+        if (activeFilters.travelPeriod && typeof activeFilters.travelPeriod === 'string') {
+            try {
+                // --- 👇 여기가 최종 수정된 날짜 파싱 로직입니다 ---
+                const currentYear = dayjs().year();
+                const parts = activeFilters.travelPeriod.split(' ~ ');
+                
+                // "8월 5일(화)" -> "8-5" -> "2025-8-5" 와 같이 dayjs가 확실히 이해하는 형태로 변환
+                const startDateStr = `${currentYear}-${parts[0].replace(/\(.\)/, '').replace('월 ', '-').replace('일', '').trim()}`;
+                const endDateStr = `${currentYear}-${parts[1].replace(/\(.\)/, '').replace('월 ', '-').replace('일', '').trim()}`;
+                
+                // 이제 dayjs가 확실히 이해하는 형식으로 객체를 생성합니다.
+                const filterStart = dayjs(startDateStr);
+                const filterEnd = dayjs(endDateStr);
+                // --- 파싱 로직 수정 끝 ---
+
+                // 파싱이 성공했는지 최종 확인
+                if (filterStart.isValid() && filterEnd.isValid()) {
+                    filteredTours = filteredTours.filter(tour => {
+                        if (!tour.startDate || !tour.endDate) return false;
+
+                        const tourStart = dayjs(tour.startDate);
+                        const tourEnd = dayjs(tour.endDate);
+
+                        // 올바른 비교 로직
+                        const isOverlapping = 
+                            tourEnd.isSameOrAfter(filterStart, 'day') && 
+                            tourStart.isSameOrBefore(filterEnd, 'day');
+                        
+                        return isOverlapping;
+                    });
+                }
+            } catch (error) {
+                console.error("날짜 파싱 또는 필터링 중 오류 발생:", error);
+            }
+        }
+
+        // 2. 지역 필터링 (기존 로직과 동일)
+        if (activeFilters.travelLocation) {
+            const searchTerm = activeFilters.travelLocation; // 사용자가 입력한 검색어
+
+            filteredTours = filteredTours.filter(tour => 
+                // tour.regions 배열에 아래 조건을 만족하는 region이 하나라도 있는지(.some) 확인합니다.
+                tour.regions?.some(region => 
+                    // 조건 1: areaName(광역시/도 이름)에 검색어가 포함되거나
+                    (region.areaName && region.areaName.includes(searchTerm)) || 
+                    
+                    // 조건 2: sigungu(시/군/구 이름) 배열에 검색어가 포함된 항목이 하나라도 있는지(.some) 확인
+                    (region.sigungu?.some(sgg => sgg.name && sgg.name.includes(searchTerm)))
+                )
+            );
+        }
+        // --- 필터링 로직 끝 ---
+        console.log(`3️⃣ 필터링 후 남은 여행 개수: ${filteredTours.length}개`);
+
+
+        // 정렬 로직은 그대로 둡니다.
         filteredTours.sort((a, b) => {
             if (sortType === 'latest') {
                 return dayjs(b.endDate).diff(dayjs(a.endDate));
@@ -46,11 +110,16 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
         });
 
         return filteredTours;
-    }, [tours, sortType]);
+
+    // 의존성 배열은 activeFilters 그대로 유지
+    }, [tours, sortType, activeFilters]);
 
     const handleSortChange = (newSortType) => setSortType(newSortType);
     const handleFilterPress = () => console.log('필터 버튼 클릭');
-    const handleFilterApply = (appliedFilters) => setActiveFilters(appliedFilters);
+    const handleFilterApply = (appliedFilters) => {
+        console.log('1️⃣ 필터에서 받은 데이터:', JSON.stringify(appliedFilters, null, 2));
+        setActiveFilters(appliedFilters);
+    };
     
     // ✅ 피드 클릭 핸들러 수정: 일정 수정 페이지로 이동
     const handleTourPress = (tourId) => {
@@ -98,15 +167,25 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
                     },
                     { 
                         text: "삭제", 
-                        onPress: async () => {
+                                                onPress: async () => {
                             try {
                                 await deleteMyTours(selectedTours);
-                                
-                                setTours(prevTours => prevTours.filter(tour => !selectedTours.includes(tour.id)));
+
+                                                                setTours(prevTours => {
+                                    const newTours = prevTours.filter(tour => !selectedTours.includes(tour.id));
+                                    console.log('[MyTourTab] After internal setTours, newTours count:', newTours.length);
+                                    return newTours;
+                                });
                                 setSelectedTours([]);
                                 setIsEditMode(false);
-                                
+
                                 Alert.alert("삭제 완료", "선택한 여행이 성공적으로 삭제되었습니다.");
+
+                                // Notify parent component about deleted tours
+                                if (onToursDeleted) {
+                                    console.log('[MyTourTab] Calling onToursDeleted with:', selectedTours);
+                                    onToursDeleted(selectedTours);
+                                }
                             } catch (error) {
                                 console.error('여행 삭제 에러:', error);
                                 Alert.alert("삭제 실패", "여행 삭제 중 오류가 발생했습니다.");
@@ -134,6 +213,7 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate }) {
             onSortChange={handleSortChange}
             onFilterPress={handleFilterPress}
             onFilterApply={handleFilterApply}
+            isFilterActive={isFilterActive} 
         />
 
         <View style={styles.summaryContainer}>

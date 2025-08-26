@@ -1,7 +1,9 @@
-import { Platform } from 'react-native';
+import { ActivityIndicator , Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from "axios";
+
 
 // API 기본 URL을 가져오는 헬퍼 함수
 export const getBaseURL = () => {
@@ -121,6 +123,21 @@ export const getTourDetails = async (tourId) => {
     } catch (error) {
         console.error('여행 상세 정보 조회 에러:', error);
         throw error;
+    }
+};
+
+// 닉네임으로 유저를 검색하는 API 함수
+export const searchUsers = async (nickname) => {
+    if (!nickname || nickname.trim().length < 2) {
+        return []; // 검색어가 2글자 미만이면 요청하지 않음
+    }
+    try {
+        console.log("검색 API 호출:", `${getBaseURL()}/api/user/search?nickname=${nickname}`);
+        const response = await axios.get(`${getBaseURL()}/api/user/search?nickname=${encodeURIComponent(nickname)}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error searching users:', error);
+        return []; // 에러 발생 시 빈 배열 반환
     }
 };
 
