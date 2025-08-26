@@ -178,7 +178,12 @@ export const deleteTravelSchedule = async (scheduleId) => {
     try {
         const headers = await getAuthHeaders();
         const response = await fetch(url, { method: 'DELETE', headers });
-        if (!response.ok) throw new Error(await response.text());
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[deleteTravelSchedule] API Error: Status ${response.status}, ${response.statusText}, Body: ${errorText}`);
+            throw new Error(`일정 삭제 실패: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+        console.log(`[deleteTravelSchedule] API Success: Status ${response.status}, ${response.statusText}`);
         return true;
     } catch (error) {
         console.error('여행 스케줄 삭제 에러:', error);

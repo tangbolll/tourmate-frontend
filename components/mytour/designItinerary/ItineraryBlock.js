@@ -249,7 +249,10 @@ const TimeBlock = ({
                 // 기존 일정 블록을 클릭한 경우: 해당 일정의 시작 시간을 전달
                 clickedTimeString = scheduleInfo.schedule.startTime;
                 [clickedHour, clickedMinute] = clickedTimeString.split(':').map(Number);
-                clickedExistingSchedule = scheduleInfo.schedule;
+                    clickedExistingSchedule = {
+                    ...scheduleInfo.schedule,
+                    date: dateInfo.fullDate || dateInfo.displayText
+                };
             } else {
                 // 빈 블록을 클릭한 경우: 클릭한 시간 슬롯의 정확한 시작 시간을 전달
                 clickedHour = timeSlot.hour;
@@ -257,7 +260,7 @@ const TimeBlock = ({
                 clickedTimeString = timeUtils.minutesToTime(clickedHour * 60 + clickedMinute);
             }
 
-            onTimeBlockClick({
+                        onTimeBlockClick({
                 day: dateInfo.dayNumber,
                 date: dateInfo.fullDate || dateInfo.displayText,
                 hour: clickedHour,
@@ -265,6 +268,8 @@ const TimeBlock = ({
                 timeString: clickedTimeString,
                 existingSchedule: clickedExistingSchedule
             });
+            console.log('[TimeBlock] dateInfo:', dateInfo);
+            console.log('[TimeBlock] date passed to onTimeBlockClick:', dateInfo.fullDate || dateInfo.displayText);
         }
     };
 
@@ -582,6 +587,8 @@ const ItineraryBlock = ({
                             scrollEventThrottle={1}
                             bounces={false}
                             decelerationRate="fast"
+                            // 👇 이 속성을 추가하여 스크롤을 비활성화합니다.
+                            scrollEnabled={false} 
                         >
                             {baseSlots.map((timeSlot, index) => (
                                 <TimeLabel
