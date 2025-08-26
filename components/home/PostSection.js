@@ -9,7 +9,11 @@ import {
     Alert,
 } from 'react-native';
 import Post from './Post';
-import { fetchPostcardFeedApi } from '../../utils/HomePostApi';
+import { 
+    fetchPostcardFeedApi, 
+    toggleLikePostcard, 
+    toggleScrapPostcard 
+} from '../../utils/HomePostApi';
 
 const PostSection = () => {
     const [posts, setPosts] = useState([]);
@@ -65,7 +69,7 @@ const PostSection = () => {
         }
     };
 
-    // 더 많은 데이터 로드 (무한 스크롤) - ScrollView가 담당하므로 비활성화
+    // 더 많은 데이터 로드 (무한 스크롤)
     const loadMoreData = async () => {
         if (!hasMoreData || loadingMore) return;
 
@@ -89,21 +93,51 @@ const PostSection = () => {
         }
     };
 
-    // 게시물 데이터 업데이트 (좋아요, 북마크 등)
-    const handleDataUpdate = (postcardId, actionType, newValue) => {
-        setPosts(prevPosts => 
-            prevPosts.map(post => 
-                post.postcardId === postcardId 
-                    ? {
-                        ...post,
-                        [actionType === 'like' ? 'likeCount' : 'scrapCount']: 
-                            actionType === 'like' 
-                                ? (newValue ? post.likeCount + 1 : post.likeCount - 1)
-                                : (newValue ? post.scrapCount + 1 : post.scrapCount - 1)
-                    }
-                    : post
-            )
-        );
+    // 좋아요/스크랩 처리 함수 (실제 API 호출)
+    const handleDataUpdate = async (postcardId, actionType, currentValue) => {
+        try {
+            let result;
+            
+            if (actionType === 'like') {
+                result = await toggleLikePostcard(postcardId, currentValue);
+            } else if (actionType === 'scrap') {
+                result = await toggleScrapPostcard(postcardId, currentValue);
+            }
+
+            if (result && result.success) {
+                // API 호출 성공 시에만 UI 업데이트
+                setPosts(prevPosts => 
+                    prevPosts.map(post => {
+                        if (post.postcardId === postcardId) {
+                            if (actionType === 'like') {
+                                return {
+                                    ...post,
+                                    isLiked: !currentValue,
+                                    likeCount: currentValue 
+                                        ? Math.max(0, post.likeCount - 1) 
+                                        : post.likeCount + 1
+                                };
+                            } else if (actionType === 'scrap') {
+                                return {
+                                    ...post,
+                                    isScraped: !currentValue,
+                                    scrapCount: currentValue 
+                                        ? Math.max(0, post.scrapCount - 1) 
+                                        : post.scrapCount + 1
+                                };
+                            }
+                        }
+                        return post;
+                    })
+                );
+            } else {
+                // API 호출 실패 시 에러 메시지 표시
+                Alert.alert('오류', result?.error || '처리 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('데이터 업데이트 오류:', error);
+            Alert.alert('오류', '처리 중 오류가 발생했습니다.');
+        }
     };
 
     // 무한 스크롤을 위한 함수 - 상위 컴포넌트에서 호출 가능

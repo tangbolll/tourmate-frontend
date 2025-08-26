@@ -145,13 +145,23 @@ export const fetchPostcardFeedApi = async (page = 0, size = 20) => {
     }
 };
 
-// 좋아요 API (추후 구현)
-export const likePostcardApi = async (postcardId) => {
+// 좋아요 API - userId를 매개변수로 받음
+export const likePostcardApi = async (postcardId, userId) => {
+    if (!userId) {
+        return {
+            success: false,
+            error: '사용자 정보가 필요합니다.'
+        };
+    }
+
     try {
         const response = await axios.post(
             `${API_URL}/api/postcards/${postcardId}/like`,
             {},
             {
+                params: {
+                    userId
+                },
                 headers: {
                     'Content-Type': 'application/json',
                     // 'Authorization': `Bearer ${token}`,
@@ -166,20 +176,52 @@ export const likePostcardApi = async (postcardId) => {
         };
     } catch (error) {
         console.error('좋아요 API 오류:', error);
+        
+        let errorMessage = '좋아요 처리 중 오류가 발생했습니다.';
+        
+        if (error.response) {
+            const status = error.response.status;
+            switch (status) {
+                case 400:
+                    errorMessage = '잘못된 요청입니다.';
+                    break;
+                case 401:
+                    errorMessage = '인증이 필요합니다.';
+                    break;
+                case 404:
+                    errorMessage = '해당 게시물을 찾을 수 없습니다.';
+                    break;
+                case 500:
+                    errorMessage = '서버 오류가 발생했습니다.';
+                    break;
+            }
+        } else if (error.request) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+        }
+
         return {
             success: false,
-            error: '좋아요 처리 중 오류가 발생했습니다.'
+            error: errorMessage
         };
     }
 };
 
-// 북마크 API (추후 구현)
-export const bookmarkPostcardApi = async (postcardId) => {
+// 좋아요 취소 API - userId를 매개변수로 받음
+export const unlikePostcardApi = async (postcardId, userId) => {
+    if (!userId) {
+        return {
+            success: false,
+            error: '사용자 정보가 필요합니다.'
+        };
+    }
+
     try {
-        const response = await axios.post(
-            `${API_URL}/api/postcards/${postcardId}/scrap`,
-            {},
+        const response = await axios.delete(
+            `${API_URL}/api/postcards/${postcardId}/like`,
             {
+                params: {
+                    userId
+                },
                 headers: {
                     'Content-Type': 'application/json',
                     // 'Authorization': `Bearer ${token}`,
@@ -193,10 +235,175 @@ export const bookmarkPostcardApi = async (postcardId) => {
             data: response.data
         };
     } catch (error) {
-        console.error('북마크 API 오류:', error);
+        console.error('좋아요 취소 API 오류:', error);
+        
+        let errorMessage = '좋아요 취소 처리 중 오류가 발생했습니다.';
+        
+        if (error.response) {
+            const status = error.response.status;
+            switch (status) {
+                case 400:
+                    errorMessage = '잘못된 요청입니다.';
+                    break;
+                case 401:
+                    errorMessage = '인증이 필요합니다.';
+                    break;
+                case 404:
+                    errorMessage = '해당 게시물을 찾을 수 없습니다.';
+                    break;
+                case 500:
+                    errorMessage = '서버 오류가 발생했습니다.';
+                    break;
+            }
+        } else if (error.request) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+        }
+
         return {
             success: false,
-            error: '북마크 처리 중 오류가 발생했습니다.'
+            error: errorMessage
         };
     }
 };
+
+// 스크랩 API - userId를 매개변수로 받음
+export const scrapPostcardApi = async (postcardId, userId) => {
+    if (!userId) {
+        return {
+            success: false,
+            error: '사용자 정보가 필요합니다.'
+        };
+    }
+
+    try {
+        const response = await axios.post(
+            `${API_URL}/api/postcards/${postcardId}/scrap`,
+            {},
+            {
+                params: {
+                    userId
+                },
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 'Authorization': `Bearer ${token}`,
+                },
+                timeout: 5000,
+            }
+        );
+
+        return {
+            success: true,
+            data: response.data
+        };
+    } catch (error) {
+        console.error('스크랩 API 오류:', error);
+        
+        let errorMessage = '스크랩 처리 중 오류가 발생했습니다.';
+        
+        if (error.response) {
+            const status = error.response.status;
+            switch (status) {
+                case 400:
+                    errorMessage = '잘못된 요청입니다.';
+                    break;
+                case 401:
+                    errorMessage = '인증이 필요합니다.';
+                    break;
+                case 404:
+                    errorMessage = '해당 게시물을 찾을 수 없습니다.';
+                    break;
+                case 500:
+                    errorMessage = '서버 오류가 발생했습니다.';
+                    break;
+            }
+        } else if (error.request) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+        }
+
+        return {
+            success: false,
+            error: errorMessage
+        };
+    }
+};
+
+// 스크랩 취소 API - userId를 매개변수로 받음
+export const unscrapPostcardApi = async (postcardId, userId) => {
+    if (!userId) {
+        return {
+            success: false,
+            error: '사용자 정보가 필요합니다.'
+        };
+    }
+
+    try {
+        const response = await axios.delete(
+            `${API_URL}/api/postcards/${postcardId}/scrap`,
+            {
+                params: {
+                    userId
+                },
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 'Authorization': `Bearer ${token}`,
+                },
+                timeout: 5000,
+            }
+        );
+
+        return {
+            success: true,
+            data: response.data
+        };
+    } catch (error) {
+        console.error('스크랩 취소 API 오류:', error);
+        
+        let errorMessage = '스크랩 취소 처리 중 오류가 발생했습니다.';
+        
+        if (error.response) {
+            const status = error.response.status;
+            switch (status) {
+                case 400:
+                    errorMessage = '잘못된 요청입니다.';
+                    break;
+                case 401:
+                    errorMessage = '인증이 필요합니다.';
+                    break;
+                case 404:
+                    errorMessage = '해당 게시물을 찾을 수 없습니다.';
+                    break;
+                case 500:
+                    errorMessage = '서버 오류가 발생했습니다.';
+                    break;
+            }
+        } else if (error.request) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+        }
+
+        return {
+            success: false,
+            error: errorMessage
+        };
+    }
+};
+
+// 통합 좋아요 토글 함수 - userId를 매개변수로 받음
+export const toggleLikePostcard = async (postcardId, isCurrentlyLiked, userId) => {
+    if (isCurrentlyLiked) {
+        return await unlikePostcardApi(postcardId, userId);
+    } else {
+        return await likePostcardApi(postcardId, userId);
+    }
+};
+
+// 통합 스크랩 토글 함수 - userId를 매개변수로 받음
+export const toggleScrapPostcard = async (postcardId, isCurrentlyScraped, userId) => {
+    if (isCurrentlyScraped) {
+        return await unscrapPostcardApi(postcardId, userId);
+    } else {
+        return await scrapPostcardApi(postcardId, userId);
+    }
+};
+
+// 기존 함수들 (하위 호환성을 위해 유지)
+export const bookmarkPostcardApi = scrapPostcardApi;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
@@ -10,11 +10,13 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import PostExpanded from './PostExpanded';
 import Report from './Report';
-import { likePostcardApi, bookmarkPostcardApi } from '../../utils/HomePostApi';
+import { toggleLikePostcard, toggleScrapPostcard } from '../../utils/HomePostApi';
+import { useAuth } from '../../context/AuthContext';
 
 const defaultProfile = require('../../assets/defaultProfile2.png');
 
 const Post = ({ postData, onDataUpdate }) => {
+    const { currentUserId } = useAuth();
     const [isLiked, setIsLiked] = useState(false);
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [showExpanded, setShowExpanded] = useState(false);
@@ -22,6 +24,18 @@ const Post = ({ postData, onDataUpdate }) => {
     const [showReport, setShowReport] = useState(false);
     const [currentLikeCount, setCurrentLikeCount] = useState(postData?.likeCount || 0);
     const [currentScrapCount, setCurrentScrapCount] = useState(postData?.scrapCount || 0);
+    const [likeLoading, setLikeLoading] = useState(false);
+    const [scrapLoading, setScrapLoading] = useState(false);
+
+    // postData 변경 시 상태 초기화
+    useEffect(() => {
+        if (postData) {
+            setIsLiked(postData.isLiked || false);
+            setIsBookmarked(postData.isScraped || false);
+            setCurrentLikeCount(postData.likeCount || 0);
+            setCurrentScrapCount(postData.scrapCount || 0);
+        }
+    }, [postData]);
 
     // 실제 데이터가 없으면 기본값 사용
     const data = {
@@ -34,51 +48,72 @@ const Post = ({ postData, onDataUpdate }) => {
         timeAgo: '방금 전', // 서버에서 시간 데이터가 없어서 임시
         location: '위치 정보 없음', // 서버에서 위치 데이터가 없어서 임시
         date: new Date().toISOString().slice(0, 10).replace(/-/g, '.'), // 임시 날짜
+        isLiked: isLiked,
+        isScraped: isBookmarked,
     };
 
     const handleLike = async () => {
-        if (!data.postcardId) return;
+    if (!data.postcardId || likeLoading) return;
 
-        try {
-            const result = await likePostcardApi(data.postcardId);
+    if (!currentUserId) {
+        Alert.alert('알림', '로그인이 필요합니다.');
+        return;
+    }
+
+    setLikeLoading(true);
+    try {
+        // 디버깅 함수 대신 정상 함수 사용
+        const result = await toggleLikePostcard(data.postcardId, isLiked, currentUserId);
+        
+        if (result.success) {
+            const newIsLiked = !isLiked;
+            setIsLiked(newIsLiked);
+            setCurrentLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
             
-            if (result.success) {
-                setIsLiked(!isLiked);
-                setCurrentLikeCount(prev => isLiked ? prev - 1 : prev + 1);
-                
-                // 부모 컴포넌트에 데이터 업데이트 알림
-                if (onDataUpdate) {
-                    onDataUpdate(data.postcardId, 'like', !isLiked);
-                }
-            } else {
-                Alert.alert('오류', result.error);
+            if (onDataUpdate) {
+                onDataUpdate(data.postcardId, 'like', isLiked);
             }
-        } catch (error) {
-            console.error('좋아요 처리 오류:', error);
-            Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
+        } else {
+            Alert.alert('오류', result.error);
         }
+    } catch (error) {
+        console.error('좋아요 처리 오류:', error);
+        Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
+    } finally {
+        setLikeLoading(false);
+    }
     };
 
     const handleBookmark = async () => {
-        if (!data.postcardId) return;
+        if (!data.postcardId || scrapLoading) return;
 
+        // userId 확인
+        if (!currentUserId) {
+            Alert.alert('알림', '로그인이 필요합니다.');
+            return;
+        }
+
+        setScrapLoading(true);
         try {
-            const result = await bookmarkPostcardApi(data.postcardId);
+            const result = await toggleScrapPostcard(data.postcardId, isBookmarked, currentUserId);
             
             if (result.success) {
-                setIsBookmarked(!isBookmarked);
-                setCurrentScrapCount(prev => isBookmarked ? prev - 1 : prev + 1);
+                const newIsBookmarked = !isBookmarked;
+                setIsBookmarked(newIsBookmarked);
+                setCurrentScrapCount(prev => newIsBookmarked ? prev + 1 : Math.max(0, prev - 1));
                 
-                // 부모 컴포넌트에 데이터 업데이트 알림
+                // 부모 컴포넌트에 데이터 업데이트 알림 (scrap으로 전달)
                 if (onDataUpdate) {
-                    onDataUpdate(data.postcardId, 'bookmark', !isBookmarked);
+                    onDataUpdate(data.postcardId, 'scrap', isBookmarked);
                 }
             } else {
-                Alert.alert('오류', result.error);
+                Alert.alert('오류', result.error || '스크랩 처리 중 오류가 발생했습니다.');
             }
         } catch (error) {
-            console.error('북마크 처리 오류:', error);
-            Alert.alert('오류', '북마크 처리 중 오류가 발생했습니다.');
+            console.error('스크랩 처리 오류:', error);
+            Alert.alert('오류', '스크랩 처리 중 오류가 발생했습니다.');
+        } finally {
+            setScrapLoading(false);
         }
     };
 
@@ -90,6 +125,24 @@ const Post = ({ postData, onDataUpdate }) => {
     const handleReportSubmit = (reportData) => {
         setShowReport(false);
         Alert.alert('신고 완료', '신고가 접수되었습니다.');
+    };
+
+    const handleDataUpdateFromExpanded = (postcardId, actionType, currentValue) => {
+        // PostExpanded에서 전달받은 업데이트를 로컬 상태에 반영
+        if (actionType === 'like') {
+            const newIsLiked = !currentValue;
+            setIsLiked(newIsLiked);
+            setCurrentLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
+        } else if (actionType === 'scrap') {
+            const newIsBookmarked = !currentValue;
+            setIsBookmarked(newIsBookmarked);
+            setCurrentScrapCount(prev => newIsBookmarked ? prev + 1 : Math.max(0, prev - 1));
+        }
+        
+        // 부모 컴포넌트에도 전달
+        if (onDataUpdate) {
+            onDataUpdate(postcardId, actionType, currentValue);
+        }
     };
 
     return (
@@ -153,7 +206,11 @@ const Post = ({ postData, onDataUpdate }) => {
             <View style={styles.footer}>
                 <Text style={styles.timeAgo}>{data.timeAgo}</Text>
                 <View style={styles.actions}>
-                    <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
+                    <TouchableOpacity 
+                        style={[styles.actionButton, likeLoading && styles.actionButtonDisabled]} 
+                        onPress={handleLike}
+                        disabled={likeLoading}
+                    >
                         <Ionicons 
                             name={isLiked ? "heart" : "heart-outline"} 
                             size={24} 
@@ -161,7 +218,11 @@ const Post = ({ postData, onDataUpdate }) => {
                         />
                         <Text style={styles.actionText}>{currentLikeCount}</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionButton} onPress={handleBookmark}>
+                    <TouchableOpacity 
+                        style={[styles.actionButton, scrapLoading && styles.actionButtonDisabled]} 
+                        onPress={handleBookmark}
+                        disabled={scrapLoading}
+                    >
                         <Ionicons 
                             name={isBookmarked ? "bookmark" : "bookmark-outline"} 
                             size={24} 
@@ -177,6 +238,8 @@ const Post = ({ postData, onDataUpdate }) => {
                 visible={showExpanded}
                 postData={data}
                 onClose={() => setShowExpanded(false)}
+                onDataUpdate={handleDataUpdateFromExpanded}
+                currentUserId={currentUserId} // userId 전달
             />
 
             {/* 신고 모달 */}
@@ -293,6 +356,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginLeft: 8,
+    },
+    actionButtonDisabled: {
+        opacity: 0.7,
     },
     actionText: {
         marginLeft: 4,
