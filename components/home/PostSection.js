@@ -65,7 +65,7 @@ const PostSection = () => {
         }
     };
 
-    // 더 많은 데이터 로드 (무한 스크롤)
+    // 더 많은 데이터 로드 (무한 스크롤) - ScrollView가 담당하므로 비활성화
     const loadMoreData = async () => {
         if (!hasMoreData || loadingMore) return;
 
@@ -104,6 +104,13 @@ const PostSection = () => {
                     : post
             )
         );
+    };
+
+    // 무한 스크롤을 위한 함수 - 상위 컴포넌트에서 호출 가능
+    const handleLoadMore = () => {
+        if (hasMoreData && !loadingMore) {
+            loadMoreData();
+        }
     };
 
     useEffect(() => {
@@ -151,12 +158,13 @@ const PostSection = () => {
                 <Text style={styles.title}>다른 유저의 여행엽서 엿보기</Text>
             </View>
 
-            {/* 포스트 리스트 */}
+            {/* 포스트 리스트 - ScrollView 내부에서 스크롤 비활성화 */}
             <FlatList
                 data={posts}
                 renderItem={renderPost}
                 keyExtractor={(item) => item.postcardId?.toString() || Math.random().toString()}
                 showsVerticalScrollIndicator={false}
+                scrollEnabled={false} // 🔑 핵심: FlatList 자체 스크롤 비활성화
                 contentContainerStyle={posts.length === 0 ? styles.emptyList : styles.postList}
                 refreshControl={
                     <RefreshControl
@@ -166,22 +174,31 @@ const PostSection = () => {
                         tintColor="#666"
                     />
                 }
-                onEndReached={loadMoreData}
-                onEndReachedThreshold={0.3}
+                // onEndReached와 onEndReachedThreshold 제거 (ScrollView가 담당)
                 ListFooterComponent={renderFooter}
                 ListEmptyComponent={renderEmpty}
-                scrollEventThrottle={16}
-                removeClippedSubviews={true}
-                maxToRenderPerBatch={5}
-                windowSize={10}
+                removeClippedSubviews={false} // ScrollView 내부에서는 false 권장
+                maxToRenderPerBatch={10}
+                windowSize={5}
             />
+            
+            {/* 무한 스크롤을 위한 더보기 버튼 (필요시) */}
+            {hasMoreData && !loadingMore && posts.length > 0 && (
+                <View style={styles.loadMoreContainer}>
+                    <Text 
+                        style={styles.loadMoreText}
+                        onPress={handleLoadMore}
+                    >
+                        더 많은 엽서 보기
+                    </Text>
+                </View>
+            )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
-        flex: 1,
         backgroundColor: '#fff',
         marginTop: 3,
     },
@@ -200,10 +217,10 @@ const styles = StyleSheet.create({
         paddingBottom: 32,
     },
     emptyList: {
-        flexGrow: 1,
+        minHeight: 200, // flex: 1 대신 minHeight 사용
     },
     loadingContainer: {
-        flex: 1,
+        minHeight: 200,
         justifyContent: 'center',
         alignItems: 'center',
         backgroundColor: '#fff',
@@ -223,11 +240,11 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     emptyContainer: {
-        flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
         paddingHorizontal: 20,
         paddingVertical: 60,
+        minHeight: 200,
     },
     emptyText: {
         fontSize: 18,
@@ -241,6 +258,17 @@ const styles = StyleSheet.create({
         color: '#666',
         textAlign: 'center',
         lineHeight: 20,
+    },
+    loadMoreContainer: {
+        padding: 20,
+        alignItems: 'center',
+        borderTopWidth: 1,
+        borderTopColor: '#f0f0f0',
+    },
+    loadMoreText: {
+        fontSize: 16,
+        color: '#007AFF',
+        fontWeight: '600',
     },
 });
 
