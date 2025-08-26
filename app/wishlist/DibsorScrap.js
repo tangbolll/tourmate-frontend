@@ -95,6 +95,13 @@ const DibsorScrap = ({ router }) => {
 
             console.log('✅ 찜 데이터 로드 완료:', likedAccompanyPosts.length, '개');
             
+            // 🔍 디버깅: ID 값들 확인
+            console.log('🔍 로드된 포스트 ID들:', likedAccompanyPosts.map(post => ({
+                id: post.id,
+                title: post.title,
+                idType: typeof post.id
+            })));
+            
         } catch (error) {
             if (error.name === 'AbortError') {
                 console.log('🚫 찜 데이터 로딩 취소됨');
@@ -261,8 +268,50 @@ const DibsorScrap = ({ router }) => {
         };
     }, []);
 
+    // 🧪 테스트용 네비게이션 함수
+    const testNavigation = useCallback(() => {
+        console.log('🧪 네비게이션 테스트 시작');
+        console.log('Router 상태:', {
+            exists: !!router,
+            methods: router ? Object.keys(router) : 'no router'
+        });
+        
+        if (router && typeof router.push === 'function') {
+            try {
+                router.push('/'); // 홈으로 이동 테스트
+                console.log('✅ 홈 네비게이션 성공');
+            } catch (error) {
+                console.error('❌ 홈 네비게이션 실패:', error);
+            }
+        }
+    }, [router]);
+
     const navigateToPost = useCallback((postId) => {
-        router?.push(`/accompany/post/${postId}`);
+        console.log('🔍 네비게이션 시도:', {
+            postId,
+            router: !!router,
+            routerType: typeof router
+        });
+        
+        if (!router) {
+            console.error('❌ router 객체가 없습니다');
+            Alert.alert('오류', '네비게이션 오류가 발생했습니다.');
+            return;
+        }
+        
+        if (!postId) {
+            console.error('❌ postId가 없습니다');
+            Alert.alert('오류', '포스트 ID가 없습니다.');
+            return;
+        }
+        
+        try {
+            router.push(`/accompany/AccompanyPost?postId=${postId}`);
+            
+        } catch (error) {
+            console.error('❌ 네비게이션 실패:', error);
+            Alert.alert('오류', `페이지 이동 중 오류가 발생했습니다: ${error.message}`);
+        }
     }, [router]);
 
     const handlePostcardPress = useCallback((postcardId) => {
