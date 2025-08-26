@@ -360,6 +360,7 @@ const DateColumn = ({
     onTimeBlockClick,
     DATE_BLOCK_WIDTH
 }) => {
+    console.log('[DateColumn] Received dateInfo:', dateInfo);
     const renderTimeSlots = () => {
         const slots = [];
 

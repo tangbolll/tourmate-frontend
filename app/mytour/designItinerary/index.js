@@ -81,7 +81,13 @@ export default function DesignItinerary() {
         setLoading(true);
         try {
             const data = await getTourDetails(currentTourId);
+            console.log('[DesignItinerary] Tour details data:', data);
+            console.log('[DesignItinerary] Participants from API:', data.participants);
             if (!data) throw new Error("여행 정보를 불러올 수 없습니다.");
+
+            console.log('1️⃣ [DesignItinerary] API로부터 받은 전체 데이터:', data);
+            console.log('1️⃣ [DesignItinerary] API로부터 받은 participants:', data.participants);
+
 
             const mappedScheduleData = {};
             if (data.schedules && Array.isArray(data.schedules) && data.startDate) {
@@ -137,47 +143,62 @@ export default function DesignItinerary() {
         fetchTourData();
     }, [fetchTourData]);
 
-    // 자동 저장
-    useEffect(() => {
-        if (!isDataLoaded || !currentTourId) return;
+    // 서버에 보내는 순수 schedule 데이터만 뽑는 함수
+const getCleanScheduleData = (data) => {
+    const cleanData = {};
+    Object.keys(data).forEach(dayKey => {
+        cleanData[dayKey] = data[dayKey].map(item => ({
+            id: item.id,
+            date: item.date,
+            title: item.title,
+            tag: item.tag,
+            location: item.location,
+            latitude: item.latitude,
+            longitude: item.longitude,
+            memo: item.memo
+            // categoryColor, existingSchedule 등 제거
+        }));
+    });
+    return cleanData;
+};
 
-        const updateServer = async () => {
-            try {
-                if (!title.trim() ||
-                    (period.type === 'date' && (!period.startDate || !period.endDate)) ||
-                    (period.type === 'duration' && (!period.nights || !period.days))
-                ) {
-                    console.log("필수 데이터 누락으로 자동 저장 건너뜀");
-                    return;
-                }
-                // regions 계층 구조 변환
-                const mappedRegions = regions.map(r => ({
+// 자동 저장 useEffect
+useEffect(() => {
+    if (!isDataLoaded || !currentTourId) return;
+
+    const updateServer = async () => {
+        try {
+            const safeScheduleData = getCleanScheduleData(scheduleData);
+
+            const tourData = {
+                title,
+                regions: regions.map(r => ({
                     areaCode: r.key,
                     areaName: r.name,
                     sigungu: r.sigungu.map(s => ({ key: s.key, name: s.name }))
-                }));
+                })),
+                periodType: period.type === 'date' ? 1 : 2,
+                startDate: period.startDate,
+                endDate: period.endDate,
+                nightCount: period.nights,
+                dayCount: period.days,
+                attractions: selectedAttractions.map(a => a.id || a),
+                schedule: safeScheduleData,
+                members,
+                ownerId: currentUserId
+            };
 
-                const tourData = {
-                    title: debouncedTitle || title,
-                    regions: mappedRegions,
-                    periodType: period.type === 'date' ? 1 : 2,
-                    startDate: period.type === 'date' ? period.startDate : null,
-                    endDate: period.type === 'date' ? period.endDate : null,
-                    nightCount: period.type === 'duration' ? period.nights : null,
-                    dayCount: period.type === 'duration' ? period.days : null,
-                    attractions: debouncedSelectedAttractions.map(a => a.id || a),
-                    schedule: debouncedScheduleData,
-                    members: members,
-                    ownerId: currentUserId
-                };
-                await updateTour(currentTourId, tourData);
-                console.log("✅ 자동 저장 완료");
-            } catch (error) {
-                console.error("자동 저장 실패:", error);
-            }
-        };
-        updateServer();
-    }, [debouncedTitle, debouncedSelectedAttractions, debouncedScheduleData, members, currentTourId, isDataLoaded]);
+            await updateTour(currentTourId, tourData);
+            console.log("자동 저장 성공");
+        } catch (error) {
+            console.error("자동 저장 실패:", error);
+        }
+    };
+
+    updateServer();
+}, [scheduleData, selectedAttractions, title, regions, period, members, currentTourId, isDataLoaded]);
+
+
 
     // 여행 확정/저장 버튼
     const handleConfirmItinerary = async () => {
@@ -334,7 +355,7 @@ export default function DesignItinerary() {
     const handleMemberPress = () => setShowMemberPopup(true);
     const handleCloseMemberPopup = () => setShowMemberPopup(false);
     const handleMemberDelete = (memberToDelete) => {
-        setMembers(prev => prev.filter(member => member.id !== memberToDelete.id));
+        setMembers(prev => prev.filter(member => member.userId !== memberToDelete.userId));
     };
     const handleMemberAdd = (newMember) => setMembers(prev => [...prev, newMember]);
     const handleAddSchedule = (day, date, hour) => {
@@ -462,6 +483,8 @@ export default function DesignItinerary() {
                     onClose={handleCloseMemberPopup}
                     onMemberDelete={handleMemberDelete}
                     onMemberAdd={handleMemberAdd}
+                    tourId={currentTourId}
+
                 />
             )}
 
@@ -500,9 +523,12 @@ export default function DesignItinerary() {
                                 <TouchableOpacity
                                     style={[styles.modalButton, styles.modalDeleteButton]}
                                     onPress={() => {
-                                        performDeleteSchedule(scheduleToDelete);
+                                        // 1. Modal 닫기
                                         setShowConfirmModal(false);
+                                        const scheduleIdToDelete = scheduleToDelete;
                                         setScheduleToDelete(null);
+                                        // 2. API 호출
+                                        performDeleteSchedule(scheduleIdToDelete);
                                     }}
                                 >
                                     <Text style={styles.modalButtonText}>삭제</Text>

@@ -240,36 +240,23 @@ const AddSchedule = ({
     };
 
     const handleDelete = () => {
-        // --- 디버깅 코드 추가 ---
-        console.log('handleDelete 함수 실행됨');                 // 1. 함수가 호출되는지 확인
-        console.log('onDelete 프롭:', onDelete);               // 2. onDelete가 함수인지 확인
-        console.log('extraTimeId 프롭:', extraTimeId);         // 3. extraTimeId 값이 있는지 확인
-        // ----------------------
+        if (onScheduleDelete && existingSchedule?.id) {
+            Alert.alert(
+                '일정 삭제', // '여유시간 삭제'가 아니라 '일정 삭제'가 더 적절합니다.
+                '정말로 이 일정을 삭제하시겠습니까?',
+                [
+                    { text: '취소', style: 'cancel' },
+                    { 
+                        text: '삭제', 
+                        style: 'destructive', 
+                        // `onScheduleDelete`를 `existingSchedule.id`와 함께 호출합니다.
+                        onPress: () => onScheduleDelete(existingSchedule.id) 
+                    }
+                ]
+            );
 
-        if (onDelete && extraTimeId) { // 👈 여기가 문제일 가능성이 높습니다.
-            console.log('조건문 통과! 확인 창을 띄웁니다.');
-
-            if (Platform.OS === 'web') {
-                if (window.confirm('정말로 이 여유시간을 삭제하시겠습니까?')) {
-                    onDelete(extraTimeId);
-                }
-            } else {
-                Alert.alert(
-                    '여유시간 삭제',
-                    '정말로 이 여유시간을 삭제하시겠습니까?',
-                    [
-                        { text: '취소', style: 'cancel' },
-                        { 
-                            text: '삭제', 
-                            style: 'destructive', 
-                            onPress: () => onDelete(extraTimeId) 
-                        }
-                    ]
-                );
-            }
         } else {
-            // --- 문제 발생 시 이 메시지가 보일 것입니다 ---
-            console.error('오류: onDelete 프롭이나 extraTimeId가 전달되지 않았습니다!');
+            console.error('오류: 삭제할 일정이 없거나 삭제 함수가 전달되지 않았습니다.');
         }
     };
 

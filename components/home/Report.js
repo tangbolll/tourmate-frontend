@@ -81,7 +81,7 @@ const Report = ({ visible, onClose, onSubmit }) => {
 
                 {/* 신고자 정보 */}
                 <View style={styles.reporterInfo}>
-                <Text style={styles.reporterLabel}>작성자 : {user}</Text>
+                <Text style={styles.reporterLabel}>작성자 : {user.nickname}</Text>
                 <Text style={styles.reportDate}>작성일시 : {(getFormattedDate())}</Text>
                 </View>
 

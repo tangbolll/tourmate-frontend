@@ -44,15 +44,24 @@ export default function MyTourHeader({ onSortChange, onFilterPress, onFilterAppl
     };
 
     const handleCalendarSelect = (range) => {
-        const { startDate, endDate } = range;
-        const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
+        const { startDate, endDate } = range; 
+
+        if (!startDate || !endDate) {
+            setFilters(prev => ({ ...prev, travelPeriod: '' }));
+        } else {
+            // startDate가 있으면 기존 방식대로 날짜를 포맷합니다.
+            const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
+            setFilters(prev => ({ ...prev, travelPeriod: formatted }));
+        }
         
-        setFilters(prev => ({ ...prev, travelPeriod: formatted }));
         setCalendarVisible(false);
         setTimeout(() => {
             setShowFilterPopup(true);
         }, 300);
     };
+
+    const isLocalFilterActive = !!(filters.travelPeriod || filters.travelLocation);
+    const filterIconColor = isLocalFilterActive ? '#007BFF' : '#666'; 
 
     return (
         <>
@@ -72,7 +81,7 @@ export default function MyTourHeader({ onSortChange, onFilterPress, onFilterAppl
                             <Icon 
                                 name="tune-variant" 
                                 size={20} 
-                                color="#666" 
+                                color={filterIconColor} 
                             />
                         </TouchableOpacity>
                     </View>
@@ -104,6 +113,7 @@ export default function MyTourHeader({ onSortChange, onFilterPress, onFilterAppl
                 visible={calendarVisible}
                 onClose={() => setCalendarVisible(false)}
                 onSelectDates={handleCalendarSelect}
+                initialPeriod={filters.travelPeriod}
             />  
         </>
     );

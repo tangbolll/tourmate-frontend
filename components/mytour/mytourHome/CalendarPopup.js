@@ -12,15 +12,21 @@ const CUSTOM_LOCALE = {
     weekdays: ['일', '월', '화', '수', '목', '금', '토'],
 };
 
-export default function CalendarPopup({ visible, onClose = () => {}, onSelectDates = () => {} }) {
+export default function CalendarPopup({ visible, onClose = () => {}, onSelectDates = () => {}, initialPeriod }) {
     const [range, setRange] = useState({ startDate: null, endDate: null });
     const [currentMonth, setCurrentMonth] = useState(dayjs());
 
+
     useEffect(() => {
-        visible
-            ? setCurrentMonth(dayjs()) // 모달이 열릴 때: 현재 날짜로 초기화
-            : setRange({ startDate: null, endDate: null }) // 모달이 닫힐 때: 선택 초기화
-    }, [visible]);
+        if (visible) {
+            // 팝업이 열릴 때, 부모로부터 받은 initialPeriod 값이 없으면(초기화되었으면)
+            // 내부 range 상태도 깨끗하게 비워줍니다.
+            if (!initialPeriod) {
+                setRange({ startDate: null, endDate: null });
+            }
+            setCurrentMonth(dayjs());
+        }
+    }, [visible, initialPeriod]); 
 
     const applyFilters = () => {
         if (range.startDate && range.endDate) {
@@ -42,8 +48,14 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
     };
 
     const resetSelection = () => {
+        // 내부 상태를 초기화합니다.
         setRange({ startDate: null, endDate: null });
+
+        onSelectDates({ startDate: null, endDate: null });
+        
+        closeModal();
     };
+
 
     const handleDateChange = (date) => {
         if (!range.startDate || (range.startDate && range.endDate)) {
@@ -79,22 +91,31 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
             <View style={styles.modalContent}>
                 {/* Header */}
                 <View style={styles.header}>
-                <TouchableOpacity 
-                    onPress={resetSelection}
-                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                >
-                    <View style={styles.row}>
-                    <Icon name="reload" size={15} color="gray" />
-                    <Text style={styles.resetText}> 재설정</Text>
+                    {/* 왼쪽 (재설정 버튼) */}
+                    <View style={styles.headerSide}>
+                        <TouchableOpacity 
+                            onPress={resetSelection}
+                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                        >
+                            <View style={styles.row}>
+                                <Icon name="reload" size={15} color="gray" />
+                                <Text style={styles.resetText}> 재설정</Text>
+                            </View>
+                        </TouchableOpacity>
                     </View>
-                </TouchableOpacity>
-                <Text style={styles.title}>날짜 선택</Text>
-                <TouchableOpacity 
-                    onPress={closeModal}
-                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                >
-                    <Icon name="close" size={22} color="black" />
-                </TouchableOpacity>
+
+                    {/* 중앙 (제목) */}
+                    <Text style={styles.title}>날짜 선택</Text>
+
+                    {/* 오른쪽 (닫기 버튼) */}
+                    <View style={styles.headerSide}>
+                        <TouchableOpacity 
+                            onPress={closeModal}
+                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                        >
+                            <Icon name="close" size={22} color="black" />
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Navigation Buttons */}
@@ -127,8 +148,7 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     customDatesStyles={null}
                     monthYearHeaderWrapperStyle={{ display: 'none' }}
                     allowRangeSelection
-                    minDate={new Date()}
-                    disabledBeforeToday={true} 
+                     
                     disabledDatesTextStyle={{ color: '#ccc' }}
                     selectedStartDate={range.startDate}
                     selectedEndDate={range.endDate}
@@ -191,18 +211,29 @@ const styles = StyleSheet.create({
         marginBottom: 15,
         paddingHorizontal: 5,
     },
+    // 👇 왼쪽 정렬을 위한 스타일
+    headerSideLeft: {
+        width: 70,
+        justifyContent: 'flex-start', // 왼쪽 정렬
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    // 👇 오른쪽 정렬을 위한 스타일 (새로 추가)
+    headerSideRight: {
+        width: 70,
+        justifyContent: 'flex-end', // 오른쪽 끝으로 정렬
+        alignItems: 'center',
+    },
     resetText: {
         color: '#999',
         fontSize: 14,
     },
     title: {
+        flex: 1, // 중앙 영역이 남은 공간을 모두 차지하도록 설정
+        textAlign: 'center', // 차지한 공간 내에서 텍스트를 중앙 정렬
         fontSize: 18,
         fontWeight: 'bold',
         color: '#000',
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        textAlign: 'center',
     },
     monthNav: {
         flexDirection: 'row',
