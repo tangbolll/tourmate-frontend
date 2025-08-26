@@ -16,6 +16,7 @@ export function AuthProvider({ children }) {
         const checkAuth = async () => {
             try {
                 const token = await AsyncStorage.getItem('jwtToken');
+                console.log('AuthContext checkAuth - retrieved token:', token);
                 const userId = await AsyncStorage.getItem('userId'); // ✅ 추가
                 
                 if (token && userId) {

@@ -39,7 +39,15 @@ const LoginScreen = () => {
         />
 
         <TouchableOpacity
-          onPress={() => handleLoginApi(email, password, signIn)}
+          onPress={async () => { // Make it async
+            const result = await handleLoginApi(email, password); // Await the result
+            if (result.success) {
+              await signIn(result.token, result.userId); // Call signIn with token and userId
+              router.replace('/'); // Navigate to home screen
+            } else {
+              Alert.alert("로그인 실패", result.message); // Show error message
+            }
+          }}
           style={styles.loginButton}
         >
           <Text style={styles.loginButtonText}>로그인</Text>

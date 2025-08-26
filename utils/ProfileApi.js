@@ -9,9 +9,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const getBaseURL = () => {
     if (__DEV__) {
         if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080';
+            return 'http://10.0.2.2:8080'; // Keep for Android emulator
         }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+        // For web and other platforms in development
+        return 'http://localhost:8080';
     } else {
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
