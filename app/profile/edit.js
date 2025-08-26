@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as ImagePicker from 'expo-image-picker';
 import { fetchUserProfileApi, updateUserProfileApi, checkNicknameApi } from '../../utils/ProfileApi';
 import useUserStore from '../../context/userStore';
 
@@ -45,6 +46,7 @@ const ProfileEditScreen = () => {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
+  const [profileImage, setProfileImage] = useState(null);
   
   // Feedback state
   const [nicknameFeedback, setNicknameFeedback] = useState('');
@@ -152,6 +154,30 @@ const ProfileEditScreen = () => {
     }
   }, [nickname]);
 
+  const pickImage = async () => {
+    // Request camera roll permissions
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('권한 필요', '프로필 사진을 변경하려면 사진 라이브러리 접근 권한이 필요합니다.');
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 1,
+    });
+
+    if (!result.canceled) {
+      const selectedImageUri = result.assets[0].uri;
+      setProfileImage(selectedImageUri);
+      // TODO: Call backend API to upload the image
+      console.log('Selected image URI:', selectedImageUri);
+      // Example: await uploadProfileImageApi(selectedImageUri);
+    }
+  };
+
   // Check if there are any changes
   const canSave = useMemo(() => {
     if (!originalUserData) return false; // No original data yet
@@ -197,8 +223,8 @@ const ProfileEditScreen = () => {
         )}
       </View>
       <ScrollView contentContainerStyle={styles.content}>
-        <TouchableOpacity style={styles.profileImageContainer}>
-          <Image source={userData?.profileImage ? { uri: userData.profileImage } : defaultProfile} style={styles.profileImage} />
+        <TouchableOpacity style={styles.profileImageContainer} onPress={pickImage}>
+          <Image source={profileImage ? { uri: profileImage } : defaultProfile} style={styles.profileImage} />
           <View style={styles.cameraIconContainer}>
             <Ionicons name="camera" size={20} color="white" />
           </View>

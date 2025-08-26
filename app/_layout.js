@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, Text } from 'react-native';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import setupAxiosInterceptor from '../utils/axiosInterceptor';
 
 export default function RootLayout() {
     return (
@@ -20,6 +21,7 @@ function RootLayoutNav() {
     const router = useRouter();
 
     useEffect(() => {
+        setupAxiosInterceptor(); // Call the setup function here
         console.log('Auth status changed:', { user, loading, segments });
         // Only navigate if loading is false (auth status has been determined)
         if (!loading) {
