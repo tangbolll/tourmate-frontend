@@ -12,6 +12,7 @@ import MemberPopup from '../../../components/mytour/designItinerary/MemberPopup'
 import ItineraryWithSchedule from '../../../components/mytour/designItinerary/ItineraryWithSchedule';
 import Schedule from '../../../components/mytour/designItinerary/schedule/Schedule';
 import AddSchedule from '../../../components/mytour/designItinerary/AddSchedule/AddSchedule';
+ import { scheduleUtils } from '../../../utils/scheduleUtils';
 
 // API Imports
 import { 
@@ -80,7 +81,6 @@ export default function DesignItinerary() {
             const data = await getTourDetails(currentTourId);
             if (!data) throw new Error("여행 정보를 불러올 수 없습니다.");
 
-            // day별 스케줄 매핑(day1, ...)
             const mappedScheduleData = {};
             if (data.schedules && Array.isArray(data.schedules) && data.startDate) {
                 const tripStartDate = dayjs(data.startDate);
@@ -91,7 +91,12 @@ export default function DesignItinerary() {
                         if (dayNumber > 0) {
                             const dayKey = `day${dayNumber}`;
                             if (!mappedScheduleData[dayKey]) mappedScheduleData[dayKey] = [];
-                            mappedScheduleData[dayKey].push(schedule);
+                            const style = scheduleUtils.getCategoryStyle(schedule.tag);
+                            const scheduleWithColor = {
+                                ...schedule,
+                                categoryColor: style.borderColor
+                            };
+                            mappedScheduleData[dayKey].push(scheduleWithColor);
                         }
                     }
                 });

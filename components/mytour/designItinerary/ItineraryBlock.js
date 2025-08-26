@@ -296,7 +296,7 @@ const TimeBlock = ({
         return null;
     }
 
-    const categoryStyle = scheduleUtils.getCategoryStyle(schedule.category);
+    const categoryStyle = scheduleUtils.getCategoryStyle(schedule.tag);
     // 일정 블록의 높이는 일정의 총 분 단위 길이를 픽셀 스케일로 변환하여 계산
     const calculatedHeight = (
         scheduleUtils.calculateBlockHeight(
