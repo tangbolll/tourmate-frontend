@@ -21,7 +21,7 @@ import {
     handleApiError,
     checkToken,
     testServerConnection,
-    createPostcardInExistingFolderApi, // 추가: 기존 폴더에 엽서 생성 API
+    createPostcardInExistingFolderApi,
 } from '../../utils/PostCardApi';
 
 export default function ProfileHome() {
@@ -35,45 +35,44 @@ export default function ProfileHome() {
     const [editingFolder, setEditingFolder] = useState(null);
     const { userData, setUserData } = useUserStore();
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const userId = await AsyncStorage.getItem('userId');
-                if (userId) {
-                    const data = await fetchUserProfileApi(userId);
-                    setUserData(data);
-                }
-            } catch (error) {
-                console.error('Error fetching user data in ProfileHome:', error);
-            }
-        };
-
-        fetchUserData();
-    }, []);
-
-    // 💡 참고: 실제 사용자 이메일은 로그인 세션 등에서 가져와야 합니다.
-    const userEmail = userData?.email; 
-
-    // 폴더 목록을 서버에서 불러오는 함수
-    const fetchFolders = useCallback(async () => {
-        if (!userEmail) return; // userEmail이 없으면 호출하지 않음
+    // 폴더 목록을 서버에서 불러오는 함수를 useCallback으로 정의
+    // 이 함수는 userEmail이 변경될 때만 새로 생성됩니다.
+    const fetchFolders = useCallback(async (email) => {
+        if (!email) {
+            console.log("⚠️ userEmail이 없으므로 폴더 목록을 불러오지 않습니다.");
+            return;
+        }
         try {
-            const fetchedFolders = await getFoldersByUserApi(userEmail);
+            const fetchedFolders = await getFoldersByUserApi(email);
             setFolders(fetchedFolders);
             console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", fetchedFolders);
         } catch (error) {
             handleApiError(error, '폴더 목록 조회');
         }
-    }, [userEmail]);
+    }, []); // 이 함수는 userEmail에 의존하지 않으므로, 의존성 배열을 비워둡니다.
 
-    // 컴포넌트 마운트 시 폴더 목록 불러오기
+    // 컴포넌트 마운트 시 사용자 데이터와 폴더 목록 불러오기
     useEffect(() => {
-        fetchFolders();
-    }, [fetchFolders, userEmail]); // userEmail을 의존성 배열에 추가
+        const fetchData = async () => {
+            try {
+                const userId = await AsyncStorage.getItem('userId');
+                if (userId) {
+                    const data = await fetchUserProfileApi(userId);
+                    setUserData(data);
+                    if (data?.email) {
+                        // 사용자 이메일이 있을 때만 폴더를 가져옵니다.
+                        fetchFolders(data.email);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching data in ProfileHome:', error);
+            }
+        };
+        fetchData();
+    }, [fetchFolders]);
 
-    // if (!userData) {
-    //     return <View style={[styles.container, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}><Text>Loading profile...</Text></View>; // 로딩 스피너 또는 플레이스홀더
-    // }
+    // userData?.email을 사용하여 userEmail 변수 정의
+    const userEmail = userData?.email; 
 
     // 폴더 생성/수정 팝업 열기
     const handleCreateFolder = useCallback(() => {
@@ -93,13 +92,11 @@ export default function ProfileHome() {
     const navigateToWritePost = useCallback((folderData) => {
         const params = {};
         
-        // folderData에서 id 또는 folderId를 찾아 directoryId로 설정
         const directoryId = folderData?.folderId || folderData?.id;
         if (directoryId) {
             params.directoryId = String(directoryId);
         }
         
-        // folderData에서 title 또는 name을 찾아 directoryName으로 설정
         const directoryName = folderData?.title || folderData?.name;
         if (directoryName) {
             params.directoryName = directoryName;
@@ -119,52 +116,6 @@ export default function ProfileHome() {
             params: params
         });
     }, [router]);
-
-    const fetchFolders = useCallback(async (email) => {
-        if (!email) return; 
-        try {
-            const fetchedFolders = await getFoldersByUserApi(email);
-            setFolders(fetchedFolders);
-            console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", fetchedFolders);
-        } catch (error) {
-            handleApiError(error, '폴더 목록 조회');
-        }
-    }, []);
-
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const tokenInfo = await checkToken();
-                console.log('📝 ProfileHome - 토큰 정보:', tokenInfo);
-                const userId = await AsyncStorage.getItem('userId');
-                
-                if (userId) {
-                    const data = await fetchUserProfileApi(userId);
-                    setUserData(data);
-                    if (data?.email) {
-                        fetchFolders(data.email);
-                    }
-                }
-            } catch (error) {
-                console.error('Error fetching data in ProfileHome:', error);
-            }
-        };
-        fetchData();
-    }, [fetchFolders]);
-
-    const userEmail = userData?.email; 
-
-    const handleCreateFolder = useCallback(() => {
-        setPopupMode('create');
-        setEditingFolder(null);
-        setCreatePopupVisible(true);
-    }, []);
-
-    const handleEditFolder = useCallback((folderData) => {
-        setPopupMode('edit');
-        setEditingFolder(folderData);
-        setCreatePopupVisible(true);
-    }, []);
 
     // 엽서 저장 로직
     const handleSavePostcard = useCallback(async (folderId, postcardData) => {
@@ -193,14 +144,12 @@ export default function ProfileHome() {
                 Alert.alert('성공', '새 폴더와 함께 엽서가 저장되었습니다.');
                 console.log('새 폴더에 엽서 저장 성공:', response);
             }
-            // 저장 후 폴더 목록 갱신
             await fetchFolders(userEmail);
 
         } catch (error) {
             handleApiError(error, '엽서 저장');
         }
     }, [userEmail, fetchFolders]);
-
 
     const handleSave = useCallback(async (folderData) => {
         setCreatePopupVisible(false);
@@ -222,7 +171,6 @@ export default function ProfileHome() {
                 console.log('새 폴더 및 엽서 생성 API 호출 준비:', requestBody);
                 const response = await createPostcardWithNewFolderApi(requestBody);
                 
-                // API 응답의 실제 구조를 확인하기 위한 로그 추가
                 console.log('⭐ 새 폴더 생성 API 응답:', response);
 
                 Alert.alert('성공', '새 폴더가 생성되었습니다.');
@@ -287,7 +235,7 @@ export default function ProfileHome() {
             default:
                 return <PostBoardTab userEmail={userEmail}/>;
         }
-    }, [activeTab, handleEditFolder, folders]);
+    }, [activeTab, handleEditFolder, folders, userEmail]);
 
     if (!userData) {
         return <View style={[styles.container, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}><Text>Loading profile...</Text></View>;
