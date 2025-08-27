@@ -28,7 +28,6 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
     const { currentUserId } = useAuth();
     const router = useRouter();
     const [sortType, setSortType] = useState('latest');
-    const [tours, setTours] = useState([]);
     const [activeFilters, setActiveFilters] = useState({
         travelPeriod: '',
         travelLocation: '',
@@ -37,12 +36,8 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
     const [isEditMode, setIsEditMode] = useState(false);
     const [selectedTours, setSelectedTours] = useState([]);
 
-    useEffect(() => {
-        setTours(Array.isArray(mytours) ? mytours : []);
-    }, [mytours]);
-
     const filteredAndSortedTours = useMemo(() => {
-        let filteredTours = Array.isArray(tours) ? [...tours] : [];
+        let filteredTours = Array.isArray(mytours) ? [...mytours] : [];
 
         if (activeFilters.travelPeriod && typeof activeFilters.travelPeriod === 'string') {
             try {
@@ -112,7 +107,7 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
         return filteredTours;
 
     // 의존성 배열은 activeFilters 그대로 유지
-    }, [tours, sortType, activeFilters]);
+    }, [mytours, sortType, activeFilters]);
 
     const handleSortChange = (newSortType) => setSortType(newSortType);
     const handleFilterPress = () => console.log('필터 버튼 클릭');
@@ -162,29 +157,25 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
                 [
                     {
                         text: "취소",
-                        onPress: () => console.log("삭제 취소"),
                         style: "cancel"
                     },
                     { 
                         text: "삭제", 
-                                                onPress: async () => {
+                        onPress: async () => {
                             try {
+                                // 1. 서버에 삭제 요청
                                 await deleteMyTours(selectedTours);
-
-                                                                setTours(prevTours => {
-                                    const newTours = prevTours.filter(tour => !selectedTours.includes(tour.id));
-                                    console.log('[MyTourTab] After internal setTours, newTours count:', newTours.length);
-                                    return newTours;
-                                });
+                                
+                                // 2. 로컬 상태 초기화
                                 setSelectedTours([]);
                                 setIsEditMode(false);
 
                                 Alert.alert("삭제 완료", "선택한 여행이 성공적으로 삭제되었습니다.");
 
-                                // Notify parent component about deleted tours
+                                // 3. 삭제 성공 후, 부모 컴포넌트의 새로고침 함수 호출!
                                 if (onToursDeleted) {
-                                    console.log('[MyTourTab] Calling onToursDeleted with:', selectedTours);
-                                    onToursDeleted(selectedTours);
+                                    console.log('[MyTourTab] 삭제 API 성공. 부모에게 새로고침을 요청합니다.');
+                                    onToursDeleted(); // 인자 없이 함수만 호출
                                 }
                             } catch (error) {
                                 console.error('여행 삭제 에러:', error);
@@ -217,7 +208,7 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
         />
 
         <View style={styles.summaryContainer}>
-            <Text style={styles.tourCountText}>여행 {tours.length}</Text>
+            <Text style={styles.tourCountText}>여행 {mytours.length}</Text>
             <View style={styles.editButtonsContainer}>
                 {isEditMode && (
                     <TouchableOpacity 
@@ -272,8 +263,11 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
                                     <View key={tour.id} style={styles.feedItem}>
                                         <MyTourFeed
                                             imageUrl={tour.imageUrl || null}
+                                            periodType = {tour.periodType}
                                             tourStartDate={tour.startDate}
                                             tourEndDate={tour.endDate}
+                                            dayCount={tour.dayCount}
+                                            nightCount={tour.nightCount}
                                             title={tour.title}
                                             location={locationString}
                                             members={tour.participants || []}
@@ -283,6 +277,7 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
                                             isEditMode={isEditMode}
                                             isSelected={selectedTours.includes(tour.id)}
                                             onSelect={() => handleTourSelection(tour.id)}
+                                            onDeletePress={() => onToursDeleted(tour.id)}
                                         />
                                     </View>
                                 );

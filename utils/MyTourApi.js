@@ -5,6 +5,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
 
 
+
 // API 기본 URL을 가져오는 헬퍼 함수
 export const getBaseURL = () => {
     if (__DEV__) {
@@ -57,6 +58,7 @@ export const toggleTourFavorite = async (tourId, userId) => {
         throw error;
     }
 };
+
 
 // 여러 여행 삭제 (배치)
 export const deleteMyTours = async (tourIds) => {
@@ -256,27 +258,5 @@ export const deleteTravelSchedules = async (scheduleIds) => {
     } catch (error) {
         console.error('여행 스케줄 배치 삭제 에러:', error);
         throw error;
-    }
-};
-
-// 즐겨찾기 토글 API 함수
-export const handleBookmarkPress = async (event) => {
-        console.log('handleBookmarkPress called', event.id);
-    try {
-        const userId = currentUserId; // 로그인 유저 ID
-        const headers = await getAuthHeaders();
-        const response = await fetch(
-            `${getBaseURL()}/api/myTour/${event.id}/favorite?userId=${userId}`,
-            { method: 'POST', headers }
-        );
-
-        if (!response.ok) throw new Error('즐겨찾기 업데이트 실패');
-
-        // 상태 업데이트
-        if (onBookmarkUpdate) onBookmarkUpdate(event.id);
-
-        console.log('✅ 즐겨찾기 토글 완료:', event.id);
-    } catch (error) {
-        console.error('Bookmark update error:', error);
     }
 };

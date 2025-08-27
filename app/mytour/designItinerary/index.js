@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, StyleSheet, SafeAreaView, Alert, Text, ActivityIndicator, Platform, Modal, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+
 import dayjs from 'dayjs';
 
 // 컴포넌트 Imports
@@ -12,7 +13,10 @@ import MemberPopup from '../../../components/mytour/designItinerary/MemberPopup'
 import ItineraryWithSchedule from '../../../components/mytour/designItinerary/ItineraryWithSchedule';
 import Schedule from '../../../components/mytour/designItinerary/schedule/Schedule';
 import AddSchedule from '../../../components/mytour/designItinerary/AddSchedule/AddSchedule';
- import { scheduleUtils } from '../../../utils/scheduleUtils';
+import { scheduleUtils } from '../../../utils/scheduleUtils';
+import DesignItineraryMapHeader from '../../../components/mytour/designItinerary/map/designItineraryMapHeader';
+
+ 
 
 // API Imports
 import { 
@@ -256,32 +260,55 @@ useEffect(() => {
                 Alert.alert("알림", "먼저 여행을 저장한 후 일정을 추가할 수 있습니다.");
                 return;
             }
+
+            let locationName = '';
+            let latitude = null;
+            let longitude = null;
+
+            if (newScheduleData.location) {
+                if (typeof newScheduleData.location === 'string') {
+                    locationName = newScheduleData.location;
+                } else if (typeof newScheduleData.location === 'object') {
+                    locationName = newScheduleData.location.place_name || '';
+                    // 좌표가 존재하면 숫자로 변환, 없으면 null
+                    latitude = newScheduleData.location.y ? parseFloat(newScheduleData.location.y) : null;
+                    longitude = newScheduleData.location.x ? parseFloat(newScheduleData.location.x) : null;
+                }
+            }
+
             const payload = {
                 travelId: currentTourId,
                 date: newScheduleData.date,
                 timeSlot: `${newScheduleData.startTime} ~ ${newScheduleData.endTime}`,
                 title: newScheduleData.title,
                 tag: newScheduleData.category || 'CUSTOM',
-                location: newScheduleData.location,
-                latitude: newScheduleData.latitude || 0,
-                longitude: newScheduleData.longitude || 0,
+                location: locationName,
+                latitude,
+                longitude,
                 memo: newScheduleData.memo || ''
             };
+
+            console.log('Final payload:', payload);
+
+
 
             if (schedulePopupData?.existingSchedule?.id) {
                 await updateTravelSchedule(schedulePopupData.existingSchedule.id, payload);
             } else {
                 await createTravelSchedule(payload);
             }
+
+
             await fetchTourData();
         } catch (error) {
+            
+            console.error('일정 저장 에러:', error, await error?.response?.text?.());
             Alert.alert('오류', '일정 저장에 실패했습니다.');
         } finally {
             setScheduleLoading(false);
             handleCloseAddSchedulePopup();
         }
     };
-
     // 일정 삭제 핸들러 - 팝업창에서
     const performDeleteSchedule = async (scheduleId) => {
         console.log(`[Delete Flow] Starting deletion for schedule ID: ${scheduleId}`);
@@ -435,11 +462,15 @@ useEffect(() => {
 
     return (
         <SafeAreaView style={styles.container}>
-            <DesignItineraryHeader
+            <DesignItineraryHeader 
                 title={title}
                 dateRange={dateInfo.displayText}
+                startDate={dateInfo.startDate}
+                endDate={dateInfo.endDate}
+                periodType={period.type}
                 onBackPress={handleBackPress}
                 onMemberPress={handleMemberPress}
+                tourId={currentTourId}
             />
 
             <DateSelectButtons
