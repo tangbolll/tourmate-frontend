@@ -23,6 +23,14 @@ export const formatChatTimestamp = (timestamp) => {
     else if (diffInHours < 24) {
         return messageTime.format('HH:mm');
     }
+    // 2일 미만
+    else if (diffInDays < 2) {
+        return messageTime.format('2일 전');
+    }
+    // 3일 미만
+    else if (diffInDays < 3) {
+        return messageTime.format('3일 전');
+    }
     // 1주일 미만
     else if (diffInDays < 7) {
         return messageTime.format('M월 D일');

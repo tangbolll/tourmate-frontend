@@ -611,3 +611,66 @@ export const toggleScrapPostcard = async (postcardId, isCurrentlyScraped, userId
 
 // 기존 함수들 (하위 호환성을 위해 유지)
 export const bookmarkPostcardApi = scrapPostcardApi;
+
+// 엽서 상세 정보 가져오기 API (새로 추가)
+export const fetchPostcardDetailApi = async (postcardId) => {
+    if (!postcardId) {
+        return {
+            success: false,
+            error: '엽서 ID가 필요합니다.'
+        };
+    }
+
+    try {
+        const response = await axios.get(
+            `${API_URL}/api/accompany/postcards/${postcardId}`,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                timeout: 10000,
+            }
+        );
+
+        return {
+            success: true,
+            data: response.data
+        };
+    } catch (error) {
+        console.error('엽서 상세 정보 API 오류:', error);
+        
+        let errorMessage = '엽서 정보를 불러오는 중 오류가 발생했습니다.';
+        
+        if (error.response) {
+            const status = error.response.status;
+            const data = error.response.data;
+            
+            switch (status) {
+                case 400:
+                    errorMessage = '잘못된 요청입니다. 엽서 ID를 확인해주세요.';
+                    break;
+                case 401:
+                    errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
+                    break;
+                case 403:
+                    errorMessage = '접근 권한이 없습니다.';
+                    break;
+                case 404:
+                    errorMessage = '엽서를 찾을 수 없습니다.';
+                    break;
+                case 500:
+                    errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+                    break;
+                default:
+                    errorMessage = data?.message || errorMessage;
+            }
+        } else if (error.request) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+        }
+
+        return {
+            success: false,
+            error: errorMessage
+        };
+    }
+};

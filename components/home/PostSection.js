@@ -114,7 +114,7 @@ const PostSection = () => {
         }
     };
 
-    // 🔧 수정된 부분: API 호출 없이 UI 상태만 동기화
+    // API 호출 없이 UI 상태만 동기화
     const handleDataUpdate = (postcardId, actionType, wasActive) => {
         console.log(`[PostSection] UI 상태 동기화 - PostCard ${postcardId}, ${actionType}, 이전상태: ${wasActive}`);
         
@@ -204,7 +204,7 @@ const PostSection = () => {
                 renderItem={renderPost}
                 keyExtractor={(item) => item.postcardId?.toString() || Math.random().toString()}
                 showsVerticalScrollIndicator={false}
-                scrollEnabled={false} // 🔑 핵심: FlatList 자체 스크롤 비활성화
+                scrollEnabled={false}
                 contentContainerStyle={posts.length === 0 ? styles.emptyList : styles.postList}
                 refreshControl={
                     <RefreshControl
@@ -214,10 +214,9 @@ const PostSection = () => {
                         tintColor="#666"
                     />
                 }
-                // onEndReached와 onEndReachedThreshold 제거 (ScrollView가 담당)
                 ListFooterComponent={renderFooter}
                 ListEmptyComponent={renderEmpty}
-                removeClippedSubviews={false} // ScrollView 내부에서는 false 권장
+                removeClippedSubviews={false} 
                 maxToRenderPerBatch={10}
                 windowSize={5}
             />

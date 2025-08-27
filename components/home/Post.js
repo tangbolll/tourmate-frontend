@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import PostExpanded from './PostExpanded';
 import Report from './Report';
 import { toggleLikePostcard, toggleScrapPostcard } from '../../utils/HomePostApi';
+import { formatChatTimestamp } from '../../utils/timeUtils';
 import { useAuth } from '../../context/AuthContext';
 
 const defaultProfile = require('../../assets/defaultProfile2.png');
@@ -46,9 +47,9 @@ const Post = ({ postData, onDataUpdate }) => {
         author: postData?.author || '알 수 없음',
         likeCount: currentLikeCount,
         scrapCount: currentScrapCount,
-        timeAgo: '방금 전', // 서버에서 시간 데이터가 없어서 임시
-        location: '위치 정보 없음', // 서버에서 위치 데이터가 없어서 임시
-        date: new Date().toISOString().slice(0, 10).replace(/-/g, '.'), // 임시 날짜
+        timeAgo: postData?.createdAt ? formatChatTimestamp(new Date(postData.createdAt)) : '알 수 없음',
+        location: postData?.location || '위치 정보 없음',
+        date: postData?.createdAt ? new Date(postData.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음',
         isLiked: isLiked,
         isScraped: isBookmarked,
     };

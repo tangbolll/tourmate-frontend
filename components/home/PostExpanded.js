@@ -10,11 +10,64 @@ import {
     Dimensions,
     Alert,
     ActivityIndicator,
+    ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { toggleLikePostcard, toggleScrapPostcard } from '../../utils/HomePostApi';
+import { toggleLikePostcard, toggleScrapPostcard, fetchPostcardDetailApi} from '../../utils/HomePostApi';
 
 const { width, height } = Dimensions.get('window');
+
+// 로컬 템플릿 이미지 매핑
+const postcardTemplates = {
+    1: require('../../assets/postcardType/1.png'),
+    2: require('../../assets/postcardType/2.png'),
+    3: require('../../assets/postcardType/3.png'),
+    4: require('../../assets/postcardType/4.png'),
+    5: require('../../assets/postcardType/5.png'),
+    6: require('../../assets/postcardType/6.png'),
+    7: require('../../assets/postcardType/7.png'),
+    8: require('../../assets/postcardType/8.png'),
+    9: require('../../assets/postcardType/9.png'),
+    10: require('../../assets/postcardType/10.png'),
+    11: require('../../assets/postcardType/11.png'),
+    12: require('../../assets/postcardType/12.png'),
+    13: require('../../assets/postcardType/13.png'),
+    14: require('../../assets/postcardType/14.png'),
+    15: require('../../assets/postcardType/15.png'),
+};
+
+// 템플릿 이미지 가져오기 함수
+const getPostcardTemplate = (typeImageUrl) => {
+    if (!typeImageUrl) return postcardTemplates[1]; // 기본 템플릿
+    
+    try {
+        const match = typeImageUrl.match(/(\d+)\.png$/);
+        if (match) {
+            const templateNumber = parseInt(match[1], 10);
+            return postcardTemplates[templateNumber] || postcardTemplates[1];
+        }
+        return postcardTemplates[1];
+    } catch (error) {
+        console.error('템플릿 이미지 가져오기 오류:', error);
+        return postcardTemplates[1];
+    }
+};
+
+// 날짜 포맷팅 함수
+const formatDate = (dateString) => {
+    if (!dateString) return '';
+    
+    try {
+        const date = new Date(dateString);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}.${month}.${day}`;
+    } catch (error) {
+        console.error('날짜 포맷팅 오류:', error);
+        return '';
+    }
+};
 
 const PostExpanded = ({ 
     visible, 
@@ -31,7 +84,11 @@ const PostExpanded = ({
     const [likeLoading, setLikeLoading] = useState(false);
     const [scrapLoading, setScrapLoading] = useState(false);
 
-    // 목 데이터
+        // detail 데이터 상태
+    const [detailData, setDetailData] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
+
+    // 목 데이터 (fallback용)
     const mockData = {
         profileImage: 'https://via.placeholder.com/50',
         postcardName: '부산의 바다 !',
@@ -45,8 +102,50 @@ const PostExpanded = ({
         postcardContent: '부산에다녀왔다\n넘즐거웠다\n엽서디자인 아직 안 넣었습니다 임시입니다\n놀래지마세용',
         isLiked: false,
         isScraped: false,
+        typeImageUrl: '../postcardType/1.png', // 기본 템플릿
         ...postData
     };
+
+    useEffect(() => {
+    if (visible && postData?.postcardId && !detailData) {
+        loadDetailData();
+    }
+    }, [visible, postData?.postcardId]);
+
+        // detail 데이터 로드
+    const loadDetailData = async () => {
+        setDetailLoading(true);
+        try {
+            const result = await fetchPostcardDetailApi(postData.postcardId);
+            if (result.success) {
+                setDetailData(result.data);
+            } else {
+                console.warn('Detail 로드 실패:', result.error);
+                // 실패해도 기본 데이터로 표시
+            }
+        } catch (error) {
+            console.error('Detail 로드 오류:', error);
+            // 에러가 나도 기본 데이터로 표시
+        } finally {
+            setDetailLoading(false);
+        }
+    };
+
+    // 실제 표시할 데이터 (서버 데이터가 있으면 서버 데이터 우선)
+    const displayData = {
+        postcardName: detailData?.title || postData?.title || postData?.postcardName || mockData.postcardName,
+        userName: detailData?.author || postData?.author || postData?.userName || mockData.userName,
+        location: detailData?.location || postData?.location || mockData.location,
+        date: detailData?.createdAt 
+            ? formatDate(detailData.createdAt) 
+            : (postData?.createdAt ? formatDate(postData.createdAt) : (postData?.date || mockData.date)),
+        postcardImage: detailData?.imageUrl || postData?.imageUrl || postData?.postcardImage || mockData.postcardImage,
+        postcardContent: detailData?.content || postData?.content || postData?.postcardContent || mockData.postcardContent,
+        templateImage: getPostcardTemplate(detailData?.typeImageUrl || postData?.typeImageUrl || mockData.typeImageUrl),
+        profileImage: postData?.profileImage || mockData.profileImage,
+    };
+
+
 
     // postData가 변경될 때마다 상태 동기화 (서버 데이터 우선)
     useEffect(() => {
@@ -174,32 +273,34 @@ const PostExpanded = ({
                 {/* 메인 콘텐츠 */}
                 <View style={styles.contentContainer}>
                     {/* 엽서 제목 */}
-                    <Text style={styles.postcardTitle}>{mockData.postcardName}</Text>
+                    <Text style={styles.postcardTitle}>{displayData.postcardName}</Text>
                     
                     {/* 사용자 정보 */}
                     <View style={styles.userInfo}>
-                        <Image source={{ uri: mockData.profileImage }} style={styles.profileImage} />
+                        <Image source={{ uri: displayData.profileImage }} style={styles.profileImage} />
                         <Text style={styles.userText}>
-                            {mockData.userName} · {mockData.location} · {mockData.date}
+                            {displayData.userName} · {displayData.location} · {displayData.date}
                         </Text>
                     </View>
 
                     {/* 엽서 이미지 */}
                     <View style={styles.imageSection}>
-                        <Image source={{ uri: mockData.postcardImage }} style={styles.postcardImage} />
+                        <Image source={{ uri: displayData.postcardImage }} style={styles.postcardImage} />
                     </View>
 
-                    {/* 엽서 내용 */}
+                    {/* 엽서 템플릿 배경에 내용 오버레이 */}
                     <View style={styles.postcardSection}>
-                        <View style={styles.postcardContainer}>
-                            <View style={styles.postcardHeader}>
-                                <Text style={styles.locationTitle}>{mockData.location}</Text>
+                        <ImageBackground
+                            source={displayData.templateImage}
+                            style={styles.postcardContainer}
+                            resizeMode="contain"
+                        >
+                            <View style={styles.postcardOverlay}>
+                                <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
+                                    <Text style={styles.contentText}>{displayData.postcardContent}</Text>
+                                </ScrollView>
                             </View>
-                            <View style={styles.postcardContent}>
-                                <Text style={styles.contentText}>{mockData.postcardContent}</Text>
-                                <Text style={styles.dateText}>{mockData.date}</Text>
-                            </View>
-                        </View>
+                        </ImageBackground>
                     </View>
 
                     {/* 하단 액션 버튼 */}
@@ -329,32 +430,37 @@ const styles = StyleSheet.create({
     postcardContainer: {
         width: width * 0.85,
         height: width / 1.48 * 0.85,
-        backgroundColor: '#f8f9fa',
-        overflow: 'hidden',
+        justifyContent: 'center',
+        alignItems: 'center',
     },
-    postcardHeader: {
-        backgroundColor: '#aaa',
-        paddingVertical: 8,
-        paddingHorizontal: 15,
+    postcardOverlay: {
+        width: '80%',
+        height: '70%',
+        padding: 20,
+        justifyContent: 'space-between',
     },
     locationTitle: {
-        fontSize: 18,
+        fontSize: 16,
         fontWeight: 'bold',
-        color: '#fff',
+        color: '#333',
         textAlign: 'center',
+        marginBottom: 8,
     },
-    postcardContent: {
-        padding: 15,
-        minHeight: 120,
+    contentScrollArea: {
+        flex: 1,
+        marginVertical: 8,
     },
     contentText: {
         fontSize: 14,
         color: '#333',
-        marginBottom: 15,
+        lineHeight: 18,
+        textAlign: 'left',
     },
     dateText: {
-        fontSize: 12,
+        fontSize: 11,
         color: '#666',
+        textAlign: 'right',
+        marginTop: 8,
     },
     actionSection: {
         flexDirection: 'row',
