@@ -9,19 +9,24 @@ const { width } = Dimensions.get('window');
 
 export default function MyTourFeed({
     imageUrl,
+    periodType,
     tourStartDate,
     tourEndDate,
+    dayCount,
+    nightCount,
     title,
     location,
     members = [],
     isBookmarked = false,
     onPress,
     onBookmarkPress,
+    onDeletePress,
     // ✅ 편집 모드 관련 prop 추가
     isEditMode,
     isSelected,
     onSelect
 }) {
+
     // 날짜 포맷팅 함수
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -32,13 +37,16 @@ export default function MyTourFeed({
 
     // 날짜 범위 포맷팅
     const getDateRange = () => {
-        const startFormatted = formatDate(tourStartDate);
-        const endFormatted = formatDate(tourEndDate);
-        
-        if (tourStartDate === tourEndDate) {
-            return startFormatted; // 당일치기
+        if (periodType === 1) {
+            const startFormatted = formatDate(tourStartDate);
+            const endFormatted = formatDate(tourEndDate);
+            if (tourStartDate === tourEndDate) return startFormatted;
+            return `${startFormatted} - ${endFormatted}`;
+        } else if (periodType === 2) {
+            if (dayCount && nightCount) return `${nightCount}박 ${dayCount}일`;
+            return '';
         }
-        return `${startFormatted} - ${endFormatted}`;
+        return '';
     };
 
     // 멤버 표시 함수

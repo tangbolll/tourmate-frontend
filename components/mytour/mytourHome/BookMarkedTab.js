@@ -18,6 +18,13 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate 
         console.log('Event pressed:', event);
     };
 
+    const handleBookmarkChange = (eventId) => {
+        if (onBookmarkUpdate) {
+            onBookmarkUpdate(eventId); // 부모에게 이벤트 ID를 전달하며 알림
+        }
+    };
+
+
     return (
         <View style={styles.container}>
             {/* 헤더 */}
@@ -76,12 +83,16 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate 
                                         key={event.id || index}
                                         tourStartDate={event.startDate ?? '날짜 없음'}
                                         tourEndDate={event.endDate ?? '날짜 없음'}
+                                        dayCount = {event.dayCount}
+                                        nightCount = {event.nightCount}
+                                        periodType = {event.periodType}
                                         title={event.title}
                                         location={locationString} // 최종 문자열 전달
                                         imageUrl={event.imageUrl || null}
                                         isBookmarked={event.isBookmarked}
                                         onPress={() => handleEventPress(event)}
-                                        onBookmarkPress={() => handleBookmarkPress(event)}
+                                        onBookmarkPress={() => handleBookmarkChange(event.id)}
+
                                     />
                                 );
                             })}
