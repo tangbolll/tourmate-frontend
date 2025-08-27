@@ -217,7 +217,7 @@ const PostExpanded = ({
                                     <Ionicons 
                                         name={isLiked ? "heart" : "heart-outline"} 
                                         size={28} 
-                                        color={isLiked ? "#ff4757" : "#fff"} 
+                                        color={isLiked ? "white" : "#fff"} 
                                     />
                                 )}
                             </View>
@@ -237,7 +237,7 @@ const PostExpanded = ({
                                     <Ionicons 
                                         name={isScraped ? "bookmark" : "bookmark-outline"} 
                                         size={28} 
-                                        color={isScraped ? "#3742fa" : "#fff"} 
+                                        color={isScraped ? "white" : "#fff"} 
                                     />
                                 )}
                             </View>

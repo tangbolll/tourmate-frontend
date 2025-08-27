@@ -219,14 +219,12 @@ export const getCurrentTourStatus = (tourList) => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    // 진행중인 여행 찾기
     const ongoingTour = tourList.find(tour => {
         if (!tour.startDate || !tour.endDate) return false;
         
-        const startDate = new Date(tour.startDate);
-        const endDate = new Date(tour.endDate);
-        startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
+        // 로컬 시간대로 강제 변환
+        const startDate = new Date(tour.startDate + 'T00:00:00');
+        const endDate = new Date(tour.endDate + 'T23:59:59');
         
         return today >= startDate && today <= endDate;
     });
@@ -235,12 +233,11 @@ export const getCurrentTourStatus = (tourList) => {
         return { status: 'ongoing', currentTour: ongoingTour, daysLeft: 0 };
     }
 
-    // 임박한 여행 찾기 (3일 이내)
     const upcomingTour = tourList.find(tour => {
         if (!tour.startDate) return false;
         
-        const startDate = new Date(tour.startDate);
-        startDate.setHours(0, 0, 0, 0);
+        // 로컬 시간대로 강제 변환
+        const startDate = new Date(tour.startDate + 'T00:00:00');
         
         const timeDiff = startDate.getTime() - today.getTime();
         const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
@@ -249,7 +246,7 @@ export const getCurrentTourStatus = (tourList) => {
     });
 
     if (upcomingTour) {
-        const startDate = new Date(upcomingTour.startDate);
+        const startDate = new Date(upcomingTour.startDate + 'T00:00:00');
         const timeDiff = startDate.getTime() - today.getTime();
         const daysLeft = Math.ceil(timeDiff / (1000 * 3600 * 24));
         
