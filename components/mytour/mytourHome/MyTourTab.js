@@ -8,7 +8,7 @@ import {
     TouchableOpacity,
     Alert
 } from 'react-native';
-import { useRouter } from 'expo-router';
+//import { useRouter } from 'expo-router';
 import MyTourHeader from './MyTourHeader';
 import MyTourFeed from './MyTourFeed';
 import { toggleTourFavorite, deleteMyTours } from '../../../utils/MyTourApi';
@@ -24,9 +24,9 @@ dayjs.extend(isSameOrBefore);    // dayjs에 isSameOrBefore 플러그인 기능 
 const { width } = Dimensions.get('window');
 
 
-export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDeleted }) {
+export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDeleted, onTourPress }) {
     const { currentUserId } = useAuth();
-    const router = useRouter();
+    //const router = useRouter();
     const [sortType, setSortType] = useState('latest');
     const [activeFilters, setActiveFilters] = useState({
         travelPeriod: '',
@@ -272,7 +272,11 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
                                             location={locationString}
                                             members={tour.participants || []}
                                             isBookmarked={tour.isFavorite}
-                                            onPress={() => handleTourPress(tour.id)}
+                                            onPress={() => {
+                                                if (!isEditMode && onTourPress) {
+                                                    onTourPress(tour.id);
+                                                }
+                                            }}
                                             onBookmarkPress={() => handleBookmarkPress(tour.id)}
                                             isEditMode={isEditMode}
                                             isSelected={selectedTours.includes(tour.id)}

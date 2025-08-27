@@ -12,94 +12,82 @@ import {
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Constants from 'expo-constants';
 
-// ✅ searchText prop을 추가합니다.
 export default function AllAreaToggle({ onRegionSelect, selectedRegions = [], searchText }) {
     const [areas, setAreas] = useState([]);
     const [expanded, setExpanded] = useState({});
     const [loading, setLoading] = useState(false);
-    
-    // ✅ 필터링된 지역 목록을 저장할 상태를 추가합니다.
     const [filteredAreas, setFilteredAreas] = useState([]);
 
     const defaultImage = require('../../../assets/defaultBackground.png');
 
     const getBaseURL = () => {
-    // 개발 모드일 때
-    if (__DEV__) {
-        if (Platform.OS === 'android') {
-        return 'http://10.0.2.2:8080';
+        if (__DEV__) {
+            if (Platform.OS === 'android') {
+                return 'http://10.0.2.2:8080';
+            }
+            if (Platform.OS === 'web') {
+                return 'http://localhost:8080';
+            }
+            return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+        } else {
+            return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
         }
-        if (Platform.OS === 'web') {
-        return 'http://localhost:8080';
-        }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } 
-    // 배포(프로덕션) 모드일 때
-    else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-    }
     };
 
     const API_URL = getBaseURL();
 
     useEffect(() => {
         const fetchAllAreas = async () => {
-        setLoading(true);
-        try {
-            const res = await fetch(`${API_URL}/api/myTour/allArea`);
-            const text = await res.text();
-            let json;
-            try { json = JSON.parse(text); } catch { json = { response: { body: { items: { item: [] } } } }; }
-            const items = json.response?.body?.items?.item || [];
+            setLoading(true);
+            try {
+                const res = await fetch(`${API_URL}/api/myTour/allArea`);
+                const text = await res.text();
+                let json;
+                try { json = JSON.parse(text); } catch { json = { response: { body: { items: { item: [] } } } }; }
+                const items = json.response?.body?.items?.item || [];
 
-            const areasWithRegions = await Promise.all(
-            items.map(async (area) => {
-                try {
-                const res2 = await fetch(`${API_URL}/api/myTour/areaByCode/${area.code}`);
-                const text2 = await res2.text();
-                let json2;
-                try { json2 = JSON.parse(text2); } catch { return { ...area, regions: [] }; }
-                const subRegionsRaw = json2.response?.body?.items?.item || [];
-                const subRegionsArray = Array.isArray(subRegionsRaw) ? subRegionsRaw : [subRegionsRaw];
-                const regions = subRegionsArray.map((r) => ({
-                    name: r.name,
-                    code: r.code,
-                    parentCode: area.code,
-                }));
-                return { ...area, regions };
-                } catch (err) {
-                return { ...area, regions: [] };
-                }
-            })
-            );
-
-            setAreas(areasWithRegions);
-        } catch (err) {
-            setAreas([]);
-        } finally {
-            setLoading(false);
-        }
+                const areasWithRegions = await Promise.all(
+                    items.map(async (area) => {
+                        try {
+                            const res2 = await fetch(`${API_URL}/api/myTour/areaByCode/${area.code}`);
+                            const text2 = await res2.text();
+                            let json2;
+                            try { json2 = JSON.parse(text2); } catch { return { ...area, regions: [] }; }
+                            const subRegionsRaw = json2.response?.body?.items?.item || [];
+                            const subRegionsArray = Array.isArray(subRegionsRaw) ? subRegionsRaw : [subRegionsRaw];
+                            const regions = subRegionsArray.map((r) => ({
+                                name: r.name,
+                                code: r.code,
+                                parentCode: area.code,
+                            }));
+                            return { ...area, regions };
+                        } catch (err) {
+                            return { ...area, regions: [] };
+                        }
+                    })
+                );
+                setAreas(areasWithRegions);
+            } catch (err) {
+                setAreas([]);
+            } finally {
+                setLoading(false);
+            }
         };
-
         fetchAllAreas();
     }, []);
 
-    // ✅ searchText가 변경될 때마다 필터링을 다시 실행하는 useEffect
     useEffect(() => {
         if (!searchText) {
-        setFilteredAreas(areas);
-        return;
+            setFilteredAreas(areas);
+            return;
         }
-
         const filtered = areas.filter(country => {
-        // ✅ 국가 이름과 지역 이름에 검색어가 포함되었는지 확인
-        const countryMatch = country.name.toLowerCase().includes(searchText.toLowerCase());
-        const regionMatch = country.regions.some(region => 
-            region.name.toLowerCase().includes(searchText.toLowerCase())
-        );
-        return countryMatch || regionMatch;
+            const countryMatch = country.name.toLowerCase().includes(searchText.toLowerCase());
+            const regionMatch = country.regions.some(region => 
+                region.name.toLowerCase().includes(searchText.toLowerCase())
+            );
+            return countryMatch || regionMatch;
         });
-
         setFilteredAreas(filtered);
     }, [searchText, areas]);
 
@@ -110,76 +98,90 @@ export default function AllAreaToggle({ onRegionSelect, selectedRegions = [], se
     const toggleRegion = (country, region) => {
         const key = `${country}-${region.name}`;
         if (onRegionSelect) {
-        onRegionSelect(key, country, region.name, region.code, region.parentCode);
+            onRegionSelect(key, country, region.name, region.code, region.parentCode);
         }
     };
 
     if (loading) {
         return (
-        <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color="#000" />
-        </View>
+            <View style={styles.loadingContainer}>
+                <ActivityIndicator size="large" color="#000" />
+            </View>
         );
     }
 
     return (
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <View style={styles.contentContainer}>
-            {/* ✅ areas 대신 filteredAreas를 사용해 렌더링 */}
-            {filteredAreas.map((country, index) => {
-            const isExpanded = expanded[country.code];
-            const displayRegions = country.regions?.slice(0, 3) || [];
-            const remaining = (country.regions?.length || 0) - displayRegions.length;
+            <View style={styles.contentContainer}>
+                {filteredAreas.map((country, index) => {
+                    const isExpanded = expanded[country.code];
+                    const displayRegions = country.regions?.slice(0, 3) || [];
+                    const remaining = (country.regions?.length || 0) - displayRegions.length;
 
-            return (
-                <View key={index} style={styles.countryItem}>
-                <TouchableOpacity
-                    style={styles.countryHeader}
-                    onPress={() => toggleCountry(country.code)}
-                    activeOpacity={0.7}
-                >
-                    <View style={styles.countryInfo}>
-                    <View style={styles.imageContainer}>
-                        <Image source={defaultImage} style={styles.countryImage} resizeMode="cover" />
-                    </View>
-                    <View style={styles.countryDetails}>
-                        {!isExpanded ? (
-                        <View style={styles.countryPreviewContainer}>
-                            <Text style={styles.countryName} numberOfLines={1}>{country.name}</Text>
-                            <Text style={styles.separator}> | </Text>
-                            <Text style={styles.regionPreviewText} numberOfLines={1}>
-                            {displayRegions.map((r) => r.name).join(', ')}
-                            {remaining > 0 && ` 외 ${remaining}개 도시`}
-                            </Text>
+                    return (
+                        <View key={index} style={styles.countryItem}>
+                            <TouchableOpacity
+                                style={styles.countryHeader}
+                                onPress={() => toggleCountry(country.code)}
+                                activeOpacity={0.7}
+                            >
+                                <View style={styles.countryInfo}>
+                                    <View style={styles.imageContainer}>
+                                        <Image source={defaultImage} style={styles.countryImage} resizeMode="cover" />
+                                    </View>
+                                    <View style={styles.countryDetails}>
+                                        {!isExpanded ? (
+                                            <View style={styles.countryPreviewContainer}>
+                                                <Text style={styles.countryName} numberOfLines={1}>{country.name}</Text>
+                                                <Text style={styles.separator}> | </Text>
+                                                <Text style={styles.regionPreviewText} numberOfLines={1}>
+                                                    {displayRegions.map((r) => r.name).join(', ')}
+                                                    {remaining > 0 && ` 외 ${remaining}개 도시`}
+                                                </Text>
+                                            </View>
+                                        ) : (
+                                            <Text style={styles.countryName}>{country.name}</Text>
+                                        )}
+                                    </View>
+                                </View>
+                                <AntDesign name={isExpanded ? 'up' : 'down'} style={styles.chevronIcon} />
+                            </TouchableOpacity>
+
+                            {isExpanded && (
+                                <View style={styles.regionsContainer}>
+                                    <View style={styles.regionsGrid}>
+                                        {(country.regions || []).map((region, regionIndex) => {
+                                            // ✅ Step 1: 현재 지역이 선택되었는지 확인합니다.
+                                            const key = `${country.name}-${region.name}`;
+                                            const isSelected = selectedRegions.includes(key);
+
+                                            return (
+                                                <TouchableOpacity
+                                                    key={regionIndex}
+                                                    onPress={() => toggleRegion(country.name, region)}
+                                                    // ✅ Step 2: isSelected 값에 따라 스타일을 동적으로 적용합니다.
+                                                    style={[
+                                                        styles.regionChip,
+                                                        isSelected && styles.regionChipSelected
+                                                    ]}
+                                                    activeOpacity={0.8}
+                                                >
+                                                    <Text style={[
+                                                        styles.regionChipText,
+                                                        isSelected && styles.regionChipTextSelected
+                                                    ]}>
+                                                        {region.name}
+                                                    </Text>
+                                                </TouchableOpacity>
+                                            );
+                                        })}
+                                    </View>
+                                </View>
+                            )}
                         </View>
-                        ) : (
-                        <Text style={styles.countryName}>{country.name}</Text>
-                        )}
-                    </View>
-                    </View>
-                    <AntDesign name={isExpanded ? 'up' : 'down'} style={styles.chevronIcon} />
-                </TouchableOpacity>
-
-                {isExpanded && (
-                    <View style={styles.regionsContainer}>
-                    <View style={styles.regionsGrid}>
-                        {(country.regions || []).map((region, regionIndex) => (
-                        <TouchableOpacity
-                            key={regionIndex}
-                            onPress={() => toggleRegion(country.name, region)}
-                            style={styles.regionChip}
-                            activeOpacity={0.8}
-                        >
-                            <Text style={styles.regionChipText}>{region.name}</Text>
-                        </TouchableOpacity>
-                        ))}
-                    </View>
-                    </View>
-                )}
-                </View>
-            );
-            })}
-        </View>
+                    );
+                })}
+            </View>
         </ScrollView>
     );
 }
@@ -270,10 +272,19 @@ const styles = StyleSheet.create({
         borderWidth: 1, 
         borderColor: '#d1d5db', 
         marginBottom: 4,
-        marginRight: 4 
+        marginRight: 4,
+        backgroundColor: '#fff', // 기본 배경색 (흰색)
     },
     regionChipText: { 
         fontSize: 14,
-        color: '#000'
+        color: '#000' // 기본 글자색 (검정)
+    },
+    // ✅ Step 3: 선택되었을 때 적용될 새로운 스타일을 추가합니다.
+    regionChipSelected: {
+        backgroundColor: '#111827', // 선택 시 배경색 (검정)
+        borderColor: '#111827',     // 선택 시 테두리색 (검정)
+    },
+    regionChipTextSelected: {
+        color: '#fff', // 선택 시 글자색 (흰색)
     },
 });

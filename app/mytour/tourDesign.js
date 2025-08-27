@@ -45,6 +45,9 @@ const TourDesign = () => {
 
     const isNextButtonActive = selectedRegions.length > 0;
 
+    const selectedRegionKeys = selectedRegions.map(region => region.key);
+
+
     return (
         <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaView style={styles.container}>
@@ -65,7 +68,7 @@ const TourDesign = () => {
                 <AllAreaToggle
                 searchText={searchText}
                 onRegionSelect={handleRegionSelect}
-                selectedRegions={selectedRegions}
+                selectedRegions={selectedRegionKeys}
                 />
             </ScrollView>
             </View>

@@ -77,6 +77,14 @@ export default function MyTourHome() {
         }
     };
 
+    const handleTourPress = (tourId) => {
+        console.log('투어 상세 페이지로 이동:', tourId);
+        router.push({
+            pathname: '/mytour/designItinerary',
+            params: { tourId: tourId }
+        });
+    };
+
     
 
     const bookmarkedEvents = tours.filter(tour => tour.isFavorite);
@@ -117,6 +125,7 @@ export default function MyTourHome() {
             <BookmarkedTab
                 bookmarkedEvents={bookmarkedEvents}
                 onBookmarkUpdate={handleBookmarkToggle} 
+                onTourPress={handleTourPress}
             />
             
             {/* 나의 여행 탭 */}
@@ -125,6 +134,7 @@ export default function MyTourHome() {
                     mytours={tours}
                     onBookmarkUpdate={handleBookmarkToggle}
                     onToursDeleted={handleToursDeleted} 
+                    onTourPress={handleTourPress}
                 />
             </View>
 

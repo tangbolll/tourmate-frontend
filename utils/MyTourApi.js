@@ -51,11 +51,20 @@ export const toggleTourFavorite = async (tourId, userId) => {
     try {
         const headers = await getAuthHeaders();
         const response = await fetch(url, { method: 'POST', headers });
-        if (!response.ok) throw new Error(await response.text());
-        return true;
+
+        // 1. 서버가 성공 신호(200번대)를 보내면, 즉시 성공으로 처리합니다.
+        if (response.ok) {
+            return true;
+        }
+        
+        // 2. 만약 성공이 아니라면 (400, 500번대 에러), 
+        //    서버가 보낸 에러 메시지를 읽어서 원인을 명확하게 알려줍니다.
+        const errorText = await response.text();
+        throw new Error(errorText || `서버 에러: ${response.status}`);
+
     } catch (error) {
-        console.error('즐겨찾기 토글 에러:', error);
-        throw error;
+        console.error('즐겨찾기 토글 API 상세 에러:', error.message || error);
+        throw error;    
     }
 };
 
