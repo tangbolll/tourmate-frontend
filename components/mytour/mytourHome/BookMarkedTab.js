@@ -6,7 +6,11 @@ import Constants from 'expo-constants';
 import { handleBookmarkPress } from '../../../utils/MyTourApi';
 
 
-export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate }) {
+export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate, onTourPress }) {
+    if (bookmarkedEvents.length === 0) {
+        return null; // 즐겨찾기가 없으면 아무것도 표시하지 않음
+    }
+
     const [isExpanded, setIsExpanded] = useState(true);
 
     const toggleExpanded = () => {
@@ -90,7 +94,7 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate 
                                         location={locationString} // 최종 문자열 전달
                                         imageUrl={event.imageUrl || null}
                                         isBookmarked={event.isBookmarked}
-                                        onPress={() => handleEventPress(event)}
+                                        onPress={() => onTourPress && onTourPress(event.id)}
                                         onBookmarkPress={() => handleBookmarkChange(event.id)}
 
                                     />
