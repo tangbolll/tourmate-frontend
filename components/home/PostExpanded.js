@@ -23,10 +23,11 @@ const PostExpanded = ({
     onDataUpdate, 
     currentUserId 
 }) => {
-    const [isLiked, setIsLiked] = useState(false);
-    const [isScraped, setIsScraped] = useState(false);
-    const [likeCount, setLikeCount] = useState(0);
-    const [scrapCount, setScrapCount] = useState(0);
+    // 서버에서 받은 데이터를 기반으로 초기 상태 설정
+    const [isLiked, setIsLiked] = useState(postData?.isLiked || false);
+    const [isScraped, setIsScraped] = useState(postData?.isScraped || false);
+    const [likeCount, setLikeCount] = useState(postData?.likeCount || 0);
+    const [scrapCount, setScrapCount] = useState(postData?.scrapCount || 0);
     const [likeLoading, setLikeLoading] = useState(false);
     const [scrapLoading, setScrapLoading] = useState(false);
 
@@ -47,7 +48,7 @@ const PostExpanded = ({
         ...postData
     };
 
-    // postData가 변경될 때마다 상태 업데이트
+    // postData가 변경될 때마다 상태 동기화 (서버 데이터 우선)
     useEffect(() => {
         if (postData) {
             setIsLiked(postData.isLiked || false);
@@ -55,7 +56,7 @@ const PostExpanded = ({
             setLikeCount(postData.likeCount || mockData.likeCount);
             setScrapCount(postData.scrapCount || mockData.scrapCount);
         }
-    }, [postData]);
+    }, [postData?.postcardId, postData?.isLiked, postData?.isScraped, postData?.likeCount, postData?.scrapCount]);
 
     const handleLike = async () => {
         if (likeLoading) return;
@@ -66,7 +67,6 @@ const PostExpanded = ({
             return;
         }
 
-        // userId 확인
         if (!currentUserId) {
             Alert.alert('알림', '로그인이 필요합니다.');
             return;
@@ -110,7 +110,6 @@ const PostExpanded = ({
             return;
         }
 
-        // userId 확인
         if (!currentUserId) {
             Alert.alert('알림', '로그인이 필요합니다.');
             return;
@@ -143,6 +142,11 @@ const PostExpanded = ({
         } finally {
             setScrapLoading(false);
         }
+    };
+
+    // 로그인하지 않은 사용자를 위한 액션 핸들러
+    const handleLoginRequired = () => {
+        Alert.alert('알림', '로그인이 필요한 기능입니다.');
     };
 
     return (
@@ -203,7 +207,7 @@ const PostExpanded = ({
                         {/* 좋아요 버튼 */}
                         <TouchableOpacity 
                             style={[styles.actionButton, likeLoading && styles.actionButtonDisabled]} 
-                            onPress={handleLike}
+                            onPress={currentUserId ? handleLike : handleLoginRequired}
                             disabled={likeLoading}
                         >
                             <View style={styles.actionIcon}>
@@ -223,7 +227,7 @@ const PostExpanded = ({
                         {/* 스크랩 버튼 */}
                         <TouchableOpacity 
                             style={[styles.actionButton, scrapLoading && styles.actionButtonDisabled]} 
-                            onPress={handleScrap}
+                            onPress={currentUserId ? handleScrap : handleLoginRequired}
                             disabled={scrapLoading}
                         >
                             <View style={styles.actionIcon}>

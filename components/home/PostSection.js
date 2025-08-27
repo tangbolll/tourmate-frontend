@@ -10,12 +10,15 @@ import {
 } from 'react-native';
 import Post from './Post';
 import { 
+    fetchPostcardFeedWithUserInteractionsApi,
     fetchPostcardFeedApi, 
     toggleLikePostcard, 
     toggleScrapPostcard 
 } from '../../utils/HomePostApi';
+import { useAuth } from '../../context/AuthContext';
 
 const PostSection = () => {
+    const { currentUserId } = useAuth(); // 사용자 ID 가져오기
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -23,11 +26,14 @@ const PostSection = () => {
     const [hasMoreData, setHasMoreData] = useState(true);
     const [loadingMore, setLoadingMore] = useState(false);
 
-    // 초기 데이터 로드
+    // 초기 데이터 로드 - 사용자 상호작용 정보 포함
     const loadInitialData = async () => {
         setLoading(true);
         try {
-            const result = await fetchPostcardFeedApi(0, 20);
+            // 로그인한 사용자가 있으면 통합 API 사용, 없으면 기본 API 사용
+            const result = currentUserId 
+                ? await fetchPostcardFeedWithUserInteractionsApi(0, 20, currentUserId)
+                : await fetchPostcardFeedApi(0, 20);
             
             if (result.success) {
                 const { content, totalPages, last } = result.data;
@@ -47,11 +53,14 @@ const PostSection = () => {
         }
     };
 
-    // 새로고침
+    // 새로고침 - 사용자 상호작용 정보 포함
     const handleRefresh = async () => {
         setRefreshing(true);
         try {
-            const result = await fetchPostcardFeedApi(0, 20);
+            // 로그인한 사용자가 있으면 통합 API 사용, 없으면 기본 API 사용
+            const result = currentUserId 
+                ? await fetchPostcardFeedWithUserInteractionsApi(0, 20, currentUserId)
+                : await fetchPostcardFeedApi(0, 20);
             
             if (result.success) {
                 const { content, totalPages, last } = result.data;
@@ -69,18 +78,30 @@ const PostSection = () => {
         }
     };
 
-    // 더 많은 데이터 로드 (무한 스크롤)
+    // 더 많은 데이터 로드 (무한 스크롤) - 사용자 상호작용 정보는 추가 로드시에는 제외
     const loadMoreData = async () => {
         if (!hasMoreData || loadingMore) return;
 
         setLoadingMore(true);
         try {
             const nextPage = currentPage + 1;
+            // 추가 로드시에는 기본 API 사용 (성능 최적화)
             const result = await fetchPostcardFeedApi(nextPage, 20);
             
             if (result.success) {
                 const { content, last } = result.data;
-                setPosts(prevPosts => [...prevPosts, ...(content || [])]);
+                
+                // 새로운 엽서에 사용자 상호작용 정보 추가 (로그인 사용자인 경우)
+                let enhancedContent = content || [];
+                if (currentUserId && content && content.length > 0) {
+                    enhancedContent = content.map(postcard => ({
+                        ...postcard,
+                        isLiked: false, // 새로 로드된 것들은 기본값으로 설정
+                        isScraped: false
+                    }));
+                }
+                
+                setPosts(prevPosts => [...prevPosts, ...enhancedContent]);
                 setCurrentPage(nextPage);
                 setHasMoreData(!last);
             } else {
@@ -93,51 +114,35 @@ const PostSection = () => {
         }
     };
 
-    // 좋아요/스크랩 처리 함수 (실제 API 호출)
-    const handleDataUpdate = async (postcardId, actionType, currentValue) => {
-        try {
-            let result;
-            
-            if (actionType === 'like') {
-                result = await toggleLikePostcard(postcardId, currentValue);
-            } else if (actionType === 'scrap') {
-                result = await toggleScrapPostcard(postcardId, currentValue);
-            }
-
-            if (result && result.success) {
-                // API 호출 성공 시에만 UI 업데이트
-                setPosts(prevPosts => 
-                    prevPosts.map(post => {
-                        if (post.postcardId === postcardId) {
-                            if (actionType === 'like') {
-                                return {
-                                    ...post,
-                                    isLiked: !currentValue,
-                                    likeCount: currentValue 
-                                        ? Math.max(0, post.likeCount - 1) 
-                                        : post.likeCount + 1
-                                };
-                            } else if (actionType === 'scrap') {
-                                return {
-                                    ...post,
-                                    isScraped: !currentValue,
-                                    scrapCount: currentValue 
-                                        ? Math.max(0, post.scrapCount - 1) 
-                                        : post.scrapCount + 1
-                                };
-                            }
-                        }
-                        return post;
-                    })
-                );
-            } else {
-                // API 호출 실패 시 에러 메시지 표시
-                Alert.alert('오류', result?.error || '처리 중 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            console.error('데이터 업데이트 오류:', error);
-            Alert.alert('오류', '처리 중 오류가 발생했습니다.');
-        }
+    // 🔧 수정된 부분: API 호출 없이 UI 상태만 동기화
+    const handleDataUpdate = (postcardId, actionType, wasActive) => {
+        console.log(`[PostSection] UI 상태 동기화 - PostCard ${postcardId}, ${actionType}, 이전상태: ${wasActive}`);
+        
+        // API 호출 없이 UI 상태만 업데이트
+        setPosts(prevPosts => 
+            prevPosts.map(post => {
+                if (post.postcardId === postcardId) {
+                    if (actionType === 'like') {
+                        return {
+                            ...post,
+                            isLiked: !wasActive,
+                            likeCount: wasActive 
+                                ? Math.max(0, post.likeCount - 1) 
+                                : post.likeCount + 1
+                        };
+                    } else if (actionType === 'scrap') {
+                        return {
+                            ...post,
+                            isScraped: !wasActive,
+                            scrapCount: wasActive 
+                                ? Math.max(0, post.scrapCount - 1) 
+                                : post.scrapCount + 1
+                        };
+                    }
+                }
+                return post;
+            })
+        );
     };
 
     // 무한 스크롤을 위한 함수 - 상위 컴포넌트에서 호출 가능
@@ -147,9 +152,10 @@ const PostSection = () => {
         }
     };
 
+    // currentUserId 변경시 데이터 다시 로드
     useEffect(() => {
         loadInitialData();
-    }, []);
+    }, [currentUserId]);
 
     const renderPost = ({ item }) => (
         <Post 

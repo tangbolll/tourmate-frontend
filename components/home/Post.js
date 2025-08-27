@@ -17,8 +17,9 @@ const defaultProfile = require('../../assets/defaultProfile2.png');
 
 const Post = ({ postData, onDataUpdate }) => {
     const { currentUserId } = useAuth();
-    const [isLiked, setIsLiked] = useState(false);
-    const [isBookmarked, setIsBookmarked] = useState(false);
+    // 서버에서 받은 데이터를 기반으로 초기 상태 설정
+    const [isLiked, setIsLiked] = useState(postData?.isLiked || false);
+    const [isBookmarked, setIsBookmarked] = useState(postData?.isScraped || false);
     const [showExpanded, setShowExpanded] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const [showReport, setShowReport] = useState(false);
@@ -27,7 +28,7 @@ const Post = ({ postData, onDataUpdate }) => {
     const [likeLoading, setLikeLoading] = useState(false);
     const [scrapLoading, setScrapLoading] = useState(false);
 
-    // postData 변경 시 상태 초기화
+    // postData 변경 시 상태 동기화 (서버 데이터 우선)
     useEffect(() => {
         if (postData) {
             setIsLiked(postData.isLiked || false);
@@ -35,7 +36,7 @@ const Post = ({ postData, onDataUpdate }) => {
             setCurrentLikeCount(postData.likeCount || 0);
             setCurrentScrapCount(postData.scrapCount || 0);
         }
-    }, [postData]);
+    }, [postData?.postcardId, postData?.isLiked, postData?.isScraped, postData?.likeCount, postData?.scrapCount]);
 
     // 실제 데이터가 없으면 기본값 사용
     const data = {
@@ -53,41 +54,40 @@ const Post = ({ postData, onDataUpdate }) => {
     };
 
     const handleLike = async () => {
-    if (!data.postcardId || likeLoading) return;
+        if (!data.postcardId || likeLoading) return;
 
-    if (!currentUserId) {
-        Alert.alert('알림', '로그인이 필요합니다.');
-        return;
-    }
-
-    setLikeLoading(true);
-    try {
-        // 디버깅 함수 대신 정상 함수 사용
-        const result = await toggleLikePostcard(data.postcardId, isLiked, currentUserId);
-        
-        if (result.success) {
-            const newIsLiked = !isLiked;
-            setIsLiked(newIsLiked);
-            setCurrentLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
-            
-            if (onDataUpdate) {
-                onDataUpdate(data.postcardId, 'like', isLiked);
-            }
-        } else {
-            Alert.alert('오류', result.error);
+        if (!currentUserId) {
+            Alert.alert('알림', '로그인이 필요합니다.');
+            return;
         }
-    } catch (error) {
-        console.error('좋아요 처리 오류:', error);
-        Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
-    } finally {
-        setLikeLoading(false);
-    }
+
+        setLikeLoading(true);
+        try {
+            const result = await toggleLikePostcard(data.postcardId, isLiked, currentUserId);
+            
+            if (result.success) {
+                const newIsLiked = !isLiked;
+                setIsLiked(newIsLiked);
+                setCurrentLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
+                
+                // 부모 컴포넌트에 데이터 업데이트 알림
+                if (onDataUpdate) {
+                    onDataUpdate(data.postcardId, 'like', isLiked);
+                }
+            } else {
+                Alert.alert('오류', result.error);
+            }
+        } catch (error) {
+            console.error('좋아요 처리 오류:', error);
+            Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
+        } finally {
+            setLikeLoading(false);
+        }
     };
 
     const handleBookmark = async () => {
         if (!data.postcardId || scrapLoading) return;
 
-        // userId 확인
         if (!currentUserId) {
             Alert.alert('알림', '로그인이 필요합니다.');
             return;
@@ -145,6 +145,11 @@ const Post = ({ postData, onDataUpdate }) => {
         }
     };
 
+    // 로그인하지 않은 사용자를 위한 액션 핸들러
+    const handleLoginRequired = () => {
+        Alert.alert('알림', '로그인이 필요한 기능입니다.');
+    };
+
     return (
         <View style={styles.container}>
             {/* 헤더 */}
@@ -174,7 +179,7 @@ const Post = ({ postData, onDataUpdate }) => {
                 <View style={styles.dropdown}>
                     <TouchableOpacity 
                         style={styles.dropdownItem}
-                        onPress={handleReport}
+                        onPress={currentUserId ? handleReport : handleLoginRequired}
                     >
                         <Text style={styles.dropdownText}>신고하기</Text>
                     </TouchableOpacity>
@@ -208,7 +213,7 @@ const Post = ({ postData, onDataUpdate }) => {
                 <View style={styles.actions}>
                     <TouchableOpacity 
                         style={[styles.actionButton, likeLoading && styles.actionButtonDisabled]} 
-                        onPress={handleLike}
+                        onPress={currentUserId ? handleLike : handleLoginRequired}
                         disabled={likeLoading}
                     >
                         <Ionicons 
@@ -220,7 +225,7 @@ const Post = ({ postData, onDataUpdate }) => {
                     </TouchableOpacity>
                     <TouchableOpacity 
                         style={[styles.actionButton, scrapLoading && styles.actionButtonDisabled]} 
-                        onPress={handleBookmark}
+                        onPress={currentUserId ? handleBookmark : handleLoginRequired}
                         disabled={scrapLoading}
                     >
                         <Ionicons 

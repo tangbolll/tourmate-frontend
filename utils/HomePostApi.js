@@ -18,6 +18,198 @@ const getBaseURL = () => {
 
 const API_URL = getBaseURL();
 
+// 사용자가 좋아요한 엽서 목록 가져오기 API
+export const fetchUserLikedPostcardsApi = async (userId) => {
+    if (!userId) {
+        return {
+            success: false,
+            error: '사용자 ID가 필요합니다.'
+        };
+    }
+
+    try {
+        const response = await axios.get(
+            `${API_URL}/api/postcards/users/${userId}/liked`,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 필요한 경우 인증 토큰 추가
+                    // 'Authorization': `Bearer ${token}`,
+                },
+                timeout: 10000,
+            }
+        );
+
+        return {
+            success: true,
+            data: response.data
+        };
+    } catch (error) {
+        console.error('사용자 좋아요 목록 API 오류:', error);
+        
+        let errorMessage = '좋아요 목록을 불러오는 중 오류가 발생했습니다.';
+        
+        if (error.response) {
+            const status = error.response.status;
+            const data = error.response.data;
+            
+            switch (status) {
+                case 400:
+                    errorMessage = '잘못된 요청입니다. 사용자 ID를 확인해주세요.';
+                    break;
+                case 401:
+                    errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
+                    break;
+                case 403:
+                    errorMessage = '접근 권한이 없습니다.';
+                    break;
+                case 404:
+                    errorMessage = '사용자를 찾을 수 없습니다.';
+                    break;
+                case 500:
+                    errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+                    break;
+                default:
+                    errorMessage = data?.message || errorMessage;
+            }
+        } else if (error.request) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+        }
+
+        return {
+            success: false,
+            error: errorMessage
+        };
+    }
+};
+
+// 사용자가 스크랩한 엽서 목록 가져오기 API
+export const fetchUserScrappedPostcardsApi = async (userId) => {
+    if (!userId) {
+        return {
+            success: false,
+            error: '사용자 ID가 필요합니다.'
+        };
+    }
+
+    try {
+        const response = await axios.get(
+            `${API_URL}/api/postcards/users/${userId}/scrapped`,
+            {
+                headers: {
+                    'Content-Type': 'application/json',
+                    // 필요한 경우 인증 토큰 추가
+                    // 'Authorization': `Bearer ${token}`,
+                },
+                timeout: 10000,
+            }
+        );
+
+        return {
+            success: true,
+            data: response.data
+        };
+    } catch (error) {
+        console.error('사용자 스크랩 목록 API 오류:', error);
+        
+        let errorMessage = '스크랩 목록을 불러오는 중 오류가 발생했습니다.';
+        
+        if (error.response) {
+            const status = error.response.status;
+            const data = error.response.data;
+            
+            switch (status) {
+                case 400:
+                    errorMessage = '잘못된 요청입니다. 사용자 ID를 확인해주세요.';
+                    break;
+                case 401:
+                    errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
+                    break;
+                case 403:
+                    errorMessage = '접근 권한이 없습니다.';
+                    break;
+                case 404:
+                    errorMessage = '사용자를 찾을 수 없습니다.';
+                    break;
+                case 500:
+                    errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+                    break;
+                default:
+                    errorMessage = data?.message || errorMessage;
+            }
+        } else if (error.request) {
+            errorMessage = '네트워크 연결을 확인해주세요.';
+        }
+
+        return {
+            success: false,
+            error: errorMessage
+        };
+    }
+};
+
+// 엽서 피드와 사용자 상호작용 정보를 함께 가져오는 통합 함수
+export const fetchPostcardFeedWithUserInteractionsApi = async (page = 0, size = 20, userId = null) => {
+    try {
+        // 엽서 피드 가져오기
+        const feedResult = await fetchPostcardFeedApi(page, size);
+        
+        if (!feedResult.success) {
+            return feedResult;
+        }
+
+        let likedPostcards = [];
+        let scrappedPostcards = [];
+
+        // 사용자가 로그인한 경우에만 좋아요/스크랩 목록 가져오기
+        if (userId) {
+            const [likedResult, scrappedResult] = await Promise.all([
+                fetchUserLikedPostcardsApi(userId),
+                fetchUserScrappedPostcardsApi(userId)
+            ]);
+
+            // 에러가 있어도 피드는 보여주기 위해 계속 진행
+            if (likedResult.success) {
+                likedPostcards = likedResult.data || [];
+            } else {
+                console.warn('좋아요 목록 로드 실패:', likedResult.error);
+            }
+
+            if (scrappedResult.success) {
+                scrappedPostcards = scrappedResult.data || [];
+            } else {
+                console.warn('스크랩 목록 로드 실패:', scrappedResult.error);
+            }
+        }
+
+        // 좋아요/스크랩 정보를 Map으로 변환 (빠른 조회를 위해)
+        const likedPostcardIds = new Set(likedPostcards.map(item => item.postcardId));
+        const scrappedPostcardIds = new Set(scrappedPostcards.map(item => item.postcardId));
+
+        // 엽서 데이터에 사용자 상호작용 정보 추가
+        const enhancedContent = feedResult.data.content.map(postcard => ({
+            ...postcard,
+            isLiked: likedPostcardIds.has(postcard.postcardId),
+            isScraped: scrappedPostcardIds.has(postcard.postcardId)
+        }));
+
+        return {
+            success: true,
+            data: {
+                ...feedResult.data,
+                content: enhancedContent
+            }
+        };
+
+    } catch (error) {
+        console.error('통합 피드 API 오류:', error);
+        return {
+            success: false,
+            error: '피드를 불러오는 중 오류가 발생했습니다.'
+        };
+    }
+};
+
 // 신고 API 함수
 export const submitReportApi = async (postcardId, reportData) => {
     try {
@@ -188,6 +380,9 @@ export const likePostcardApi = async (postcardId, userId) => {
                 case 401:
                     errorMessage = '인증이 필요합니다.';
                     break;
+                case 403:
+                    errorMessage = '이미 좋아요한 게시물입니다.';
+                    break;
                 case 404:
                     errorMessage = '해당 게시물을 찾을 수 없습니다.';
                     break;
@@ -247,6 +442,9 @@ export const unlikePostcardApi = async (postcardId, userId) => {
                     break;
                 case 401:
                     errorMessage = '인증이 필요합니다.';
+                    break;
+                case 403:
+                    errorMessage = '좋아요하지 않은 게시물입니다.';
                     break;
                 case 404:
                     errorMessage = '해당 게시물을 찾을 수 없습니다.';
@@ -309,6 +507,9 @@ export const scrapPostcardApi = async (postcardId, userId) => {
                 case 401:
                     errorMessage = '인증이 필요합니다.';
                     break;
+                case 403:
+                    errorMessage = '이미 스크랩한 게시물입니다.';
+                    break;
                 case 404:
                     errorMessage = '해당 게시물을 찾을 수 없습니다.';
                     break;
@@ -368,6 +569,9 @@ export const unscrapPostcardApi = async (postcardId, userId) => {
                     break;
                 case 401:
                     errorMessage = '인증이 필요합니다.';
+                    break;
+                case 403:
+                    errorMessage = '스크랩하지 않은 게시물입니다.';
                     break;
                 case 404:
                     errorMessage = '해당 게시물을 찾을 수 없습니다.';
