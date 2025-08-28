@@ -107,9 +107,10 @@ const SettingsScreen = () => {
         </Section>
 
         <Section title="고객센터">
-          <SettingItem label="공지사항" isNav onPress={() => { /* Navigate to Announcements */ }} />
-          <SettingItem label="FAQ" isNav onPress={() => { /* Navigate to FAQ */ }} />
-          <SettingItem label="고객센터 문의" isNav onPress={() => { /* Navigate to Customer Service */ }} />
+          <SettingItem label="공지사항" isNav onPress={() => router.push('/profile/notice')} />
+          <SettingItem label="FAQ" isNav onPress={() => router.push('/profile/faq')} />
+          {/* 여기를 수정했습니다. */}
+          <SettingItem label="고객센터 문의" isNav onPress={() => router.push('/profile/inquiry')} />
         </Section>
         
         <View style={styles.singleItemContainer}>

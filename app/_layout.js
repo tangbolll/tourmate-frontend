@@ -3,6 +3,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { StyleSheet, Text } from 'react-native';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
+import setupAxiosInterceptor from '../utils/axiosInterceptor';
 
 export default function RootLayout() {
     return (
@@ -20,18 +21,22 @@ function RootLayoutNav() {
     const router = useRouter();
 
     useEffect(() => {
+        setupAxiosInterceptor(); // Call the setup function here
+        console.log('Auth status changed:', { user, loading, segments });
         // Only navigate if loading is false (auth status has been determined)
         if (!loading) {
-            const isAuthGroup = segments[0] === 'auth';
-            const isTermsAndPoliciesGroup = segments[0] === 'profile' && segments[1] === 'terms-and-policies';
+            const inAuthGroup = segments[0] === 'auth';
+            console.log('Navigation check:', { user, inAuthGroup });
 
-            const isPublicRoute = isAuthGroup || isTermsAndPoliciesGroup;
-
-            if (!user && !isPublicRoute) {
+            if (user && inAuthGroup) {
+                console.log('Redirecting to tabs');
+                router.replace('/(tabs)');
+            } else if (!user && !inAuthGroup) {
+                console.log('Redirecting to login');
                 router.replace('/auth/login');
             }
         }
-    }, [user, segments, loading]); // Add loading to dependency array
+    }, [user, segments, loading]);
 
     // Optionally, render a loading screen while auth status is being determined
     if (loading) {
