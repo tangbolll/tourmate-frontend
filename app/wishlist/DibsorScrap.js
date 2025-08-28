@@ -11,6 +11,9 @@ import {
     clearFeedCache,
     handleApiError
 } from '../../utils/AccompanyListApi';
+import { 
+    fetchUserScrappedPostcardsApi 
+} from '../../utils/HomePostApi';
 import { useAuth } from '../../context/AuthContext';
 
 const DibsorScrap = ({ router }) => {
@@ -117,7 +120,7 @@ const DibsorScrap = ({ router }) => {
         }
     }, [currentUserId, dibsLoaded, dibsList.length]);
 
-    // 🚀 스크랩 데이터 로딩 최적화
+    // 🚀 스크랩 데이터 로딩 - 실제 API 사용
     const fetchScrapDataOptimized = useCallback(async () => {
         if (loadingRef.current || (scrapLoaded && scrapList.length > 0)) return;
         
@@ -125,55 +128,59 @@ const DibsorScrap = ({ router }) => {
             loadingRef.current = true;
             setLoading(true);
             
-            // 캐시에서 먼저 확인
-            const cachedData = await AsyncStorage.getItem('scrapData');
-            if (cachedData) {
-                const parsedData = JSON.parse(cachedData);
-                setScrapList(parsedData);
-                setScrapLoaded(true);
-                console.log('✅ 스크랩 데이터 캐시에서 로드');
-                return;
-            }
-            
             console.log('🔍 스크랩 데이터 로딩 시작...');
             
-            // 더미 데이터 (실제로는 API 호출)
-            const dummyScrapData = [
-                {
-                    id: 'postcard1',
-                    image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-                    title: '부산 해운대',
-                    location: '부산',
-                    date: '2021.03.04',
-                    author: '주리를 들어라',
-                    authorDate: '부산 · 2021.03.04',
-                    design: { type: 'Line', color: '#E1F5FE' },
-                    content: { leftText: '오늘은 부산으로 즐거운 여행을 떠났다...' },
-                    likeCount: 24,
-                    scrapCount: 47,
-                    isLiked: false,
-                    isScrapped: true,
-                }
-                // ... 나머지 데이터
-            ];
+            // 실제 스크랩 API 호출
+            const result = await fetchUserScrappedPostcardsApi(currentUserId);
             
-            setScrapList(dummyScrapData);
-            setScrapLoaded(true);
-            
-            // 캐시에 저장
-            await AsyncStorage.setItem('scrapData', JSON.stringify(dummyScrapData));
-            
-            console.log('✅ 스크랩 데이터 로드 완료');
+            if (result.success) {
+                const scrappedPostcards = result.data || [];
+                
+                // 엽서 데이터를 적절한 형태로 변환
+                const formattedScrapData = scrappedPostcards.map(postcard => ({
+                    postcardId: postcard.postcardId,
+                    id: postcard.postcardId, // 호환성을 위해
+                    image: postcard.imageUrl,
+                    title: postcard.title,
+                    location: postcard.location,
+                    date: postcard.createdAt ? new Date(postcard.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음',
+                    author: postcard.author,
+                    authorDate: `${postcard.author} · ${postcard.location} · ${postcard.createdAt ? new Date(postcard.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음'}`,
+                    imageUrl: postcard.imageUrl,
+                    likeCount: postcard.likeCount || 0,
+                    scrapCount: postcard.scrapCount || 0,
+                    isLiked: postcard.isLiked || false,
+                    isScrapped: true, // 스크랩 목록이므로 항상 true
+                    // PostExpanded에서 필요한 필드들
+                    postcardName: postcard.title,
+                    userName: postcard.author,
+                    createdAt: postcard.createdAt,
+                    content: postcard.content,
+                    typeImageUrl: postcard.typeImageUrl
+                }));
+                
+                setScrapList(formattedScrapData);
+                setScrapLoaded(true);
+                
+                console.log('✅ 스크랩 데이터 로드 완료:', formattedScrapData.length, '개');
+                
+            } else {
+                console.error('❌ 스크랩 데이터 로드 실패:', result.error);
+                setScrapList([]);
+                Alert.alert('오류', result.error || '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
+                setScrapLoaded(true);
+            }
             
         } catch (error) {
             console.error('❌ 스크랩 데이터 로드 실패:', error);
             setScrapList([]);
             Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
+            setScrapLoaded(true);
         } finally {
             loadingRef.current = false;
             setLoading(false);
         }
-    }, [scrapLoaded, scrapList.length]);
+    }, [currentUserId, scrapLoaded, scrapList.length]);
 
     // 🔥 초기 로딩 최적화
     useEffect(() => {
@@ -200,7 +207,6 @@ const DibsorScrap = ({ router }) => {
             } else {
                 setScrapLoaded(false);
                 setScrapList([]);
-                await AsyncStorage.removeItem('scrapData');
                 await fetchScrapDataOptimized();
             }
         } finally {
@@ -314,9 +320,40 @@ const DibsorScrap = ({ router }) => {
         }
     }, [router]);
 
-    const handlePostcardPress = useCallback((postcardId) => {
-        router?.push(`/postcard/${postcardId}`);
-    }, [router]);
+    // const handlePostcardPress = useCallback((postcardId) => {
+    //     router?.push(`accompany/postcards/${postcardId}`);
+    // }, [router]);
+
+    // 스크랩 데이터 업데이트 핸들러 (PostExpanded에서 스크랩 상태 변경 시)
+    const handleScrapDataUpdate = useCallback((postcardId, actionType, wasActive) => {
+        console.log(`[DibsorScrap] 스크랩 데이터 업데이트: ${postcardId}, ${actionType}, 이전상태: ${wasActive}`);
+        
+        if (actionType === 'scrap' && wasActive) {
+            // 스크랩 취소된 경우, 스크랩 목록에서 해당 아이템 제거
+            setScrapList(prevList => 
+                prevList.filter(item => 
+                    item.postcardId !== postcardId && item.id !== postcardId
+                )
+            );
+            console.log(`✅ 스크랩 목록에서 ${postcardId} 제거됨`);
+        } else if (actionType === 'like') {
+            // 좋아요 상태 변경 시 카운트만 업데이트
+            setScrapList(prevList => 
+                prevList.map(item => {
+                    if (item.postcardId === postcardId || item.id === postcardId) {
+                        return {
+                            ...item,
+                            isLiked: !wasActive,
+                            likeCount: wasActive 
+                                ? Math.max(0, (item.likeCount || 0) - 1) 
+                                : (item.likeCount || 0) + 1
+                        };
+                    }
+                    return item;
+                })
+            );
+        }
+    }, []);
 
     return (
         <SafeAreaView style={styles.container}>
@@ -338,7 +375,9 @@ const DibsorScrap = ({ router }) => {
                 likedPosts={likedPosts}
                 handlePressLike={handlePressLike}
                 navigateToPost={navigateToPost}
-                onPostcardPress={handlePostcardPress}
+                // onPostcardPress={handlePostcardPress}
+                currentUserId={currentUserId}
+                onScrapDataUpdate={handleScrapDataUpdate}
             />
         </SafeAreaView>
     );

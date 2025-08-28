@@ -22,7 +22,9 @@ const DibsScrapListView = ({
     likedPosts,
     handlePressLike,
     navigateToPost,
-    onPostcardPress
+    onPostcardPress,
+    currentUserId, // currentUserId 추가
+    onScrapDataUpdate, // 스크랩 데이터 업데이트 핸들러 추가
 }) => {
 
     // ✅ getCurrentTabData() 함수에서 props로 받은 변수를 사용하도록 수정
@@ -62,7 +64,7 @@ const DibsScrapListView = ({
                     <Text style={styles.emptyStateText}>
                         {selectedTab === '찜'
                             ? '아직 찜한 동행이 없습니다.\n마음에 드는 동행을 찜해보세요!'
-                            : '아직 스크랩한 동행이 없습니다.\n유용한 동행을 스크랩해보세요!'}
+                            : '아직 스크랩한 엽서가 없습니다.\n마음에 드는 엽서를 스크랩해보세요!'}
                     </Text>
                 </View>
             );
@@ -106,13 +108,14 @@ const DibsScrapListView = ({
             )}
             
             {selectedTab === '스크랩' && (
-                // PostcardGridView로 scrapList를 전달
                 <PostcardGridView
                     refreshing={refreshing}
                     onRefresh={onRefresh}
                     loading={loading}
                     postcardList={scrapList}
                     onPostcardPress={onPostcardPress}
+                    currentUserId={currentUserId} // currentUserId 전달
+                    onDataUpdate={onScrapDataUpdate} // 스크랩 데이터 업데이트 핸들러 전달
                 />
             )}
         </>
