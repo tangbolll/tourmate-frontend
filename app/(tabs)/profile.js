@@ -18,59 +18,61 @@ import {
     updateFolderApi, 
     deleteFolderApi,
     getFoldersByUserApi,
-    handleApiError
+    handleApiError,
+    checkToken,
+    testServerConnection,
+    createPostcardInExistingFolderApi,
 } from '../../utils/PostCardApi';
 
 export default function ProfileHome() {
     const { signOut } = useAuth();
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('board');
-    const [folders, setFolders] = useState([]); // 폴더 목록 상태 추가
+    const [folders, setFolders] = useState([]);
     const [createPopupVisible, setCreatePopupVisible] = useState(false);
     const [selectPopupVisible, setSelectPopupVisible] = useState(false);
     const [popupMode, setPopupMode] = useState('create');
     const [editingFolder, setEditingFolder] = useState(null);
     const { userData, setUserData } = useUserStore();
 
-    useEffect(() => {
-        const fetchUserData = async () => {
-            try {
-                const userId = await AsyncStorage.getItem('userId');
-                if (userId) {
-                    const data = await fetchUserProfileApi(userId);
-                    setUserData(data);
-                }
-            } catch (error) {
-                console.error('Error fetching user data in ProfileHome:', error);
-            }
-        };
-
-        fetchUserData();
-    }, []);
-
-    // 💡 참고: 실제 사용자 이메일은 로그인 세션 등에서 가져와야 합니다.
-    const userEmail = userData?.email; 
-
-    // 폴더 목록을 서버에서 불러오는 함수
-    const fetchFolders = useCallback(async () => {
-        if (!userEmail) return; // userEmail이 없으면 호출하지 않음
+    // 폴더 목록을 서버에서 불러오는 함수를 useCallback으로 정의
+    // 이 함수는 userEmail이 변경될 때만 새로 생성됩니다.
+    const fetchFolders = useCallback(async (email) => {
+        if (!email) {
+            console.log("⚠️ userEmail이 없으므로 폴더 목록을 불러오지 않습니다.");
+            return;
+        }
         try {
-            const fetchedFolders = await getFoldersByUserApi(userEmail);
+            const fetchedFolders = await getFoldersByUserApi(email);
             setFolders(fetchedFolders);
             console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", fetchedFolders);
         } catch (error) {
             handleApiError(error, '폴더 목록 조회');
         }
-    }, [userEmail]);
+    }, []); // 이 함수는 userEmail에 의존하지 않으므로, 의존성 배열을 비워둡니다.
 
-    // 컴포넌트 마운트 시 폴더 목록 불러오기
+    // 컴포넌트 마운트 시 사용자 데이터와 폴더 목록 불러오기
     useEffect(() => {
-        fetchFolders();
-    }, [fetchFolders, userEmail]); // userEmail을 의존성 배열에 추가
+        const fetchData = async () => {
+            try {
+                const userId = await AsyncStorage.getItem('userId');
+                if (userId) {
+                    const data = await fetchUserProfileApi(userId);
+                    setUserData(data);
+                    if (data?.email) {
+                        // 사용자 이메일이 있을 때만 폴더를 가져옵니다.
+                        fetchFolders(data.email);
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching data in ProfileHome:', error);
+            }
+        };
+        fetchData();
+    }, [fetchFolders]);
 
-    // if (!userData) {
-    //     return <View style={[styles.container, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}><Text>Loading profile...</Text></View>; // 로딩 스피너 또는 플레이스홀더
-    // }
+    // userData?.email을 사용하여 userEmail 변수 정의
+    const userEmail = userData?.email; 
 
     // 폴더 생성/수정 팝업 열기
     const handleCreateFolder = useCallback(() => {
@@ -89,17 +91,24 @@ export default function ProfileHome() {
     // WritePost 페이지로 네비게이션
     const navigateToWritePost = useCallback((folderData) => {
         const params = {};
-        if (folderData.folderId) {
-            params.directoryId = String(folderData.folderId);
+        
+        const directoryId = folderData?.folderId || folderData?.id;
+        if (directoryId) {
+            params.directoryId = String(directoryId);
         }
-        // 이 부분은 API 응답 형태에 맞춰 수정될 수 있습니다.
+        
+        const directoryName = folderData?.title || folderData?.name;
+        if (directoryName) {
+            params.directoryName = directoryName;
+        }
+
         if (folderData.startDate) {
             params.startDate = folderData.startDate;
         }
         if (folderData.endDate) {
             params.endDate = folderData.endDate;
         }
-
+        
         console.log('Navigating to WritePost with params:', params);
         
         router.push({
@@ -108,27 +117,66 @@ export default function ProfileHome() {
         });
     }, [router]);
 
-    // 폴더 저장 처리 (API 연동)
+    // 엽서 저장 로직
+    const handleSavePostcard = useCallback(async (folderId, postcardData) => {
+        try {
+            if (folderId) {
+                console.log('기존 폴더에 엽서 저장:', folderId);
+                const response = await createPostcardInExistingFolderApi(folderId, postcardData);
+                Alert.alert('성공', '엽서가 기존 폴더에 저장되었습니다.');
+                console.log('엽서 저장 성공:', response);
+            } else {
+                console.log('새 폴더에 엽서 저장');
+                const requestBody = {
+                    userEmail: userEmail,
+                    folder: {
+                        title: postcardData.title || '새 폴더',
+                        startDate: postcardData.startDate,
+                        endDate: postcardData.endDate,
+                    },
+                    postcard: {
+                        content: postcardData.content,
+                        imageUrl: postcardData.imageUrl,
+                        postcardType: postcardData.postcardType,
+                    },
+                };
+                const response = await createPostcardWithNewFolderApi(requestBody);
+                Alert.alert('성공', '새 폴더와 함께 엽서가 저장되었습니다.');
+                console.log('새 폴더에 엽서 저장 성공:', response);
+            }
+            await fetchFolders(userEmail);
+
+        } catch (error) {
+            handleApiError(error, '엽서 저장');
+        }
+    }, [userEmail, fetchFolders]);
+
     const handleSave = useCallback(async (folderData) => {
         setCreatePopupVisible(false);
         try {
             if (popupMode === 'create') {
-                const newFolderData = {
-                    title: folderData.title,
-                    startDate: folderData.startDate,
-                    endDate: folderData.endDate,
+                const requestBody = {
                     userEmail: userEmail,
-                    // postcards: [] // 엽서 데이터는 비워둠
+                    folder: {
+                        title: folderData.title,
+                        startDate: folderData.startDate,
+                        endDate: folderData.endDate,
+                    },
+                    postcard: {
+                        content: '',
+                        imageUrl: '',
+                        postcardType: 1, 
+                    },
                 };
-                console.log('새 폴더 생성 API 호출 준비:', newFolderData);
-                const response = await createPostcardWithNewFolderApi(newFolderData);
+                console.log('새 폴더 및 엽서 생성 API 호출 준비:', requestBody);
+                const response = await createPostcardWithNewFolderApi(requestBody);
+                
+                console.log('⭐ 새 폴더 생성 API 응답:', response);
+
                 Alert.alert('성공', '새 폴더가 생성되었습니다.');
-                // 폴더 생성 후 목록 갱신
-                await fetchFolders(); 
-                // 생성된 폴더 정보로 엽서 작성 페이지 이동
+                await fetchFolders(userEmail);
                 navigateToWritePost(response);
             } else {
-                // 폴더 수정 로직
                 const updateData = {
                     title: folderData.title,
                     startDate: folderData.startDate,
@@ -137,33 +185,28 @@ export default function ProfileHome() {
                 console.log('폴더 수정 API 호출 준비:', editingFolder.folderId, updateData);
                 await updateFolderApi(editingFolder.folderId, updateData);
                 Alert.alert('성공', '폴더가 수정되었습니다.');
-                // 폴더 목록 갱신
-                await fetchFolders();
+                await fetchFolders(userEmail);
             }
         } catch (error) {
             handleApiError(error, `폴더 ${popupMode === 'create' ? '생성' : '수정'}`);
         }
     }, [popupMode, editingFolder, navigateToWritePost, userEmail, fetchFolders]);
 
-    // 폴더 삭제 처리 (API 연동)
     const handleDelete = useCallback(async (folderId) => {
         setCreatePopupVisible(false);
         try {
             console.log('폴더 삭제 API 호출 준비:', folderId);
             await deleteFolderApi(folderId);
             Alert.alert('성공', '폴더가 삭제되었습니다.');
-            // 폴더 목록에서 삭제된 폴더 제거
-            await fetchFolders();
+            await fetchFolders(userEmail);
         } catch (error) {
             handleApiError(error, '폴더 삭제');
         }
-    }, [fetchFolders]);
+    }, [fetchFolders, userEmail]);
 
-    // 기존 폴더 선택 처리
     const handleFolderSelect = useCallback((selectedFolder) => {
         console.log('선택된 폴더:', selectedFolder);
         setSelectPopupVisible(false);
-        // 선택된 폴더로 WritePost 페이지로 이동
         navigateToWritePost(selectedFolder);
     }, [navigateToWritePost]);
 
@@ -171,7 +214,6 @@ export default function ProfileHome() {
         setActiveTab(tab);
     }, []);
 
-    // 플로팅 버튼 옵션 선택 처리
     const handleFloatingButtonOption = useCallback((option) => {
         console.log('Selected option:', option);
         if (option === 'existing') {
@@ -184,16 +226,20 @@ export default function ProfileHome() {
     const renderTabContent = useCallback(() => {
         switch (activeTab) {
             case 'board':
-                return <PostBoardTab />;
+                return <PostBoardTab userEmail={userEmail} />;
             case 'directory':
                 return <PostDirectoryTab 
                     onEditFolder={handleEditFolder} 
-                    folders={folders} // 불러온 폴더 데이터를 PostDirectoryTab에 전달
+                    folders={folders}
                 />;
             default:
-                return <PostBoardTab />;
+                return <PostBoardTab userEmail={userEmail}/>;
         }
-    }, [activeTab, handleEditFolder, folders]);
+    }, [activeTab, handleEditFolder, folders, userEmail]);
+
+    if (!userData) {
+        return <View style={[styles.container, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}><Text>Loading profile...</Text></View>;
+    }
 
     return (
         <View style={styles.container}>
@@ -223,7 +269,7 @@ export default function ProfileHome() {
                 visible={selectPopupVisible}
                 onClose={() => setSelectPopupVisible(false)}
                 onSelect={handleFolderSelect}
-                folders={folders} // 불러온 폴더 데이터를 SelectPostDirectoryPopup에 전달
+                folders={folders}
             />
         </View>
     );

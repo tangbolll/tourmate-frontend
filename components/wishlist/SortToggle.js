@@ -90,7 +90,6 @@ export const SortToggle = ({ onSortChange, selectedTab = '찜' }) => {
             {/* 정렬 아이콘만 */}
             <TouchableOpacity 
                 ref={buttonRef}
-                style={styles.sortButton} 
                 onPress={handleSortPress}
             >
                 <MaterialIcons name="import-export" size={24} color="#666" />
@@ -144,9 +143,6 @@ export const SortToggle = ({ onSortChange, selectedTab = '찜' }) => {
 };
 
 const styles = StyleSheet.create({
-    sortButton: {
-        padding: 4,
-    },
     modalOverlay: {
         flex: 1,
         backgroundColor: 'rgba(0, 0, 0, 0.5)',

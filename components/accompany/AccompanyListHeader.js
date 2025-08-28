@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Image, TextInput, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import GroupChats from '../../app/accompany/GroupChats';
 
@@ -9,7 +9,12 @@ export default function AccompanyListHeader({  onPressDM, onPressFilter, searchT
         <View style={styles.container}>
         {/* Top Row */}
         <View style={styles.topRow}>
-            <View style={styles.searchContainer}>
+            <Image source={require('../../assets/logo.png')} style={styles.logo} />
+            <TouchableOpacity onPress={onPressDM} style={styles.iconButton}>
+                <Ionicons name="chatbubbles-outline" size={26} color="black" />
+            </TouchableOpacity>
+        </View>
+                    <View style={styles.searchContainer}>
                 <TextInput
                     style={styles.searchInput}
                     placeholder="관심 여행지, 카테고리를 검색해보세요"
@@ -21,11 +26,8 @@ export default function AccompanyListHeader({  onPressDM, onPressFilter, searchT
                     <Ionicons name="options-outline" size={20} color="#666" />
                 </TouchableOpacity>
             </View>
-            <TouchableOpacity onPress={onPressDM} style={styles.iconButton}>
-                <Ionicons name="chatbubbles-outline" size={26} color="black" />
-            </TouchableOpacity>
-            </View>
         </View>
+        
     );
 }
 
@@ -34,6 +36,11 @@ const styles = StyleSheet.create({
         paddingTop: 2,
         paddingHorizontal: 16,
         backgroundColor: '#fff',
+    },
+    logo: {
+        width: 150,
+        height: 50,
+        resizeMode: 'contain',
     },
     topRow: {
         flexDirection: 'row',
@@ -48,7 +55,7 @@ const styles = StyleSheet.create({
         marginBottom: 5,
     },
     searchContainer: {
-        width: '90%',
+        width: '100%',
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 12,

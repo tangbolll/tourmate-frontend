@@ -7,7 +7,7 @@ import PostSection from '../../components/home/PostSection';
 
 const Home = () => {
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <HomeHeader />
         <ScrollView 
             style={styles.scrollView}
@@ -16,14 +16,14 @@ const Home = () => {
             <TourSection />
             <PostSection />
         </ScrollView>
-        </View>
+        </SafeAreaView>
     );
 };
 
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#eee'
+        backgroundColor: 'white'
     },
     scrollView: {
         flex: 1,

@@ -8,7 +8,7 @@ import {
     Text,
     RefreshControl 
 } from 'react-native';
-import PostcardDetailView from './PostcardDetailView';
+import PostExpanded from '../home/PostExpanded';
 
 const PostcardGridView = ({
     refreshing,
@@ -16,15 +16,22 @@ const PostcardGridView = ({
     loading,
     postcardList,
     onPostcardPress,
+    currentUserId, // currentUserId를 prop으로 받음
+    onDataUpdate, // 상위 컴포넌트의 데이터 업데이트 함수
 }) => {
     const [selectedPostcard, setSelectedPostcard] = useState(null);
     const [showDetail, setShowDetail] = useState(false);
 
     const handlePostcardPress = (postcardId) => {
         // 선택된 엽서 데이터 찾기
-        const postcardData = postcardList.find(p => p.id === postcardId);
-        setSelectedPostcard(postcardData);
-        setShowDetail(true);
+        const postcardData = postcardList.find(p => 
+            p.id === postcardId || p.postcardId === postcardId
+        );
+        
+        if (postcardData) {
+            setSelectedPostcard(postcardData);
+            setShowDetail(true);
+        }
         
         // 부모 컴포넌트에도 알림
         if (onPostcardPress) {
@@ -37,14 +44,39 @@ const PostcardGridView = ({
         setSelectedPostcard(null);
     };
 
-    const handleLike = (postcardId) => {
-        console.log('좋아요:', postcardId);
-        // TODO: 좋아요 API 호출
-    };
+    // PostExpanded에서 스크랩/좋아요 상태가 변경될 때 호출
+    const handleDataUpdate = (postcardId, actionType, wasActive) => {
+        // 상위 컴포넌트에 전달 (스크랩 목록에서 제거 등을 위해)
+        if (onDataUpdate) {
+            onDataUpdate(postcardId, actionType, wasActive);
+        }
 
-    const handleScrap = (postcardId) => {
-        console.log('스크랩:', postcardId);
-        // TODO: 스크랩 API 호출
+        // 로컬 상태 업데이트 (선택된 엽서 데이터)
+        if (selectedPostcard && (selectedPostcard.postcardId === postcardId || selectedPostcard.id === postcardId)) {
+            setSelectedPostcard(prevData => {
+                if (!prevData) return null;
+                
+                if (actionType === 'like') {
+                    return {
+                        ...prevData,
+                        isLiked: !wasActive,
+                        likeCount: wasActive 
+                            ? Math.max(0, (prevData.likeCount || 0) - 1) 
+                            : (prevData.likeCount || 0) + 1
+                    };
+                } else if (actionType === 'scrap') {
+                    return {
+                        ...prevData,
+                        isScraped: !wasActive,
+                        isScrapped: !wasActive, 
+                        scrapCount: wasActive 
+                            ? Math.max(0, (prevData.scrapCount || 0) - 1) 
+                            : (prevData.scrapCount || 0) + 1
+                    };
+                }
+                return prevData;
+            });
+        }
     };
 
     // 엽서 아이템 렌더링
@@ -57,7 +89,7 @@ const PostcardGridView = ({
             );
         }
 
-        if (postcardList.length === 0) {
+        if (!postcardList || postcardList.length === 0) {
             return (
                 <View style={styles.emptyState}>
                     <Text style={styles.emptyStateText}>
@@ -70,22 +102,33 @@ const PostcardGridView = ({
 
         return (
             <View style={styles.grid}>
-                {postcardList.map((postcard) => (
-                    <TouchableOpacity
-                        key={postcard.id}
-                        style={styles.postcardContainer}
-                        onPress={() => handlePostcardPress(postcard.id)}
-                        activeOpacity={0.8}
-                    >
-                        <View style={styles.imageContainer}>
-                            <Image
-                                source={{ uri: postcard.image }}
-                                style={styles.postcardImage}
-                                resizeMode="cover"
-                            />
-                        </View>
-                    </TouchableOpacity>
-                ))}
+                {postcardList.map((postcard, index) => {
+                    const postcardId = postcard.postcardId || postcard.id;
+                    const imageUrl = postcard.image || postcard.imageUrl;
+                    
+                    // 3개씩 나누어 배치하므로 마지막 아이템(index % 3 === 2)에는 marginRight 0
+                    const isLastInRow = (index + 1) % 3 === 0;
+                    
+                    return (
+                        <TouchableOpacity
+                            key={postcardId}
+                            style={[
+                                styles.postcardContainer,
+                                isLastInRow && { marginRight: 0 }
+                            ]}
+                            onPress={() => handlePostcardPress(postcardId)}
+                            activeOpacity={0.8}
+                        >
+                            <View style={styles.imageContainer}>
+                                <Image
+                                    source={{ uri: imageUrl }}
+                                    style={styles.postcardImage}
+                                    resizeMode="cover"
+                                />
+                            </View>
+                        </TouchableOpacity>
+                    );
+                })}
             </View>
         );
     };
@@ -109,11 +152,12 @@ const PostcardGridView = ({
 
             {/* 엽서 상세 모달 */}
             {showDetail && selectedPostcard && (
-                <PostcardDetailView
-                    postcardData={selectedPostcard}
+                <PostExpanded
+                    visible={showDetail}
+                    postData={selectedPostcard}
                     onClose={handleCloseDetail}
-                    onLikePress={handleLike}
-                    onScrapPress={handleScrap}
+                    onDataUpdate={handleDataUpdate} 
+                    currentUserId={currentUserId} // currentUserId 전달
                 />
             )}
         </>
@@ -140,17 +184,17 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        padding: 16,
-        justifyContent: 'space-between',
+        paddingHorizontal: 16,
+        paddingTop: 8,
     },
     postcardContainer: {
-        width: '31%',
-        marginBottom: 12,
-        // aspectRatio: 1,
+        width: '30%', 
+        marginBottom: 16, 
+        marginRight: '5%', 
     },
     imageContainer: {
-        width: 148 * 0.85,
-        height: 100 * 0.85,
+        width: '100%',
+        aspectRatio: 148 / 100, 
         position: 'relative',
         overflow: 'hidden',
         backgroundColor: '#f0f0f0',

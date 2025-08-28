@@ -185,32 +185,141 @@ export const getLikeStatusApi = async (accompanyId, userId) => {
 };
 
 // 6. 여러 동행 포스트의 좋아요 상태를 한 번에 조회
-// 🔥 최적화: Promise.all을 명시적으로 사용하여 병렬 처리
-export const getMultipleAccompanyLikesApi = async (accompanyIds, userId) => {
+// 🚀 최적화된 일괄 좋아요 상태 조회 API
+export const getMultipleAccompanyLikesOptimizedApi = async (accompanyIds, userId) => {
     const validAccompanyIds = accompanyIds
         .filter(id => id !== undefined && id !== null && id !== '')
-        .map(id => Number(id));
+        .map(id => Number(id))
+        .filter(id => !isNaN(id));
         
     if (validAccompanyIds.length === 0) {
         return {};
     }
     
     try {
-        const likeStatusPromises = validAccompanyIds.map(async (accompanyId) => {
-            const result = await getLikeStatusApi(accompanyId, userId);
-            return { accompanyId, ...result };
+        // 🔥 핵심 개선: 하나의 POST 요청으로 모든 좋아요 상태 조회
+        const response = await api.post('/api/accompany/likes/batch', {
+            accompanyIds: validAccompanyIds,
+            userId: userId
+        }, {
+            timeout: 15000, // 타임아웃 단축
         });
         
-        const results = await Promise.all(likeStatusPromises);
+        // 백엔드에서 { accompanyId: boolean } 형태로 반환된다고 가정
+        return response.data || {};
         
-        const likedPostsMap = {};
-        results.forEach(({ accompanyId, isLiked }) => {
-            likedPostsMap[accompanyId] = isLiked;
-        });
-        
-        return likedPostsMap;
     } catch (error) {
-        // 모든 에러는 인터셉터에서 처리되므로, 여기서는 단순히 에러를 던지거나 빈 객체 반환
-        return {}; 
+        console.error('❌ 일괄 좋아요 상태 조회 실패, 개별 조회로 폴백:', error);
+        
+        // 🔄 폴백: 배치 API 실패 시 개별 조회 (최대 10개까지만)
+        return await getMultipleAccompanyLikesFallback(
+            validAccompanyIds.slice(0, 10), 
+            userId
+        );
     }
+};
+
+// 🔄 폴백 함수: 배치 크기 제한 + 청크 처리
+const getMultipleAccompanyLikesFallback = async (accompanyIds, userId) => {
+    const CHUNK_SIZE = 5; // 한 번에 5개씩 처리
+    const chunks = [];
+    
+    for (let i = 0; i < accompanyIds.length; i += CHUNK_SIZE) {
+        chunks.push(accompanyIds.slice(i, i + CHUNK_SIZE));
+    }
+    
+    const likedPostsMap = {};
+    
+    // 청크별로 순차 처리 (서버 부하 방지)
+    for (const chunk of chunks) {
+        try {
+            const promises = chunk.map(async (accompanyId) => {
+                try {
+                    const result = await getLikeStatusApi(accompanyId, userId);
+                    return { accompanyId, ...result };
+                } catch (error) {
+                    console.warn(`⚠️ 개별 좋아요 조회 실패 (ID: ${accompanyId}):`, error);
+                    return { accompanyId, isLiked: false, likeCount: 0 };
+                }
+            });
+            
+            const results = await Promise.all(promises);
+            
+            results.forEach(({ accompanyId, isLiked }) => {
+                likedPostsMap[accompanyId] = isLiked;
+            });
+            
+            // 청크 간 딜레이 (서버 부하 방지)
+            if (chunks.length > 1) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            
+        } catch (error) {
+            console.error('❌ 청크 처리 실패:', error);
+        }
+    }
+    
+    return likedPostsMap;
+};
+
+// 🚀 찜한 포스트만 직접 가져오는 최적화된 API
+export const fetchLikedAccompanyPostsApi = async (userId) => {
+    try {
+        const response = await api.get('/api/accompany/liked', {
+            params: { userId: userId },
+            timeout: 15000,
+        });
+        
+        return transformAccompanyData(response.data);
+    } catch (error) {
+        if (error.response?.status === 404) {
+            console.log('ℹ️ 찜한 포스트 API가 아직 구현되지 않음, 기존 방식 사용');
+            return null; // 기존 방식으로 폴백
+        }
+        throw error;
+    }
+};
+
+// 🔥 캐싱이 적용된 피드 조회 (메모리 캐시)
+const feedCache = new Map();
+const CACHE_DURATION = 5 * 60 * 1000; // 5분
+
+export const fetchAccompanyFeedWithCacheApi = async (currentUserId) => {
+    const cacheKey = `feed_${currentUserId}`;
+    const cached = feedCache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log('📦 캐시에서 피드 데이터 반환');
+        return cached.data;
+    }
+    
+    try {
+        const response = await api.get('/api/accompany/home', {
+            params: { id: currentUserId },
+            timeout: 15000,
+        });
+        
+        const transformedData = transformAccompanyData(response.data.feed);
+        
+        // 캐시 저장
+        feedCache.set(cacheKey, {
+            data: transformedData,
+            timestamp: Date.now()
+        });
+        
+        return transformedData;
+    } catch (error) {
+        // 캐시된 데이터가 있으면 반환 (오프라인 지원)
+        if (cached) {
+            console.log('⚠️ API 실패, 캐시된 데이터 반환');
+            return cached.data;
+        }
+        throw error;
+    }
+};
+
+// 🧹 캐시 클리어 함수
+export const clearFeedCache = () => {
+    feedCache.clear();
+    console.log('🧹 피드 캐시 클리어됨');
 };

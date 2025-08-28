@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const HomeHeader = () => {
@@ -10,7 +10,7 @@ const HomeHeader = () => {
 
     return (
         <View style={styles.container}>
-        <Text style={styles.title}>TOURMATE</Text>
+        <Image source={require('../../assets/logo.png')} style={styles.logo} />
         <TouchableOpacity 
             style={styles.notificationButton}
             onPress={handleNotificationPress}
@@ -27,9 +27,13 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 16,
-        paddingTop: 50,
-        paddingBottom: 10,
+        paddingTop: 2,
         backgroundColor: '#fff',
+    },
+    logo: {
+        width: 150,
+        height: 50,
+        resizeMode: 'contain',
     },
     title: {
         fontSize: 20,

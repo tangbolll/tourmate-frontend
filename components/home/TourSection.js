@@ -1,52 +1,110 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import TourInfo from './TourInfo';
 import TourItinerary from './TourItinerary'; 
 import FindTour from './FindTour';
+import { getMyToursBriefApi, getCurrentTourStatus } from '../../utils/HomeTourApi';
+import { useAuth } from '../../context/AuthContext';
 
 const TourSection = () => {
-    // 예시 여행 데이터
-    const tourData = {
-        title: '싸우지말자 런던여행',
-        date: '2025.3.1 ~ 3.4',
-        members: [
-            {
-                profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-            },
-            {
-                profileImage: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face',
-            },
-        ],
-    };
+    const [tourList, setTourList] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const { currentUserId, loading: authLoading } = useAuth();
 
-    // 여행 상태를 판단하는 함수들
-    const getTravelStatus = () => {
-        // 테스트용 - 실제로는 여행 시작/종료 날짜를 파싱해서 비교
-        const today = new Date();
-        const travelStartDate = new Date('2025-08-19'); // 여행 시작일
-        const travelEndDate = new Date('2025-08-20'); // 여행 종료일
-        
-        const timeDiff = travelStartDate.getTime() - today.getTime();
-        const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24));
-        
-        if (today >= travelStartDate && today <= travelEndDate) {
-            return { status: 'ongoing', daysLeft: 0 };
-        } else if (daysDiff > 0 && daysDiff <= 3) {
-            return { status: 'upcoming', daysLeft: daysDiff };
-        } else {
-            return { status: 'none', daysLeft: 0 };
-        }
-    };
+    useEffect(() => {
+        const fetchTourData = async () => {
+            try {
+                // AuthContext가 아직 로딩 중이면 대기
+                if (authLoading) {
+                    console.log('🔄 Auth 컨텍스트 로딩 중...');
+                    return;
+                }
 
+                if (!currentUserId) {
+                    console.log('❌ 사용자 ID 없음');
+                    setError('로그인이 필요합니다.');
+                    setLoading(false);
+                    return;
+                }
+
+                setLoading(true);
+                setError(null);
+                
+                console.log('👤 현재 사용자 ID:', currentUserId);
+                const data = await getMyToursBriefApi(currentUserId);
+                console.log('✅ 여행 데이터 로딩 성공:', data);
+                setTourList(data);
+            } catch (error) {
+                console.error('❌ 여행 데이터 로딩 실패:', error);
+                setError('여행 정보를 불러오는데 실패했습니다.');
+                setTourList([]);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchTourData();
+    }, [currentUserId, authLoading]);
+
+    // AuthContext 로딩 중일 때
+    if (authLoading) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.title}>진행 중인 여행</Text>
+                <View style={styles.centerContainer}>
+                    <ActivityIndicator size="small" color="#333" />
+                    <Text style={styles.loadingText}>사용자 정보 확인 중...</Text>
+                </View>
+            </View>
+        );
+    }
+
+    // 사용자 ID가 없는 경우
+    if (!currentUserId) {
+        return (
+            <View style={styles.container}>
+                <Text style={styles.title}>진행 중인 여행</Text>
+                <View style={styles.centerContainer}>
+                    <Text style={styles.noTravelText}>로그인이 필요합니다.</Text>
+                </View>
+            </View>
+        );
+    }
+
+    // 콘텐츠 렌더링
     const renderContent = () => {
-        const travelStatus = getTravelStatus();
+        if (loading) {
+            return (
+                <View style={styles.centerContainer}>
+                    <ActivityIndicator size="small" color="#333" />
+                    <Text style={styles.loadingText}>여행 정보를 불러오는 중...</Text>
+                </View>
+            );
+        }
+
+        if (error) {
+            return (
+                <View style={styles.centerContainer}>
+                    <Text style={styles.errorText}>{error}</Text>
+                </View>
+            );
+        }
+
+        const travelStatus = getCurrentTourStatus(tourList);
         
         switch (travelStatus.status) {
             case 'ongoing':
                 return (
                     <View style={styles.ongoingContainer}>
-                        <TourInfo tourData={tourData} />
-                        <TourItinerary />
+                        <TourInfo 
+                            tourData={{
+                                ...travelStatus.currentTour,
+                                date: travelStatus.currentTour.dateRange,
+                                members: travelStatus.currentTour.members || []
+                            }} 
+                        />
+                        <TourItinerary travelId={travelStatus.currentTour.travelId} />
                     </View>
                 );
             
@@ -59,7 +117,13 @@ const TourSection = () => {
                                 여행 시작 전에 미리 일정 확인해보세요!
                             </Text>
                         </View>
-                        <TourInfo tourData={tourData} />
+                        <TourInfo 
+                            tourData={{
+                                ...travelStatus.currentTour,
+                                date: travelStatus.currentTour.dateRange,
+                                members: travelStatus.currentTour.members || []
+                            }} 
+                        />
                     </View>
                 );
             
@@ -82,6 +146,7 @@ const TourSection = () => {
     );
 };
 
+// 스타일은 동일...
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#fff',
@@ -95,7 +160,7 @@ const styles = StyleSheet.create({
         marginBottom: 16,
     },
     ongoingContainer: {
-        marginTop: -8, // 제목과 TourInfo 사이의 간격을 줄임
+        marginTop: -8,
     },
     upcomingNotice: {
         paddingHorizontal: 20,
@@ -114,6 +179,22 @@ const styles = StyleSheet.create({
         color: '#333',
         textAlign: 'flex-start',
         paddingHorizontal: 20,
+    },
+    centerContainer: {
+        alignItems: 'center',
+        justifyContent: 'center',
+        paddingVertical: 20,
+        paddingHorizontal: 20,
+    },
+    loadingText: {
+        fontSize: 14,
+        color: '#666',
+        marginTop: 8,
+    },
+    errorText: {
+        fontSize: 14,
+        color: '#ff6b6b',
+        textAlign: 'center',
     },
 });
 

@@ -58,7 +58,7 @@ const AccompanyListView = ({
     const getDisplayTags = useCallback((tags) => {
         if (!tags || !Array.isArray(tags)) return [];
         
-        const genderTags = ['남성', '여성', '성별무관', 'ALL'];
+        const genderTags = ['남자만', '여자만', '성별무관'];
         const ageTags = ['10대', '20대', '30대', '40대', '50대', '60대', '나이무관'];
         const allowedCategoryTags = [
             '투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '액티비티', '힐링', '역사유적', '박물관/미술관'

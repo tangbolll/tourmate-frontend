@@ -1,3 +1,4 @@
+import { router } from 'expo-router';
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
 
@@ -7,9 +8,10 @@ const TourInfo = ({ tourData }) => {
     const renderMemberImages = () => {
         if (!members || members.length === 0) {
         return (
-            <View style={styles.defaultAvatar}>
-            <Text style={styles.defaultAvatarText}>?</Text>
-            </View>
+            <Image 
+            source={require('../../assets/defaultProfile2.png')} 
+            style={styles.defaultAvatar}
+            />
         );
         }
         
@@ -38,6 +40,7 @@ const TourInfo = ({ tourData }) => {
     };
 
     const handleMoreOptionsPress = () => {
+        router.push(`/mytour/designItinerary?tourId=${tourData.id}`);
         console.log('더 많은 옵션');
     };
 
@@ -57,7 +60,7 @@ const TourInfo = ({ tourData }) => {
             style={styles.moreButton}
             onPress={handleMoreOptionsPress}
             >
-            <Text style={styles.moreButtonText}>여행시간표</Text>
+            <Text style={styles.moreButtonText}>여행시간표 바로가기</Text>
             </TouchableOpacity>
         </View>
         </View>
@@ -138,6 +141,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 12,
         paddingVertical: 8,
         borderRadius: 8,
+        justifyContent: 'center',
     },
     moreButtonText: {
         color: '#fff',

@@ -1,46 +1,121 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View,
     Text,
     Image,
     TouchableOpacity,
     StyleSheet,
-    Modal,
     Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PostExpanded from './PostExpanded';
 import Report from './Report';
+import { toggleLikePostcard, toggleScrapPostcard } from '../../utils/HomePostApi';
+import { formatChatTimestamp } from '../../utils/timeUtils';
+import { useAuth } from '../../context/AuthContext';
 
-const Post = ({ postData }) => {
-    const [isLiked, setIsLiked] = useState(false);
-    const [isBookmarked, setIsBookmarked] = useState(false);
+const defaultProfile = require('../../assets/defaultProfile2.png');
+
+const Post = ({ postData, onDataUpdate }) => {
+    const { currentUserId } = useAuth();
+    // 서버에서 받은 데이터를 기반으로 초기 상태 설정
+    const [isLiked, setIsLiked] = useState(postData?.isLiked || false);
+    const [isBookmarked, setIsBookmarked] = useState(postData?.isScraped || false);
     const [showExpanded, setShowExpanded] = useState(false);
     const [showDropdown, setShowDropdown] = useState(false);
     const [showReport, setShowReport] = useState(false);
+    const [currentLikeCount, setCurrentLikeCount] = useState(postData?.likeCount || 0);
+    const [currentScrapCount, setCurrentScrapCount] = useState(postData?.scrapCount || 0);
+    const [likeLoading, setLikeLoading] = useState(false);
+    const [scrapLoading, setScrapLoading] = useState(false);
 
-    // 임시 데이터 (서버 연동 전)
-    const tempData = {
-        profileImage: 'https://via.placeholder.com/50',
-        postcardName: '부산의 바다',
-        userName: '추리를봐야',
-        location: '부산',
-        date: '2021.03.06',
-        postcardImage: 'https://via.placeholder.com/400x300',
-        timeAgo: '5시간 전',
-        likeCount: 23,
-        bookmarkCount: 46,
-        ...postData
+    // postData 변경 시 상태 동기화 (서버 데이터 우선)
+    useEffect(() => {
+        if (postData) {
+            setIsLiked(postData.isLiked || false);
+            setIsBookmarked(postData.isScraped || false);
+            setCurrentLikeCount(postData.likeCount || 0);
+            setCurrentScrapCount(postData.scrapCount || 0);
+        }
+    }, [postData?.postcardId, postData?.isLiked, postData?.isScraped, postData?.likeCount, postData?.scrapCount]);
+
+    // 실제 데이터가 없으면 기본값 사용
+    const data = {
+        postcardId: postData?.postcardId,
+        title: postData?.title || '제목 없음',
+        imageUrl: postData?.imageUrl,
+        author: postData?.author || '알 수 없음',
+        likeCount: currentLikeCount,
+        scrapCount: currentScrapCount,
+        timeAgo: postData?.createdAt ? formatChatTimestamp(new Date(postData.createdAt)) : '알 수 없음',
+        location: postData?.location || '위치 정보 없음',
+        date: postData?.createdAt ? new Date(postData.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음',
+        isLiked: isLiked,
+        isScraped: isBookmarked,
     };
 
-    const handleLike = () => {
-        setIsLiked(!isLiked);
-        // 좋아요 API 호출 로직 추가 예정
+    const handleLike = async () => {
+        if (!data.postcardId || likeLoading) return;
+
+        if (!currentUserId) {
+            Alert.alert('알림', '로그인이 필요합니다.');
+            return;
+        }
+
+        setLikeLoading(true);
+        try {
+            const result = await toggleLikePostcard(data.postcardId, isLiked, currentUserId);
+            
+            if (result.success) {
+                const newIsLiked = !isLiked;
+                setIsLiked(newIsLiked);
+                setCurrentLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
+                
+                // 부모 컴포넌트에 데이터 업데이트 알림
+                if (onDataUpdate) {
+                    onDataUpdate(data.postcardId, 'like', isLiked);
+                }
+            } else {
+                Alert.alert('오류', result.error);
+            }
+        } catch (error) {
+            console.error('좋아요 처리 오류:', error);
+            Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
+        } finally {
+            setLikeLoading(false);
+        }
     };
 
-    const handleBookmark = () => {
-        setIsBookmarked(!isBookmarked);
-        // 북마크 API 호출 로직 추가 예정
+    const handleBookmark = async () => {
+        if (!data.postcardId || scrapLoading) return;
+
+        if (!currentUserId) {
+            Alert.alert('알림', '로그인이 필요합니다.');
+            return;
+        }
+
+        setScrapLoading(true);
+        try {
+            const result = await toggleScrapPostcard(data.postcardId, isBookmarked, currentUserId);
+            
+            if (result.success) {
+                const newIsBookmarked = !isBookmarked;
+                setIsBookmarked(newIsBookmarked);
+                setCurrentScrapCount(prev => newIsBookmarked ? prev + 1 : Math.max(0, prev - 1));
+                
+                // 부모 컴포넌트에 데이터 업데이트 알림 (scrap으로 전달)
+                if (onDataUpdate) {
+                    onDataUpdate(data.postcardId, 'scrap', isBookmarked);
+                }
+            } else {
+                Alert.alert('오류', result.error || '스크랩 처리 중 오류가 발생했습니다.');
+            }
+        } catch (error) {
+            console.error('스크랩 처리 오류:', error);
+            Alert.alert('오류', '스크랩 처리 중 오류가 발생했습니다.');
+        } finally {
+            setScrapLoading(false);
+        }
     };
 
     const handleReport = () => {
@@ -51,89 +126,135 @@ const Post = ({ postData }) => {
     const handleReportSubmit = (reportData) => {
         setShowReport(false);
         Alert.alert('신고 완료', '신고가 접수되었습니다.');
-        // 신고 API 호출 로직 추가 예정
+    };
+
+    const handleDataUpdateFromExpanded = (postcardId, actionType, currentValue) => {
+        // PostExpanded에서 전달받은 업데이트를 로컬 상태에 반영
+        if (actionType === 'like') {
+            const newIsLiked = !currentValue;
+            setIsLiked(newIsLiked);
+            setCurrentLikeCount(prev => newIsLiked ? prev + 1 : Math.max(0, prev - 1));
+        } else if (actionType === 'scrap') {
+            const newIsBookmarked = !currentValue;
+            setIsBookmarked(newIsBookmarked);
+            setCurrentScrapCount(prev => newIsBookmarked ? prev + 1 : Math.max(0, prev - 1));
+        }
+        
+        // 부모 컴포넌트에도 전달
+        if (onDataUpdate) {
+            onDataUpdate(postcardId, actionType, currentValue);
+        }
+    };
+
+    // 로그인하지 않은 사용자를 위한 액션 핸들러
+    const handleLoginRequired = () => {
+        Alert.alert('알림', '로그인이 필요한 기능입니다.');
     };
 
     return (
         <View style={styles.container}>
-        {/* 헤더 */}
-        <View style={styles.header}>
-            <View style={styles.userInfo}>
-            <Image source={{ uri: tempData.profileImage }} style={styles.profileImage} />
-            <View style={styles.userDetails}>
-                <Text style={styles.postcardName}>{tempData.postcardName}</Text>
-                <Text style={styles.userLocation}>
-                {tempData.userName} · {tempData.location} · {tempData.date}
-                </Text>
+            {/* 헤더 */}
+            <View style={styles.header}>
+                <View style={styles.userInfo}>
+                    <Image 
+                        source={defaultProfile} // 임시로 기본 프로필 이미지 사용
+                        style={styles.profileImage} 
+                    />
+                    <View style={styles.userDetails}>
+                        <Text style={styles.postcardName}>{data.title}</Text>
+                        <Text style={styles.userLocation}>
+                            {data.author} · {data.location} · {data.date}
+                        </Text>
+                    </View>
+                </View>
+                <TouchableOpacity 
+                    style={styles.moreButton}
+                    onPress={() => setShowDropdown(!showDropdown)}
+                >
+                    <Ionicons name="ellipsis-vertical" size={24} color="#666" />
+                </TouchableOpacity>
             </View>
+
+            {/* 드롭다운 메뉴 */}
+            {showDropdown && (
+                <View style={styles.dropdown}>
+                    <TouchableOpacity 
+                        style={styles.dropdownItem}
+                        onPress={currentUserId ? handleReport : handleLoginRequired}
+                    >
+                        <Text style={styles.dropdownText}>신고하기</Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
+            {/* 엽서 이미지 */}
+            <View style={styles.imageContainer}>
+                {data.imageUrl ? (
+                    <Image 
+                        source={{ uri: data.imageUrl }} 
+                        style={styles.postcardImage} 
+                        onError={() => console.log('이미지 로드 실패:', data.imageUrl)}
+                    />
+                ) : (
+                    <View style={[styles.postcardImage, styles.noImageContainer]}>
+                        <Text style={styles.noImageText}>이미지 없음</Text>
+                    </View>
+                )}
+                <TouchableOpacity 
+                    style={styles.expandButton}
+                    onPress={() => setShowExpanded(true)}
+                >
+                    <Ionicons name="expand" size={20} color="#fff" />
+                </TouchableOpacity>
             </View>
-            <TouchableOpacity 
-            style={styles.moreButton}
-            onPress={() => setShowDropdown(!showDropdown)}
-            >
-            <Ionicons name="ellipsis-vertical" size={24} color="#666" />
-            </TouchableOpacity>
-        </View>
 
-        {/* 드롭다운 메뉴 */}
-        {showDropdown && (
-            <View style={styles.dropdown}>
-            <TouchableOpacity 
-                style={styles.dropdownItem}
-                onPress={handleReport}
-            >
-                <Text style={styles.dropdownText}>신고하기</Text>
-            </TouchableOpacity>
+            {/* 하단 정보 */}
+            <View style={styles.footer}>
+                <Text style={styles.timeAgo}>{data.timeAgo}</Text>
+                <View style={styles.actions}>
+                    <TouchableOpacity 
+                        style={[styles.actionButton, likeLoading && styles.actionButtonDisabled]} 
+                        onPress={currentUserId ? handleLike : handleLoginRequired}
+                        disabled={likeLoading}
+                    >
+                        <Ionicons 
+                            name={isLiked ? "heart" : "heart-outline"} 
+                            size={24} 
+                            color={isLiked ? "#ff4757" : "#666"} 
+                        />
+                        <Text style={styles.actionText}>{currentLikeCount}</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                        style={[styles.actionButton, scrapLoading && styles.actionButtonDisabled]} 
+                        onPress={currentUserId ? handleBookmark : handleLoginRequired}
+                        disabled={scrapLoading}
+                    >
+                        <Ionicons 
+                            name={isBookmarked ? "bookmark" : "bookmark-outline"} 
+                            size={24} 
+                            color={isBookmarked ? "#3742fa" : "#666"} 
+                        />
+                        <Text style={styles.actionText}>{currentScrapCount}</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
-        )}
 
-        {/* 엽서 이미지 */}
-        <View style={styles.imageContainer}>
-            <Image source={{ uri: tempData.postcardImage }} style={styles.postcardImage} />
-            <TouchableOpacity 
-            style={styles.expandButton}
-            onPress={() => setShowExpanded(true)}
-            >
-            <Ionicons name="expand" size={20} color="#fff" />
-            </TouchableOpacity>
-        </View>
+            {/* 확대 모달 */}
+            <PostExpanded 
+                visible={showExpanded}
+                postData={data}
+                onClose={() => setShowExpanded(false)}
+                onDataUpdate={handleDataUpdateFromExpanded}
+                currentUserId={currentUserId} // userId 전달
+            />
 
-        {/* 하단 정보 */}
-        <View style={styles.footer}>
-            <Text style={styles.timeAgo}>{tempData.timeAgo}</Text>
-            <View style={styles.actions}>
-            <TouchableOpacity style={styles.actionButton} onPress={handleLike}>
-                <Ionicons 
-                name={isLiked ? "heart" : "heart-outline"} 
-                size={24} 
-                color={isLiked ? "#ff4757" : "#666"} 
-                />
-                <Text style={styles.actionText}>{tempData.likeCount}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton} onPress={handleBookmark}>
-                <Ionicons 
-                name={isBookmarked ? "bookmark" : "bookmark-outline"} 
-                size={24} 
-                color={isBookmarked ? "#3742fa" : "#666"} 
-                />
-                <Text style={styles.actionText}>{tempData.bookmarkCount}</Text>
-            </TouchableOpacity>
-            </View>
-        </View>
-
-        {/* 확대 모달 */}
-        <PostExpanded 
-            visible={showExpanded}
-            postData={tempData}
-            onClose={() => setShowExpanded(false)}
-        />
-
-        {/* 신고 모달 */}
-        <Report 
-            visible={showReport}
-            onClose={() => setShowReport(false)}
-            onSubmit={handleReportSubmit}
-        />
+            {/* 신고 모달 */}
+            <Report 
+                visible={showReport}
+                onClose={() => setShowReport(false)}
+                onSubmit={handleReportSubmit}
+                postcardId={data.postcardId}
+            />
         </View>
     );
 };
@@ -141,14 +262,6 @@ const Post = ({ postData }) => {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#fff',
-        // marginBottom: 20,
-        // borderRadius: 12,
-        // shadowColor: '#000',
-        // shadowOffset: { width: 0, height: 2 },
-        // shadowOpacity: 0.1,
-        // shadowRadius: 4,
-        // elevation: 3,
-        // margin: 16,
     },
     header: {
         flexDirection: 'row',
@@ -213,6 +326,15 @@ const styles = StyleSheet.create({
         height: 250,
         resizeMode: 'cover',
     },
+    noImageContainer: {
+        backgroundColor: '#f0f0f0',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    noImageText: {
+        color: '#999',
+        fontSize: 14,
+    },
     expandButton: {
         position: 'absolute',
         bottom: 12,
@@ -240,6 +362,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         marginLeft: 8,
+    },
+    actionButtonDisabled: {
+        opacity: 0.7,
     },
     actionText: {
         marginLeft: 4,

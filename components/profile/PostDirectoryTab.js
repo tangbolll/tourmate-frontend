@@ -1,75 +1,26 @@
+// PostDirectoryTab.js
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 
-// 목 데이터
-const mockDirectories = [
-    {
-        id: 1,
-        title: '강릉 여행',
-        startDate: '2021-03-04',
-        endDate: '2021-03-06',
-        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400&h=300&fit=crop',
-        postcardCount: 12
-    },
-    {
-        id: 2,
-        title: '서울 여행',
-        startDate: '2021-05-01',
-        endDate: '2021-05-02',
-        image: 'https://images.unsplash.com/photo-1534274867514-d5b47ef22043?w=400&h=300&fit=crop',
-        postcardCount: 8
-    },
-    {
-        id: 3,
-        title: '싸우지말자 부산여행',
-        startDate: '2023-05-05',
-        endDate: '2023-05-07',
-        image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?w=400&h=300&fit=crop',
-        postcardCount: 15
-    },
-    {
-        id: 4,
-        title: '강릉 푸른바다 여행',
-        startDate: '2022-01-03',
-        endDate: '2022-01-08',
-        image: 'https://images.unsplash.com/photo-1544551763-46a013bb70d5?w=400&h=300&fit=crop',
-        postcardCount: 6
-    },
-    {
-        id: 5,
-        title: '이태원 나들이',
-        startDate: '2024-10-13',
-        endDate: '2024-10-13',
-        image: 'https://images.unsplash.com/photo-1617085222613-49c7a5a8e5cb?w=400&h=300&fit=crop',
-        postcardCount: 4
-    },
-    {
-        id: 6,
-        title: '홍천오크 골프치러',
-        startDate: '2024-05-03',
-        endDate: '2024-05-05',
-        image: 'https://images.unsplash.com/photo-1535131749006-b7f58c99034b?w=400&h=300&fit=crop',
-        postcardCount: 3
-    }
-];
+export const PostDirectoryTab = ({ folders, onEditFolder }) => {
+    const router = useRouter();
 
-export const PostDirectoryTab = () => {
-    router = useRouter();
-    const handleDirectoryPress = (directory) => {
-    router.push({
-        pathname: '/profile/postDirectory',
-        params: {
-            title: directory.title,
-            startDate: directory.startDate,
-            endDate: directory.endDate,
-        }
-    });
-};
+    const handleDirectoryPress = (folder) => {
+        router.push({
+            pathname: '/profile/postDirectory',
+            params: {
+                directoryId: folder.id, // ✅ folderId -> directoryId로 수정
+                title: folder.title,
+                startDate: folder.startDate,
+                endDate: folder.endDate,
+            }
+        });
+    };
 
     const formatPeriod = (startDate, endDate) => {
-        // yyyy-mm-dd 형식을 yy.mm.dd 형식으로 변환
         const formatDate = (dateString) => {
+            if (!dateString) return '';
             const date = new Date(dateString);
             const year = date.getFullYear().toString().slice(-2);
             const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -87,13 +38,11 @@ export const PostDirectoryTab = () => {
         const formattedStart = formatDate(startDate);
         
         if (startYear === endYear) {
-            // 같은 연도면 끝날짜는 연도 생략
-            const endDateObj = new Date(endDate); // 변수명 변경
+            const endDateObj = new Date(endDate);
             const month = String(endDateObj.getMonth() + 1).padStart(2, '0');
             const day = String(endDateObj.getDate()).padStart(2, '0');
             return `${formattedStart}~${month}.${day}`;
         } else {
-            // 다른 연도면 둘 다 표시
             return `${formattedStart}~${formatDate(endDate)}`;
         }
     };
@@ -102,27 +51,35 @@ export const PostDirectoryTab = () => {
         <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
             <View style={styles.content}>
                 <View style={styles.grid}>
-                    {mockDirectories.map((directory) => (
-                        <View key={directory.id} style={styles.directoryCard}>
+                    {folders.length > 0 ? (
+                        folders.map((folder) => (
                             <TouchableOpacity
-                                style={styles.imageContainer}
-                                onPress={() => handleDirectoryPress(directory)}
+                                key={folder.id}
+                                style={styles.directoryCard}
+                                onPress={() => handleDirectoryPress(folder)}
+                                onLongPress={() => onEditFolder(folder)} // 길게 누르면 수정 팝업 열기
                                 activeOpacity={0.8}
                             >
-                                <Image
-                                    source={{ uri: directory.image }}
-                                    style={styles.directoryImage}
-                                    resizeMode="cover"
-                                />
+                                <View style={styles.imageContainer}>
+                                    <Image
+                                        source={{ uri: folder.postcards && folder.postcards.length > 0 ? folder.postcards[0].image : 'https://via.placeholder.com/400x300.png?text=No+Image' }}
+                                        style={styles.directoryImage}
+                                        resizeMode="cover"
+                                    />
+                                </View>
+                                <View style={styles.textContainer}>
+                                    <Text style={styles.period}>
+                                        {formatPeriod(folder.startDate, folder.endDate)}
+                                    </Text>
+                                    <Text style={styles.title}>{folder.title}</Text>
+                                </View>
                             </TouchableOpacity>
-                            <View style={styles.textContainer}>
-                                <Text style={styles.period}>
-                                    {formatPeriod(directory.startDate, directory.endDate)}
-                                </Text>
-                                <Text style={styles.title}>{directory.title}</Text>
-                            </View>
+                        ))
+                    ) : (
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>아직 폴더가 없습니다.</Text>
                         </View>
-                    ))}
+                    )}
                 </View>
             </View>
         </ScrollView>
@@ -141,28 +98,26 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-start', // 카드 왼쪽 정렬
+        gap: 12, // 카드 사이 간격
     },
     directoryCard: {
         width: '31%',
-        marginBottom: 12,
-        marginRight: 5,
         backgroundColor: '#fff',
         overflow: 'hidden',
-        
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 2,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
     },
     imageContainer: {
         width: '100%',
         aspectRatio: 1.48,
         backgroundColor: '#f0f0f0',
-        shadowColor: '#000',
-        shadowOffset: {
-            width: 2,   // 오른쪽 그림자
-            height: 2,  // 하단 그림자
-        },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
-        elevation: 5, // Android 그림자
     },
     directoryImage: {
         width: '100%',
@@ -185,5 +140,15 @@ const styles = StyleSheet.create({
         fontWeight: '600',
         lineHeight: 14,
         textAlign: 'center',
+    },
+    emptyContainer: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        paddingTop: 50,
+    },
+    emptyText: {
+        fontSize: 16,
+        color: '#999',
     },
 });
