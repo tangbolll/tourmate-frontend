@@ -3,6 +3,7 @@ import { Platform } from 'react-native';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // API 베이스 URL 설정
 const getBaseURL = () => {
@@ -15,7 +16,25 @@ const getBaseURL = () => {
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
 };
+
+const api = axios.create({
+    baseURL: getBaseURL(),
+    timeout: 20000,
+});
+
+api.interceptors.request.use(
+    async config => {
+        const token = await AsyncStorage.getItem('jwtToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
+        return config;
+    },
+    error => Promise.reject(error)
+);
+
 const API_URL = getBaseURL();
+
 
 // 백엔드 데이터 포맷을 프론트엔드 형식으로 변환
 const transformAccompanyDetail = (backendData) => {
@@ -478,59 +497,15 @@ export const deleteAccompanyPostApi = async (postId) => {
     try {
         console.log('🗑️ DELETE API 호출 시작 - postId:', postId);
         
-        const response = await fetch(`${API_URL}/api/accompany/${postId}`, {
-            method: 'DELETE',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-        });
+        const response = await axios.delete(`${API_URL}/api/accompany/${postId}`);
 
-        if (!response.ok) {
-            // JSON 파싱 에러 방지를 위한 안전한 에러 처리
-            let errorMessage = '삭제에 실패했습니다.';
-            
-            try {
-                const errorData = await response.json();
-                errorMessage = errorData.message || errorMessage;
-            } catch (jsonError) {
-                // JSON 파싱 실패 시 응답을 텍스트로 읽기
-                try {
-                    const errorText = await response.text();
-                    console.error('❌ 서버 응답 (텍스트):', errorText);
-                    errorMessage = `서버 오류 (${response.status}): ${response.statusText}`;
-                } catch (textError) {
-                    console.error('❌ 응답 읽기 실패:', textError);
-                    errorMessage = `서버 오류 (${response.status})`;
-                }
-            }
-            
-            throw new Error(errorMessage);
-        }
-
-        // 성공 응답
-        let data;
-        try {
-            const responseText = await response.text();
-            console.log('📄 응답 텍스트:', responseText);
-            
-            if (responseText.trim() === '') {
-                // 빈 응답인 경우
-                data = { success: true, message: '삭제 완료' };
-            } else {
-                // JSON 파싱 시도
-                data = JSON.parse(responseText);
-            }
-        } catch (parseError) {
-            console.warn('⚠️ JSON 파싱 실패, 하지만 삭제는 성공:', parseError);
-            // 파싱 실패해도 HTTP 상태가 성공이면 삭제된 것으로 간주
-            data = { success: true, message: '삭제 완료' };
-        }
-        
-        console.log('✅ DELETE API 성공:', data);
-        return data;
+        console.log('✅ DELETE API 성공:', response.data);
+        return response.data;
         
     } catch (error) {
         console.error('🔥 DELETE API 에러:', error);
+        // handleApiError 함수가 있다면 여기서 호출
+        // handleApiError(error, '동행 삭제');
         throw error;
     }
 };

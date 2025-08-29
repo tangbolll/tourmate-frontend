@@ -1,5 +1,6 @@
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
+import axios from 'axios';
 
 // API 베이스 URL 설정
 const getBaseURL = () => {
@@ -24,13 +25,16 @@ const handleApiError = (error, operation) => {
         data: error.response?.data
     });
     
-    if (error.response?.status === 404) {
+    const status = error.response?.status;
+    const errorMessage = error.response?.data?.message || error.message;
+
+    if (status === 404) {
         throw new Error('요청한 데이터를 찾을 수 없습니다.');
-    } else if (error.response?.status === 403) {
+    } else if (status === 403) {
         throw new Error('권한이 없습니다.');
-    } else if (error.response?.status === 400) {
-        throw new Error(error.response?.data || '잘못된 요청입니다.');
-    } else if (error.response?.status >= 500) {
+    } else if (status === 400) {
+        throw new Error(errorMessage || '잘못된 요청입니다.');
+    } else if (status >= 500) {
         throw new Error('서버 오류가 발생했습니다.');
     } else {
         throw new Error('네트워크 오류가 발생했습니다.');
@@ -52,19 +56,17 @@ export const acceptApplicationApi = async (accompanyId, applicantId) => {
         const url = `${API_URL}/api/accompany/${numericAccompanyId}/accept/${numericApplicantId}`;
         console.log(`🌐 API 호출 URL: ${url}`);
         
-        const response = await fetch(url, {
-            method: 'POST',
+        const response = await axios.post(url, null, {
             headers: {
                 'Content-Type': 'application/json',
             },
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || '신청 수락에 실패했습니다.');
+        if (response.status !== 200) {
+            throw new Error(response.data || '신청 수락에 실패했습니다.');
         }
 
-        const result = await response.text();
+        const result = response.data;
         console.log(`✅ acceptApplicationApi 성공:`, result);
         
         return {
@@ -96,19 +98,17 @@ export const rejectApplicationApi = async (accompanyId, applicantId) => {
         const url = `${API_URL}/api/accompany/${numericAccompanyId}/reject/${numericApplicantId}`;
         console.log(`🌐 API 호출 URL: ${url}`);
         
-        const response = await fetch(url, {
-            method: 'DELETE',
+        const response = await axios.delete(url, {
             headers: {
                 'Content-Type': 'application/json',
             },
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || '신청 거절에 실패했습니다.');
+        if (response.status !== 200) {
+            throw new Error(response.data || '신청 거절에 실패했습니다.');
         }
 
-        const result = await response.text();
+        const result = response.data;
         console.log(`✅ rejectApplicationApi 성공:`, result);
         
         return {
@@ -140,19 +140,17 @@ export const removeParticipantApi = async (accompanyId, participantId) => {
         const url = `${API_URL}/api/accompany/${numericAccompanyId}/remove-participant/${numericParticipantId}`;
         console.log(`🌐 API 호출 URL: ${url}`);
         
-        const response = await fetch(url, {
-            method: 'DELETE',
+        const response = await axios.delete(url, {
             headers: {
                 'Content-Type': 'application/json',
             },
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || '멤버 내보내기에 실패했습니다.');
+        if (response.status !== 200) {
+            throw new Error(response.data || '멤버 내보내기에 실패했습니다.');
         }
 
-        const result = await response.text();
+        const result = response.data;
         console.log(`✅ removeParticipantApi 성공:`, result);
         
         return {
@@ -183,19 +181,17 @@ export const closeAccompanyApi = async (accompanyId) => {
         const url = `${API_URL}/api/accompany/${numericAccompanyId}/close`;
         console.log(`🌐 API 호출 URL: ${url}`);
         
-        const response = await fetch(url, {
-            method: 'PATCH',
+        const response = await axios.patch(url, null, {
             headers: {
                 'Content-Type': 'application/json',
             },
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || '동행 마감에 실패했습니다.');
+        if (response.status !== 200) {
+            throw new Error(response.data || '동행 마감에 실패했습니다.');
         }
 
-        const result = await response.text();
+        const result = response.data;
         console.log(`✅ closeAccompanyApi 성공:`, result);
         
         return {
@@ -228,19 +224,17 @@ export const getAccompanyManagementDataApi = async (accompanyId, hostId) => {
         const url = `${API_URL}/api/accompany/${numericAccompanyId}?userId=${numericHostId}`;
         console.log(`🌐 API 호출 URL: ${url}`);
         
-        const response = await fetch(url, {
-            method: 'GET',
+        const response = await axios.get(url, {
             headers: {
                 'Content-Type': 'application/json',
             },
         });
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            throw new Error(errorText || '동행 관리 데이터 조회에 실패했습니다.');
+        if (response.status !== 200) {
+            throw new Error(response.data || '동행 관리 데이터 조회에 실패했습니다.');
         }
 
-        const data = await response.json();
+        const data = response.data;
         console.log(`✅ getAccompanyManagementDataApi 성공:`, data);
         
         // 백엔드 응답을 프론트엔드에서 사용할 형태로 변환

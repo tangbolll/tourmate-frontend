@@ -3,25 +3,36 @@ import Constants from 'expo-constants';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 🔥 최적화: axios 인스턴스 생성 및 인터셉터 설정
 const api = axios.create({
     baseURL: (() => {
+        let baseUrl;
         if (__DEV__) {
-            return Platform.OS === 'android' ? 'http://10.0.2.2:8080' : Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
+            baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
         }
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL';
+        else {
+            baseUrl = Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL';
+        }
+        console.log('Axios baseURL:', baseUrl);
+        return baseUrl;
     })(),
     timeout: 20000, // 기본 타임아웃 20초
 });
 
-// 🔥 최적화: 요청 인터셉터 - 디버그 로깅
+// 🔥 최적화: 요청 인터셉터 - 디버그 로깅 및 인증 토큰 추가
 api.interceptors.request.use(
-    config => {
+    async config => {
+        const token = await AsyncStorage.getItem('jwtToken');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
+        }
         if (__DEV__) {
             console.log(`🌐 API 요청 시작: ${config.method.toUpperCase()} ${config.url}`);
             if (config.params) console.log('🔍 요청 파라미터:', config.params);
             if (config.data) console.log('🔍 요청 데이터:', config.data);
+            console.log('🔍 요청 헤더:', config.headers);
         }
         return config;
     },
@@ -72,27 +83,30 @@ export const transformAccompanyData = (accompanyData) => {
 
     return accompanyData.map((item) => {
         const transformedId = item.id?.toString() || Math.random().toString();
-        
+        // 🔥 'images' 배열을 사용하여 'mainImageUrl'을 설정합니다.
+        const mainImageUrl = item.mainImageUrl || (item.images && item.images.length > 0 ? item.images[0] : null);
+
         return {
             id: transformedId,
             title: item.title || '제목 없음',
             location: item.location || '위치 미정',
             description: item.intro || '',
             meetingPoint: item.meetPlace || '',
-            participants: item.currentParticipants || 0,
-            maxParticipants: item.maxRecruit || 0,
-            imageUrl: item.images?.length > 0 ? item.images[0] : null,
+            currentParticipants: item.currentParticipants || item.member?.length || 0,
+            maxRecruit: item.maxRecruit || 0,
+            //mainImageUrl: item.images && item.images.length > 0 ? item.images[0] : null,
+            mainImageUrl: mainImageUrl, // ✨ 수정된 변수 사용
             tags: [
                 item.gender === 'ALL' ? '성별무관' : item.gender,
                 ...(item.category || []),
                 ...(item.ageGroup || []),
                 ...(item.tag || []),
             ].filter(Boolean),
-            date: item.tripStartDate && item.tripEndDate ?
-                `${dayjs(item.tripStartDate).locale('ko').format('MM.DD')} ~ ${dayjs(item.tripEndDate).locale('ko').format('MM.DD')}` :
-                '날짜 미정',
+            
+            tripStartDate: item.tripStartDate, 
+            tripEndDate: item.tripEndDate,
             hostId: item.userId || null,
-            status: item.status || '상태 미정',
+            status: item.accompanyStatus || '상태 미정',
             likeCount: item.likeCount || 0,
             userApplicationStatus: item.userApplicationStatus || null,
         };
@@ -105,7 +119,7 @@ export const fetchAccompanyFeedApi = async (currentUserId) => {
         const response = await api.get('/api/accompany/home', {
             params: { id: currentUserId },
         });
-        return transformAccompanyData(response.data.feed);
+        return response.data; // Changed this line
     } catch (error) {
         throw error;
     }
@@ -115,7 +129,9 @@ export const fetchAccompanyFeedApi = async (currentUserId) => {
 export const fetchMyCreatedAccompanyApi = async (currentUserId) => {
     try {
         const response = await api.get(`/api/accompany/my/${currentUserId}`);
-        return transformAccompanyData(response.data);
+        // 🔥 API 응답 원본 데이터를 직접 확인
+        console.log('API 응답 원본 데이터:', response.data); 
+        return transformAccompanyData(response.data); 
     } catch (error) {
         throw error;
     }
@@ -186,7 +202,7 @@ export const getLikeStatusApi = async (accompanyId, userId) => {
 
 // 6. 여러 동행 포스트의 좋아요 상태를 한 번에 조회
 // 🚀 최적화된 일괄 좋아요 상태 조회 API
-export const getMultipleAccompanyLikesOptimizedApi = async (accompanyIds, userId) => {
+export const getMultipleAccompanyLikesApi = async (accompanyIds, userId) => {
     const validAccompanyIds = accompanyIds
         .filter(id => id !== undefined && id !== null && id !== '')
         .map(id => Number(id))
@@ -202,8 +218,10 @@ export const getMultipleAccompanyLikesOptimizedApi = async (accompanyIds, userId
             accompanyIds: validAccompanyIds,
             userId: userId
         }, {
-            timeout: 15000, // 타임아웃 단축
-        });
+            timeout: 60000, // 타임아웃 단축
+            headers: {
+                'Content-Type': 'application/json'
+            }})
         
         // 백엔드에서 { accompanyId: boolean } 형태로 반환된다고 가정
         return response.data || {};
@@ -322,4 +340,27 @@ export const fetchAccompanyFeedWithCacheApi = async (currentUserId) => {
 export const clearFeedCache = () => {
     feedCache.clear();
     console.log('🧹 피드 캐시 클리어됨');
+};
+
+export const handleApiError = (error, context = '작업') => {
+    console.error(`❌ API 오류 발생 (${context}):`, error);
+
+    let errorMessage = '오류가 발생했습니다. 다시 시도해주세요.';
+
+    if (error.response) {
+        // 서버가 상태 코드로 응답한 경우
+        const { status, data } = error.response;
+        errorMessage = `서버 오류 (코드: ${status}): ${data.message || '알 수 없는 오류'}`;
+        if (status === 404) {
+            errorMessage = `${context}을(를) 찾을 수 없습니다.`;
+        }
+    } else if (error.request) {
+        // 요청은 이루어졌으나 응답을 받지 못한 경우
+        errorMessage = '서버에서 응답이 없습니다. 네트워크 연결을 확인해주세요.';
+    } else {
+        // 요청 설정 중 오류가 발생한 경우
+        errorMessage = `요청 중 오류 발생: ${error.message}`;
+    }
+
+    Alert.alert(`${context} 실패`, errorMessage);
 };

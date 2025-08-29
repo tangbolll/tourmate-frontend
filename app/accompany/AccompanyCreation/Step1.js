@@ -9,12 +9,12 @@ import {
     TouchableWithoutFeedback,
     Keyboard,
     ActivityIndicator,
-    Platform
+    Platform,
+    ScrollView
 } from 'react-native';
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import DayPicker from '../../../components/accompany/DayPicker';
 import ImageSelector from '../../../components/accompany/ImageSelector';
 
@@ -135,6 +135,7 @@ const Step1 = ({
 
     const handleMeetLocationSearch = async (query) => {
         setMeetLocationInput(query);
+        setMeetLocation(query); // Update the parent state
         if (query.length < 2) {
             setSearchResults([]);
             setShowSearchResults(false);
@@ -209,11 +210,7 @@ const Step1 = ({
 
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
-            <KeyboardAwareScrollView 
-                style={styles.form} 
-                extraScrollHeight={20}
-                keyboardShouldPersistTaps="handled"
-            >
+            <ScrollView style={styles.form}>
                 <Text style={styles.label}>동행 제목</Text>
                 <TextInput
                     style={styles.input}
@@ -292,7 +289,7 @@ const Step1 = ({
                 
                 {/* 검색 결과를 별도 컴포넌트로 렌더링 */}
                 <SearchResultsList />
-            </KeyboardAwareScrollView>
+            </ScrollView>
         </TouchableWithoutFeedback>
     );
 };
@@ -332,9 +329,11 @@ const styles = StyleSheet.create({
         fontSize: 14,
         marginBottom: 12,
         color: '#000',
+        backgroundColor: '#fff',
+        lineHeight: 20,
     },
     inputWithIcon: {
-        height: 20,
+        height: 44,
         flex: 1,
         fontSize: 14,
         marginLeft: 8,

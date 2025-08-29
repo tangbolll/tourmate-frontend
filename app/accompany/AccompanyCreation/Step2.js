@@ -11,6 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
 import DayPicker from '../../../components/accompany/DayPicker';
 import { formatDate, getDayOfWeek } from '../../../utils/dateUtils';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 
 const Step2 = ({ 
     maxPeople, setMaxPeople,
@@ -175,7 +176,7 @@ const Step2 = ({
     };
     
     return (
-        <View style={styles.form}>
+        <KeyboardAwareScrollView style={styles.form}>
             <Text style={styles.label}>모집 정원</Text>
             <View style={styles.splitInputRow}>
                 <View style={styles.iconContainer}>
@@ -325,7 +326,7 @@ const Step2 = ({
                     </View>
                 ))}
             </View>
-        </View>
+        </KeyboardAwareScrollView>
     );
 };
 
@@ -358,6 +359,7 @@ const styles = StyleSheet.create({
         fontSize: 14,
         paddingVertical: 12,
         color: '#000',
+        height: 44,
     },
     unitText: {
         fontSize: 14,
@@ -452,6 +454,7 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ccc',
         borderRadius: 8,
+        height: 44,
     },
     tagButton: {
         paddingHorizontal: 15,

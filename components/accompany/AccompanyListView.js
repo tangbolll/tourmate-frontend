@@ -104,12 +104,17 @@ const AccompanyListView = ({
         return filteredPosts.map((post, index) => {
             const isLiked = !!likedPosts[post.id];
             
+            // 🔥 AccompanyFeed에 전달될 최종 post 객체 확인
+            console.log(`AccompanyFeed로 전달될 post 객체 ID: ${post.id}, 날짜:`, post.date);
+
             // 🔥 최적화: MemoizedAccompanyFeed 컴포넌트 사용
             return (
                 <MemoizedAccompanyFeed
                     key={post.id || `post-${index}`}
                     {...post}
                     tags={getDisplayTags(post.tags)}
+                    mainImageUrl={post.mainImageUrl} // 🔥 mainImageUrl을 명시적으로 전달
+
                     liked={isLiked}
                     onPressLike={() => handlePressLike(post.id)}
                     onPress={() => navigateToPost(post.id)}
@@ -171,6 +176,7 @@ const AccompanyListView = ({
                                 <AccompanyCard
                                     key={item.id || `card-${index}`}
                                     {...item}
+                                    imageUrl={item.mainImageUrl}
                                     onPress={() => navigateToPost(item.id)}
                                     userApplicationStatus={item.userApplicationStatus}
                                 />

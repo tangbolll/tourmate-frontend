@@ -3,6 +3,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 
 const setupAxiosInterceptor = () => {
+  axios.interceptors.request.use(
+    async (config) => {
+      const token = await AsyncStorage.getItem('jwtToken');
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
   axios.interceptors.response.use(
     response => response,
     async error => {

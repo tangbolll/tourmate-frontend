@@ -1,28 +1,36 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
+import dayjs from 'dayjs';
+import 'dayjs/locale/ko';
 
 const defaultImage = require('../../assets/defaultFeed.png');
 
 export default function AccompanyFeed({
-    date,
     title,
     tags,
     location,
-    participants,
-    maxParticipants,
-    imageUrl,
+    currentParticipants,
+    maxRecruit,
+    mainImageUrl, // Changed prop name
     liked,
     onPressLike,
     onPress,
+    tripStartDate,
+    tripEndDate,
 }) {
+    console.log('mainImageUrl:', mainImageUrl);
+    
+    const formattedDate = tripStartDate && tripEndDate
+        ? `${dayjs(tripStartDate).locale('ko').format('MM.DD')} ~ ${dayjs(tripEndDate).locale('ko').format('MM.DD')}`
+        : '날짜 미정';
     
     return (
         <TouchableOpacity onPress={onPress} style={styles.card}>
             <View style={styles.contentRow}>
             {/* 왼쪽 텍스트 영역 */}
             <View style={styles.textSection}>
-            <Text style={styles.date}>{date}</Text>
+            <Text style={styles.date}>{formattedDate}</Text>
             <Text style={styles.title}>{title}</Text>
 
             <View style={styles.tagsContainer}>
@@ -37,13 +45,13 @@ export default function AccompanyFeed({
                 <Icon name="map-marker" size={16} color="#666" style={{ marginBottom: -4 }} />
                 <Text style={styles.infoText}>{location}</Text>
                 <Icon name="account-multiple" size={16} color="#666" style={{ marginLeft: 12, marginBottom: -4 }} />
-                <Text style={styles.infoText}>{participants}/{maxParticipants}</Text>
+                <Text style={styles.infoText}>{currentParticipants}/{maxRecruit}</Text>
             </View>
             </View>
 
             {/* 오른쪽 이미지 영역 */}
             <View style={styles.imageContainer}>
-            <Image source={imageUrl ? { uri: imageUrl } : defaultImage} style={styles.image} />
+            <Image source={mainImageUrl ? { uri: mainImageUrl } : defaultImage} style={styles.image} />
             <TouchableOpacity onPress={onPressLike} style={styles.heartIcon}>
                 <Icon name="heart" size={30} color={liked ? '#ff3040' : 'lightgray'} />
             </TouchableOpacity>

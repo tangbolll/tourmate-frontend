@@ -219,7 +219,7 @@ const AccompanyList = () => {
         }
 
         allPosts.sort((a, b) => {
-            const getDate = (post) => new Date(post.postDate || post.createdAt || post.date || '1970-01-01');
+            const getDate = (post) => new Date(post.tripStartDate || '1970-01-01');
             return getDate(b) - getDate(a);
         });
 
@@ -229,8 +229,7 @@ const AccompanyList = () => {
             const searchLower = searchText.toLowerCase();
             filtered = filtered.filter(post =>
                 (post.title?.toLowerCase().includes(searchLower) ||
-                post.location?.toLowerCase().includes(searchLower) ||
-                (post.tags && post.tags.some(tag => tag.toLowerCase().includes(searchLower))))
+                post.location?.toLowerCase().includes(searchLower))
             );
         }
         
