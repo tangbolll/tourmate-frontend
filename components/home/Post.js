@@ -11,7 +11,7 @@ import { Ionicons } from '@expo/vector-icons';
 import PostExpanded from './PostExpanded';
 import Report from './Report';
 import { toggleLikePostcard, toggleScrapPostcard } from '../../utils/HomePostApi';
-import { formatChatTimestamp } from '../../utils/timeUtils';
+import { formatChatTimestamp, formatPostDate } from '../../utils/timeUtils';
 import { useAuth } from '../../context/AuthContext';
 
 const defaultProfile = require('../../assets/defaultProfile2.png');
@@ -49,7 +49,7 @@ const Post = ({ postData, onDataUpdate }) => {
         scrapCount: currentScrapCount,
         timeAgo: postData?.createdAt ? formatChatTimestamp(new Date(postData.createdAt)) : '알 수 없음',
         location: postData?.location || '위치 정보 없음',
-        date: postData?.createdAt ? new Date(postData.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음',
+        date: formatPostDate(postData?.createdAt),
         isLiked: isLiked,
         isScraped: isBookmarked,
     };
@@ -157,7 +157,7 @@ const Post = ({ postData, onDataUpdate }) => {
             <View style={styles.header}>
                 <View style={styles.userInfo}>
                     <Image 
-                        source={defaultProfile} // 임시로 기본 프로필 이미지 사용
+                        source={defaultProfile}
                         style={styles.profileImage} 
                     />
                     <View style={styles.userDetails}>
@@ -245,7 +245,7 @@ const Post = ({ postData, onDataUpdate }) => {
                 postData={data}
                 onClose={() => setShowExpanded(false)}
                 onDataUpdate={handleDataUpdateFromExpanded}
-                currentUserId={currentUserId} // userId 전달
+                currentUserId={currentUserId}
             />
 
             {/* 신고 모달 */}

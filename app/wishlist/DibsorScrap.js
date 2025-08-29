@@ -29,13 +29,17 @@ const DibsorScrap = ({ router }) => {
     const [dibsLoaded, setDibsLoaded] = useState(false);
     const [scrapLoaded, setScrapLoaded] = useState(false);
 
+    // 정렬 상태 관리 추가
+    const [dibsSortKey, setDibsSortKey] = useState('closestTrip');
+    const [scrapSortKey, setScrapSortKey] = useState('closestTrip'); // 여행시작일 가까운순을 기본값으로
+
     // 🔥 API 호출 중복 방지를 위한 ref
     const loadingRef = useRef(false);
     const abortControllerRef = useRef(null);
 
     // 🚀 최적화된 찜 데이터 로딩
-    const fetchDibsDataOptimized = useCallback(async () => {
-        if (loadingRef.current || (dibsLoaded && dibsList.length > 0)) return;
+    const fetchDibsDataOptimized = useCallback(async (sortKey = dibsSortKey) => {
+        if (loadingRef.current || (dibsLoaded && dibsList.length > 0 && sortKey === dibsSortKey)) return;
         
         try {
             loadingRef.current = true;
@@ -54,7 +58,25 @@ const DibsorScrap = ({ router }) => {
             if (likedPosts !== null) {
                 // ✅ 전용 API가 성공한 경우
                 console.log('✅ 전용 API로 찜 데이터 로드 완료:', likedPosts.length, '개');
-                setDibsList(likedPosts);
+                
+                // 정렬 적용
+                let sortedPosts = [...likedPosts];
+                switch (sortKey) {
+                    case 'closestTrip':
+                        // 여행일 빠른순 (startDate 기준)
+                        sortedPosts.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+                        break;
+                    case 'closestRecruitment':
+                        // 모집마감 임박순 (recruitmentEndDate 기준)
+                        sortedPosts.sort((a, b) => new Date(a.recruitmentEndDate) - new Date(b.recruitmentEndDate));
+                        break;
+                    case 'saved':
+                        // 저장한 동행순 (createdAt 기준 최신순)
+                        sortedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                        break;
+                }
+                
+                setDibsList(sortedPosts);
                 
                 // 좋아요 상태 맵 생성
                 const likesMap = {};
@@ -63,6 +85,7 @@ const DibsorScrap = ({ router }) => {
                 });
                 setLikedPosts(likesMap);
                 setDibsLoaded(true);
+                setDibsSortKey(sortKey);
                 return;
             }
             
@@ -74,6 +97,7 @@ const DibsorScrap = ({ router }) => {
                 setDibsList([]);
                 setLikedPosts({});
                 setDibsLoaded(true);
+                setDibsSortKey(sortKey);
                 return;
             }
 
@@ -88,22 +112,29 @@ const DibsorScrap = ({ router }) => {
             );
             
             // 좋아요한 포스트만 필터링
-            const likedAccompanyPosts = limitedPosts.filter(post => 
+            let likedAccompanyPosts = limitedPosts.filter(post => 
                 likesMap[post.id] === true
             );
+
+            // 정렬 적용
+            switch (sortKey) {
+                case 'closestTrip':
+                    likedAccompanyPosts.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+                    break;
+                case 'closestRecruitment':
+                    likedAccompanyPosts.sort((a, b) => new Date(a.recruitmentEndDate) - new Date(b.recruitmentEndDate));
+                    break;
+                case 'saved':
+                    likedAccompanyPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                    break;
+            }
             
             setDibsList(likedAccompanyPosts);
             setLikedPosts(likesMap);
             setDibsLoaded(true);
+            setDibsSortKey(sortKey);
 
             console.log('✅ 찜 데이터 로드 완료:', likedAccompanyPosts.length, '개');
-            
-            // 🔍 디버깅: ID 값들 확인
-            console.log('🔍 로드된 포스트 ID들:', likedAccompanyPosts.map(post => ({
-                id: post.id,
-                title: post.title,
-                idType: typeof post.id
-            })));
             
         } catch (error) {
             if (error.name === 'AbortError') {
@@ -118,20 +149,20 @@ const DibsorScrap = ({ router }) => {
             loadingRef.current = false;
             setLoading(false);
         }
-    }, [currentUserId, dibsLoaded, dibsList.length]);
+    }, [currentUserId, dibsLoaded, dibsList.length, dibsSortKey]);
 
-    // 🚀 스크랩 데이터 로딩 - 실제 API 사용
-    const fetchScrapDataOptimized = useCallback(async () => {
-        if (loadingRef.current || (scrapLoaded && scrapList.length > 0)) return;
+    // 🚀 스크랩 데이터 로딩 - 정렬 옵션 포함
+    const fetchScrapDataOptimized = useCallback(async (sortKey = scrapSortKey) => {
+        if (loadingRef.current || (scrapLoaded && scrapList.length > 0 && sortKey === scrapSortKey)) return;
         
         try {
             loadingRef.current = true;
             setLoading(true);
             
-            console.log('🔍 스크랩 데이터 로딩 시작...');
+            console.log('🔍 스크랩 데이터 로딩 시작...', { sortKey });
             
-            // 실제 스크랩 API 호출
-            const result = await fetchUserScrappedPostcardsApi(currentUserId);
+            // 실제 스크랩 API 호출 (정렬 옵션 포함)
+            const result = await fetchUserScrappedPostcardsApi(currentUserId, sortKey);
             
             if (result.success) {
                 const scrappedPostcards = result.data || [];
@@ -151,16 +182,19 @@ const DibsorScrap = ({ router }) => {
                     scrapCount: postcard.scrapCount || 0,
                     isLiked: postcard.isLiked || false,
                     isScrapped: true, // 스크랩 목록이므로 항상 true
+                    scrappedAt: postcard.scrappedAt, // 스크랩한 날짜 추가
                     // PostExpanded에서 필요한 필드들
                     postcardName: postcard.title,
                     userName: postcard.author,
                     createdAt: postcard.createdAt,
                     content: postcard.content,
-                    typeImageUrl: postcard.typeImageUrl
+                    typeImageUrl: postcard.typeImageUrl,
+                    startDate: postcard.startDate // 여행 시작일 추가
                 }));
                 
                 setScrapList(formattedScrapData);
                 setScrapLoaded(true);
+                setScrapSortKey(sortKey);
                 
                 console.log('✅ 스크랩 데이터 로드 완료:', formattedScrapData.length, '개');
                 
@@ -169,6 +203,7 @@ const DibsorScrap = ({ router }) => {
                 setScrapList([]);
                 Alert.alert('오류', result.error || '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
                 setScrapLoaded(true);
+                setScrapSortKey(sortKey);
             }
             
         } catch (error) {
@@ -176,11 +211,12 @@ const DibsorScrap = ({ router }) => {
             setScrapList([]);
             Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
             setScrapLoaded(true);
+            setScrapSortKey(sortKey);
         } finally {
             loadingRef.current = false;
             setLoading(false);
         }
-    }, [currentUserId, scrapLoaded, scrapList.length]);
+    }, [currentUserId, scrapLoaded, scrapList.length, scrapSortKey]);
 
     // 🔥 초기 로딩 최적화
     useEffect(() => {
@@ -193,6 +229,21 @@ const DibsorScrap = ({ router }) => {
         }
     }, [selectedTab, currentUserId]); // 의존성 배열 단순화
 
+    // 정렬 변경 핸들러
+    const handleSortChange = useCallback((sortKey) => {
+        console.log('정렬 변경:', { selectedTab, sortKey });
+        
+        if (selectedTab === '찜') {
+            setDibsSortKey(sortKey);
+            setDibsLoaded(false); // 재로딩을 위해 false로 설정
+            fetchDibsDataOptimized(sortKey);
+        } else if (selectedTab === '스크랩') {
+            setScrapSortKey(sortKey);
+            setScrapLoaded(false); // 재로딩을 위해 false로 설정  
+            fetchScrapDataOptimized(sortKey);
+        }
+    }, [selectedTab, fetchDibsDataOptimized, fetchScrapDataOptimized]);
+
     // 🚀 새로고침 최적화
     const onRefresh = useCallback(async () => {
         if (refreshing) return; // 이미 새로고침 중이면 스킵
@@ -203,16 +254,16 @@ const DibsorScrap = ({ router }) => {
                 setDibsLoaded(false);
                 setDibsList([]);
                 clearFeedCache(); // 캐시 클리어
-                await fetchDibsDataOptimized();
+                await fetchDibsDataOptimized(dibsSortKey);
             } else {
                 setScrapLoaded(false);
                 setScrapList([]);
-                await fetchScrapDataOptimized();
+                await fetchScrapDataOptimized(scrapSortKey);
             }
         } finally {
             setRefreshing(false);
         }
-    }, [selectedTab, refreshing, fetchDibsDataOptimized, fetchScrapDataOptimized]);
+    }, [selectedTab, refreshing, fetchDibsDataOptimized, fetchScrapDataOptimized, dibsSortKey, scrapSortKey]);
 
     // 🚀 좋아요 핸들러 최적화 - 디바운싱 추가
     const likeTimeoutRef = useRef({});
@@ -274,24 +325,6 @@ const DibsorScrap = ({ router }) => {
         };
     }, []);
 
-    // 🧪 테스트용 네비게이션 함수
-    const testNavigation = useCallback(() => {
-        console.log('🧪 네비게이션 테스트 시작');
-        console.log('Router 상태:', {
-            exists: !!router,
-            methods: router ? Object.keys(router) : 'no router'
-        });
-        
-        if (router && typeof router.push === 'function') {
-            try {
-                router.push('/'); // 홈으로 이동 테스트
-                console.log('✅ 홈 네비게이션 성공');
-            } catch (error) {
-                console.error('❌ 홈 네비게이션 실패:', error);
-            }
-        }
-    }, [router]);
-
     const navigateToPost = useCallback((postId) => {
         console.log('🔍 네비게이션 시도:', {
             postId,
@@ -319,10 +352,6 @@ const DibsorScrap = ({ router }) => {
             Alert.alert('오류', `페이지 이동 중 오류가 발생했습니다: ${error.message}`);
         }
     }, [router]);
-
-    // const handlePostcardPress = useCallback((postcardId) => {
-    //     router?.push(`accompany/postcards/${postcardId}`);
-    // }, [router]);
 
     // 스크랩 데이터 업데이트 핸들러 (PostExpanded에서 스크랩 상태 변경 시)
     const handleScrapDataUpdate = useCallback((postcardId, actionType, wasActive) => {
@@ -360,9 +389,7 @@ const DibsorScrap = ({ router }) => {
             <SelectDibsOrScrap
                 selectedTab={selectedTab}
                 setSelectedTab={setSelectedTab}
-                onSortChange={(sortKey) => {
-                    console.log('Selected sort key:', sortKey);
-                }}
+                onSortChange={handleSortChange}
             />
             
             <DibsScrapListView
@@ -375,7 +402,6 @@ const DibsorScrap = ({ router }) => {
                 likedPosts={likedPosts}
                 handlePressLike={handlePressLike}
                 navigateToPost={navigateToPost}
-                // onPostcardPress={handlePostcardPress}
                 currentUserId={currentUserId}
                 onScrapDataUpdate={handleScrapDataUpdate}
             />

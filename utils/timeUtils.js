@@ -40,3 +40,10 @@ export const formatChatTimestamp = (timestamp) => {
         return messageTime.format('YYYY.M.D');
     }
 };
+
+// 날짜 포맷팅 함수 (YYYY.M.D 형식)
+export const formatPostDate = (timestamp) => {
+    if (!timestamp) return '알 수 없음';
+    
+    return dayjs(timestamp).format('YYYY.M.D');
+};

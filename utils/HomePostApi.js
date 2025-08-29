@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 // 기본 API URL을 가져오는 함수
 const getBaseURL = () => {
@@ -84,7 +85,7 @@ export const fetchUserLikedPostcardsApi = async (userId) => {
 };
 
 // 사용자가 스크랩한 엽서 목록 가져오기 API
-export const fetchUserScrappedPostcardsApi = async (userId) => {
+export const fetchUserScrappedPostcardsApi = async (userId, sortBy = 'closestTrip') => { // 기본값 변경
     if (!userId) {
         return {
             success: false,
@@ -93,13 +94,17 @@ export const fetchUserScrappedPostcardsApi = async (userId) => {
     }
 
     try {
+        const token = await AsyncStorage.getItem('authToken');
+        
         const response = await axios.get(
-            `${API_URL}/api/postcards/users/${userId}/scrapped`,
+            `${API_URL}/api/postcards/users/${userId}/scrapped`, // BASE_URL → API_URL 변경
             {
+                params: {
+                    sortBy
+                },
                 headers: {
                     'Content-Type': 'application/json',
-                    // 필요한 경우 인증 토큰 추가
-                    // 'Authorization': `Bearer ${token}`,
+                    ...(token && { 'Authorization': `Bearer ${token}` }),
                 },
                 timeout: 10000,
             }
@@ -110,18 +115,13 @@ export const fetchUserScrappedPostcardsApi = async (userId) => {
             data: response.data
         };
     } catch (error) {
-        console.error('사용자 스크랩 목록 API 오류:', error);
+        console.error('스크랩한 엽서 목록 조회 실패:', error);
         
-        let errorMessage = '스크랩 목록을 불러오는 중 오류가 발생했습니다.';
+        let errorMessage = '스크랩한 엽서 목록을 불러오는데 실패했습니다.';
         
         if (error.response) {
             const status = error.response.status;
-            const data = error.response.data;
-            
             switch (status) {
-                case 400:
-                    errorMessage = '잘못된 요청입니다. 사용자 ID를 확인해주세요.';
-                    break;
                 case 401:
                     errorMessage = '인증이 필요합니다. 다시 로그인해주세요.';
                     break;
@@ -132,10 +132,8 @@ export const fetchUserScrappedPostcardsApi = async (userId) => {
                     errorMessage = '사용자를 찾을 수 없습니다.';
                     break;
                 case 500:
-                    errorMessage = '서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요.';
+                    errorMessage = '서버 오류가 발생했습니다.';
                     break;
-                default:
-                    errorMessage = data?.message || errorMessage;
             }
         } else if (error.request) {
             errorMessage = '네트워크 연결을 확인해주세요.';

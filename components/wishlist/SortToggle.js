@@ -18,7 +18,7 @@ export const SortToggle = ({ onSortChange, selectedTab = '찜' }) => {
         if (tab === '찜') {
             return 'closestTrip';
         } else { // 스크랩
-            return 'newest';
+            return 'closestTrip'; // 여행시작일 가까운순을 기본값으로
         }
     };
 
@@ -56,12 +56,12 @@ export const SortToggle = ({ onSortChange, selectedTab = '찜' }) => {
         } else { // 스크랩
             return [
                 {
-                    key: 'newest',
-                    label: '여행일 빠른 순'
+                    key: 'closestTrip',
+                    label: '여행시작일 가까운순'
                 },
                 {
-                    key: 'oldest',
-                    label: '저장한 엽서 순'
+                    key: 'scrapped',
+                    label: '스크랩한 엽서순'
                 }
             ];
         }
