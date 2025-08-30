@@ -32,7 +32,10 @@ export function ProfileHeader() { // Removed userData prop
                 <View style={styles.profileHeader}>
                     <Text style={styles.profileTitle}>내 프로필</Text>
                     <View style={styles.headerIcons}>
-                        <TouchableOpacity style={styles.editButton}>
+                        <TouchableOpacity 
+                            onPress={() => router.push('/profile/edit')}
+                            style={styles.editButton}
+                        >
                             <Ionicons name="pencil" size={22} color="#666" />
                         </TouchableOpacity>
                         {/* 설정 아이콘 버튼 추가 */}

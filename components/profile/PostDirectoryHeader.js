@@ -3,44 +3,20 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 const PostDirectoryHeader = ({
-    title = 'Busan',
-    startDate = '2021.03.04',
-    endDate = '2021.03.06',
+    title,
+    startDate,
+    endDate,
     onBackPress,
     onSelectPress,
-    onCancelPress,
-    showActionButton = true, // 오른쪽 버튼 표시 여부
-    isSelectMode = false, // 외부에서 선택 모드 상태 받기
+    showActionButton = true,
+    isSelectMode = false,
 }) => {
-    const handleSelectToggle = () => {
-        if (isSelectMode) {
-            // 취소 모드일 때
-            if (onCancelPress) {
-                onCancelPress();
-            }
-        } else {
-            // 선택 모드일 때
-            if (onSelectPress) {
-                onSelectPress();
-            }
-        }
-    };
-
-    const handleBackPress = () => {
-        if (onBackPress) {
-            onBackPress();
-        }
-    };
-
-    // onSelectPress나 onCancelPress가 없으면 버튼 숨김
-    const shouldShowButton = showActionButton && (onSelectPress || onCancelPress);
-
     return (
         <View style={styles.container}>
             {/* 왼쪽 뒤로가기 버튼 */}
             <TouchableOpacity 
                 style={styles.backButton}
-                onPress={handleBackPress}
+                onPress={onBackPress}
             >
                 <Feather name="chevron-left" size={24} color="#333" />
             </TouchableOpacity>
@@ -51,11 +27,11 @@ const PostDirectoryHeader = ({
                 <Text style={styles.dateRange}>{startDate} - {endDate}</Text>
             </View>
 
-            {/* 오른쪽 선택/취소 버튼 - 조건부 렌더링 */}
-            {shouldShowButton ? (
+            {/* 오른쪽 선택/취소 버튼 */}
+            {showActionButton && onSelectPress ? (
                 <TouchableOpacity 
                     style={styles.actionButton}
-                    onPress={handleSelectToggle}
+                    onPress={onSelectPress}
                 >
                     <Text style={styles.actionButtonText}>
                         {isSelectMode ? '취소' : '선택'}
@@ -79,7 +55,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
         height: 70,
-        marginTop: 50, // 헤더 높이 조정
+        marginTop: 50,
     },
     backButton: {
         padding: 8,
@@ -117,7 +93,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     actionButtonPlaceholder: {
-        width: 60, // 버튼과 같은 너비를 유지하여 레이아웃 균형 맞춤
+        width: 60,
     },
 });
 

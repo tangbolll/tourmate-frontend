@@ -64,7 +64,11 @@ export const registerUserApi = async (userData) => {
 
 export const fetchUserProfileApi = async (userId) => {
     try {
-        const response = await apiClient.get(`/api/user/${userId}`);
+        const token = await AsyncStorage.getItem('jwtToken');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        const response = await axios.get(`${API_URL}/api/user/${userId}`, { headers });
+        console.log("Fetched user profile:", response.data);
         return response.data;
     } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -74,7 +78,11 @@ export const fetchUserProfileApi = async (userId) => {
 
 export const updateUserProfileApi = async (userId, userData) => {
     try {
-        const response = await apiClient.put(`/api/user/${userId}`, userData);
+        const token = await AsyncStorage.getItem('jwtToken');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        // 백엔드 API 명세에 맞게 PUT 요청으로 수정
+        const response = await axios.put(`${API_URL}/api/user/${userId}`, userData, { headers });
         return response.data;
     } catch (error) {
         console.error('Error updating user profile:', error);
@@ -84,10 +92,15 @@ export const updateUserProfileApi = async (userId, userData) => {
 
 export const checkNicknameApi = async (nickname) => {
     try {
-        const response = await apiClient.get(`/api/user/check-nickname`, {
+        const token = await AsyncStorage.getItem('jwtToken');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        // 백엔드 API 명세에 맞게 GET 요청 및 params 사용으로 수정
+        const response = await axios.get(`${API_URL}/api/user/check-nickname`, {
+            headers: headers,
             params: { nickname }
         });
-        return response.data;
+        return response.data; // true (중복) 또는 false (사용 가능)
     } catch (error) {
         console.error('Error checking nickname:', error);
         throw error;

@@ -6,9 +6,9 @@ import PostDirectoryHeader from '../../components/profile/PostDirectoryHeader';
 import PostDirectoryFooter from '../../components/profile/PostDirectoryFooter';
 
 import {
-    getPostcardsByFolderApi, // 특정 폴더의 엽서 목록을 불러오는 API
-    deletePostcardApi, // 엽서 삭제 API
-    handleApiError, // API 오류 처리
+    getPostcardsByFolderApi,
+    deletePostcardApi,
+    handleApiError,
 } from '../../utils/PostCardApi';
 
 export default function PostDirectory() {
@@ -66,19 +66,13 @@ export default function PostDirectory() {
 
     // 뒤로가기 처리
     const handleBackPress = useCallback(() => {
-        // 선택 모드일 경우 취소, 아니면 뒤로가기
-        if (isSelectMode) {
-            setIsSelectMode(false);
-            setSelectedPostcards(new Set());
-        } else {
-            router.back();
-        }
-    }, [isSelectMode, router]);
+        router.back();
+    }, [router]);
 
     // 선택 모드 토글
     const handleSelectToggle = useCallback(() => {
         setIsSelectMode(prev => !prev);
-        setSelectedPostcards(new Set()); // 선택 모드 진입/해제 시 선택 초기화
+        setSelectedPostcards(new Set()); 
     }, []);
 
     // 엽서 선택/해제 처리
@@ -208,8 +202,8 @@ export default function PostDirectory() {
                 startDate={startDate}
                 endDate={endDate}
                 onBackPress={handleBackPress}
-                onSelectPress={handleSelectToggle} // 토글 함수 연결
-                isSelectMode={isSelectMode} // 현재 모드 전달
+                onSelectPress={handleSelectToggle}
+                isSelectMode={isSelectMode}
             />
 
             {/* 엽서 그리드 */}
@@ -219,10 +213,14 @@ export default function PostDirectory() {
                 contentContainerStyle={styles.scrollContent}
             >
                 <View style={styles.grid}>
-                    {postcards.map((postcard) => (
+                    {postcards.map((postcard, index) => (
                         <TouchableOpacity
                             key={postcard.id}
-                            style={styles.postcardContainer}
+                            style={[
+                                styles.postcardContainer,
+                                // 3번째 아이템마다 marginRight 제거
+                                (index + 1) % 3 !== 0 && styles.postcardMarginRight
+                            ]}
                             onPress={() => handlePostcardPress(postcard.id)}
                             activeOpacity={0.8}
                         >
@@ -314,15 +312,19 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         flexWrap: 'wrap',
         padding: 16,
-        // 왼쪽 정렬 및 간격 유지
-        justifyContent: 'space-between',
-        alignContent: 'flex-start', // 상단부터 차곡차곡 쌓이도록
+        // 왼쪽부터 차곡차곡 정렬
+        justifyContent: 'flex-start',
+        alignContent: 'flex-start',
     },
     postcardContainer: {
         width: '31%',
         marginBottom: 12,
         // 비율 148:100 = 1.48
         aspectRatio: 1.48,
+    },
+    // 왼쪽과 가운데 아이템에만 적용될 마진
+    postcardMarginRight: {
+        marginRight: '3.5%', 
     },
     imageContainer: {
         width: '100%',
