@@ -27,6 +27,7 @@ import {
     getAccompanyManagementDataApi 
 } from '../../utils/AccompanyManagementApi';
 import { useAuth } from '../../context/AuthContext';
+import useAccompanyStore from '../../context/accompanyStore'; // Import the new store
 
 const AccompanyManagement = () => {
     const { currentUserId } = useAuth();
@@ -34,14 +35,15 @@ const AccompanyManagement = () => {
     const router = useRouter();
     const { postId } = params;
     
+    // Get states and actions from Zustand store
+    const { applicants, participants, setAccompanyData, updateParticipants, accompanyData } = useAccompanyStore(); // Ensure accompanyData is destructured
+    console.log('AccompanyManagement: accompanyData on render:', accompanyData);
+
     // 기본 상태
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
-    // 동행 관리 데이터
-    const [accompanyData, setAccompanyData] = useState(null);
-    const [applicants, setApplicants] = useState([]);
-    const [participants, setParticipants] = useState([]);
+    // accompanyData is now managed by Zustand store
     
     // 좋아요 상태와 좋아요 수를 별도로 관리
     const [isLiked, setIsLiked] = useState(false);
@@ -104,10 +106,16 @@ const AccompanyManagement = () => {
             await acceptApplicationApi(postId, numericApplicantId);
             
             // UI 업데이트: 신청자를 참가자로 이동
-            const acceptedApplicant = applicants.find(app => Number(app.id) === numericApplicantId);
+            console.log('Before accept - applicants:', applicants.map(a => a.userId));
+            console.log('Before accept - participants:', participants.map(p => p.userId));
+            const acceptedApplicant = applicants.find(app => Number(app.userId) === numericApplicantId);
+            console.log('Accepted applicant found:', acceptedApplicant);
             if (acceptedApplicant) {
-                setApplicants(prev => prev.filter(app => Number(app.id) !== numericApplicantId));
-                setParticipants(prev => [...prev, { ...acceptedApplicant, isHost: false }]);
+                const newApplicants = applicants.filter(app => Number(app.userId) !== numericApplicantId);
+                const newParticipants = [...participants, { ...acceptedApplicant, isHost: false }];
+                updateParticipants(newApplicants, newParticipants);
+                console.log('After accept - new applicants (Zustand):', newApplicants.map(a => a.userId));
+                console.log('After accept - new participants (Zustand):', newParticipants.map(p => p.userId));
             }
             
             Alert.alert('성공', '신청을 수락했습니다.');
@@ -135,7 +143,10 @@ const AccompanyManagement = () => {
             await rejectApplicationApi(postId, numericApplicantId);
             
             // UI 업데이트: 신청자 목록에서 제거
-            setApplicants(prev => prev.filter(app => Number(app.id) !== numericApplicantId));
+            console.log('Before reject - applicants:', applicants.map(a => a.userId));
+            const newApplicants = applicants.filter(app => Number(app.userId) !== numericApplicantId);
+            updateParticipants(newApplicants, participants); // Only applicants change
+            console.log('After reject - new applicants (Zustand):', newApplicants.map(a => a.userId));
             
             Alert.alert('성공', '신청을 거절했습니다.');
             
@@ -162,7 +173,8 @@ const AccompanyManagement = () => {
             await removeParticipantApi(postId, numericParticipantId);
             
             // UI 업데이트: 참가자 목록에서 제거
-            setParticipants(prev => prev.filter(participant => Number(participant.id) !== numericParticipantId));
+            const newParticipants = participants.filter(participant => Number(participant.id) !== numericParticipantId);
+            updateParticipants(applicants, newParticipants); // Only participants change
             
             Alert.alert('성공', '참가자를 내보냈습니다.');
             
@@ -189,9 +201,7 @@ const AccompanyManagement = () => {
                 participantsIds: data.participants?.map(part => ({ id: part.id, type: typeof part.id }))
             });
             
-            setAccompanyData(data.accompanyInfo);
-            setApplicants(data.applicants || []);
-            setParticipants(data.participants || []);
+            setAccompanyData(data); // Update Zustand store
             
             // 동행 상태 설정
             setAccompanyStatus(data.accompanyInfo.status || 'RECRUITING');
@@ -238,7 +248,7 @@ const AccompanyManagement = () => {
 
     // 신청자 렌더링
     const renderApplicant = (applicant) => (
-        <View key={applicant.id} style={styles.memberRow}>
+        <View key={applicant.userId} style={styles.memberRow}>
             <View style={styles.profileSection}>
                 <Image 
                     source={applicant.profileImage ? { uri: applicant.profileImage } : require('../../assets/defaultProfile.png')} 
@@ -250,20 +260,24 @@ const AccompanyManagement = () => {
                         <Text style={styles.nickname}>{applicant.nickname || applicant.name}</Text>
                         <Text style={styles.genderAge}> · {applicant.gender} · {applicant.age}세</Text>
                     </View>
-                    <Text style={styles.hashtags}>{applicant.hashtags || applicant.tags}</Text>
+                    {console.log('Applicant hashtags:', applicant.hashtags)}
+                    {console.log('Applicant tags:', applicant.tags)}
+                    <Text style={styles.hashtags}>
+                        {(applicant.hashtags && applicant.hashtags.join(' ')) || (applicant.tags && applicant.tags.join(' ')) || ''}
+                    </Text>
                 </View>
             </View>
             
             <View style={styles.actionButtons}>
                 <TouchableOpacity 
                     style={styles.acceptButton}
-                    onPress={() => handleAcceptApplication(applicant.id)}
+                    onPress={() => handleAcceptApplication(applicant.userId)}
                 >
                     <Text style={styles.acceptText}>수락</Text>
                 </TouchableOpacity>
                 <TouchableOpacity 
                     style={styles.rejectButton}
-                    onPress={() => handleRejectApplication(applicant.id)}
+                    onPress={() => handleRejectApplication(applicant.userId)}
                 >
                     <Text style={styles.rejectText}>거절</Text>
                 </TouchableOpacity>
@@ -286,7 +300,11 @@ const AccompanyManagement = () => {
                         <Text style={styles.genderAge}> · {companion.gender} · {companion.age}세</Text>
                         {companion.isHost && <Text style={styles.hostTag}>호스트</Text>}
                     </View>
-                    <Text style={styles.hashtags}>{companion.hashtags || companion.tags}</Text>
+                    {console.log('Companion hashtags:', companion.hashtags)}
+                    {console.log('Companion tags:', companion.tags)}
+                    <Text style={styles.hashtags}>
+                        {(companion.hashtags && companion.hashtags.join(' ')) || (companion.tags && companion.tags.join(' ')) || ''}
+                    </Text>
                 </View>
             </View>
             
@@ -359,7 +377,7 @@ const AccompanyManagement = () => {
     }
 
     // 에러 상태
-    if (error || !accompanyData) {
+    if (error || !accompanyData?.accompanyInfo) {
         return (
             <SafeAreaView style={styles.container}>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
@@ -382,7 +400,7 @@ const AccompanyManagement = () => {
 
     const applicationCnt = applicants.length;
     const currentMember = participants.length;
-    const totalMember = accompanyData?.maxParticipants || 5;
+    const totalMember = accompanyData?.accompanyInfo?.maxParticipants || 5;
 
     return (
         <SafeAreaView style={styles.container}>

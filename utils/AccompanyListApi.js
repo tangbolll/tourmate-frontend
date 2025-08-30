@@ -223,7 +223,7 @@ export const getMultipleAccompanyLikesApi = async (accompanyIds, userId) => {
                 'Content-Type': 'application/json'
             }})
         
-        // 백엔드에서 { accompanyId: { isLiked: boolean, likeCount: int } } 형태로 반환된다고 가정
+        // 백엔드에서 { accompanyId: boolean } 형태로 반환된다고 가정
         return response.data || {};
         
     } catch (error) {

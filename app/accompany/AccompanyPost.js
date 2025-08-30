@@ -2,6 +2,8 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { SafeAreaView, ScrollView, View, StyleSheet, TouchableOpacity, Text, Keyboard, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { Feather, Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import useAccompanyStore from '../../context/accompanyStore'; // Import the new store
+import { useFocusEffect } from '@react-navigation/native';
 import EventSchedule from '../../components/accompany/EventSchedule';
 import Comment from '../../components/accompany/Comment';
 import Reply from '../../components/accompany/Reply';
@@ -40,9 +42,13 @@ export default function AccompanyPost() {
     const params = useLocalSearchParams();
     const router = useRouter();
     const { postId } = params;
-    const [postData, setPostData] = useState(null);
+
+    // Get states and actions from Zustand store
+    const { accompanyData, applicants, participants, currentParticipants, maxParticipants, setAccompanyData } = useAccompanyStore();
+
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [userApplicationStatusLocal, setUserApplicationStatusLocal] = useState(null); // New local state
     // 좋아요 상태와 좋아요 수를 별도로 관리
     const [isLiked, setIsLiked] = useState(false);
     const [likeCount, setLikeCount] = useState(0);
@@ -144,7 +150,11 @@ export default function AccompanyPost() {
 
             const transformedData = transformAccompanyDetail(backendData);
             
-            setPostData(transformedData);
+            setAccompanyData({ // Use Zustand store action
+                accompanyInfo: transformedData,
+                applicants: backendData.applicants || [], // Assuming backendData contains applicants
+                participants: backendData.participants || [], // Assuming backendData contains participants
+            });
             setChatAccess(chatAccessData);
             
             // ✅ 호스트 판별 로직 수정 - createdBy 또는 userId 사용
@@ -214,7 +224,7 @@ export default function AccompanyPost() {
             time: "방금 전",
             content: content.trim(),
             profileImage: null,
-            isHost: currentUserId === postData?.createdBy,
+            isHost: currentUserId === accompanyData?.accompanyInfo?.createdBy,
             isTemporary: true
         };
 
@@ -347,14 +357,15 @@ export default function AccompanyPost() {
     }, [postId, currentUserId, isLikeLoading]);
 
     useEffect(() => {
-        if (postData) {
-            console.log('🔍 AccompanyPost: postData 전체 구조 확인:', {
-                postData: postData,
-                keys: Object.keys(postData),
-                isLiked: postData.isLiked,
-                likeCount: postData.likeCount,
-                likes: postData.likes,
-                liked: postData.liked
+        if (accompanyData?.accompanyInfo) { // Use accompanyData from Zustand
+            const postDataFromStore = accompanyData.accompanyInfo; // Alias for clarity
+            console.log('🔍 AccompanyPost: accompanyData.accompanyInfo 전체 구조 확인:', {
+                postData: postDataFromStore,
+                keys: Object.keys(postDataFromStore),
+                isLiked: postDataFromStore.isLiked,
+                likeCount: postDataFromStore.likeCount,
+                likes: postDataFromStore.likes,
+                liked: postDataFromStore.liked
             });
             
             // ✅ 좋아요 정보 초기화 - 다양한 필드명 처리
@@ -363,25 +374,25 @@ export default function AccompanyPost() {
             let needsSeparateLikeQuery = true; // 별도 좋아요 상태 조회 필요 여부
             
             // isLiked 필드 확인 (다양한 가능성 체크)
-            if (typeof postData.isLiked === 'boolean') {
-                initialIsLiked = postData.isLiked;
+            if (typeof postDataFromStore.isLiked === 'boolean') {
+                initialIsLiked = postDataFromStore.isLiked;
                 needsSeparateLikeQuery = false;
-                console.log('🔍 AccompanyPost: 초기 좋아요 상태 설정 (isLiked)', postData.isLiked);
-            } else if (typeof postData.liked === 'boolean') {
-                initialIsLiked = postData.liked;
+                console.log('🔍 AccompanyPost: 초기 좋아요 상태 설정 (isLiked)', postDataFromStore.isLiked);
+            } else if (typeof postDataFromStore.liked === 'boolean') {
+                initialIsLiked = postDataFromStore.liked;
                 needsSeparateLikeQuery = false;
-                console.log('🔍 AccompanyPost: 초기 좋아요 상태 설정 (liked)', postData.liked);
+                console.log('🔍 AccompanyPost: 초기 좋아요 상태 설정 (liked)', postDataFromStore.liked);
             } else {
                 console.log('⚠️ AccompanyPost: 좋아요 상태 필드를 찾을 수 없어 별도 API 조회 필요');
             }
             
             // likeCount 필드 확인
-            if (typeof postData.likeCount === 'number') {
-                initialLikeCount = postData.likeCount;
-                console.log('🔍 AccompanyPost: 초기 좋아요 수 설정 (likeCount)', postData.likeCount);
-            } else if (typeof postData.likes === 'number') {
-                initialLikeCount = postData.likes;
-                console.log('🔍 AccompanyPost: 초기 좋아요 수 설정 (likes)', postData.likes);
+            if (typeof postDataFromStore.likeCount === 'number') {
+                initialLikeCount = postDataFromStore.likeCount;
+                console.log('🔍 AccompanyPost: 초기 좋아요 수 설정 (likeCount)', postDataFromStore.likeCount);
+            } else if (typeof postDataFromStore.likes === 'number') {
+                initialLikeCount = postDataFromStore.likes;
+                console.log('🔍 AccompanyPost: 초기 좋아요 수 설정 (likes)', postDataFromStore.likes);
             } else {
                 console.log('⚠️ AccompanyPost: 좋아요 수 필드를 찾을 수 없어 기본값 0 사용');
             }
@@ -400,7 +411,7 @@ export default function AccompanyPost() {
                 fetchLikeStatus();
             }
         }
-    }, [postData]);
+    }, [accompanyData?.accompanyInfo]); // Dependency on accompanyData.accompanyInfo
 
     // 별도 좋아요 상태 조회 함수
     const fetchLikeStatus = useCallback(async () => {
@@ -431,7 +442,7 @@ export default function AccompanyPost() {
     // AccompanyPost.jsx - 수정된 handleApplicationPress
 
     const handleApplicationPress = async () => {
-        const currentStatus = postData?.userApplicationStatus;
+        const currentStatus = userApplicationStatusLocal; // Use local state
         const isCurrentlyApplied = isUserApplied(currentStatus);
         
         console.log('🔄 신청/취소 시작:', {
@@ -443,10 +454,7 @@ export default function AccompanyPost() {
         
         // 낙관적 업데이트
         const newStatus = isCurrentlyApplied ? null : 'PENDING';
-        setPostData(prev => ({
-            ...prev,
-            userApplicationStatus: newStatus
-        }));
+        setUserApplicationStatusLocal(newStatus); // Update local state
         
         try {
             // currentStatus 대신 isCurrentlyApplied 전달
@@ -454,10 +462,7 @@ export default function AccompanyPost() {
             console.log('✅ API 호출 성공:', result);
             
             // API 결과의 newStatus를 사용해서 최종 상태 업데이트
-            setPostData(prev => ({
-                ...prev,
-                userApplicationStatus: result.newStatus
-            }));
+            setUserApplicationStatusLocal(result.newStatus); // Update local state
             
             setShowAlarmPopup(true);
             
@@ -466,10 +471,7 @@ export default function AccompanyPost() {
             Alert.alert('오류', error.message);
             
             // 🔥 오류 발생 시 원래 상태로 롤백
-            setPostData(prev => ({
-                ...prev,
-                userApplicationStatus: currentStatus
-            }));
+            setUserApplicationStatusLocal(currentStatus); // Rollback local state
         }
     };
     // 동행 모집 마감 API 호출 함수 (리팩토링 적용)
@@ -513,15 +515,21 @@ export default function AccompanyPost() {
     };
 
     // postId를 사용하여 데이터 로드
-    useEffect(() => {
-        if (postId && currentUserId) {
-            fetchAccompanyDetail(postId);
-            fetchComments(postId);
-        } else if (postId === undefined) {
-            setError('잘못된 동행 ID입니다.');
-            setLoading(false);
-        }
-    }, [postId, currentUserId]);
+    useFocusEffect(
+        useCallback(() => {
+            if (postId && currentUserId) {
+                fetchAccompanyDetail(postId);
+                fetchComments(postId);
+            } else if (postId === undefined) {
+                setError('잘못된 동행 ID입니다.');
+                setLoading(false);
+            }
+            // Cleanup function (optional, but good practice if you have subscriptions/listeners)
+            return () => {
+                // Any cleanup when the screen loses focus
+            };
+        }, [postId, currentUserId])
+    );
 
     // // 정기적으로 새로운 신청을 확인하는 useEffect 추가
     // useEffect(() => {
@@ -575,9 +583,12 @@ export default function AccompanyPost() {
 
     const handleConfirmClose = async () => {
         // 1. 즉시 UI 업데이트 (낙관적 업데이트)
-        setPostData(prev => ({
+        setAccompanyData(prev => ({ // Use Zustand store action
             ...prev,
-            status: 'COMPLETED'  // 동행 상태를 COMPLETED로 변경
+            accompanyInfo: {
+                ...prev.accompanyInfo,
+                status: 'COMPLETED'  // 동행 상태를 COMPLETED로 변경
+            }
         }));
         setClosed(true);  // closed 상태도 즉시 변경
         setShowAlarmPopupHost(false);  // 팝업 닫기
@@ -590,9 +601,12 @@ export default function AccompanyPost() {
             console.error('❌ 동행 모집 마감 오류:', error);
             
             // 3. API 실패 시 UI 롤백
-            setPostData(prev => ({
+            setAccompanyData(prev => ({
                 ...prev,
-                status: 'RECRUITING'  // 원래 상태로 되돌리기
+                accompanyInfo: {
+                    ...prev.accompanyInfo,
+                    status: 'RECRUITING'  // 원래 상태로 되돌리기
+                }
             }));
             setClosed(false);
             
@@ -612,7 +626,7 @@ export default function AccompanyPost() {
     }
 
     // 에러 상태
-    if (error || !postData) {
+    if (error || !accompanyData?.accompanyInfo) {
         return (
             <SafeAreaView style={styles.safeArea}>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 }}>
@@ -661,15 +675,15 @@ export default function AccompanyPost() {
 
                         {/* Event header card */}
                         <EventHeader
-                            title={postData.title}
-                            location={postData.location}
-                            participants={postData.currentParticipants}
-                            maxParticipants={postData.maxParticipants}
+                            title={accompanyData?.accompanyInfo?.title}
+                            location={accompanyData?.accompanyInfo?.location}
+                            participants={currentParticipants} // From Zustand store
+                            maxParticipants={maxParticipants} // From Zustand store
                             newApplication={hasNewApplications} 
                             onParticipantsClick={handleParticipantsClick}
                             postId={postId}
                             currentUserId={currentUserId}
-                            status={postData.status}
+                            status={accompanyData?.accompanyInfo?.status}
                             chatAccess={chatAccess}
                         />
 
@@ -703,35 +717,35 @@ export default function AccompanyPost() {
                         <View style={styles.hostInfoContainer}>
                             <Text style={styles.hostInfoText}>
                                 <Text style={styles.hostInfoLabel}>호스트 </Text>
-                                {postData.createdByName}
+                                {accompanyData?.accompanyInfo?.createdByName}
                                 <Text style={styles.hostInfoLabel}>  게시일 </Text>
-                                {postData.createdAt}
+                                {accompanyData?.accompanyInfo?.createdAt}
                                 <Text style={styles.hostInfoLabel}>  조회수 </Text>
-                                {postData.views}
+                                {accompanyData?.accompanyInfo?.views}
                             </Text>
                         </View>
 
                         <EventSchedule
-                            travelStartDate={postData.travelStartDate}
-                            travelEndDate={postData.travelEndDate}
-                            recruitStartDate={postData.recruitStartDate}
-                            recruitEndDate={postData.recruitEndDate}
+                            travelStartDate={accompanyData?.accompanyInfo?.travelStartDate}
+                            travelEndDate={accompanyData?.accompanyInfo?.travelEndDate}
+                            recruitStartDate={accompanyData?.accompanyInfo?.recruitStartDate}
+                            recruitEndDate={accompanyData?.accompanyInfo?.recruitEndDate}
                         />
                         <Intro
-                            message={postData.description}
-                            photos={postData.imageUrls || []}
+                            message={accompanyData?.accompanyInfo?.description}
+                            photos={accompanyData?.accompanyInfo?.imageUrls || []}
                         />
 
                         <GatheringPlace
-                            location={postData.meetingPoint}
+                            location={accompanyData?.accompanyInfo?.meetingPoint}
                         />
                         <Conditions
-                            gender={postData.gender}
-                            ageRange={postData.ageRange}
+                            gender={accompanyData?.accompanyInfo?.gender}
+                                                        ageRange={Array.from(accompanyData?.accompanyInfo?.ageGroup || [])}
                         />
                         <Categories
-                            category={postData.category}
-                            tags={postData.tags}
+                            category={Array.from(accompanyData?.accompanyInfo?.category || [])}
+                            tags={Array.from(accompanyData?.accompanyInfo?.tag || [])}
                         />
 
                         {/* 댓글 섹션 제목 (항상 표시) */}
@@ -786,12 +800,12 @@ export default function AccompanyPost() {
                 </KeyboardAvoidingView>
 
                 {/* 하단 버튼을 절대 위치로 고정 */}
-                {postData && (
+                {accompanyData?.accompanyInfo && (
                 <View style={styles.bottomButtonContainer}>
                     <AccompanyBottomButton
                         isHost={isHost}
-                        accompanyStatus={postData.status}
-                        userApplicationStatus={postData.userApplicationStatus}
+                        accompanyStatus={accompanyData?.accompanyInfo?.status}
+                        userApplicationStatus={userApplicationStatusLocal}
                         onPress={isHost ? handleClosedPress : handleApplicationPress}
                         likes={likeCount}
                         isLiked={isLiked}
@@ -821,7 +835,7 @@ export default function AccompanyPost() {
                     <AlarmPopup
                         alarmText={
                             <Text style={styles.alarmPopupText}>
-                                {isUserApplied(postData?.userApplicationStatus)
+                                {isUserApplied(userApplicationStatusLocal)
                                     ? `동행 신청이 완료되었습니다.\n호스트가 수락하거나 거절하면 알림이 발송됩니다.\n수락되기 전까지 신청을 취소할 수 있습니다.`
                                     : `동행 신청이 취소되었습니다.\n다시 신청하시려면 아래 버튼을 눌러주세요.`}
                             </Text>
