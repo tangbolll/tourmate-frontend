@@ -132,14 +132,19 @@ const Schedule = ({
                 {schedules && schedules.length > 0 ? (
                     renderScheduleItems()
                 ) : (
+                    // ✨ 이 부분을 새로운 View로 감싸줍니다.
+                <View style={styles.emptyContainer}>
                     <Text style={styles.emptyText}>등록된 일정이 없습니다.</Text>
-                )}
-                <AddScheduleButton 
-                    onPress={() => onAddSchedule && onAddSchedule(selectedDay)}
-                />
-            </ScrollView>
-        </View>
-    );
+                </View>
+            )}
+            
+            {/* ✨ 일정 추가 버튼은 스케줄이 있든 없든 항상 보이도록 조건문 밖으로 이동 */}
+            <AddScheduleButton 
+                onPress={() => onAddSchedule && onAddSchedule(selectedDay)}
+            />
+        </ScrollView>
+    </View>
+);
 };
 
 const styles = StyleSheet.create({
@@ -154,14 +159,18 @@ const styles = StyleSheet.create({
         padding: 16,
         paddingBottom: 32,
     },
+    emptyContainer: {
+    flex: 1, 
+    justifyContent: 'center', 
+    alignItems: 'center',     
+    },
     emptyText: {
         textAlign: 'center',
-        marginTop: 50,
         fontSize: 16,
         color: '#888',
+        marginTop: 20,
+        marginBottom: 50,
     },
 });
-
-// 👈 여기에 있던 잘못된 중괄호 '}' 제거
 
 export default Schedule;

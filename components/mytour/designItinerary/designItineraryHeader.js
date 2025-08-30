@@ -12,7 +12,8 @@ const DesignItineraryHeader = ({
     periodType, 
     onBackPress,
     onMemberPress, 
-    tourId,  //
+    tourId,  
+    onEditPress,
 }) => {
     const router = useRouter();
 
@@ -52,12 +53,12 @@ const DesignItineraryHeader = ({
                     <Ionicons name="chevron-back" size={24} color="black" />
                 </TouchableOpacity>
                 
-                <View style={styles.titleContainer}>
+                <TouchableOpacity onPress={onEditPress} style={styles.titleContainer}>
                     <Text style={styles.title}>{title}</Text>
                     <Text style={styles.dateRange}>
                         {getDisplayDate()}
                     </Text>
-                </View>
+                </TouchableOpacity>
                 
                 <View style={styles.rightIcons}>
                     <TouchableOpacity 
