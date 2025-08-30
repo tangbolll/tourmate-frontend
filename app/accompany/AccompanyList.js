@@ -14,6 +14,7 @@ import {
     fetchMyAppliedAccompanyApi,
     toggleLikeApi,
     getMultipleAccompanyLikesApi,
+    getLikeStatusApi, // Add this line
     handleApiError
 } from '../../utils/AccompanyListApi';
 
@@ -24,6 +25,7 @@ const AccompanyList = () => {
     const [showCards, setShowCards] = useState(true);
     const [filteredPosts, setFilteredPosts] = useState([]);
     const [likedPosts, setLikedPosts] = useState({});
+    const [likeCounts, setLikeCounts] = useState({});
     const [calendarVisible, setCalendarVisible] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
@@ -77,8 +79,20 @@ const AccompanyList = () => {
             const postIds = posts.map(post => post.id).filter(id => id && id !== undefined && id !== 'undefined');
             
             if (postIds.length > 0 && currentUserId) {
-                const likesStatus = await getMultipleAccompanyLikesApi(postIds, currentUserId);
-                setLikedPosts(prev => ({ ...prev, ...likesStatus }));
+                const batchStatus = await getMultipleAccompanyLikesApi(postIds, currentUserId);
+                
+                const newLikedPosts = {};
+                const newLikeCounts = {};
+
+                for (const postId in batchStatus) {
+                                newLikedPosts[postId] = batchStatus[postId].liked;
+            newLikeCounts[postId] = batchStatus[postId].likeCount;
+                }
+
+                setLikedPosts(prev => ({ ...prev, ...newLikedPosts }));
+                setLikeCounts(prev => ({ ...prev, ...newLikeCounts }));
+                console.log('newLikedPosts:', newLikedPosts);
+                console.log('newLikeCounts:', newLikeCounts);
             } else {
                 if (postIds.length === 0) console.warn('⚠️ 유효한 post ID가 없어서 좋아요 상태 로드 건너뛰기');
                 if (!currentUserId) console.warn('⚠️ 현재 사용자 ID가 없어서 좋아요 상태 로드 건너뛰기');
@@ -183,20 +197,18 @@ const AccompanyList = () => {
             return;
         }
 
-        const currentLikeStatus = likedPosts[postId];
+        let currentLikeStatus;
+        setLikedPosts(prev => {
+            currentLikeStatus = prev[postId];
+            return { ...prev, [postId]: !currentLikeStatus };
+        });
+
         try {
             updateLoadingState('likes', true);
-            const optimisticLikeStatus = !currentLikeStatus;
-            setLikedPosts(prev => ({ ...prev, [postId]: optimisticLikeStatus }));
             const response = await toggleLikeApi(postId, currentUserId);
             const { isLiked, likeCount } = response;
             setLikedPosts(prev => ({ ...prev, [postId]: isLiked }));
-            
-            // 모든 목록에서 좋아요 수 업데이트
-            setFeedList(prev => prev.map(post => post.id.toString() === postId.toString() ? { ...post, likeCount } : post));
-            setMyCreatedAccompanyList(prev => prev.map(post => post.id.toString() === postId.toString() ? { ...post, likeCount } : post));
-            setMyAppliedAccompanyList(prev => prev.map(post => post.id.toString() === postId.toString() ? { ...post, likeCount } : post));
-            setFilteredPosts(prev => prev.map(post => post.id.toString() === postId.toString() ? { ...post, likeCount } : post));
+            setLikeCounts(prev => ({ ...prev, [postId]: likeCount }));
 
         } catch (error) {
             console.error('❌ 좋아요 토글 실패:', error);
@@ -205,7 +217,7 @@ const AccompanyList = () => {
         } finally {
             updateLoadingState('likes', false);
         }
-    }, [currentUserId, loadingStates.likes, likedPosts]);
+    }, [currentUserId, loadingStates.likes]);
 
     // 필터링 로직은 그대로 유지
     useEffect(() => {
@@ -315,6 +327,7 @@ const AccompanyList = () => {
         setSelectedTab,
         loading: isLoading,
         likedPosts,
+        likeCounts,
         handlePressLike: handleToggleLike,
         filteredPosts,
         navigateToPost,

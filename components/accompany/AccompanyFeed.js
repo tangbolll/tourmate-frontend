@@ -19,7 +19,6 @@ export default function AccompanyFeed({
     tripStartDate,
     tripEndDate,
 }) {
-    console.log('mainImageUrl:', mainImageUrl);
     
     const formattedDate = tripStartDate && tripEndDate
         ? `${dayjs(tripStartDate).locale('ko').format('MM.DD')} ~ ${dayjs(tripEndDate).locale('ko').format('MM.DD')}`
@@ -110,6 +109,14 @@ const styles = StyleSheet.create({
         position: 'absolute',
         bottom: -10,
         right: -7,
+    },
+    likeCountText: {
+        position: 'absolute',
+        top: 5,
+        right: 35,
+        fontSize: 12,
+        color: 'black',
+        fontWeight: 'bold',
     },
     contentRow: {
         flexDirection: 'row',

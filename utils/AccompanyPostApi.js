@@ -295,60 +295,43 @@ export const toggleLikeApi = async (accompanyId, userId) => {
 };
 
 
-// ✅ 수정된 좋아요 상태 조회 API - fetch 사용
+// ✅ 수정된 좋아요 상태 조회 API - axios 사용
 export const getLikeStatusApi = async (accompanyId, userId) => {
-    // accompanyId를 명시적으로 Number 타입으로 변환
     const numericAccompanyId = Number(accompanyId);
-    
     if (isNaN(numericAccompanyId)) {
         console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
         return { isLiked: false, likeCount: 0 };
     }
-    
+
     console.log(`🔍 getLikeStatusApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
-    
+
     try {
-        const url = `${API_URL}/api/accompany/${numericAccompanyId}/like/status?id=${userId}`;
-        console.log(`🌐 API 호출 URL: ${url}`);
-        
-        const response = await fetch(url, {
-            method: 'GET',
-            headers: {
-                'Content-Type': 'application/json'
-            }
+        const response = await api.get(`/api/accompany/${numericAccompanyId}/like/status`, {
+            params: { id: userId },
         });
         
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const data = await response.json();
-        console.log(`✅ getLikeStatusApi 응답 성공:`, data);
+        console.log(`✅ getLikeStatusApi 응답 성공:`, response.data);
         console.log(`🔍 응답 데이터 타입 확인:`, {
-            isLiked: typeof data.isLiked,
-            likeCount: typeof data.likeCount,
-            전체_응답: data
+            isLiked: typeof response.data.isLiked,
+            likeCount: typeof response.data.likeCount,
+            전체_응답: response.data
         });
-        
-        // ✅ 백엔드 응답 필드명에 맞춰 반환
+
         return {
-            isLiked: Boolean(data.isLiked), // isLiked 필드 사용
-            likeCount: Number(data.likeCount) || 0
+            isLiked: Boolean(response.data.isLiked),
+            likeCount: Number(response.data.likeCount) || 0,
         };
-        
     } catch (error) {
         console.error(`❌ getLikeStatusApi 에러 (ID: ${numericAccompanyId}):`, {
             message: error.message,
             name: error.name
         });
-        
-        // 404 에러인 경우 (동행이 존재하지 않음)
-        if (error.message.includes('status: 404')) {
+
+        if (error.response?.status === 404) {
             console.warn(`⚠️ 동행 ID ${numericAccompanyId}를 찾을 수 없습니다.`);
             return { isLiked: false, likeCount: 0 };
         }
         
-        // 다른 에러의 경우
         console.error(`❌ 좋아요 상태 조회 실패 (ID: ${numericAccompanyId}):`, error.message);
         return { isLiked: false, likeCount: 0 };
     }
