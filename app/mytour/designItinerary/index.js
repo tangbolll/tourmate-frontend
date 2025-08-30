@@ -14,7 +14,7 @@ import ItineraryWithSchedule from '../../../components/mytour/designItinerary/It
 import Schedule from '../../../components/mytour/designItinerary/schedule/Schedule';
 import AddSchedule from '../../../components/mytour/designItinerary/AddSchedule/AddSchedule';
 import { scheduleUtils } from '../../../utils/scheduleUtils';
-import DesignItineraryMapHeader from '../../../components/mytour/designItinerary/map/designItineraryMapHeader';
+import EditTourInfoPopup from '../../../components/mytour/designItinerary/EditTourInfoPopup';
 
  
 
@@ -66,6 +66,10 @@ export default function DesignItinerary() {
     const [scheduleLoading, setScheduleLoading] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [scheduleToDelete, setScheduleToDelete] = useState(null);
+    const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [isManuallySaving, setIsManuallySaving] = useState(false); 
+
+
 
     // 디바운스된 값들 (자동 저장용 모두 복구)
     const debouncedSelectedAttractions = useDebounce(selectedAttractions, 2000);
@@ -165,6 +169,64 @@ const getCleanScheduleData = (data) => {
     });
     return cleanData;
 };
+
+// ✅ 여행 정보 수정 모달 열기 핸들러
+const handleEditInfoPress = () => {
+    setIsEditModalVisible(true);
+};
+
+// ✅ 여행 정보 수정 저장 핸들러
+// DesignItinerary.js
+
+const handleSaveEditInfo = async (updatedData) => {
+    // 1. 유효성 검사
+    if (!updatedData.title.trim()) {
+        Alert.alert("알림", "제목을 입력해주세요.");
+        return;
+    }
+
+    // 2. updatedData에 startDate가 있는지 확인하여 기간 타입 결정
+    const isDateType = updatedData.startDate !== null;
+
+    // 3. API에 보낼 데이터 구성
+    // (state가 아닌 updatedData와 기존 state를 조합하여 항상 정확한 데이터를 만듭니다)
+    const tourDataForUpdate = {
+        title: updatedData.title,
+        regions: regions, // 기존 regions state 사용
+        periodType: isDateType ? 1 : 2,
+        startDate: updatedData.startDate,
+        endDate: updatedData.endDate,
+        nightCount: updatedData.nights,
+        dayCount: updatedData.days,
+        attractions: selectedAttractions, // 기존 attractions state 사용
+        schedule: scheduleData,           // 기존 scheduleData state 사용
+        members: members,                 // 기존 members state 사용
+        ownerId: currentUserId
+    };
+
+    console.log('4️⃣ 부모: API에 보낼 최종 데이터 ->', tourDataForUpdate);
+
+    try {
+        // 4. API로 데이터 업데이트
+        await updateTour(currentTourId, tourDataForUpdate);
+        console.log('여행 정보 업데이트 성공');
+
+        // 5. 성공하면, 서버에서 최신 데이터를 다시 불러와 화면 전체를 동기화
+        await fetchTourData(); 
+        
+        // 6. 모달 닫기
+        setIsEditModalVisible(false);
+
+    } catch (error) {
+        console.error("수정 정보 저장 실패:", error); 
+        Alert.alert("오류", "정보를 업데이트하는 데 실패했습니다.");
+    }
+};
+
+const handleCloseEditModal = () => {
+    setIsEditModalVisible(false);
+};
+
 
 // 자동 저장 useEffect
 useEffect(() => {
@@ -471,8 +533,9 @@ useEffect(() => {
                 onBackPress={handleBackPress}
                 onMemberPress={handleMemberPress}
                 tourId={currentTourId}
+                onEditPress={handleEditInfoPress}
             />
-
+            
             <DateSelectButtons
                 periodType={period.type}
                 startDate={period.startDate}
@@ -576,9 +639,25 @@ useEffect(() => {
                     <Text style={styles.loadingTextWhite}>처리 중...</Text>
                 </View>
             )}
+
+            <EditTourInfoPopup
+                visible={isEditModalVisible}
+                onClose={handleCloseEditModal}
+                onSave={handleSaveEditInfo}
+                existingData={{ 
+                    title: title, 
+                    startDate: period.startDate, 
+                    endDate: period.endDate,
+                    nights: period.nights,
+                    days: period.days
+                }}
+                periodType={period.type}
+            />
         </SafeAreaView>
+        
     );
 }
+
 
 const styles = StyleSheet.create({
     container: {
