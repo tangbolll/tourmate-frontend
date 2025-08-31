@@ -16,9 +16,9 @@ export const SortToggle = ({ onSortChange, selectedTab = '찜' }) => {
     // getDefaultSort 함수를 먼저 정의
     const getDefaultSort = (tab) => {
         if (tab === '찜') {
-            return 'closestTrip';
+            return 'saved'; // 찜한 동행순을 기본값으로
         } else { // 스크랩
-            return 'closestTrip'; // 여행시작일 가까운순을 기본값으로
+            return 'scrapped'; // 스크랩한 엽서순을 기본값으로
         }
     };
 
@@ -41,28 +41,30 @@ export const SortToggle = ({ onSortChange, selectedTab = '찜' }) => {
         if (selectedTab === '찜') {
             return [
                 {
-                    key: 'closestTrip',
-                    label: '여행일 빠른순'
+                    key: 'saved',
+                    label: '찜한 동행순'                    
+
                 },
                 {
                     key: 'closestRecruitment',
                     label: '모집마감 임박순'
                 },
                 {
-                    key: 'saved',
-                    label: '저장한 동행순'
+                    key: 'closestTrip',
+                    label: '여행일 빠른순'
                 }
             ];
         } else { // 스크랩
             return [
                 {
+                    key: 'scrapped',
+                    label: '스크랩한 엽서순'
+                },
+                {
                     key: 'closestTrip',
                     label: '여행시작일 가까운순'
                 },
-                {
-                    key: 'scrapped',
-                    label: '스크랩한 엽서순'
-                }
+
             ];
         }
     };

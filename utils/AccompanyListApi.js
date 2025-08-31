@@ -280,11 +280,14 @@ const getMultipleAccompanyLikesFallback = async (accompanyIds, userId) => {
     return likedPostsMap;
 };
 
-// 🚀 찜한 포스트만 직접 가져오는 최적화된 API
-export const fetchLikedAccompanyPostsApi = async (userId) => {
+// 🚀 찜한 포스트만 직접 가져오는 최적화된 API (정렬 옵션 추가)
+export const fetchLikedAccompanyPostsApi = async (userId, sortKey = 'saved') => {
     try {
         const response = await api.get('/api/accompany/liked', {
-            params: { userId: userId },
+            params: { 
+                userId: userId,
+                sortKey: sortKey 
+            },
             timeout: 15000,
         });
         
