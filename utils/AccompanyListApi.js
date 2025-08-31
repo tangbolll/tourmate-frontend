@@ -85,6 +85,7 @@ export const transformAccompanyData = (accompanyData) => {
         const transformedId = item.id?.toString() || Math.random().toString();
         // 🔥 'images' 배열을 사용하여 'mainImageUrl'을 설정합니다.
         const mainImageUrl = item.mainImageUrl || (item.images && item.images.length > 0 ? item.images[0] : null);
+        console.log('Accompany Image URL:', mainImageUrl);
 
         return {
             id: transformedId,

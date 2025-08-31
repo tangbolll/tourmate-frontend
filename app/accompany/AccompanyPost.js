@@ -155,6 +155,7 @@ export default function AccompanyPost() {
                 applicants: backendData.applicants || [], // Assuming backendData contains applicants
                 participants: backendData.participants || [], // Assuming backendData contains participants
             });
+            console.log('DEBUG: AccompanyPost - accompanyData.accompanyInfo.imageUrls:', transformedData.imageUrls); // ADD THIS LINE
             setChatAccess(chatAccessData);
             
             // ✅ 호스트 판별 로직 수정 - createdBy 또는 userId 사용

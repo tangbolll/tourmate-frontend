@@ -178,6 +178,20 @@ const handleSubmit = async () => {
         setIsLoading(true);
 
         try {
+            const travelStartDate = new Date(dateRange.startDate || dateRange.startDay);
+            const recruitEndDate = new Date(recruitDateRange.endDate);
+
+            if (recruitEndDate >= travelStartDate) {
+                const message = "모집 마감일은 여행 시작일보다 빨라야 합니다.";
+                if (Platform.OS === 'web') {
+                    alert("유효성 검사 실패: " + message);
+                } else {
+                    Alert.alert("유효성 검사 실패", message);
+                }
+                setIsLoading(false);
+                return;
+            }
+            
             const userId = await AsyncStorage.getItem('userId');
             if (!userId) {
                 Alert.alert("오류", "로그인 정보가 없습니다. 다시 로그인해주세요.");
@@ -201,17 +215,15 @@ const handleSubmit = async () => {
                 gender: selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'),
                 ageGroup: [...new Set(selectedAges.includes('누구나') ? ['ALL'] : selectedAges)],
                 category: [...new Set(selectedCategories)],
-                tag: [...new Set(tags)]
+                tag: [...new Set(tags)],
+                mainImageIndex: thumbnailIndex // Add this line
             };
 
             // FormData 생성
             const formData = new FormData();
             
-            // JSON 데이터를 문자열로 변환하여 추가 (React Native에서는 이렇게 해야 함)
-            formData.append('request', {
-                string: JSON.stringify(accompanyData),
-                type: 'application/json'
-            });
+            // FormData에 JSON 데이터를 문자열로 직접 추가
+            formData.append('request', JSON.stringify(accompanyData));
             
             // 이미지 파일들 추가
             if (images && images.length > 0) {
@@ -232,7 +244,7 @@ const handleSubmit = async () => {
 
             const response = await axios.post(url, formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
+                    'Content-Type': 'multipart/form-data', // Add this line
                     'Accept': 'application/json',
                 },
             });
