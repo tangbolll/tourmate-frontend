@@ -9,19 +9,24 @@ const { width } = Dimensions.get('window');
 
 export default function MyTourFeed({
     imageUrl,
+    periodType,
     tourStartDate,
     tourEndDate,
+    dayCount,
+    nightCount,
     title,
     location,
     members = [],
     isBookmarked = false,
     onPress,
     onBookmarkPress,
+    onDeletePress,
     // ✅ 편집 모드 관련 prop 추가
     isEditMode,
     isSelected,
     onSelect
 }) {
+
     // 날짜 포맷팅 함수
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -32,20 +37,32 @@ export default function MyTourFeed({
 
     // 날짜 범위 포맷팅
     const getDateRange = () => {
-        const startFormatted = formatDate(tourStartDate);
-        const endFormatted = formatDate(tourEndDate);
-        
-        if (tourStartDate === tourEndDate) {
-            return startFormatted; // 당일치기
+        if (periodType === 1) {
+            const startFormatted = formatDate(tourStartDate);
+            const endFormatted = formatDate(tourEndDate);
+            if (tourStartDate === tourEndDate) return startFormatted;
+            return `${startFormatted} - ${endFormatted}`;
+        } else if (periodType === 2) {
+            if (dayCount && nightCount) return `${nightCount}박 ${dayCount}일`;
+            return '';
         }
-        return `${startFormatted} - ${endFormatted}`;
+        return '';
     };
 
     // 멤버 표시 함수
     const getMemberDisplay = () => {
-        if (members.length === 0) return '';
-        if (members.length === 1) return members[0];
-        return `${members[0]} 외 ${members.length - 1}명`;
+        // members가 비어있거나 배열이 아닐 경우를 대비
+        if (!Array.isArray(members) || members.length === 0) {
+            return '참여 인원 없음'; 
+        }
+
+        const firstMemberName = members[0]?.nickname || members[0]?.name || '첫 멤버'; 
+
+        if (members.length === 1) {
+            return firstMemberName;
+        }
+        
+        return `${firstMemberName} 외 ${members.length - 1}명`;
     };
 
     const handleCardPress = () => {
@@ -121,7 +138,7 @@ export default function MyTourFeed({
                     {/* 위치 */}
                     <View style={styles.infoRow}>
                         <MaterialIcons name="location-pin" size={16} color="black" />
-                        <Text style={styles.infoText}>{location}</Text>
+                        <Text style={styles.infoText}numberOfLines={1}>{location}</Text>
                     </View>
 
                     {/* 멤버 */}

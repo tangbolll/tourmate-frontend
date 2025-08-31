@@ -1,114 +1,149 @@
-import React, { useState } from 'react';
-import { View, StyleSheet, SafeAreaView, Text } from 'react-native';
+// ItineraryMapRN.js
+import React, { useState, useEffect } from 'react';
+import { View, StyleSheet, SafeAreaView, Text, Platform } from 'react-native';
+//import MapView, { Marker } from 'react-native-maps';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import DesignItineraryMapHeader from '../../../components/mytour/designItinerary/map/designItineraryMapHeader';
 import BottomSheet from '../../../components/mytour/designItinerary/map/BottomSheet';
+import DesignItineraryMapHeader from '../../../components/mytour/designItinerary/map/designItineraryMapHeader';
+import axios from 'axios';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import Constants from 'expo-constants';
+
+const getBaseURL = () => {
+  if (__DEV__) {
+    if (Platform.OS === 'android') return 'http://10.0.2.2:8080';
+    if (Platform.OS === 'web') return 'http://localhost:8080';
+    return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+  } else {
+    return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+  }
+};
 
 export default function ItineraryMap() {
-    const router = useRouter();
-    const { selectedRegions, itineraryTitle, periodData } = useLocalSearchParams();
-    
-    // 전달받은 데이터들을 파싱
-    const regions = selectedRegions ? JSON.parse(selectedRegions) : [];
-    const title = itineraryTitle || '';
-    const period = periodData ? JSON.parse(periodData) : {};
-    
-    console.log('전달받은 데이터들:');
-    console.log('- 지역 데이터:', regions);
-    console.log('- 여행 제목:', title);
-    console.log('- 기간 데이터:', period);
-    console.log('- 기간 타입:', period.type);
-    
-    if (period.type === 'date') {
-        console.log('- 시작 날짜:', period.startDate);
-        console.log('- 종료 날짜:', period.endDate);
-    } else if (period.type === 'duration') {
-        console.log('- 숙박 기간:', period.nights + '박');
-        console.log('- 총 기간:', period.days + '일');
-    }
+  const router = useRouter();
+  const { tourId, selectedRegions, itineraryTitle, periodData } = useLocalSearchParams();
 
-    // 날짜 포맷팅 함수
-    const formatDateRange = () => {
-        if (period.type === 'date' && period.startDate && period.endDate) {
-            return {
-                startDate: period.startDate,
-                endDate: period.endDate,
-                displayText: `${period.startDate} - ${period.endDate}`
-            };
-        } else if (period.type === 'duration' && period.nights && period.days) {
-            return {
-                displayText: `${period.nights}박 ${period.days}일`
-            };
+  const [tourData, setTourData] = useState(null);
+  const [scheduleData, setScheduleData] = useState([]);
+
+  // 예시 마커 좌표 (Kakao Map에서 받아온 좌표라 가정)
+  const [markers, setMarkers] = useState([]);
+
+  useEffect(() => {
+    if (!tourId) return;
+
+    const fetchTourData = async () => {
+      try {
+        const token = await AsyncStorage.getItem('jwtToken');
+        if (!token) {
+          console.warn("토큰이 없습니다!");
+          return;
         }
-        return { displayText: '' };
+
+        const response = await axios.get(
+          `${getBaseURL()}/api/travelSchedule/travel/${tourId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        setTourData(response.data);
+        setScheduleData(response.data.schedules || []);
+
+        // 예: 각 스케줄에 좌표가 있다고 가정
+        const coords = (response.data.schedules || []).map(item => ({
+          latitude: item.lat || 37.5665,
+          longitude: item.lng || 126.9780,
+          title: item.title,
+        }));
+        setMarkers(coords);
+
+      } catch (error) {
+        console.error('스케줄 불러오기 실패:', error);
+      }
     };
 
-    const handleBackPress = () => {
-        router.back();
-    };
+    fetchTourData();
+  }, [tourId]);
 
-    // 멤버 아이콘 클릭 핸들러 (임시)
-    const handleMemberPress = () => {
-        console.log('멤버 아이콘 클릭');
-    };
+  const regionsParsed = selectedRegions ? JSON.parse(selectedRegions) : tourData?.regions || [];
+  const title = itineraryTitle || tourData?.title || '';
+  const periodParsed = periodData ? JSON.parse(periodData) : {
+    type: tourData?.periodType || '',
+    startDate: tourData?.startDate,
+    endDate: tourData?.endDate,
+    nights: tourData?.nightCount,
+    days: tourData?.dayCount
+  };
 
-    const dateInfo = formatDateRange();
+  const formatDateRange = () => {
+    if (periodParsed.type === 'date' && periodParsed.startDate && periodParsed.endDate) {
+      return {
+        startDate: periodParsed.startDate,
+        endDate: periodParsed.endDate,
+        displayText: `${periodParsed.startDate} - ${periodParsed.endDate}`
+      };
+    } else if (periodParsed.type === 'duration' && periodParsed.nights && periodParsed.days) {
+      return { displayText: `${periodParsed.nights}박 ${periodParsed.days}일` };
+    }
+    return { displayText: '' };
+  };
 
-    return (
-        <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
-            <DesignItineraryMapHeader 
-                title={title}
-                dateRange={dateInfo.displayText}
-                startDate={dateInfo.startDate}
-                endDate={dateInfo.endDate}
-                periodType={period.type}
-                onBackPress={handleBackPress}
-                onMemberPress={handleMemberPress}
+  const dateInfo = formatDateRange();
+  const handleBackPress = () => router.back();
+  const handleMemberPress = () => console.log('멤버 아이콘 클릭');
+
+  return (
+    <SafeAreaView style={styles.container}>
+      <DesignItineraryMapHeader
+        title={title}
+        dateRange={dateInfo.displayText}
+        startDate={dateInfo.startDate}
+        endDate={dateInfo.endDate}
+        periodType={periodParsed.type}
+        onBackPress={handleBackPress}
+        onMemberPress={handleMemberPress}
+      />
+
+      <View style={styles.mapContainer}>
+        <MapView
+          style={{ flex: 1 }}
+          initialRegion={{
+            latitude: markers[0]?.latitude || 37.5665,
+            longitude: markers[0]?.longitude || 126.9780,
+            latitudeDelta: 0.05,
+            longitudeDelta: 0.05,
+          }}
+        >
+          {markers.map((marker, idx) => (
+            <Marker
+              key={idx}
+              coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
+              title={marker.title}
             />
-            
-            {/* 지도 영역 */}
-            <View style={styles.mapContainer}>
-                <Text style={styles.mapPlaceholder}>지도 영역</Text>
-            </View>
-            
-            {/* 바텀시트 */}
-            <View style={styles.bottomSheetContainer}>
-                <BottomSheet
-                    periodType={period.type}
-                    startDate={period.startDate}
-                    endDate={period.endDate}
-                    nights={period.nights}
-                    days={period.days}
-                />
-            </View>
-        </SafeAreaView>
-    );
+          ))}
+        </MapView>
+      </View>
+
+      <View style={styles.bottomSheetContainer}>
+        <BottomSheet
+          periodType={periodParsed.type}
+          startDate={periodParsed.startDate}
+          endDate={periodParsed.endDate}
+          nights={periodParsed.nights}
+          days={periodParsed.days}
+        />
+      </View>
+
+      <View style={{ padding: 16 }}>
+        <Text>DB에서 가져온 스케줄 수: {scheduleData.length}</Text>
+      </View>
+    </SafeAreaView>
+  );
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: 'transparent',
-    },
-    mapContainer: {
-        flex: 1,
-        backgroundColor: '#f0f0f0',
-        justifyContent: 'center',
-        alignItems: 'center',
-        margin: 0,
-    },
-    mapPlaceholder: {
-        fontSize: 18,
-        color: '#666',
-        fontWeight: '500',
-    },
-    bottomSheetContainer: {
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1000,
-    },
+  container: { flex: 1 },
+  mapContainer: { flex: 1 },
+  bottomSheetContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 1000 }
 });
-

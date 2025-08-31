@@ -11,11 +11,9 @@ const DesignItineraryHeader = ({
     endDate, 
     periodType, 
     onBackPress,
-    onMemberPress, // 멤버 아이콘 클릭 핸들러 props로 받기
-    // 지도 페이지로 전달할 데이터들
-    selectedRegions,
-    itineraryTitle,
-    periodData
+    onMemberPress, 
+    tourId,  
+    onEditPress,
 }) => {
     const router = useRouter();
 
@@ -37,21 +35,16 @@ const DesignItineraryHeader = ({
 
     // 지도 아이콘 클릭 핸들러
     const handleMapPress = () => {
-        router.push({
-            pathname: '/mytour/designItinerary/itineraryMap',
-            params: {
-                selectedRegions: selectedRegions ? JSON.stringify(selectedRegions) : undefined,
-                itineraryTitle: itineraryTitle || title,
-                periodData: periodData ? JSON.stringify(periodData) : JSON.stringify({
-                    type: periodType,
-                    startDate: startDate,
-                    endDate: endDate,
-                    nights: periodData?.nights,
-                    days: periodData?.days
-                })
-            }
-        });
-    };
+    if (!tourId) {
+        console.warn('tourId가 없습니다!');
+        return;
+    }
+
+    router.push({
+        pathname: '/mytour/designItinerary/itineraryMap',
+        params: { tourId } // ✅ tourId만 전달하면 DB에서 스케줄 조회 가능
+    });
+};
 
     return (
         <View style={styles.container}>
@@ -60,12 +53,12 @@ const DesignItineraryHeader = ({
                     <Ionicons name="chevron-back" size={24} color="black" />
                 </TouchableOpacity>
                 
-                <View style={styles.titleContainer}>
+                <TouchableOpacity onPress={onEditPress} style={styles.titleContainer}>
                     <Text style={styles.title}>{title}</Text>
                     <Text style={styles.dateRange}>
                         {getDisplayDate()}
                     </Text>
-                </View>
+                </TouchableOpacity>
                 
                 <View style={styles.rightIcons}>
                     <TouchableOpacity 

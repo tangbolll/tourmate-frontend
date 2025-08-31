@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform  } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const ShowExtraTime = ({ 
@@ -14,25 +14,35 @@ const ShowExtraTime = ({
         onAddSchedule && onAddSchedule(startTime, endTime, extraTimeId);
     };
 
-    const handleDelete = () => {
-        if (onDelete && extraTimeId) {
+const handleDelete = () => {
+    if (onDelete && extraTimeId) {
+        if (Platform.OS === 'web') {
+            // 웹 환경일 경우 window.confirm 사용
+            if (window.confirm('정말로 이 여유시간을 삭제하시겠습니까?')) {
+                onDelete(extraTimeId);
+            }
+        } else {
+            // 모바일 앱 환경일 경우 기존 Alert.alert 사용
             Alert.alert(
                 '여유시간 삭제',
                 '정말로 이 여유시간을 삭제하시겠습니까?',
                 [
-                    {
-                        text: '취소',
-                        style: 'cancel'
-                    },
-                    {
-                        text: '삭제',
-                        style: 'destructive',
-                        onPress: () => onDelete(extraTimeId)
+                    { text: '취소', style: 'cancel' },
+                    { 
+                        text: '삭제', 
+                        style: 'destructive', 
+                        onPress: () => onDelete(extraTimeId) 
                     }
                 ]
             );
         }
-    };
+    }
+};
+
+const confirmDeletion = () => {
+    onDelete(extraTimeId);
+    setShowConfirmModal(false);
+};
 
     return (
         <View style={styles.container}>

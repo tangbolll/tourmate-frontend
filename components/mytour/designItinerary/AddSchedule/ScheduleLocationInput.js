@@ -2,7 +2,7 @@ import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-const ScheduleLocationInput = ({ location, setLocation }) => {
+const ScheduleLocationInput = ({ location, setLocation, onChangeText }) => {
     return (
         <View style={commonStyles.section}>
             <View style={commonStyles.inputRow}>
@@ -12,7 +12,7 @@ const ScheduleLocationInput = ({ location, setLocation }) => {
                 <TextInput
                     style={commonStyles.input}
                     value={location}
-                    onChangeText={setLocation}
+                    onChangeText={onChangeText}
                     placeholder="위치 추가 *"
                     placeholderTextColor="#CCCCCC"
                 />

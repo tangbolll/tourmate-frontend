@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
 const ShowSchedule = ({ 
@@ -25,21 +25,25 @@ const ShowSchedule = ({
 
     const handleDelete = () => {
         if (onDelete && safeSchedule.id && safeSchedule.id !== 'no-id') {
-            Alert.alert(
-                '일정 삭제',
-                '정말로 이 일정을 삭제하시겠습니까?',
-                [
-                    {
-                        text: '취소',
-                        style: 'cancel'
-                    },
-                    {
-                        text: '삭제',
-                        style: 'destructive',
-                        onPress: () => onDelete(safeSchedule.id)
-                    }
-                ]
-            );
+            const deleteAction = () => {
+                onDelete(safeSchedule.id);
+            };
+
+            if (Platform.OS === 'web') {
+                const isConfirmed = window.confirm('정말로 이 일정을 삭제하시겠습니까?');
+                if (isConfirmed) {
+                    deleteAction();
+                }
+            } else {
+                Alert.alert(
+                    '일정 삭제',
+                    '정말로 이 일정을 삭제하시겠습니까?',
+                    [
+                        { text: '취소', style: 'cancel' },
+                        { text: '삭제', style: 'destructive', onPress: deleteAction }
+                    ]
+                );
+            }
         }
     };
 

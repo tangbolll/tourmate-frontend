@@ -1,15 +1,32 @@
-import { Platform } from 'react-native';
+import { ActivityIndicator , Platform } from 'react-native';
 import Constants from 'expo-constants';
 import { useAuth } from '../context/AuthContext';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from "axios";
+
+
 
 // API 기본 URL을 가져오는 헬퍼 함수
 export const getBaseURL = () => {
     if (__DEV__) {
-        if (Platform.OS === 'android') return 'http://10.0.2.2:8080';
+        if (Platform.OS === 'android') {
+            return 'http://10.0.2.2:8080';
+        }
+        if (Platform.OS === 'web') {
+            return 'http://localhost:8080';
+        }
         return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
     } else {
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
+};
+
+const getAuthHeaders = async () => {
+    const token = await AsyncStorage.getItem('jwtToken');
+    return {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+    };
 };
 
 // ==================== 여행(MyTour) 관련 API ====================
@@ -18,7 +35,8 @@ export const getBaseURL = () => {
 export const fetchMyTours = async (userId) => {
     const url = `${getBaseURL()}/api/myTour/list?userId=${userId}`;
     try {
-        const response = await fetch(url);
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
@@ -31,21 +49,33 @@ export const fetchMyTours = async (userId) => {
 export const toggleTourFavorite = async (tourId, userId) => {
     const url = `${getBaseURL()}/api/myTour/${tourId}/favorite?userId=${userId}`;
     try {
-        const response = await fetch(url, { method: 'POST' });
-        if (!response.ok) throw new Error(await response.text());
-        return true;
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { method: 'POST', headers });
+
+        // 1. 서버가 성공 신호(200번대)를 보내면, 즉시 성공으로 처리합니다.
+        if (response.ok) {
+            return true;
+        }
+        
+        // 2. 만약 성공이 아니라면 (400, 500번대 에러), 
+        //    서버가 보낸 에러 메시지를 읽어서 원인을 명확하게 알려줍니다.
+        const errorText = await response.text();
+        throw new Error(errorText || `서버 에러: ${response.status}`);
+
     } catch (error) {
-        console.error('즐겨찾기 토글 에러:', error);
-        throw error;
+        console.error('즐겨찾기 토글 API 상세 에러:', error.message || error);
+        throw error;    
     }
 };
+
 
 // 여러 여행 삭제 (배치)
 export const deleteMyTours = async (tourIds) => {
     try {
+        const headers = await getAuthHeaders();
         const results = await Promise.allSettled(
             tourIds.map(tourId =>
-                fetch(`${getBaseURL()}/api/myTour/${tourId}`, { method: 'DELETE' })
+                fetch(`${getBaseURL()}/api/myTour/${tourId}`, { method: 'DELETE', headers })
                     .then(r => r.ok ? `여행 삭제 성공 (ID: ${tourId})`
                         : r.text().then(tx => { throw new Error(tx); }))
             )
@@ -62,9 +92,10 @@ export const deleteMyTours = async (tourIds) => {
 export const createTour = async (tourData) => {
     const url = `${getBaseURL()}/api/myTour/create`;
     try {
+        const headers = await getAuthHeaders();
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(tourData),
         });
         if (!response.ok) throw new Error(await response.text());
@@ -79,9 +110,10 @@ export const createTour = async (tourData) => {
 export const updateTour = async (tourId, tourData) => {
     const url = `${getBaseURL()}/api/myTour/${tourId}`;
     try {
+        const headers = await getAuthHeaders();
         const response = await fetch(url, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(tourData),
         });
         if (!response.ok) throw new Error(await response.text());
@@ -95,12 +127,28 @@ export const updateTour = async (tourId, tourData) => {
 // 여행 상세 정보 조회
 export const getTourDetails = async (tourId) => {
     try {
-        const response = await fetch(`${getBaseURL()}/api/myTour/${tourId}`);
+        const headers = await getAuthHeaders();
+        const response = await fetch(`${getBaseURL()}/api/myTour/${tourId}`, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
         console.error('여행 상세 정보 조회 에러:', error);
         throw error;
+    }
+};
+
+// 닉네임으로 유저를 검색하는 API 함수
+export const searchUsers = async (nickname) => {
+    if (!nickname || nickname.trim().length < 2) {
+        return []; // 검색어가 2글자 미만이면 요청하지 않음
+    }
+    try {
+        console.log("검색 API 호출:", `${getBaseURL()}/api/user/search?nickname=${nickname}`);
+        const response = await axios.get(`${getBaseURL()}/api/user/search?nickname=${encodeURIComponent(nickname)}`);
+        return response.data;
+    } catch (error) {
+        console.error('Error searching users:', error);
+        return []; // 에러 발생 시 빈 배열 반환
     }
 };
 
@@ -110,7 +158,8 @@ export const getTourDetails = async (tourId) => {
 export const getAllSchedulesByTravel = async (travelId) => {
     const url = `${getBaseURL()}/api/travelSchedule/travel/${travelId}`;
     try {
-        const response = await fetch(url);
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
@@ -123,9 +172,10 @@ export const getAllSchedulesByTravel = async (travelId) => {
 export const createTravelSchedule = async (scheduleData) => {
     const url = `${getBaseURL()}/api/travelSchedule/create`;
     try {
+        const headers = await getAuthHeaders();
         const response = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(scheduleData),
         });
         if (!response.ok) throw new Error(await response.text());
@@ -140,7 +190,8 @@ export const createTravelSchedule = async (scheduleData) => {
 export const getTravelScheduleDetails = async (scheduleId) => {
     const url = `${getBaseURL()}/api/travelSchedule/${scheduleId}`;
     try {
-        const response = await fetch(url);
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
@@ -153,8 +204,14 @@ export const getTravelScheduleDetails = async (scheduleId) => {
 export const deleteTravelSchedule = async (scheduleId) => {
     const url = `${getBaseURL()}/api/travelSchedule/${scheduleId}`;
     try {
-        const response = await fetch(url, { method: 'DELETE' });
-        if (!response.ok) throw new Error(await response.text());
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { method: 'DELETE', headers });
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`[deleteTravelSchedule] API Error: Status ${response.status}, ${response.statusText}, Body: ${errorText}`);
+            throw new Error(`일정 삭제 실패: ${response.status} ${response.statusText} - ${errorText}`);
+        }
+        console.log(`[deleteTravelSchedule] API Success: Status ${response.status}, ${response.statusText}`);
         return true;
     } catch (error) {
         console.error('여행 스케줄 삭제 에러:', error);
@@ -166,9 +223,10 @@ export const deleteTravelSchedule = async (scheduleId) => {
 export const updateTravelSchedule = async (scheduleId, scheduleData) => {
     const url = `${getBaseURL()}/api/travelSchedule/${scheduleId}`;
     try {
+        const headers = await getAuthHeaders();
         const response = await fetch(url, {
             method: 'PUT',
-            headers: { 'Content-Type': 'application/json' },
+            headers,
             body: JSON.stringify(scheduleData),
         });
         if (!response.ok) throw new Error(await response.text());
@@ -183,7 +241,8 @@ export const updateTravelSchedule = async (scheduleId, scheduleData) => {
 export const getSchedulesByDate = async (travelId, date) => {
     const url = `${getBaseURL()}/api/travelSchedule/scheduleByDate?travelId=${travelId}&date=${date}`;
     try {
-        const response = await fetch(url);
+        const headers = await getAuthHeaders();
+        const response = await fetch(url, { headers });
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
@@ -195,9 +254,10 @@ export const getSchedulesByDate = async (travelId, date) => {
 // 여러 스케줄 삭제 (배치)
 export const deleteTravelSchedules = async (scheduleIds) => {
     try {
+        const headers = await getAuthHeaders();
         const results = await Promise.allSettled(
             scheduleIds.map(scheduleId =>
-                fetch(`${getBaseURL()}/api/travelSchedule/${scheduleId}`, { method: 'DELETE' })
+                fetch(`${getBaseURL()}/api/travelSchedule/${scheduleId}`, { method: 'DELETE', headers })
                     .then(r => r.ok ? `여행 스케줄 삭제 성공 (ID: ${scheduleId})`
                         : r.text().then(tx => { throw new Error(tx); }))
             )
@@ -207,26 +267,5 @@ export const deleteTravelSchedules = async (scheduleIds) => {
     } catch (error) {
         console.error('여행 스케줄 배치 삭제 에러:', error);
         throw error;
-    }
-};
-
-// 즐겨찾기 토글 API 함수
-export const handleBookmarkPress = async (event) => {
-        console.log('handleBookmarkPress called', event.id); 
-    try {
-        const userId = currentUserId; // 로그인 유저 ID
-        const response = await fetch(
-            `${getBaseURL()}/api/myTour/${event.id}/favorite?userId=${userId}`,
-            { method: 'POST' }
-        );
-
-        if (!response.ok) throw new Error('즐겨찾기 업데이트 실패');
-
-        // 상태 업데이트
-        if (onBookmarkUpdate) onBookmarkUpdate(event.id);
-
-        console.log('✅ 즐겨찾기 토글 완료:', event.id);
-    } catch (error) {
-        console.error('Bookmark update error:', error);
     }
 };

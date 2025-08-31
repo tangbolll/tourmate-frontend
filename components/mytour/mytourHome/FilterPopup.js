@@ -1,10 +1,13 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, Modal, TouchableOpacity, StyleSheet, TextInput, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, Modal, TouchableOpacity, StyleSheet, TextInput, TouchableWithoutFeedback, Keyboard, KeyboardAvoidingView, Platform, Pressable } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
 
-const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters, onOpenCalendar }) => {
+const FilterPopup = ({ visible, onClose = () => {}, onApply, onReset, filters, setFilters, onOpenCalendar }) => {
     const { travelPeriod, travelLocation } = filters;
+    
+    const locationInputRef = useRef(null);
+
 
     const setTravelPeriod = (value) => setFilters({ ...filters, travelPeriod: value });
     const setTravelLocation = (value) => setFilters({ ...filters, travelLocation: value });
@@ -39,16 +42,19 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
                 <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
                 <View style={styles.centeredView}>
                 <View style={styles.modalView}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <Text style={styles.headerTitle}>필터</Text>
                     <TouchableOpacity 
+                        style={styles.closeButton}
                         onPress={handleClose}
                         hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
                     >
-                    <Icon name="close" size={18} color="black" />
+                        <Icon name="close" size={22} color="black" />
                     </TouchableOpacity>
-                </View>
+
+                    {/* Header (이제 제목만 포함) */}
+                    <View style={styles.header}>
+                        <Text style={styles.headerTitle}>필터</Text>
+                     
+                    </View>
 
                 {/* Travel Period */}
                 <View style={styles.sectionContainer}>
@@ -68,16 +74,21 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
                 {/* Location */}
                 <View style={styles.sectionContainer}>
                     <Text style={styles.sectionTitle}>여행장소</Text>
-                    <View style={styles.inputContainer}>
-                    <Icon2 name="location-on" size={18} color="black" style={styles.inputIcon} />
-                    <TextInput
-                        style={styles.input}
-                        placeholder="여행장소를 입력해주세요."
-                        placeholderTextColor="#777"
-                        value={travelLocation}
-                        onChangeText={setTravelLocation}
-                    />
-                    </View>
+                    {/* View를 Pressable로 바꾸고, onPress를 추가합니다. */}
+                    <Pressable 
+                        style={styles.inputContainer}
+                        onPress={() => locationInputRef.current?.focus()} // 👈 이 줄 추가
+                    >
+                        <Icon2 name="location-on" size={18} color="black" style={styles.inputIcon} />
+                        <TextInput
+                            ref={locationInputRef} // 👈 이 줄 추가
+                            style={styles.input}
+                            placeholder="여행장소를 입력해주세요."
+                            placeholderTextColor="#777"
+                            value={travelLocation}
+                            onChangeText={setTravelLocation}
+                        />
+                    </Pressable>
                 </View>
 
                 <TouchableOpacity 
@@ -111,17 +122,30 @@ const styles = StyleSheet.create({
         padding: 20,
         maxHeight: '90%',
     },
+    closeButton: {
+        position: 'absolute', 
+        top: 20,              
+        right: 20,           
+        zIndex: 1,            
+    },
     header: {
         flexDirection: 'row',
-        justifyContent: 'space-between',
         alignItems: 'center',
         marginBottom: 20,
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        flex: 1,
-        textAlign: 'center',
+        // flex: 1과 textAlign: 'center' 대신, 양쪽 버튼 너비를 맞춰 중앙 정렬 효과
+    },
+    headerButton: {
+        width: 60, // 양쪽 버튼의 너비를 맞춰주기 위함
+        paddingVertical: 5,
+        alignItems: 'center',
+    },
+    resetButtonText: { // '재설정' 버튼 텍스트 스타일 추가
+        fontSize: 16,
+        color: '#666',
     },
     sectionContainer: {
         marginBottom: 15,

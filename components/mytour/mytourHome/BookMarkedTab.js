@@ -6,7 +6,11 @@ import Constants from 'expo-constants';
 import { handleBookmarkPress } from '../../../utils/MyTourApi';
 
 
-export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate }) {
+export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate, onTourPress }) {
+    if (bookmarkedEvents.length === 0) {
+        return null; // 즐겨찾기가 없으면 아무것도 표시하지 않음
+    }
+
     const [isExpanded, setIsExpanded] = useState(true);
 
     const toggleExpanded = () => {
@@ -17,6 +21,13 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate 
         // 이벤트 상세 페이지로 이동하는 로직
         console.log('Event pressed:', event);
     };
+
+    const handleBookmarkChange = (eventId) => {
+        if (onBookmarkUpdate) {
+            onBookmarkUpdate(eventId); // 부모에게 이벤트 ID를 전달하며 알림
+        }
+    };
+
 
     return (
         <View style={styles.container}>
@@ -52,18 +63,23 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate 
                                 // 기본값
                                 let locationString = '지역 정보 없음';
 
-                                const area = event.areaName?.[0];            // 예: "광주"
-                                const sigungus = event.sigunguName || [];    // 예: ["광산구", "남구"]
+                                if (event.regions && event.regions.length > 0) {
+                                    const firstRegion = event.regions[0];
+                                    const areaName = firstRegion.areaName || '지역 정보 없음';
+                                    const sigungus = firstRegion.sigungu || [];
 
-                                if (sigungus.length > 0) {
-                                    const firstSigungu = sigungus[0];
-                                    if (sigungus.length > 1) {
-                                        locationString = `${area} ${firstSigungu} 외 ${sigungus.length - 1}개 지역`;
+                                    const firstSigungu = sigungus[0]?.name || '';
+
+                                    const totalRegions = event.regions.reduce((sum, region) => sum + (region.sigungu?.length || 0), 0);
+                                    const otherCount = totalRegions - 1; // 첫 지역 첫 시군 제외
+
+                                    if (firstSigungu) {
+                                        locationString = otherCount > 0
+                                            ? `${areaName} ${firstSigungu} 외 ${otherCount}개 지역`
+                                            : `${areaName} ${firstSigungu}`;
                                     } else {
-                                        locationString = `${area} ${firstSigungu}`;
+                                        locationString = areaName;
                                     }
-                                } else if (area) {
-                                    locationString = area;
                                 }
 
                                 return (
@@ -71,12 +87,16 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate 
                                         key={event.id || index}
                                         tourStartDate={event.startDate ?? '날짜 없음'}
                                         tourEndDate={event.endDate ?? '날짜 없음'}
+                                        dayCount = {event.dayCount}
+                                        nightCount = {event.nightCount}
+                                        periodType = {event.periodType}
                                         title={event.title}
                                         location={locationString} // 최종 문자열 전달
                                         imageUrl={event.imageUrl || null}
                                         isBookmarked={event.isBookmarked}
-                                        onPress={() => handleEventPress(event)}
-                                        onBookmarkPress={() => handleBookmarkPress(event)}
+                                        onPress={() => onTourPress && onTourPress(event.id)}
+                                        onBookmarkPress={() => handleBookmarkChange(event.id)}
+
                                     />
                                 );
                             })}

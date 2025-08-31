@@ -1,114 +1,181 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, TextInput, Alert, FlatList } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView, TextInput, Alert, FlatList, ActivityIndicator, Platform } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { searchUsers } from '../../../utils/MyTourApi'; 
+import axios from 'axios';
+import Constants from 'expo-constants';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+
+
+
+
+// 디바운스 기능을 위한 커스텀 훅
+const useDebounce = (value, delay) => {
+    const [debouncedValue, setDebouncedValue] = useState(value);
+    useEffect(() => {
+        const handler = setTimeout(() => setDebouncedValue(value), delay);
+        return () => clearTimeout(handler);
+    }, [value, delay]);
+    return debouncedValue;
+}; 
+
+
+// API 기본 URL을 가져오는 헬퍼 함수
+export const getBaseURL = () => {
+    if (__DEV__) {
+        if (Platform.OS === 'android') {
+            return 'http://10.0.2.2:8080';
+        }
+        if (Platform.OS === 'web') {
+            return 'http://localhost:8080';
+        }
+        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+    } else {
+        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+    }
+};
+
+
 
 const defaultProfile = require('../../../assets/defaultProfile1.png');
 
-const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd }) => {
+const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd, tourId }) => {
     const participants = members.length;
     const [searchText, setSearchText] = useState('');
     const [selectedNewMember, setSelectedNewMember] = useState(null);
     
-    // 임시 검색 가능한 사용자 목록 (실제로는 API에서 받아올 데이터)
-    const [availableUsers] = useState([
-        {
-            id: 'user1',
-            name: '김민수',
-            gender: '남',
-            age: 28,
-            tags: ['액티비티', '맛집탐방']
-        },
-        {
-            id: 'user2',
-            name: '박지영',
-            gender: '여',
-            age: 26,
-            tags: ['쇼핑', '카페투어', '사진촬영']
-        },
-        {
-            id: 'user3',
-            name: '이준호',
-            gender: '남',
-            age: 30,
-            tags: ['자연경관', '힐링']
-        },
-        {
-            id: 'user4',
-            name: '이수진',
-            gender: '여',
-            age: 24,
-            tags: ['문화탐방', '역사']
-        }
-    ]);
+    // 하드코딩된 availableUsers를 API 결과를 담을 state로 변경
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    
+    // 검색어 입력이 멈췄을 때만 API를 호출하기 위한 디바운스
+    const debouncedSearchText = useDebounce(searchText, 500); // 500ms 딜레이
 
-    // 검색 결과 필터링
-    const filteredUsers = availableUsers.filter(user => 
-        user.name.includes(searchText) && 
-        !members.some(member => member.id === user.id)
-    );
+    // debouncedSearchText가 변경될 때마다 유저 검색 API를 호출
+    useEffect(() => {
+        console.log('[MemberPopup] useEffect triggered. debouncedSearchText:', debouncedSearchText);
+        const fetchUsers = async () => {
+            if (!debouncedSearchText || debouncedSearchText.length < 2) {
+                setSearchResults([]);
+                return;
+            }
+            setIsSearching(true);
+            try {
+                const users = await searchUsers(debouncedSearchText);
+                console.log('[MemberPopup] searchUsers result (users):', users);
+                console.log('[MemberPopup] members prop:', members);
+                const newUsers = users.filter(user => !members.some(member => member.userId === user.userId));
+                setSearchResults(newUsers);
+            } catch (error) {
+                console.error("Error searching users:", error);
+                setSearchResults([]);
+            } finally {
+                setIsSearching(false);
+            }
+        };
+
+        fetchUsers();
+    }, [debouncedSearchText, members]);
 
     const handleDeleteMember = (member) => {
-        Alert.alert(
-            '동반자 삭제',
-            `${member.name}님을 동반자에서 삭제하시겠습니까?`,
-            [
-                {
-                    text: '아니오',
-                    style: 'cancel',
-                },
-                {
-                    text: '네',
-                    onPress: () => {
+    Alert.alert(
+        '동반자 삭제',
+        `${member.nickname}님을 동반자에서 삭제하시겠습니까?`,
+        [
+            {
+                text: '아니오',
+                style: 'cancel',
+            },
+            {
+                text: '네',
+                onPress: async () => {
+                    try {
+                        const token = await AsyncStorage.getItem('jwtToken');
+
+                        // 서버 호출 (DELETE)
+                        await axios.delete(
+                            `${getBaseURL()}/api/myTour/${tourId}/companion`,
+                            {
+                                params: { userId: member.userId }, // 삭제할 멤버 ID
+                                headers: {
+                                    Authorization: `Bearer ${token}`, // JWT 토큰
+                                },
+                            }
+                        );
+
+                        // 상태 업데이트
                         onMemberDelete && onMemberDelete(member);
-                    },
+                    } catch (error) {
+                        console.error("동반자 삭제 실패:", error);
+                        Alert.alert("오류", "동반자 삭제에 실패했습니다.");
+                    }
                 },
-            ]
-        );
-    };
+            },
+        ]
+    );
+};
+
+
 
     const handleSelectNewMember = (user) => {
-        // 이미 선택된 사용자를 다시 누르면 선택 취소
-        if (selectedNewMember?.id === user.id) {
-            setSelectedNewMember(null);
-        } else {
-            setSelectedNewMember(user);
-        }
+    if (selectedNewMember?.userId === user.userId) {
+        setSelectedNewMember(null);
+    } else {
+        setSelectedNewMember(user);
+    }
     };
 
-    const handleAddMember = () => {
-        if (selectedNewMember) {
-            const newMember = {
-                ...selectedNewMember,
-                isUser: false,
-                profileImage: null
-            };
-            onMemberAdd && onMemberAdd(newMember);
-            setSelectedNewMember(null);
-            setSearchText('');
-        }
-    };
+
+    const handleAddMember = async () => {
+    if (!selectedNewMember) return;
+
+    try {
+        const token = await AsyncStorage.getItem('jwtToken');
+
+        await axios.post(
+            `${getBaseURL()}/api/myTour/${tourId}/companion`,
+            null,
+            {
+                params: { userId: selectedNewMember.userId }, // 추가할 멤버의 ID
+                headers: {
+                    Authorization: `Bearer ${token}`, // JWT 토큰
+                },
+            }
+        );
+
+        const newMember = { ...selectedNewMember, isOwner: false };
+        onMemberAdd && onMemberAdd(newMember);
+        setSelectedNewMember(null);
+        setSearchText('');
+    } catch (error) {
+        console.error("멤버 추가 실패:", error);
+        Alert.alert("오류", "멤버 추가에 실패했습니다.");
+    }
+};
+
 
     const renderSearchResultItem = ({ item }) => (
         <TouchableOpacity 
             style={[
                 styles.searchResultItem,
-                selectedNewMember?.id === item.id && styles.selectedSearchResultItem
+                selectedNewMember?.userId === item.userId && styles.selectedSearchResultItem
             ]}
             onPress={() => handleSelectNewMember(item)}
-        >
+            >
             <Image 
-                source={defaultProfile}
+                source={item.profileImage ? { uri: item.profileImage } : defaultProfile}
                 style={styles.searchResultImage}
             />
             <View style={styles.searchResultInfo}>
                 <View style={styles.searchResultNameRow}>
-                    <Text style={styles.searchResultName}>{item.name}</Text>
-                    <Text style={styles.searchResultDetail}> · {item.gender} · {item.age}세</Text>
+                <Text style={styles.searchResultName}>{item.nickname}</Text>
+                <Text style={styles.searchResultDetail}> · {item.gender} · {item.age}세</Text>
                 </View>
                 <View style={styles.searchResultTags}>
-                    {item.tags.map((tag, tagIndex) => (
-                        <Text key={tagIndex} style={styles.searchResultTag}>#{tag}</Text>
-                    ))}
+                {Array.isArray(item.tags) && item.tags.map((tag, tagIndex) => (
+                    <Text key={tagIndex} style={styles.searchResultTag}>#{tag}</Text>
+                ))}
                 </View>
             </View>
         </TouchableOpacity>
@@ -132,31 +199,32 @@ const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd }) => {
                 </View>
 
                 {/* 멤버 리스트 */}
-                <ScrollView 
-                    style={styles.membersList} 
-                    contentContainerStyle={styles.membersListContent}
-                >
-                    {members.map((member, index) => (
-                        <View key={index} style={styles.memberItem}>
+          <ScrollView 
+                style={styles.membersList} 
+                contentContainerStyle={styles.membersListContent}
+            >
+                {members.map((member) => {
+                    const isOwner = member.isOwner || member.owner; // owner 통일
+                    return (
+                        <View key={member.userId} style={styles.memberItem}>
                             <Image 
-                                source={member.profileImage || defaultProfile}
+                                source={member.profileImage ? { uri: member.profileImage } : defaultProfile}
                                 style={styles.profileImage}
                             />
                             <View style={styles.memberInfoContainer}>
                                 <View style={styles.memberInfo}>
-                                    <Text style={styles.memberName}>{member.name}</Text>
+                                    <Text style={styles.memberName}>{member.nickname}</Text>
                                     <Text style={styles.memberDetail}> · {member.gender} · {member.age}세</Text>
-                                    {member.isUser && <Text style={styles.hostLabel}>나</Text>}
+                                    {isOwner && <Text style={styles.hostLabel}>나</Text>}
                                 </View>
                                 <View style={styles.tagContainer}>
-                                    {member.tags.map((tag, tagIndex) => (
+                                    {Array.isArray(member.tags) && member.tags.map((tag, tagIndex) => (
                                         <Text key={tagIndex} style={styles.tag}>#{tag}</Text>
                                     ))}
                                 </View>
                             </View>
-                            
-                            {/* 삭제 버튼 (본인이 아닌 경우에만 표시) */}
-                            {!member.isUser && (
+
+                            {!isOwner && (
                                 <TouchableOpacity 
                                     style={styles.deleteButton}
                                     onPress={() => handleDeleteMember(member)}
@@ -165,8 +233,10 @@ const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd }) => {
                                 </TouchableOpacity>
                             )}
                         </View>
-                    ))}
-                </ScrollView>
+                    );
+                })}
+</ScrollView>
+
 
                 {/* 동반자 검색/추가 섹션 */}
                 <View style={styles.addMemberSection}>
@@ -202,13 +272,17 @@ const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd }) => {
                     {/* 검색 결과 */}
                     {searchText.length > 0 && (
                         <View style={styles.searchResults}>
-                            <FlatList
-                                data={filteredUsers}
-                                renderItem={renderSearchResultItem}
-                                keyExtractor={(item) => item.id}
-                                style={styles.searchResultsList}
-                                showsVerticalScrollIndicator={false}
+                            {isSearching ? (
+                                <ActivityIndicator style={{ marginVertical: 20 }} />
+                            ) : (
+                                <FlatList
+                                    data={searchResults} // 👈 data를 searchResults state로 변경
+                                    renderItem={renderSearchResultItem}
+                                    keyExtractor={(item) => item.userId.toString()} 
+                                    style={styles.searchResultsList}
+                                    showsVerticalScrollIndicator={false}
                             />
+                            )}
                         </View>
                     )}
                 </View>

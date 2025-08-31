@@ -7,6 +7,9 @@ const defaultImage = require('../../../assets/defaultBackground.png');
 export default function BookmarkedEvent({
     tourStartDate, 
     tourEndDate,
+    dayCount,
+    nightCount,
+    periodType,
     title, 
     location, 
     imageUrl, 
@@ -22,7 +25,19 @@ export default function BookmarkedEvent({
         return `${month}.${day}`;
     };
 
-    const formattedDateRange = `${formatDate(tourStartDate)} ~ ${formatDate(tourEndDate)}`;
+    // 날짜 범위 포맷팅
+    const getDateRange = () => {
+        if (periodType === 1) {
+            const startFormatted = formatDate(tourStartDate);
+            const endFormatted = formatDate(tourEndDate);
+            if (tourStartDate === tourEndDate) return startFormatted;
+            return `${startFormatted} - ${endFormatted}`;
+        } else if (periodType === 2) {
+            if (dayCount && nightCount) return `${nightCount}박 ${dayCount}일`;
+            return '';
+        }
+        return '';
+    };
 
     const handleCardPress = () => {
         // 상세 여행일정 페이지로 라우팅
@@ -49,7 +64,7 @@ export default function BookmarkedEvent({
                 <View style={styles.overlay}>
                     {/* 상단 날짜와 즐겨찾기 버튼 */}
                     <View style={styles.topRow}>
-                        <Text style={styles.date}>{formattedDateRange}</Text>
+                        <Text style={styles.date}>{getDateRange()}</Text>
                         <TouchableOpacity 
                             onPress={handleBookmarkPress}
                             style={styles.bookmarkButton}
@@ -74,7 +89,13 @@ export default function BookmarkedEvent({
                     {/* 장소 */}
                     <View style={styles.locationRow}>
                         <Icon name="map-marker" size={14} color="#fff" />
-                        <Text style={styles.location}>{location}</Text>
+                        <Text
+                            style={styles.location}
+                            numberOfLines={1}
+                            ellipsizeMode="tail"
+                        >
+                            {location}
+                        </Text>
                     </View>
                 </View>
             </ImageBackground>

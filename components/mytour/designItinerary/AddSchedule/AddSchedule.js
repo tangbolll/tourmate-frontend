@@ -9,7 +9,8 @@ import {
     ScrollView,
     Keyboard,
     Dimensions,
-    TextInput
+    TextInput,
+    Platform
 } from 'react-native';
 import ScheduleHeader from './ScheduleHeader';
 import ScheduleCategorySelector from './ScheduleCategorySelector';
@@ -27,10 +28,8 @@ const AddSchedule = ({
     onScheduleAdded,
     selectedDay,
     selectedDate,
-    // --- 💡 1. Props 이름 변경 ---
-    hour,      // 기존: selectedHour
-    minute,    // minute 추가
-    // ---------------------------
+    hour,
+    minute,
     periodType,
     startDate,
     endDate,
@@ -52,6 +51,15 @@ const AddSchedule = ({
     const [memoFocused, setMemoFocused] = useState(false);
     const scrollViewRef = useRef(null);
 
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [scheduleToDelete, setScheduleToDelete] = useState(null);
+
+    // --- 💡 1. 위치 검색 관련 State 추가 ---
+    const [searchResults, setSearchResults] = useState([]);
+    const [showSearchResults, setShowSearchResults] = useState(false);
+    const [isSearching, setIsSearching] = useState(false); // 로딩 상태 관리를 위해 추가
+    // ------------------------------------
+
     const categories = [
         { key: '숙소', label: '숙소', icon: 'home', color: '#FFD965' },
         { key: '식사', label: '식사', icon: 'coffee', color: '#FF9E6D' },
@@ -63,7 +71,10 @@ const AddSchedule = ({
     const popupTitle = isEditMode ? '일정 수정' : '일정 추가';
     const isSaveEnabled = title.trim() && location.trim() && currentSelectedDate;
 
-    // 키보드 관련 로직 (변경 없음)
+    const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
+    const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
+
+    // ... (키보드 및 날짜 관련 useEffect 로직은 변경 없음) ...
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
             setKeyboardHeight(event.endCoordinates.height);
@@ -85,7 +96,6 @@ const AddSchedule = ({
         }
     }, [memoFocused, keyboardHeight]);
 
-    // 날짜 계산 로직 (변경 없음)
     const availableDates = useMemo(() => {
         const dateList = [];
         if (periodType === 'date' && startDate && endDate) {
@@ -108,14 +118,15 @@ const AddSchedule = ({
         return dateList;
     }, [periodType, startDate, endDate, days]);
 
-    // --- 💡 2. 컴포넌트 상태 초기화 로직 수정 ---
     useEffect(() => {
         if (visible) {
             if (existingSchedule) {
-                // 수정 모드 로직 (timeSlot 파싱 추가)
                 setCategory(existingSchedule.tag || '숙소');
                 setTitle(existingSchedule.title || '');
-                if (existingSchedule.timeSlot) {
+                if (existingSchedule.startTime && existingSchedule.endTime) {
+                    setStartTime(existingSchedule.startTime);
+                    setEndTime(existingSchedule.endTime);
+                } else if (existingSchedule.timeSlot) {
                     const [start, end] = existingSchedule.timeSlot.split(' ~ ');
                     setStartTime(start || '07:30');
                     setEndTime(end || '08:30');
@@ -125,14 +136,11 @@ const AddSchedule = ({
                 setCurrentSelectedDate(existingSchedule.date || '');
                 setMemoHeight(existingSchedule.memo ? Math.max(40, existingSchedule.memo.split('\n').length * 20 + 20) : 40);
             } else {
-                // 추가 모드 로직
                 setCategory('숙소');
                 setTitle('');
                 setLocation('');
                 setMemo('');
                 setMemoHeight(40);
-
-                // 날짜 설정 로직
                 if (selectedDate) {
                     setCurrentSelectedDate(selectedDate);
                 } else if (selectedDay && availableDates.length > 0) {
@@ -143,14 +151,11 @@ const AddSchedule = ({
                 } else if (availableDates.length > 0) {
                     setCurrentSelectedDate(availableDates[0].value);
                 }
-                
-                // ⭐ 핵심 수정: hour와 minute Props를 사용하여 시간 상태 설정
                 if (hour !== undefined && minute !== undefined) {
                     const initialHour = String(hour).padStart(2, '0');
                     const initialMinute = String(minute).padStart(2, '0');
                     const endHour = (hour + 1) % 24;
                     const endHourString = String(endHour).padStart(2, '0');
-                    
                     setStartTime(`${initialHour}:${initialMinute}`);
                     setEndTime(`${endHourString}:${initialMinute}`);
                 } else {
@@ -159,19 +164,59 @@ const AddSchedule = ({
                 }
             }
         }
-    // --- 💡 3. 의존성 배열 수정 ---
     }, [visible, existingSchedule, selectedDay, selectedDate, hour, minute, availableDates]);
 
-    // ... 나머지 핸들러 및 렌더링 로직은 기존과 동일합니다 ...
-    
     useEffect(() => {
         if (!visible) {
             setShowDateDropdown(false);
             setMemoHeight(40);
             setKeyboardHeight(0);
             setMemoFocused(false);
+            // --- 💡 2. 모달이 닫힐 때 검색 결과 초기화 ---
+            setShowSearchResults(false);
+            setSearchResults([]);
+            // ---------------------------------------
         }
     }, [visible]);
+
+    // --- 💡 3. 위치 검색 핸들러 함수 수정 ---
+    const handleMeetLocationSearch = async (query) => {
+        console.log('Searching for:', query);
+        setLocation(query); // ❌ 오류 수정: setMeetLocationInput -> setLocation
+
+        if (query.trim().length < 2) {
+            setSearchResults([]);
+            setShowSearchResults(false);
+            return;
+        }
+
+        setIsSearching(true);
+        setShowSearchResults(true);
+
+        try {
+            const response = await fetch(`${KAKAO_API_URL}?query=${encodeURIComponent(query)}&size=10`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `KakaoAK ${kakaoRestApiKey}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+
+            const data = await response.json();
+            console.log('Search results:', data.documents);
+            setSearchResults(data.documents || []);
+        } catch (error) {
+            console.error('카카오맵 API 호출 에러:', error);
+            setSearchResults([]);
+        } finally {
+            setIsSearching(false);
+        }
+    };
+    // ------------------------------------
 
     const handleSave = () => {
         if (!title.trim() || !location.trim() || !currentSelectedDate) {
@@ -180,7 +225,7 @@ const AddSchedule = ({
         }
 
         const scheduleData = {
-            id: existingSchedule?.id || null, // 새 일정은 id를 null로 보냄
+            id: existingSchedule?.id || null,
             category,
             title: title.trim(),
             startTime,
@@ -195,28 +240,34 @@ const AddSchedule = ({
     };
 
     const handleDelete = () => {
-        if (!existingSchedule) return;
-        Alert.alert(
-            '일정 삭제', '정말로 이 일정을 삭제하시겠습니까?',
-            [
-                { text: '취소', style: 'cancel' },
-                {
-                    text: '삭제', style: 'destructive',
-                    onPress: () => {
-                        onScheduleDelete(existingSchedule.id);
-                        onClose();
+        if (onScheduleDelete && existingSchedule?.id) {
+            Alert.alert(
+                '일정 삭제', // '여유시간 삭제'가 아니라 '일정 삭제'가 더 적절합니다.
+                '정말로 이 일정을 삭제하시겠습니까?',
+                [
+                    { text: '취소', style: 'cancel' },
+                    { 
+                        text: '삭제', 
+                        style: 'destructive', 
+                        // `onScheduleDelete`를 `existingSchedule.id`와 함께 호출합니다.
+                        onPress: () => onScheduleDelete(existingSchedule.id) 
                     }
-                }
-            ]
-        );
+                ]
+            );
+
+        } else {
+            console.error('오류: 삭제할 일정이 없거나 삭제 함수가 전달되지 않았습니다.');
+        }
     };
 
     const handleMemoFocus = () => setMemoFocused(true);
     const handleMemoBlur = () => setMemoFocused(false);
 
     const handleOverlayPress = () => {
-        if (showDateDropdown) {
+        if (showDateDropdown || showSearchResults) { // 검색 결과 창도 닫도록 조건 추가
             setShowDateDropdown(false);
+            setShowSearchResults(false);
+            Keyboard.dismiss(); // 키보드도 닫기
         } else {
             onClose();
         }
@@ -280,10 +331,41 @@ const AddSchedule = ({
                             endTime={endTime}
                             setEndTime={setEndTime}
                         />
-                        <ScheduleLocationInput
-                            location={location}
-                            setLocation={setLocation}
-                        />
+                        {/* --- 💡 4. 위치 입력과 검색 결과를 View로 감싸기 --- */}
+                        <View style={{ zIndex: 1000 }}>
+                            <ScheduleLocationInput
+                                location={location}
+                                setLocation={setLocation}
+                                onChangeText={handleMeetLocationSearch}
+                            />
+                            {showSearchResults && (
+                                <View style={styles.searchResultsContainer}>
+                                    <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 150 }}>
+                                        {isSearching ? (
+                                             <Text style={styles.infoText}>검색 중...</Text>
+                                        ) : searchResults.length > 0 ? (
+                                            searchResults.map((item, index) => (
+                                                <TouchableOpacity
+                                                    key={item.id || index}
+                                                    onPress={() => {
+                                                        setLocation(item.place_name);
+                                                        setShowSearchResults(false);
+                                                        Keyboard.dismiss();
+                                                    }}
+                                                    style={styles.searchResultItem}
+                                                >
+                                                    <Text style={styles.placeName}>{item.place_name}</Text>
+                                                    <Text style={styles.addressName}>{item.address_name}</Text>
+                                                </TouchableOpacity>
+                                            ))
+                                        ) : (
+                                            <Text style={styles.infoText}>검색 결과가 없습니다.</Text>
+                                        )}
+                                    </ScrollView>
+                                </View>
+                            )}
+                        </View>
+                        {/* ------------------------------------------- */}
                         <ScheduleMemoInput
                             memo={memo}
                             setMemo={setMemo}
@@ -305,7 +387,7 @@ const AddSchedule = ({
     );
 };
 
-
+// --- 💡 5. 스타일 코드 수정 및 추가 ---
 const commonStyles = StyleSheet.create({
     overlay: {
         flex: 1,
@@ -318,7 +400,7 @@ const commonStyles = StyleSheet.create({
         backgroundColor: '#fff',
         borderRadius: 16,
         width: '100%',
-        maxHeight: '70%', // 높이 제한 추가
+        maxHeight: '70%',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
         shadowOpacity: 0.25,
@@ -329,11 +411,9 @@ const commonStyles = StyleSheet.create({
         paddingHorizontal: 24,
         paddingTop: 16,
         paddingBottom: 20,
-        flexGrow: 1, // ScrollView가 content를 채우도록
     },
     section: {
         marginBottom: 16,
-        position: 'relative',
     },
     titleInput: {
         fontSize: 16,
@@ -347,5 +427,40 @@ const commonStyles = StyleSheet.create({
         textAlign: 'center',
     },
 });
+
+const styles = StyleSheet.create({
+    searchResultsContainer: {
+        position: 'absolute',
+        top: '100%', // 입력창 바로 아래에 위치
+        left: 0,
+        right: 0,
+        backgroundColor: '#fff',
+        borderRadius: 8,
+        borderWidth: 1,
+        borderColor: '#ccc',
+        marginTop: 4, // 입력창과의 간격
+    },
+    searchResultItem: {
+        paddingVertical: 10,
+        paddingHorizontal: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#eee',
+    },
+    placeName: {
+        fontSize: 14,
+        fontWeight: 'bold',
+    },
+    addressName: {
+        fontSize: 12,
+        color: '#666',
+        marginTop: 2,
+    },
+    infoText: {
+        padding: 12,
+        textAlign: 'center',
+        color: '#666',
+    }
+});
+// ------------------------------------
 
 export default AddSchedule;
