@@ -478,3 +478,43 @@ export const getFavoritePostcardsApi = async (userEmail) => {
         throw error;
     }
 };
+
+// 엽서 공개범위 토글
+export const togglePostcardPublicScopeApi = async (postcardId) => {
+    const url = `${API_URL}/api/postcards/${postcardId}/toggle-public`;
+    console.log('🌐 엽서 공개범위 토글 API 호출:', url);
+
+    try {
+        const response = await fetchWithRetry(url, {
+            method: 'POST',
+        });
+        
+        // 204 No Content 응답일 경우 (공개 해제)
+        if (response.status === 204) {
+            return { isPublic: false };
+        }
+        
+        // 200 OK 응답일 경우 (공개 설정)
+        const data = await response.json();
+        return { isPublic: true, data };
+    } catch (error) {
+        throw error;
+    }
+};
+
+// 엽서 공개 상세정보 업데이트
+export const updatePostcardPublicDetailsApi = async (postcardId, publicDetails) => {
+    const url = `${API_URL}/api/postcards/${postcardId}/public-details`;
+    console.log('🌐 엽서 공개 상세정보 업데이트 API 호출:', url);
+    console.log('📄 요청 데이터:', publicDetails);
+
+    try {
+        const response = await fetchWithRetry(url, {
+            method: 'PUT',
+            body: JSON.stringify(publicDetails),
+        });
+        return await response.json();
+    } catch (error) {
+        throw error;
+    }
+};

@@ -9,6 +9,13 @@ import PostcardTemplate from "../../components/profile/PostcardTemplate";
 import UploadSection from "../../components/profile/sharePost/UploadSection";
 import DateSelectorModal from "../../components/profile/sharePost/DateSelectorModal";
 
+import {
+    getPostcardsByFolderApi,
+    togglePostcardPublicScopeApi,
+    updatePostcardPublicDetailsApi,
+    handleApiError,
+} from "../../utils/PostCardApi";
+
 const sharePost = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
@@ -28,11 +35,14 @@ const sharePost = () => {
     // 각 엽서별 정보
     const [postcardDetails, setPostcardDetails] = useState({});
     
+    // 각 엽서별 업로드 상태
+    const [uploadStatus, setUploadStatus] = useState({});
+    
     // 모달 상태
     const [isDateModalVisible, setIsDateModalVisible] = useState(false);
     const [availableDates, setAvailableDates] = useState([]);
 
-    // 전달받은 디렉토리 정보 및 선택된 엽서들 설정
+    // 전달받은 디렉토리 정보 설정
     useEffect(() => {
         if (params?.directoryId || params?.directoryTitle || params?.startDate || params?.endDate) {
             const startDate = params.startDate ? new Date(params.startDate) : null;
@@ -67,27 +77,66 @@ const sharePost = () => {
         }
     }, [params?.directoryId, params?.directoryTitle, params?.startDate, params?.endDate]);
 
-    // 선택된 엽서들 초기화
+    // 폴더의 실제 엽서들 불러오기
     useEffect(() => {
-        const dummyPostcards = [
-            { id: 1, image: 'https://picsum.photos/400/300?random=1', postcardTemplate: { color: '#E3F2FD', tab: 'Line' }},
-            { id: 2, image: 'https://picsum.photos/400/300?random=2', postcardTemplate: { color: '#F3E5F5', tab: 'Plain' }},
-            { id: 3, image: 'https://picsum.photos/400/300?random=3', postcardTemplate: { color: '#E8F5E8', tab: 'Image' }},
-        ];
-        
-        setSelectedPostcards(dummyPostcards);
-        
-        // 각 엽서별 초기 정보 설정
-        const initialDetails = {};
-        dummyPostcards.forEach(postcard => {
-            initialDetails[postcard.id] = {
-                title: '',
-                location: '',
-                date: null
-            };
-        });
-        setPostcardDetails(initialDetails);
-    }, []);
+        const fetchPostcards = async () => {
+            if (directoryInfo.id) {
+                try {
+                    console.log('🔍 폴더 엽서 불러오기 시도:', directoryInfo.id);
+                    const postcards = await getPostcardsByFolderApi(directoryInfo.id);
+                    
+                    if (postcards && postcards.length > 0) {
+                        const formattedPostcards = postcards.map(postcard => ({
+                            id: postcard.postcardId,
+                            image: postcard.imageUrl,
+                            postcardTemplate: { 
+                                code: postcard.postcardType, 
+                                color: '#E3F2FD', // 임시 색상값
+                                tab: 'Plain' // 임시 탭값
+                            },
+                        }));
+                        
+                        setSelectedPostcards(formattedPostcards);
+                        
+                        // 각 엽서별 초기 정보 설정
+                        const initialDetails = {};
+                        const initialUploadStatus = {};
+                        formattedPostcards.forEach(postcard => {
+                            initialDetails[postcard.id] = {
+                                title: '',
+                                location: '',
+                                date: null
+                            };
+                            initialUploadStatus[postcard.id] = {
+                                isUploaded: false,
+                                isUploading: false
+                            };
+                        });
+                        setPostcardDetails(initialDetails);
+                        setUploadStatus(initialUploadStatus);
+                        
+                        // 특정 엽서가 선택되어 있다면 해당 인덱스로 설정
+                        if (params.selectedPostcardId) {
+                            const targetIndex = formattedPostcards.findIndex(
+                                pc => pc.id.toString() === params.selectedPostcardId.toString()
+                            );
+                            if (targetIndex !== -1) {
+                                setCurrentIndex(targetIndex);
+                            }
+                        }
+                    } else {
+                        Alert.alert('알림', '공개할 엽서가 없습니다.');
+                        router.back();
+                    }
+                } catch (error) {
+                    console.error('❌ 엽서 불러오기 오류:', error);
+                    handleApiError(error, '엽서 불러오기');
+                }
+            }
+        };
+
+        fetchPostcards();
+    }, [directoryInfo.id, params.selectedPostcardId, router]);
 
     // 날짜 포맷팅 함수
     const formatDate = useCallback((date) => {
@@ -131,10 +180,104 @@ const sharePost = () => {
         updatePostcardDetail('date', date);
     }, [updatePostcardDetail]);
 
-    // 업로드 기능
-    const handleUpload = useCallback(() => {
-        // 모든 엽서의 필수 정보가 입력되었는지 확인
-        const isAllCompleted = selectedPostcards.every(postcard => {
+    // 개별 엽서 업로드 기능
+    const handleIndividualUpload = useCallback(async (postcardId) => {
+        const postcard = selectedPostcards.find(pc => pc.id === postcardId);
+        const details = postcardDetails[postcardId];
+        
+        // 현재 엽서의 필수 정보가 입력되었는지 확인
+        if (!details || !details.title || !details.location || !details.date) {
+            Alert.alert('정보 부족', '제목, 여행 장소, 여행 날짜를 모두 입력해주세요.');
+            return;
+        }
+
+        // 이미 업로드된 엽서인지 확인
+        if (uploadStatus[postcardId]?.isUploaded) {
+            Alert.alert('알림', '이미 업로드된 엽서입니다.');
+            return;
+        }
+
+        Alert.alert(
+            '업로드 확인',
+            '이 엽서를 업로드하시겠습니까?\n업로드된 엽서는 다른 유저의 홈화면에 표시됩니다.',
+            [
+                { text: '취소', style: 'cancel' },
+                { 
+                    text: '업로드', 
+                    onPress: async () => {
+                        // 업로딩 상태로 변경
+                        setUploadStatus(prev => ({
+                            ...prev,
+                            [postcardId]: {
+                                ...prev[postcardId],
+                                isUploading: true
+                            }
+                        }));
+
+                        try {
+                            console.log(`📢 엽서 ID ${postcardId} 개별 공개 설정 시도`);
+                            
+                            // 1. 공개 범위 토글
+                            const toggleResult = await togglePostcardPublicScopeApi(postcardId);
+                            console.log('✅ 공개 범위 토글 결과:', toggleResult);
+                            
+                            // 2. 공개된 경우 상세 정보 업데이트
+                            if (toggleResult.isPublic) {
+                                const publicDetails = {
+                                    title: details.title,
+                                    location: details.location,
+                                    startDate: details.date.toISOString().split('T')[0],
+                                    endDate: details.date.toISOString().split('T')[0],
+                                };
+                                
+                                await updatePostcardPublicDetailsApi(postcardId, publicDetails);
+                                console.log(`✅ 엽서 ID ${postcardId} 공개 상세정보 업데이트 완료`);
+                            }
+                            
+                            // 업로드 완료 상태로 변경
+                            setUploadStatus(prev => ({
+                                ...prev,
+                                [postcardId]: {
+                                    isUploaded: true,
+                                    isUploading: false
+                                }
+                            }));
+                            
+                            Alert.alert('업로드 완료', '엽서가 성공적으로 업로드되었습니다.');
+                            
+                        } catch (error) {
+                            console.error('❌ 엽서 업로드 오류:', error);
+                            handleApiError(error, '엽서 업로드');
+                            
+                            // 업로딩 실패 시 상태 복원
+                            setUploadStatus(prev => ({
+                                ...prev,
+                                [postcardId]: {
+                                    ...prev[postcardId],
+                                    isUploading: false
+                                }
+                            }));
+                        }
+                    }
+                }
+            ]
+        );
+    }, [selectedPostcards, postcardDetails, uploadStatus]);
+
+    // 업로드 기능 (전체 업로드) - 필요시 남겨둠
+    const handleUpload = useCallback(async () => {
+        // 미업로드된 엽서들만 필터링
+        const unuploadedPostcards = selectedPostcards.filter(postcard => 
+            !uploadStatus[postcard.id]?.isUploaded
+        );
+
+        if (unuploadedPostcards.length === 0) {
+            Alert.alert('알림', '업로드할 엽서가 없습니다. 모든 엽서가 이미 업로드되었습니다.');
+            return;
+        }
+
+        // 미업로드된 엽서들의 필수 정보가 입력되었는지 확인
+        const isAllCompleted = unuploadedPostcards.every(postcard => {
             const details = postcardDetails[postcard.id];
             return details && details.title && details.location && details.date;
         });
@@ -145,28 +288,86 @@ const sharePost = () => {
         }
 
         Alert.alert(
-            '업로드 확인',
-            '엽서를 업로드하시겠습니까?\n업로드된 엽서는 다른 유저의 홈화면에 표시됩니다.',
+            '전체 업로드 확인',
+            `${unuploadedPostcards.length}개의 엽서를 업로드하시겠습니까?\n업로드된 엽서는 다른 유저의 홈화면에 표시됩니다.`,
             [
                 { text: '취소', style: 'cancel' },
                 { 
                     text: '업로드', 
-                    onPress: () => {
-                        console.log('엽서 업로드:', selectedPostcards, postcardDetails);
-                        Alert.alert('업로드 완료', '엽서가 성공적으로 업로드되었습니다.');
-                        router.back();
+                    onPress: async () => {
+                        try {
+                            // 각 엽서에 대해 공개 설정 API 호출
+                            for (const postcard of unuploadedPostcards) {
+                                const details = postcardDetails[postcard.id];
+                                
+                                // 업로딩 상태로 변경
+                                setUploadStatus(prev => ({
+                                    ...prev,
+                                    [postcard.id]: {
+                                        ...prev[postcard.id],
+                                        isUploading: true
+                                    }
+                                }));
+                                
+                                console.log(`📢 엽서 ID ${postcard.id} 공개 설정 시도`);
+                                
+                                // 1. 공개 범위 토글
+                                const toggleResult = await togglePostcardPublicScopeApi(postcard.id);
+                                console.log('✅ 공개 범위 토글 결과:', toggleResult);
+                                
+                                // 2. 공개된 경우 상세 정보 업데이트
+                                if (toggleResult.isPublic) {
+                                    const publicDetails = {
+                                        title: details.title,
+                                        location: details.location,
+                                        startDate: details.date.toISOString().split('T')[0],
+                                        endDate: details.date.toISOString().split('T')[0],
+                                    };
+                                    
+                                    await updatePostcardPublicDetailsApi(postcard.id, publicDetails);
+                                    console.log(`✅ 엽서 ID ${postcard.id} 공개 상세정보 업데이트 완료`);
+                                }
+
+                                // 업로드 완료 상태로 변경
+                                setUploadStatus(prev => ({
+                                    ...prev,
+                                    [postcard.id]: {
+                                        isUploaded: true,
+                                        isUploading: false
+                                    }
+                                }));
+                            }
+                            
+                            Alert.alert('업로드 완료', '모든 엽서가 성공적으로 업로드되었습니다.');
+                            
+                        } catch (error) {
+                            console.error('❌ 엽서 업로드 오류:', error);
+                            handleApiError(error, '엽서 업로드');
+                        }
                     }
                 }
             ]
         );
-    }, [selectedPostcards, postcardDetails, router]);
+    }, [selectedPostcards, postcardDetails, uploadStatus]);
 
     // 현재 선택된 엽서 정보
     const currentPostcard = selectedPostcards[currentIndex];
     const currentDetails = currentPostcard ? postcardDetails[currentPostcard.id] : {};
+    const currentUploadStatus = currentPostcard ? uploadStatus[currentPostcard.id] : {};
 
-    // 업로드 버튼 활성화 조건
-    const isUploadEnabled = selectedPostcards.length > 0 && selectedPostcards.every(postcard => {
+    // 현재 엽서의 업로드 버튼 활성화 조건
+    const isCurrentPostcardUploadEnabled = currentPostcard && 
+        currentDetails.title && 
+        currentDetails.location && 
+        currentDetails.date &&
+        !currentUploadStatus.isUploaded &&
+        !currentUploadStatus.isUploading;
+
+    // 전체 업로드 버튼 활성화 조건 (미업로드된 엽서 중 정보가 완전한 것들)
+    const unuploadedPostcards = selectedPostcards.filter(postcard => 
+        !uploadStatus[postcard.id]?.isUploaded
+    );
+    const isUploadEnabled = unuploadedPostcards.length > 0 && unuploadedPostcards.some(postcard => {
         const details = postcardDetails[postcard.id];
         return details && details.title && details.location && details.date;
     });
@@ -210,8 +411,13 @@ const sharePost = () => {
 
             {/* 하단 업로드 버튼 영역 */}
             <UploadSection 
-                onUpload={handleUpload} 
-                isEnabled={isUploadEnabled} 
+                onUpload={() => handleIndividualUpload(currentPostcard?.id)}
+                onUploadAll={handleUpload}
+                isEnabled={isCurrentPostcardUploadEnabled}
+                isUploadAllEnabled={isUploadEnabled}
+                isUploading={currentUploadStatus.isUploading}
+                isUploaded={currentUploadStatus.isUploaded}
+                unuploadedCount={unuploadedPostcards.length}
             />
 
             {/* 날짜 선택 모달 */}

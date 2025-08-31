@@ -6,9 +6,10 @@ const PostcardSlider = ({
     postcards, 
     currentIndex, 
     onSelectPostcard, 
-    onAddMorePostcards
+    onAddNewPostcard
 }) => {
-    // 엽서가 2개 이상일 때만 렌더링
+    // 엽서가 1개 이하일 때 렌더링하지 않도록 수정 (원래 코드에서 onAddMorePostcards 대신 onAddNewPostcard가 사용되고 있음)
+    // 엽서가 하나만 있을 때는 버튼이 보이지 않으므로, 엽서가 2개 이상일 때만 슬라이더를 렌더링하는 로직을 유지합니다.
     if (postcards.length <= 1) {
         return null;
     }
@@ -20,40 +21,46 @@ const PostcardSlider = ({
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.slideContent}
             >
-                {postcards.map((postcard, index) => (
-                    <TouchableOpacity
-                        key={postcard.id}
-                        style={[
-                            styles.slideItem,
-                            currentIndex === index && styles.slideItemActive
-                        ]}
-                        onPress={() => onSelectPostcard(index)}
-                    >
-                        {postcard.image ? (
-                            <View style={styles.slideImageContainer}>
-                                <Image source={{ uri: postcard.image }} style={styles.slideImage} />
-                                {currentIndex === index && (
-                                    <View style={styles.checkmark}>
-                                        <Feather name="check" size={16} color="#fff" />
-                                    </View>
-                                )}
-                            </View>
-                        ) : (
-                            <View style={styles.slideEmpty}>
-                                {currentIndex === index && (
-                                    <View style={styles.checkmark}>
-                                        <Feather name="check" size={16} color="#fff" />
-                                    </View>
-                                )}
-                            </View>
-                        )}
-                    </TouchableOpacity>
-                ))}
+                {postcards.map((postcard, index) => {
+                    // key prop에 고유하고 안정적인 값을 할당
+                    // postcard.id가 있으면 사용하고, 없으면 임시 키를 생성합니다.
+                    const key = postcard.id || `new-postcard-${index}`;
+                    
+                    return (
+                        <TouchableOpacity
+                            key={key}
+                            style={[
+                                styles.slideItem,
+                                currentIndex === index && styles.slideItemActive
+                            ]}
+                            onPress={() => onSelectPostcard(index)}
+                        >
+                            {postcard.image ? (
+                                <View style={styles.slideImageContainer}>
+                                    <Image source={{ uri: postcard.image }} style={styles.slideImage} />
+                                    {currentIndex === index && (
+                                        <View style={styles.checkmark}>
+                                            <Feather name="check" size={16} color="#fff" />
+                                        </View>
+                                    )}
+                                </View>
+                            ) : (
+                                <View style={styles.slideEmpty}>
+                                    {currentIndex === index && (
+                                        <View style={styles.checkmark}>
+                                            <Feather name="check" size={16} color="#fff" />
+                                        </View>
+                                    )}
+                                </View>
+                            )}
+                        </TouchableOpacity>
+                    );
+                })}
                 
                 {/* 더 추가하기 버튼 */}
                 <TouchableOpacity 
                     style={styles.addButton} 
-                    onPress={onAddMorePostcards}
+                    onPress={onAddNewPostcard}
                 >
                     <Feather name="plus" size={24} color="#999" />
                 </TouchableOpacity>

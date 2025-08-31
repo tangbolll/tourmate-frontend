@@ -11,7 +11,6 @@ import PhotoUploadArea from "../../components/profile/PhotoUploadArea";
 import PostcardSelectionArea from "../../components/profile/PostcardSelectionArea";
 
 import { 
-    createPostcardWithNewFolderApi, // 이 API는 더 이상 사용되지 않습니다.
     updateFolderApi, 
     deleteFolderApi,
     getFoldersByUserApi,
@@ -20,7 +19,6 @@ import {
     getPostcardsByFolderApi,
     deletePostcardApi,
     updatePostcardApi,
-    toggleFavoriteApi, // <-- 함수명을 toggleFavoriteApi로 수정했습니다.
 } from "../../utils/PostCardApi"
 
 const WritePost = () => {
@@ -35,7 +33,7 @@ const WritePost = () => {
         endDate: params.endDate ? new Date(params.endDate) : null,
     });
     
-    const [postcards, setPostcards] = useState([{ id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false }]);
+    const [postcards, setPostcards] = useState([{ id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false, tempId: Date.now().toString() }]);
     const [currentIndex, setCurrentIndex] = useState(0);
     const [selectedImage, setSelectedImage] = useState(null);
     const [selectedPostcard, setSelectedPostcard] = useState(null);
@@ -77,7 +75,7 @@ const WritePost = () => {
                             isFavorite: pc.isFavorite || false, // isFavorite 상태 추가
                         }));
                         // 기존 엽서 목록 + 새로운 빈 엽서 추가
-                        setPostcards([...formattedPostcards, { id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false }]);
+                        setPostcards([...formattedPostcards, { id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false, tempId: Date.now().toString() }]);
                         setCurrentIndex(0);
                         setSelectedImage(formattedPostcards[0].image);
                         setSelectedPostcard(formattedPostcards[0].postcardTemplate);
@@ -85,7 +83,7 @@ const WritePost = () => {
                         setIsEditMode(false);
                     } else {
                         // 엽서가 없으면 새로운 빈 엽서 하나만 설정
-                        setPostcards([{ id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false }]);
+                        setPostcards([{ id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false, tempId: Date.now().toString() }]);
                         setCurrentIndex(0);
                         setSelectedImage(null);
                         setSelectedPostcard(null);
@@ -98,7 +96,7 @@ const WritePost = () => {
                 }
             } else {
                 // 폴더 ID가 없으면 새로운 빈 엽서 하나만 설정
-                setPostcards([{ id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false }]);
+                setPostcards([{ id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false, tempId: Date.now().toString() }]);
                 setCurrentIndex(0);
                 setSelectedImage(null);
                 setSelectedPostcard(null);
@@ -181,6 +179,7 @@ const WritePost = () => {
                 postcardTemplate: null,
                 isSaved: false,
                 isFavorite: false,
+                tempId: Date.now().toString(), // 고유한 임시 ID 추가
             };
             return [...prev, newPostcard];
         });
@@ -219,17 +218,24 @@ const WritePost = () => {
         setIsPostcardModalVisible(true);
     }, []);
 
-    // 모달에서 엽서 선택 완료
-    const handlePostcardDesignSelect = useCallback((selectedDesignData) => {
-        console.log('선택된 엽서:', selectedDesignData);
-        
-        setSelectedPostcard(selectedDesignData);
+    // 모달에서 엽서 디자인 선택 완료 (이 부분이 수정되었습니다)
+    const handlePostcardDesignSelect = useCallback((selectedDesignCode) => {
+        console.log('선택된 엽서 디자인 코드:', selectedDesignCode);
+
+        // API가 기대하는 형식에 맞춰 객체로 변환합니다.
+        const postcardDesignObject = {
+            code: selectedDesignCode,
+            thumbnail: null // 썸네일 정보는 현재 없으므로 null로 설정합니다.
+        };
+
+        // 변환된 객체를 상태에 저장합니다.
+        setSelectedPostcard(postcardDesignObject);
         
         setPostcards(prev => {
             const updated = [...prev];
             updated[currentIndex] = {
                 ...updated[currentIndex],
-                postcardTemplate: selectedDesignData
+                postcardTemplate: postcardDesignObject
             };
             return updated;
         });
@@ -284,6 +290,8 @@ const WritePost = () => {
             imageUrl: selectedImage,
             postcardType: selectedPostcard.code,
         };
+
+        console.log('✅ 서버로 전송될 데이터:', postcardData);
 
         try {
             // 엽서 ID가 있으면 업데이트, 없으면 신규 생성
@@ -351,7 +359,7 @@ const WritePost = () => {
                                 const updated = prev.filter((_, index) => index !== currentIndex);
                                 // 엽서가 모두 삭제되었을 경우를 대비하여 빈 엽서 추가
                                 if (updated.length === 0) {
-                                    return [{ id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false }];
+                                    return [{ id: null, image: null, postcardTemplate: null, isSaved: false, isFavorite: false, tempId: Date.now().toString() }];
                                 }
                                 return updated;
                             });
@@ -380,32 +388,28 @@ const WritePost = () => {
         Alert.alert('다운로드', '모든 엽서가 갤러리에 저장되었습니다.');
     }, []);
 
-    const handleFavorite = useCallback(async () => {
+    // 공개 설정 페이지로 이동
+    const handleFavorite = useCallback(() => {
         const currentPostcard = postcards[currentIndex];
         if (!currentPostcard.id) {
-            Alert.alert('알림', '아직 저장되지 않은 엽서입니다.');
+            Alert.alert('알림', '아직 저장되지 않은 엽서입니다. 먼저 엽서를 저장해 주세요.');
             return;
         }
 
-        try {
-            const isCurrentlyFavorite = currentPostcard.isFavorite;
-            await toggleFavoriteApi(currentPostcard.id); // <-- 함수명을 toggleFavoriteApi로 수정했습니다.
-            
-            setPostcards(prev => {
-                const updated = [...prev];
-                updated[currentIndex] = {
-                    ...updated[currentIndex],
-                    isFavorite: !isCurrentlyFavorite,
-                };
-                return updated;
-            });
-            Alert.alert('상태 변경', `이 엽서가 공개 상태${isCurrentlyFavorite ? '에서 해제되었습니다.' : '에 추가되었습니다.'}`);
-        } catch (error) {
-            console.error('❌ 공개 상태 변경 오류:', error);
-            handleApiError(error, '공개 상태 변경');
-        }
+        // sharePost 페이지로 이동하면서 필요한 데이터 전달
+        const queryParams = {
+            directoryId: directoryInfo.id,
+            directoryTitle: directoryInfo.name,
+            startDate: directoryInfo.startDate?.toISOString(),
+            endDate: directoryInfo.endDate?.toISOString(),
+            selectedPostcardId: currentPostcard.id
+        };
 
-    }, [currentIndex, postcards]);
+        router.push({
+            pathname: 'profile/sharePost',
+            params: queryParams
+        });
+    }, [currentIndex, postcards, directoryInfo, router]);
 
     const handleEdit = useCallback(() => {
         console.log('편집 모드 활성화');

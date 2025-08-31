@@ -2,16 +2,14 @@ import React from 'react';
 import useUserStore from '../../context/userStore';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { fetchUserProfileApi } from '../../utils/ProfileApi';
 
 import { useRouter } from 'expo-router';
 
 const defaultProfile = require('../../assets/defaultProfile1.png');
 
-export function ProfileHeader() { // Removed userData prop
-    const router = useRouter(); // useRouter 훅 사용
-    const { userData } = useUserStore(); // Get userData from Zustand store
+export function ProfileHeader() {
+    const router = useRouter();
+    const { userData } = useUserStore();
 
     if (!userData) {
         return null;
@@ -21,6 +19,7 @@ export function ProfileHeader() { // Removed userData prop
     
     return (
         <View style={styles.headerContainer}>
+            {/* 프로필 이미지 */}
             <View style={styles.profileImageContainer}>
                 <Image 
                     source={profileImage ? { uri: profileImage } : defaultProfile}
@@ -28,7 +27,9 @@ export function ProfileHeader() { // Removed userData prop
                 />
             </View>
             
+            {/* 프로필 정보 */}
             <View style={styles.profileInfoContainer}>
+                {/* 헤더 제목 및 아이콘 */}
                 <View style={styles.profileHeader}>
                     <Text style={styles.profileTitle}>내 프로필</Text>
                     <View style={styles.headerIcons}>
@@ -38,7 +39,6 @@ export function ProfileHeader() { // Removed userData prop
                         >
                             <Ionicons name="pencil" size={22} color="#666" />
                         </TouchableOpacity>
-                        {/* 설정 아이콘 버튼 추가 */}
                         <TouchableOpacity 
                             onPress={() => router.push('/profile/settings')} 
                             style={styles.settingsButton}
@@ -48,14 +48,16 @@ export function ProfileHeader() { // Removed userData prop
                     </View>
                 </View>
                 
+                {/* 사용자 기본 정보 (닉네임, 성별, 나이) */}
                 <View style={styles.userBasicInfo}>
-                    <View style={styles.userAllInfo}>
-                        <Text style={styles.userNickname}>{nickname}</Text>
-                        <Text style={styles.userMeta}>· {gender} · {age}세</Text>
-                    </View>
+                    <Text style={styles.userNickname}>{nickname}</Text>
+                    <Text style={styles.userMeta}>· {gender} · {age}세</Text>
                 </View>
                 
-                <Text style={styles.userType}>{tags?.join(' ')}</Text>
+                {/* 사용자 태그 */}
+                <View style={styles.tagsContainer}>
+                    <Text style={styles.userType}>{tags?.join(' ')}</Text>
+                </View>
             </View>
         </View>
     );
@@ -68,9 +70,8 @@ const styles = StyleSheet.create({
     },
     headerContainer: {
         marginTop: 60,
-        height: 100,
         flexDirection: 'row',
-        paddingHorizontal: 20,
+        paddingHorizontal: 30,
         paddingVertical: 15,
         alignItems: 'flex-start',
     },
@@ -78,26 +79,24 @@ const styles = StyleSheet.create({
         marginRight: 15,
     },
     profileImage: {
-        width: 60,
-        height: 60,
-        borderRadius: 30,
+        width: 70,
+        height: 70,
+        borderRadius: 35,
         backgroundColor: '#f0f0f0',
     },
     profileInfoContainer: {
         flex: 1,
-        height: '100%',
-        justifyContent: 'space-between',
     },
     profileHeader: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 4,
     },
     profileTitle: {
-        fontSize: 18,
+        fontSize: 20,
         fontWeight: 'bold',
         color: '#000',
+        marginBottom: 8,
     },
     headerIcons: {
         flexDirection: 'row',
@@ -111,21 +110,13 @@ const styles = StyleSheet.create({
         marginLeft: 8,
     },
     userBasicInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
         marginBottom: 6,
     },
-    userAllInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        flexWrap: 'wrap',
-    },
-    userDetails: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
     userNickname: {
-        fontSize: 12,
+        fontSize: 14,
         fontWeight: '600',
         color: '#000',
     },
@@ -133,13 +124,15 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#666',
     },
+    tagsContainer: {
+        flexDirection: 'row',
+        flexWrap: 'wrap',
+    },
     userType: {
         fontSize: 11,
         fontWeight: '500',
         color: '#555',
-        marginBottom: 6,
         backgroundColor: '#f5f5f5',
-        alignSelf: 'flex-start',
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 12,
