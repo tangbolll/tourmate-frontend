@@ -29,7 +29,6 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
-      "expo-router",
       [
         "expo-splash-screen",
         {
@@ -39,7 +38,6 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-web-browser",
       [
         "expo-image-picker",
         {
@@ -64,7 +62,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "API_BASE_URL_DEV": "http://localhost:8080",
+      "API_BASE_URL_DEV": "http://192.168.0.47:8080",
       "API_BASE_URL_PROD": "https://api.your-production-domain.com"
     }
   }

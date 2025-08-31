@@ -122,10 +122,10 @@ export default function DesignItinerary() {
             const periodTypeMap = { 1: 'date', 2: 'duration' };
             setTitle(data.title || '');
             setRegions(data.regions?.map(r => ({
-                key: r.areaCode || r.key,
-                name: r.areaName || r.name,
+                areaCode: r.areaCode || r.key,
+                areaName: r.areaName || r.name,
                 sigungu: r.sigungu?.map(s =>
-                    ({ key: s.code || s.key, name: s.name })
+                    ({ code: s.code || s.key, name: s.name })
                 ) || []
             })) || []);
             setPeriod({
@@ -238,11 +238,7 @@ useEffect(() => {
 
             const tourData = {
                 title,
-                regions: regions.map(r => ({
-                    areaCode: r.key,
-                    areaName: r.name,
-                    sigungu: r.sigungu.map(s => ({ key: s.key, name: s.name }))
-                })),
+                regions: regions,
                 periodType: period.type === 'date' ? 1 : 2,
                 startDate: period.startDate,
                 endDate: period.endDate,
@@ -275,15 +271,9 @@ useEffect(() => {
 
             setScheduleLoading(true);
 
-            const mappedRegions = regions.map(r => ({
-                areaCode: r.key,
-                areaName: r.name,
-                sigungu: r.sigungu.map(s => ({ key: s.key, name: s.name }))
-            }));
-
             const tourData = {
                 title: title,
-                regions: mappedRegions,
+                regions: regions,
                 periodType: period.type === 'date' ? 1 : 2,
                 startDate: period.type === 'date' ? period.startDate : null,
                 endDate: period.type === 'date' ? period.endDate : null,

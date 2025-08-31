@@ -48,32 +48,23 @@ export default function MyTourHome() {
         loadMyTours();
     };
 
-    // ✅ Step 1: 즐겨찾기 토글 로직을 '낙관적 업데이트' 방식으로 변경합니다.
     const handleBookmarkToggle = async (tourId) => {
-        // 1. UI를 되돌리기 위해 현재 상태를 저장해 둡니다.
-        const originalTours = tours;
-
-        // 2. API 성공을 가정하고 화면(state)을 즉시 업데이트합니다.
-        const newTours = tours.map(tour => {
-            if (tour.id === tourId) {
-                // isFavorite 상태를 반전시킨 새로운 객체를 반환합니다.
-                return { ...tour, isFavorite: !tour.isFavorite };
-            }
-            return tour;
-        });
-        setTours(newTours); // UI 즉시 변경!
-
-        // 3. 백그라운드에서 실제 API를 호출합니다.
         try {
-            await toggleTourFavorite(tourId, currentUserId);
-            // API 호출 성공! UI는 이미 바뀌었으므로 아무것도 할 필요가 없습니다.
-            console.log(`[성공] 즐겨찾기 상태 변경 완료 (tourId: ${tourId})`);
+            // 1. API를 호출하여 서버 상태를 변경하고, 최종 즐겨찾기 상태(boolean)를 받습니다.
+            const newIsFavorite = await toggleTourFavorite(tourId, currentUserId);
+
+            // 2. 반환된 최종 상태를 사용하여 UI를 직접, 그리고 최종적으로 업데이트합니다.
+            setTours(prevTours =>
+                prevTours.map(tour =>
+                    tour.id === tourId ? { ...tour, isFavorite: newIsFavorite } : tour
+                )
+            );
+            console.log(`[성공] 즐겨찾기 상태 최종 반영 (tourId: ${tourId}, isFavorite: ${newIsFavorite})`);
 
         } catch (error) {
-            // 4. API 호출 실패! 화면을 원래 상태로 되돌리고 에러 메시지를 보여줍니다.
-            console.error('[실패] 즐겨찾기 토글 에러, UI를 원래대로 되돌립니다:', error);
-            setTours(originalTours); // UI 원상 복구
-            Alert.alert("오류", "즐겨찾기 상태 변경에 실패했습니다. 다시 시도해주세요.");
+            // API 호출 자체에 실패한 경우
+            console.error('[실패] 즐겨찾기 토글 API 호출 에러:', error);
+            Alert.alert("오류", "즐겨찾기 상태 변경에 실패했습니다. 네트워크 상태를 확인해주세요.");
         }
     };
 

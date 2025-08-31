@@ -1,7 +1,7 @@
 // ItineraryMapRN.js
 import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, SafeAreaView, Text, Platform } from 'react-native';
-//import MapView, { Marker } from 'react-native-maps';
+import MapView, { Marker } from 'react-native-maps';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import BottomSheet from '../../../components/mytour/designItinerary/map/BottomSheet';
 import DesignItineraryMapHeader from '../../../components/mytour/designItinerary/map/designItineraryMapHeader';
@@ -19,14 +19,21 @@ const getBaseURL = () => {
   }
 };
 
+let MapViewComp = MapView;
+let MarkerComp = Marker;
+
+if (Platform.OS !== 'web') {
+  const RnMaps = require('react-native-maps');
+  MapViewComp = RnMaps.default;
+  MarkerComp = RnMaps.Marker;
+}
+
 export default function ItineraryMap() {
   const router = useRouter();
   const { tourId, selectedRegions, itineraryTitle, periodData } = useLocalSearchParams();
 
   const [tourData, setTourData] = useState(null);
-  const [scheduleData, setScheduleData] = useState([]);
-
-  // 예시 마커 좌표 (Kakao Map에서 받아온 좌표라 가정)
+  const [scheduleData, setScheduleData] = useState({}); // day별 그룹
   const [markers, setMarkers] = useState([]);
 
   useEffect(() => {
@@ -35,28 +42,37 @@ export default function ItineraryMap() {
     const fetchTourData = async () => {
       try {
         const token = await AsyncStorage.getItem('jwtToken');
-        if (!token) {
-          console.warn("토큰이 없습니다!");
-          return;
-        }
+        if (!token) return;
 
-        const response = await axios.get(
-          `${getBaseURL()}/api/travelSchedule/travel/${tourId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        const response = await axios.get(`${getBaseURL()}/api/travelSchedule/travel/${tourId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-        setTourData(response.data);
-        setScheduleData(response.data.schedules || []);
+        console.log("API Response:", response.data);
 
-        // 예: 각 스케줄에 좌표가 있다고 가정
-        const coords = (response.data.schedules || []).map(item => ({
-          latitude: item.lat || 37.5665,
-          longitude: item.lng || 126.9780,
-          title: item.title,
-        }));
-        setMarkers(coords);
+        const schedules = response.data;
+
+        // 날짜 기준으로 그룹화
+        const groupedByDay = schedules.reduce((acc, item) => {
+          const firstDate = new Date(schedules[0].date);
+          const currentDate = new Date(item.date);
+          const dayIndex = Math.floor((currentDate - firstDate) / (1000 * 60 * 60 * 24)) + 1;
+
+          if (!acc[dayIndex]) acc[dayIndex] = [];
+          acc[dayIndex].push({
+            id: item.id,
+            name: item.title,
+            category: item.tag,
+            order: acc[dayIndex].length + 1,
+            lat: item.latitude,
+            lng: item.longitude
+          });
+
+          return acc;
+        }, {});
+
+        setScheduleData(groupedByDay);
+        console.log("Grouped Schedules:", groupedByDay);
 
       } catch (error) {
         console.error('스케줄 불러오기 실패:', error);
@@ -106,23 +122,29 @@ export default function ItineraryMap() {
       />
 
       <View style={styles.mapContainer}>
-        <MapView
-          style={{ flex: 1 }}
-          initialRegion={{
-            latitude: markers[0]?.latitude || 37.5665,
-            longitude: markers[0]?.longitude || 126.9780,
-            latitudeDelta: 0.05,
-            longitudeDelta: 0.05,
-          }}
-        >
-          {markers.map((marker, idx) => (
-            <Marker
-              key={idx}
-              coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
-              title={marker.title}
-            />
-          ))}
-        </MapView>
+        {Platform.OS !== 'web' ? (
+          <MapViewComp
+            style={{ flex: 1 }}
+            initialRegion={{
+              latitude: markers[0]?.latitude || 37.5665,
+              longitude: markers[0]?.longitude || 126.9780,
+              latitudeDelta: 0.05,
+              longitudeDelta: 0.05,
+            }}
+          >
+            {markers.map((marker, idx) => (
+              <MarkerComp
+                key={idx}
+                coordinate={{ latitude: marker.latitude, longitude: marker.longitude }}
+                title={marker.title}
+              />
+            ))}
+          </MapViewComp>
+        ) : (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text>웹에서는 지도 미지원</Text>
+          </View>
+        )}
       </View>
 
       <View style={styles.bottomSheetContainer}>
@@ -132,11 +154,12 @@ export default function ItineraryMap() {
           endDate={periodParsed.endDate}
           nights={periodParsed.nights}
           days={periodParsed.days}
+          itineraryData={scheduleData} // day별 그룹화 데이터 전달
         />
       </View>
 
       <View style={{ padding: 16 }}>
-        <Text>DB에서 가져온 스케줄 수: {scheduleData.length}</Text>
+        <Text>DB에서 가져온 스케줄 일수: {Object.keys(scheduleData).length}</Text>
       </View>
     </SafeAreaView>
   );
