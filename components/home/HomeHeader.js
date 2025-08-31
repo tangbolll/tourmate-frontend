@@ -1,11 +1,11 @@
 import React from 'react';
 import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 
 const HomeHeader = () => {
     const handleNotificationPress = () => {
-        // TODO: 알림 페이지로 이동하는 로직 구현
-        console.log('알림 페이지로 이동');
+        router.push('/Alarm');
     };
 
     return (

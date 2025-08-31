@@ -30,126 +30,110 @@ const DibsorScrap = ({ router }) => {
     const [scrapLoaded, setScrapLoaded] = useState(false);
 
     // 정렬 상태 관리 추가
-    const [dibsSortKey, setDibsSortKey] = useState('closestTrip');
-    const [scrapSortKey, setScrapSortKey] = useState('closestTrip'); // 여행시작일 가까운순을 기본값으로
+    const [dibsSortKey, setDibsSortKey] = useState('saved'); // 찜한 동행순을 기본값으로
+    const [scrapSortKey, setScrapSortKey] = useState('scrapped'); // 스크랩한 엽서순을 기본값으로
 
     // 🔥 API 호출 중복 방지를 위한 ref
     const loadingRef = useRef(false);
     const abortControllerRef = useRef(null);
 
     // 🚀 최적화된 찜 데이터 로딩
-    const fetchDibsDataOptimized = useCallback(async (sortKey = dibsSortKey) => {
-        if (loadingRef.current || (dibsLoaded && dibsList.length > 0 && sortKey === dibsSortKey)) return;
+    // DibsorScrap.js에서 fetchDibsDataOptimized 함수 전체 수정
+const fetchDibsDataOptimized = useCallback(async (sortKey = dibsSortKey) => {
+    if (loadingRef.current || (dibsLoaded && dibsList.length > 0 && sortKey === dibsSortKey)) return;
+    
+    try {
+        loadingRef.current = true;
+        setLoading(true);
         
-        try {
-            loadingRef.current = true;
-            setLoading(true);
-            
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
-            abortControllerRef.current = new AbortController();
-            
-            console.log('🔍 찜 데이터 로딩 시작...');
+        if (abortControllerRef.current) {
+            abortControllerRef.current.abort();
+        }
+        abortControllerRef.current = new AbortController();
+        
+        console.log('🔍 찜 데이터 로딩 시작...', { sortKey });
 
-            // 1단계: 찜한 포스트만 직접 가져오는 API 시도
-            const likedPosts = await fetchLikedAccompanyPostsApi(currentUserId);
+        // 1단계: 찜한 포스트만 직접 가져오는 API 시도 (정렬 키 포함)
+        const likedPosts = await fetchLikedAccompanyPostsApi(currentUserId, sortKey);
+        
+        if (likedPosts !== null) {
+            // ✅ 전용 API가 성공한 경우 (백엔드에서 이미 정렬됨)
+            console.log('✅ 전용 API로 찜 데이터 로드 완료:', likedPosts.length, '개');
             
-            if (likedPosts !== null) {
-                // ✅ 전용 API가 성공한 경우
-                console.log('✅ 전용 API로 찜 데이터 로드 완료:', likedPosts.length, '개');
-                
-                // 정렬 적용
-                let sortedPosts = [...likedPosts];
-                switch (sortKey) {
-                    case 'closestTrip':
-                        // 여행일 빠른순 (startDate 기준)
-                        sortedPosts.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-                        break;
-                    case 'closestRecruitment':
-                        // 모집마감 임박순 (recruitmentEndDate 기준)
-                        sortedPosts.sort((a, b) => new Date(a.recruitmentEndDate) - new Date(b.recruitmentEndDate));
-                        break;
-                    case 'saved':
-                        // 저장한 동행순 (createdAt 기준 최신순)
-                        sortedPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                        break;
-                }
-                
-                setDibsList(sortedPosts);
-                
-                // 좋아요 상태 맵 생성
-                const likesMap = {};
-                likedPosts.forEach(post => {
-                    likesMap[post.id] = true;
-                });
-                setLikedPosts(likesMap);
-                setDibsLoaded(true);
-                setDibsSortKey(sortKey);
-                return;
-            }
+            setDibsList(likedPosts);
             
-            // 2단계: 폴백 - 기존 방식이지만 최적화된 버전
-            console.log('🔄 폴백: 전체 피드에서 찜한 포스트 필터링...');
-            const allPosts = await fetchAccompanyFeedWithCacheApi(currentUserId);
-            
-            if (allPosts.length === 0) {
-                setDibsList([]);
-                setLikedPosts({});
-                setDibsLoaded(true);
-                setDibsSortKey(sortKey);
-                return;
-            }
-
-            // 최대 30개만 처리 (성능 보호)
-            const limitedPosts = allPosts.slice(0, 30);
-            const accompanyIds = limitedPosts.map(post => post.id);
-            
-            // 🚀 최적화된 일괄 좋아요 조회
-            const likesMap = await getMultipleAccompanyLikesOptimizedApi(
-                accompanyIds, 
-                currentUserId
-            );
-            
-            // 좋아요한 포스트만 필터링
-            let likedAccompanyPosts = limitedPosts.filter(post => 
-                likesMap[post.id] === true
-            );
-
-            // 정렬 적용
-            switch (sortKey) {
-                case 'closestTrip':
-                    likedAccompanyPosts.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
-                    break;
-                case 'closestRecruitment':
-                    likedAccompanyPosts.sort((a, b) => new Date(a.recruitmentEndDate) - new Date(b.recruitmentEndDate));
-                    break;
-                case 'saved':
-                    likedAccompanyPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-                    break;
-            }
-            
-            setDibsList(likedAccompanyPosts);
+            // 좋아요 상태 맵 생성
+            const likesMap = {};
+            likedPosts.forEach(post => {
+                likesMap[post.id] = true;
+            });
             setLikedPosts(likesMap);
             setDibsLoaded(true);
             setDibsSortKey(sortKey);
-
-            console.log('✅ 찜 데이터 로드 완료:', likedAccompanyPosts.length, '개');
-            
-        } catch (error) {
-            if (error.name === 'AbortError') {
-                console.log('🚫 찜 데이터 로딩 취소됨');
-                return;
-            }
-            
-            console.error('❌ 찜 데이터 로드 실패:', error);
-            setDibsList([]);
-            Alert.alert('오류', '찜 목록을 불러오는 중 오류가 발생했습니다.');
-        } finally {
-            loadingRef.current = false;
-            setLoading(false);
+            return;
         }
-    }, [currentUserId, dibsLoaded, dibsList.length, dibsSortKey]);
+        
+        // 2단계: 폴백 - 기존 방식이지만 최적화된 버전
+        console.log('🔄 폴백: 전체 피드에서 찜한 포스트 필터링...');
+        const allPosts = await fetchAccompanyFeedWithCacheApi(currentUserId);
+        
+        if (allPosts.length === 0) {
+            setDibsList([]);
+            setLikedPosts({});
+            setDibsLoaded(true);
+            setDibsSortKey(sortKey);
+            return;
+        }
+
+        // 최대 30개만 처리 (성능 보호)
+        const limitedPosts = allPosts.slice(0, 30);
+        const accompanyIds = limitedPosts.map(post => post.id);
+        
+        // 🚀 최적화된 일괄 좋아요 조회
+        const likesMap = await getMultipleAccompanyLikesOptimizedApi(
+            accompanyIds, 
+            currentUserId
+        );
+        
+        // 좋아요한 포스트만 필터링
+        let likedAccompanyPosts = limitedPosts.filter(post => 
+            likesMap[post.id] === true
+        );
+
+        // 클라이언트 정렬 적용 (백엔드 정렬 실패 시)
+        switch (sortKey) {
+            case 'closestTrip':
+                likedAccompanyPosts.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+                break;
+            case 'closestRecruitment':
+                likedAccompanyPosts.sort((a, b) => new Date(a.recruitmentEndDate) - new Date(b.recruitmentEndDate));
+                break;
+            case 'saved':
+                likedAccompanyPosts.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+                break;
+        }
+        
+        setDibsList(likedAccompanyPosts);
+        setLikedPosts(likesMap);
+        setDibsLoaded(true);
+        setDibsSortKey(sortKey);
+
+        console.log('✅ 찜 데이터 로드 완료:', likedAccompanyPosts.length, '개');
+        
+    } catch (error) {
+        if (error.name === 'AbortError') {
+            console.log('🚫 찜 데이터 로딩 취소됨');
+            return;
+        }
+        
+        console.error('❌ 찜 데이터 로드 실패:', error);
+        setDibsList([]);
+        Alert.alert('오류', '찜 목록을 불러오는 중 오류가 발생했습니다.');
+    } finally {
+        loadingRef.current = false;
+        setLoading(false);
+    }
+}, [currentUserId, dibsLoaded, dibsList.length, dibsSortKey]);
 
     // 🚀 스크랩 데이터 로딩 - 정렬 옵션 포함
     const fetchScrapDataOptimized = useCallback(async (sortKey = scrapSortKey) => {
