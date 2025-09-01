@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
 import { FontAwesome6 } from '@expo/vector-icons';
-import DayPicker from './DayPicker';
+import CalendarPopup from '../../accompany/CalendarPopup';
+import dayjs from 'dayjs';
 
 const TourPeriod = ({ onPeriodChange }) => {
     const [selectedType, setSelectedType] = useState('date');
@@ -10,31 +11,15 @@ const TourPeriod = ({ onPeriodChange }) => {
     const [nights, setNights] = useState('');
     const [days, setDays] = useState('');
     
-    // 달력 모달 상태
-    const [showCalendar, setShowCalendar] = useState(false);
-    const [selectingDateType, setSelectingDateType] = useState('start'); // 'start' or 'end'
-    const [selectedStartDate, setSelectedStartDate] = useState(null);
-    const [selectedEndDate, setSelectedEndDate] = useState(null);
+    const [calendarVisible, setCalendarVisible] = useState(false);
 
-    // 날짜 형식 변환 함수
-    const formatDateToString = (date) => {
+    const formatDate = (date) => {
         if (!date) return '';
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
-    };
-
-    // 문자열을 Date 객체로 변환
-    const parseStringToDate = (dateString) => {
-        if (!dateString) return null;
-        const [year, month, day] = dateString.split('-');
-        return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        return dayjs(date).format('YYYY-MM-DD');
     };
 
     const handleTypeChange = (type) => {
         setSelectedType(type);
-        // 타입이 변경될 때마다 부모 컴포넌트에 알림
         onPeriodChange({
             type,
             startDate: type === 'date' ? startDate : '',
@@ -44,38 +29,10 @@ const TourPeriod = ({ onPeriodChange }) => {
         });
     };
 
-    const handleDateInputPress = (field) => {
+    const handleDateInputPress = () => {
         if (selectedType === 'date') {
-            setSelectingDateType(field);
-            setShowCalendar(true);
+            setCalendarVisible(true);
         }
-    };
-
-    const handleDateChange = (field, value) => {
-        const newData = {
-            type: selectedType,
-            startDate: field === 'start' ? value : startDate,
-            endDate: field === 'end' ? value : endDate,
-            nights: '',
-            days: ''
-        };
-        
-        if (field === 'start') {
-            setStartDate(value);
-            setSelectedStartDate(parseStringToDate(value));
-            // 시작일이 종료일보다 늦으면 종료일 초기화
-            if (endDate && value > endDate) {
-                setEndDate('');
-                setSelectedEndDate(null);
-                newData.endDate = '';
-            }
-        }
-        if (field === 'end') {
-            setEndDate(value);
-            setSelectedEndDate(parseStringToDate(value));
-        }
-        
-        onPeriodChange(newData);
     };
 
     const handleDurationChange = (field, value) => {
@@ -93,31 +50,33 @@ const TourPeriod = ({ onPeriodChange }) => {
         onPeriodChange(newData);
     };
 
-    // 달력에서 날짜 선택 핸들러
-    const handleDateSelect = (selectedDay) => {
-        // 현재 달력의 연도와 월을 가져와서 Date 객체 생성
-        const currentDate = new Date();
-        const selectedDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), selectedDay);
-        const formattedDate = formatDateToString(selectedDate);
+    const handleDateSelect = (range) => {
+        const formattedStartDate = formatDate(range.startDate);
+        const formattedEndDate = formatDate(range.endDate);
 
-        if (selectingDateType === 'start') {
-            handleDateChange('start', formattedDate);
-        } else {
-            handleDateChange('end', formattedDate);
-        }
-        
-        setShowCalendar(false);
+        setStartDate(formattedStartDate);
+        setEndDate(formattedEndDate);
+
+        onPeriodChange({
+            type: 'date',
+            startDate: formattedStartDate,
+            endDate: formattedEndDate,
+            nights: '',
+            days: ''
+        });
+
+        setCalendarVisible(false);
     };
 
     const renderDateInputs = () => (
         <View style={styles.dateInputsContainer}>
             <TouchableOpacity 
                 style={styles.dateInputWrapper}
-                onPress={() => handleDateInputPress('start')}
+                onPress={handleDateInputPress}
             >
                 <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
                 <TextInput
-                    placeholder="여행시작일"
+                    placeholder="여행 시작일"
                     style={styles.dateInput}
                     placeholderTextColor="#9ca3af"
                     value={startDate}
@@ -128,11 +87,11 @@ const TourPeriod = ({ onPeriodChange }) => {
             <Text style={styles.separator}>-</Text>
             <TouchableOpacity 
                 style={styles.dateInputWrapper}
-                onPress={() => handleDateInputPress('end')}
+                onPress={handleDateInputPress}
             >
                 <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
                 <TextInput
-                    placeholder="여행종료일"
+                    placeholder="여행 종료일"
                     style={styles.dateInput}
                     placeholderTextColor="#9ca3af"
                     value={endDate}
@@ -186,15 +145,10 @@ const TourPeriod = ({ onPeriodChange }) => {
 
             {selectedType === 'date' ? renderDateInputs() : renderDurationInputs()}
 
-            {/* 달력 모달 */}
-            <DayPicker
-                visible={showCalendar}
-                onClose={() => setShowCalendar(false)}
-                onDateSelect={handleDateSelect}
-                selectedStartDate={selectedStartDate}
-                selectedEndDate={selectedEndDate}
-                selectingDateType={selectingDateType}
-                title={selectingDateType === 'start' ? '시작일 선택' : '종료일 선택'}
+            <CalendarPopup
+                visible={calendarVisible}
+                onClose={() => setCalendarVisible(false)}
+                onSelectDates={handleDateSelect}
             />
         </View>
     );

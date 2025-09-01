@@ -9,9 +9,9 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import DayPicker from '../../../components/accompany/DayPicker';
-import { formatDate, getDayOfWeek } from '../../../utils/dateUtils';
+import CalendarPopup from '../../../components/accompany/CalendarPopup';
 import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+import dayjs from 'dayjs';
 
 const Step2 = ({ 
     maxPeople, setMaxPeople,
@@ -28,8 +28,6 @@ const Step2 = ({
     const [recruitStartDate, setRecruitStartDate] = useState(null);
     const [recruitEndDate, setRecruitEndDate] = useState(null);
     const [showRecruitCalendar, setShowRecruitCalendar] = useState(false);
-    const [selectingRecruitDateType, setSelectingRecruitDateType] = useState('start');
-    const [recruitCurrentMonth, setRecruitCurrentMonth] = useState(new Date());
     
     useEffect(() => {
         setIsTagButtonEnabled(tagInput.trim().length > 0);
@@ -50,49 +48,25 @@ const Step2 = ({
     }, [recruitStartDate, recruitEndDate]);
 
     const formatDateToString = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        return dayjs(date).format('YYYY-MM-DD');
     };
 
     const getDayOfWeek = (date) => {
         const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-        return weekdays[date.getDay()];
+        return weekdays[dayjs(date).day()];
     };
 
     const formatDateForDisplay = (date) => {
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-        const weekday = weekdays[date.getDay()];
-        return `${year}년 ${month}월 ${day}일 (${weekday})`;
+        return dayjs(date).format('YYYY년 M월 D일 (dd)');
     };
 
-    const handleRecruitDateSelect = (day) => {
-        const selectedDate = new Date(recruitCurrentMonth.getFullYear(), recruitCurrentMonth.getMonth(), day);
-        
-        if (selectingRecruitDateType === 'start') {
-            setRecruitStartDate(selectedDate);
-            // 시작일이 끝일보다 늦으면 끝일을 시작일과 같게 설정
-            if (recruitEndDate && selectedDate > recruitEndDate) {
-                setRecruitEndDate(selectedDate);
-            }
-            // 시작일 선택 후 자동으로 종료일 선택 모드로 전환
-            setSelectingRecruitDateType('end');
-        } else {
-            // 끝일 선택 시 시작일보다 이른 날짜는 선택 불가
-            if (recruitStartDate && selectedDate < recruitStartDate) {
-                return; // 선택 불가
-            }
-            setRecruitEndDate(selectedDate);
-            setShowRecruitCalendar(false);
-        }
+    const handleRecruitDateSelect = (range) => {
+        setRecruitStartDate(range.startDate);
+        setRecruitEndDate(range.endDate);
+        setShowRecruitCalendar(false);
     };
 
     const openRecruitCalendar = () => {
-        setSelectingRecruitDateType('start');
         setShowRecruitCalendar(true);
     };
 
@@ -205,17 +179,10 @@ const Step2 = ({
                 </Text>
             </TouchableOpacity>
 
-            {/* DayPicker 컴포넌트 */}
-            <DayPicker
+            <CalendarPopup
                 visible={showRecruitCalendar}
                 onClose={() => setShowRecruitCalendar(false)}
-                onDateSelect={handleRecruitDateSelect}
-                selectedStartDate={recruitStartDate}
-                selectedEndDate={recruitEndDate}
-                selectingDateType={selectingRecruitDateType}
-                currentMonth={recruitCurrentMonth}
-                setCurrentMonth={setRecruitCurrentMonth}
-                title={selectingRecruitDateType === 'start' ? '모집 시작일 선택' : '모집 종료일 선택'}
+                onSelectDates={handleRecruitDateSelect}
             />
             
             <Text style={styles.label}>동행 조건</Text>

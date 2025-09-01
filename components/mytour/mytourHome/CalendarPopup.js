@@ -1,3 +1,5 @@
+// CalendarPopup.js
+
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
 import dayjs from 'dayjs';
@@ -12,21 +14,15 @@ const CUSTOM_LOCALE = {
     weekdays: ['일', '월', '화', '수', '목', '금', '토'],
 };
 
-export default function CalendarPopup({ visible, onClose = () => {}, onSelectDates = () => {}, initialPeriod }) {
+export default function CalendarPopup({ visible, onClose = () => {}, onSelectDates = () => {} }) {
     const [range, setRange] = useState({ startDate: null, endDate: null });
     const [currentMonth, setCurrentMonth] = useState(dayjs());
 
-
     useEffect(() => {
-        if (visible) {
-            // 팝업이 열릴 때, 부모로부터 받은 initialPeriod 값이 없으면(초기화되었으면)
-            // 내부 range 상태도 깨끗하게 비워줍니다.
-            if (!initialPeriod) {
-                setRange({ startDate: null, endDate: null });
-            }
-            setCurrentMonth(dayjs());
-        }
-    }, [visible, initialPeriod]); 
+        visible
+            ? setCurrentMonth(dayjs()) // 모달이 열릴 때: 현재 날짜로 초기화
+            : setRange({ startDate: null, endDate: null }) // 모달이 닫힐 때: 선택 초기화
+    }, [visible]);
 
     const applyFilters = () => {
         if (range.startDate && range.endDate) {
@@ -48,14 +44,8 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
     };
 
     const resetSelection = () => {
-        // 내부 상태를 초기화합니다.
         setRange({ startDate: null, endDate: null });
-
-        onSelectDates({ startDate: null, endDate: null });
-        
-        closeModal();
     };
-
 
     const handleDateChange = (date) => {
         if (!range.startDate || (range.startDate && range.endDate)) {
@@ -91,40 +81,26 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
             <View style={styles.modalContent}>
                 {/* Header */}
                 <View style={styles.header}>
-                    {/* 왼쪽 (재설정 버튼) */}
-                    <View style={styles.headerSide}>
-                        <TouchableOpacity 
-                            onPress={resetSelection}
-                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                        >
-                            <View style={styles.row}>
-                                <Icon name="reload" size={15} color="gray" />
-                                <Text style={styles.resetText}> 재설정</Text>
-                            </View>
-                        </TouchableOpacity>
+                <TouchableOpacity 
+                    onPress={resetSelection}
+                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                >
+                    <View style={styles.row}>
+                    <Icon name="reload" size={15} color="gray" />
+                    <Text style={styles.resetText}> 재설정</Text>
                     </View>
-
-                    {/* 중앙 (제목) */}
-                    <Text style={styles.title}>날짜 선택</Text>
-
-                    {/* 오른쪽 (닫기 버튼) */}
-                    <View style={styles.headerSide}>
-                        <TouchableOpacity 
-                            onPress={closeModal}
-                            hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
-                        >
-                            <Icon name="close" size={22} color="black" />
-                        </TouchableOpacity>
-                    </View>
+                </TouchableOpacity>
+                <Text style={styles.title}>날짜 선택</Text>
+                <TouchableOpacity 
+                    onPress={closeModal}
+                    hitSlop={{ top: 15, bottom: 15, left: 15, right: 15 }}
+                >
+                    <Icon name="close" size={22} color="black" />
+                </TouchableOpacity>
                 </View>
 
                 {/* Navigation Buttons */}
                 <View style={styles.monthNav}>
-                <Text style={styles.monthTitle}>
-                    {currentMonth.format('YYYY년 M월')}
-                </Text>
-                
-                <View style={styles.arrowContainer}>
                     <TouchableOpacity 
                         onPress={goToPrevMonth}
                         style={styles.arrowButton}
@@ -132,6 +108,10 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     >
                     <Text style={styles.arrow}>{'<'}</Text>
                     </TouchableOpacity>
+
+                    <Text style={styles.monthTitle}>
+                        {currentMonth.format('YYYY년 M월')}
+                    </Text>
 
                     <TouchableOpacity 
                         onPress={goToNextMonth}
@@ -141,14 +121,16 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     <Text style={styles.arrow}>{'>'}</Text>
                     </TouchableOpacity>
                 </View>
-                </View>
 
                 {/* Calendar */}
                 <CalendarPicker
+                    month={currentMonth.month()}
+                    year={currentMonth.year()}
                     customDatesStyles={null}
                     monthYearHeaderWrapperStyle={{ display: 'none' }}
                     allowRangeSelection
-                     
+                    minDate={new Date()}
+                    disabledBeforeToday={true} 
                     disabledDatesTextStyle={{ color: '#ccc' }}
                     selectedStartDate={range.startDate}
                     selectedEndDate={range.endDate}
@@ -164,7 +146,9 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     weekdays={CUSTOM_LOCALE.weekdays}
                     months={CUSTOM_LOCALE.months}
                     initialDate={currentMonth.toDate()}
-                    width={Platform.OS === 'ios' ? 320 : 300}
+                    width={Platform.OS === 'ios' ? 360 : 340}
+                    // 💡 여기에 CalendarPicker와 monthNav 사이의 간격을 좁히기 위해 marginTop 추가
+                    containerStyle={styles.calendarContainer} 
                 />
 
                 {/* Apply Button */}
@@ -208,62 +192,50 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 15,
+        marginBottom: 25,
         paddingHorizontal: 5,
-    },
-    // 👇 왼쪽 정렬을 위한 스타일
-    headerSideLeft: {
-        width: 70,
-        justifyContent: 'flex-start', // 왼쪽 정렬
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    // 👇 오른쪽 정렬을 위한 스타일 (새로 추가)
-    headerSideRight: {
-        width: 70,
-        justifyContent: 'flex-end', // 오른쪽 끝으로 정렬
-        alignItems: 'center',
     },
     resetText: {
         color: '#999',
         fontSize: 14,
     },
     title: {
-        flex: 1, // 중앙 영역이 남은 공간을 모두 차지하도록 설정
-        textAlign: 'center', // 차지한 공간 내에서 텍스트를 중앙 정렬
         fontSize: 18,
         fontWeight: 'bold',
         color: '#000',
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        textAlign: 'center',
     },
     monthNav: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        paddingHorizontal: 10,
-        marginBottom: 10,
+        paddingHorizontal: 24,
+        marginBottom: -10,
     },
     monthTitle: {
         fontSize: 16,
         fontWeight: 'bold',
     },
-    arrowContainer: {
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
     arrowButton: {
         paddingHorizontal: 15,
-        paddingVertical: 5,
     },
     arrow: {
         fontSize: 20,
         fontWeight: 'bold',
     },
+    calendarContainer: {
+        marginTop: -20,
+    },
     applyButton: {
         backgroundColor: 'black',
-        borderRadius: 8,
+        borderRadius: 12,
         padding: 15,
         alignItems: 'center',
         marginTop: 20,
+        marginBottom: 10,
     },
     applyButtonText: {
         color: 'white',

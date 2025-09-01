@@ -15,8 +15,9 @@ import {
 import Constants from 'expo-constants';
 import { MaterialIcons } from '@expo/vector-icons';
 import FontAwesome6 from '@expo/vector-icons/FontAwesome6';
-import DayPicker from '../../../components/accompany/DayPicker';
+import CalendarPopup from '../../../components/accompany/CalendarPopup';
 import ImageSelector from '../../../components/accompany/ImageSelector';
+import dayjs from 'dayjs';
 
 const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
 
@@ -54,9 +55,7 @@ const Step1 = ({
     const [locationInput, setLocationInput] = useState('');
     const [startDate, setStartDate] = useState(null);
     const [endDate, setEndDate] = useState(null);
-    const [showCalendar, setShowCalendar] = useState(false);
-    const [selectingDateType, setSelectingDateType] = useState('start');
-    const [currentMonth, setCurrentMonth] = useState(new Date());
+    const [calendarVisible, setCalendarVisible] = useState(false);
 
     const [meetLocationInput, setMeetLocationInput] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -81,47 +80,26 @@ const Step1 = ({
     }, [meetLocation]);
 
     const formatDateToString = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+        return dayjs(date).format('YYYY-MM-DD');
     };
 
     const getDayOfWeek = (date) => {
         const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-        return weekdays[date.getDay()];
+        return weekdays[dayjs(date).day()];
     };
 
     const formatDateForDisplay = (date) => {
-        const year = date.getFullYear();
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
-        const weekday = weekdays[date.getDay()];
-        return `${year}년 ${month}월 ${day}일 (${weekday})`;
+        return dayjs(date).format('YYYY년 M월 D일 (dd)');
     };
 
-    const handleDateSelect = (day) => {
-        const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-
-        if (selectingDateType === 'start') {
-            setStartDate(selectedDate);
-            if (endDate && selectedDate > endDate) {
-                setEndDate(selectedDate);
-            }
-            setSelectingDateType('end');
-        } else {
-            if (startDate && selectedDate < startDate) {
-                return;
-            }
-            setEndDate(selectedDate);
-            setShowCalendar(false);
-        }
+    const handleDateSelect = (range) => {
+        setStartDate(range.startDate);
+        setEndDate(range.endDate);
+        setCalendarVisible(false);
     };
 
     const openCalendar = () => {
-        setSelectingDateType('start');
-        setShowCalendar(true);
+        setCalendarVisible(true);
     };
 
     const handleLocationChange = (text) => {
@@ -132,8 +110,6 @@ const Step1 = ({
     const getDateRangeText = () => {
         if (startDate && endDate) {
             return `${formatDateForDisplay(startDate)} - ${formatDateForDisplay(endDate)}`;
-        } else if (startDate) {
-            return `${formatDateForDisplay(startDate)} - 종료일 선택`;
         } else {
             return '여행기간을 선택해주세요.';
         }
@@ -250,16 +226,10 @@ const Step1 = ({
                     </Text>
                 </TouchableOpacity>
 
-                <DayPicker
-                    visible={showCalendar}
-                    onClose={() => setShowCalendar(false)}
-                    onDateSelect={handleDateSelect}
-                    selectedStartDate={startDate}
-                    selectedEndDate={endDate}
-                    selectingDateType={selectingDateType}
-                    currentMonth={currentMonth}
-                    setCurrentMonth={setCurrentMonth}
-                    title={selectingDateType === 'start' ? '여행 시작일 선택' : '여행 종료일 선택'}
+                <CalendarPopup
+                    visible={calendarVisible}
+                    onClose={() => setCalendarVisible(false)}
+                    onSelectDates={handleDateSelect}
                 />
 
                 <Text style={styles.label}>동행소개</Text>

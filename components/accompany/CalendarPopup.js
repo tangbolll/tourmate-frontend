@@ -1,8 +1,5 @@
-// CalendarPopup.js
-
 import React, { useState, useEffect } from 'react';
 import { Modal, View, Text, TouchableOpacity, StyleSheet, TouchableWithoutFeedback, Keyboard, Platform } from 'react-native';
-import dayjs from 'dayjs';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import CalendarPicker from 'react-native-calendar-picker';
 
@@ -16,12 +13,19 @@ const CUSTOM_LOCALE = {
 
 export default function CalendarPopup({ visible, onClose = () => {}, onSelectDates = () => {} }) {
     const [range, setRange] = useState({ startDate: null, endDate: null });
-    const [currentMonth, setCurrentMonth] = useState(dayjs());
+    const [currentMonth, setCurrentMonth] = useState(new Date());
+
+    const [displayedMonthYear, setDisplayedMonthYear] = useState('');
 
     useEffect(() => {
-        visible
-            ? setCurrentMonth(dayjs()) // 모달이 열릴 때: 현재 날짜로 초기화
-            : setRange({ startDate: null, endDate: null }) // 모달이 닫힐 때: 선택 초기화
+        setDisplayedMonthYear(`${currentMonth.getFullYear()}년 ${currentMonth.getMonth() + 1}월`);
+    }, [currentMonth.getFullYear(), currentMonth.getMonth()]);
+
+    useEffect(() => {
+        if (visible) {
+            setCurrentMonth(new Date()); // 모달이 열릴 때: 현재 날짜로 초기화
+            setRange({ startDate: null, endDate: null }); // 모달이 열릴 때: 선택 초기화
+        }
     }, [visible]);
 
     const applyFilters = () => {
@@ -53,19 +57,28 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
             setRange({ startDate: date, endDate: null });
         } else {
             // 시작 날짜만 있는 경우, 끝 날짜 설정 (순서 보장)
-            const newEnd = dayjs(date).isBefore(range.startDate) ? range.startDate : date;
-            const newStart = dayjs(date).isBefore(range.startDate) ? date : range.startDate;
+            const newEnd = date < range.startDate ? range.startDate : date;
+            const newStart = date < range.startDate ? date : range.startDate;
             setRange({ startDate: newStart, endDate: newEnd });
         }
     };
 
     const goToPrevMonth = () => {
-        setCurrentMonth(prev => dayjs(prev).subtract(1, 'month'));
+        setCurrentMonth(prev => {
+            const newMonth = new Date(prev.getFullYear(), prev.getMonth() - 1, 1);
+            return newMonth;
+        });
     };
 
     const goToNextMonth = () => {
-        setCurrentMonth(prev => dayjs(prev).add(1, 'month'));
+        setCurrentMonth(prev => {
+            const newMonth = new Date(prev.getFullYear(), prev.getMonth() + 1, 1);
+            return newMonth;
+        });
     };
+
+    const displayYear = currentMonth.getFullYear();
+    const displayMonth = currentMonth.getMonth() + 1;
 
     return (
         <Modal 
@@ -100,7 +113,7 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                 </View>
 
                 {/* Navigation Buttons */}
-                <View style={styles.monthNav}>
+                <View key={currentMonth.toISOString()} style={styles.monthNav}>
                     <TouchableOpacity 
                         onPress={goToPrevMonth}
                         style={styles.arrowButton}
@@ -109,8 +122,8 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     <Text style={styles.arrow}>{'<'}</Text>
                     </TouchableOpacity>
 
-                    <Text style={styles.monthTitle}>
-                        {currentMonth.format('YYYY년 M월')}
+                    <Text key={displayedMonthYear} style={styles.monthTitle}>
+                        {displayedMonthYear}
                     </Text>
 
                     <TouchableOpacity 
@@ -124,6 +137,9 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
 
                 {/* Calendar */}
                 <CalendarPicker
+                    key={currentMonth.toString()}
+                    month={currentMonth.getMonth()}
+                    year={currentMonth.getFullYear()}
                     customDatesStyles={null}
                     monthYearHeaderWrapperStyle={{ display: 'none' }}
                     allowRangeSelection
@@ -143,7 +159,7 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     textStyle={{ color: '#000' }}
                     weekdays={CUSTOM_LOCALE.weekdays}
                     months={CUSTOM_LOCALE.months}
-                    initialDate={currentMonth.toDate()}
+                    initialDate={currentMonth}
                     width={Platform.OS === 'ios' ? 360 : 340}
                     // 💡 여기에 CalendarPicker와 monthNav 사이의 간격을 좁히기 위해 marginTop 추가
                     containerStyle={styles.calendarContainer} 
