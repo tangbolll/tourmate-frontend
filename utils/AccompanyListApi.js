@@ -368,3 +368,62 @@ export const handleApiError = (error, context = '작업') => {
 
     Alert.alert(`${context} 실패`, errorMessage);
 };
+
+
+//  새로운 함수: 찜한 포스트를 원본 데이터로 반환 (AccompanyList와 동일)
+export const fetchLikedAccompanyPostsRawApi = async (userId, sortKey = 'saved') => {
+    try {
+        const response = await api.get('/api/accompany/liked', {
+            params: { 
+                userId: userId,
+                sortKey: sortKey 
+            },
+            timeout: 15000,
+        });
+        
+        // 🔥 핵심: 원본 데이터 그대로 반환 (transformAccompanyData 적용 안 함)
+        return response.data;
+    } catch (error) {
+        if (error.response?.status === 404) {
+            console.log('ℹ️ 찜한 포스트 API가 아직 구현되지 않음, 기존 방식 사용');
+            return null; // 기존 방식으로 폴백
+        }
+        throw error;
+    }
+};
+
+// 🔥 새로운 함수: 캐시된 피드를 원본 데이터로 반환 (AccompanyList와 동일)
+export const fetchAccompanyFeedRawWithCacheApi = async (currentUserId) => {
+    const cacheKey = `feed_raw_${currentUserId}`;
+    const cached = feedCache.get(cacheKey);
+    
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+        console.log('📦 캐시에서 원본 피드 데이터 반환');
+        return cached.data;
+    }
+    
+    try {
+        const response = await api.get('/api/accompany/home', {
+            params: { id: currentUserId },
+            timeout: 15000,
+        });
+        
+        // 🔥 핵심: 원본 데이터 그대로 반환 (transformAccompanyData 적용 안 함)
+        const rawData = response.data.feed || response.data;
+        
+        // 캐시 저장
+        feedCache.set(cacheKey, {
+            data: rawData,
+            timestamp: Date.now()
+        });
+        
+        return rawData;
+    } catch (error) {
+        // 캐시된 데이터가 있으면 반환 (오프라인 지원)
+        if (cached) {
+            console.log('⚠️ API 실패, 캐시된 원본 데이터 반환');
+            return cached.data;
+        }
+        throw error;
+    }
+};

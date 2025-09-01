@@ -6,6 +6,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
     fetchAccompanyFeedWithCacheApi,
     fetchLikedAccompanyPostsApi, 
+    fetchLikedAccompanyPostsRawApi,
+    fetchAccompanyFeedRawWithCacheApi, 
     getMultipleAccompanyLikesOptimizedApi, 
     toggleLikeApi,
     clearFeedCache,
@@ -36,9 +38,7 @@ const DibsorScrap = ({ router }) => {
     // 🔥 API 호출 중복 방지를 위한 ref
     const loadingRef = useRef(false);
     const abortControllerRef = useRef(null);
-
-    // 🚀 최적화된 찜 데이터 로딩
-    // DibsorScrap.js에서 fetchDibsDataOptimized 함수 전체 수정
+// 🚀 수정된 찜 데이터 로딩 - 원본 데이터 사용
 const fetchDibsDataOptimized = useCallback(async (sortKey = dibsSortKey) => {
     if (loadingRef.current || (dibsLoaded && dibsList.length > 0 && sortKey === dibsSortKey)) return;
     
@@ -53,29 +53,51 @@ const fetchDibsDataOptimized = useCallback(async (sortKey = dibsSortKey) => {
         
         console.log('🔍 찜 데이터 로딩 시작...', { sortKey });
 
-        // 1단계: 찜한 포스트만 직접 가져오는 API 시도 (정렬 키 포함)
-        const likedPosts = await fetchLikedAccompanyPostsApi(currentUserId, sortKey);
+        // 1단계: 찜한 포스트만 직접 가져오는 API 시도 - 🔥 원본 데이터 사용
+        const likedPosts = await fetchLikedAccompanyPostsRawApi(currentUserId, sortKey);
         
         if (likedPosts !== null) {
-            // ✅ 전용 API가 성공한 경우 (백엔드에서 이미 정렬됨)
+            // ✅ 전용 API가 성공한 경우 (원본 데이터 그대로 사용)
             console.log('✅ 전용 API로 찜 데이터 로드 완료:', likedPosts.length, '개');
             
-            setDibsList(likedPosts);
+            // 🔥 이미지 URL 보정: images[0] → mainImageUrl
+            const processedLikedPosts = likedPosts.map(post => ({
+                ...post,
+                mainImageUrl: post.mainImageUrl || (post.images && post.images.length > 0 ? post.images[0] : null)
+            }));
+            
+            setDibsList(processedLikedPosts);
             
             // 좋아요 상태 맵 생성
             const likesMap = {};
             likedPosts.forEach(post => {
-                likesMap[post.id] = true;
+                const postId = post.id?.toString() || Math.random().toString();
+                likesMap[postId] = true;
             });
             setLikedPosts(likesMap);
             setDibsLoaded(true);
             setDibsSortKey(sortKey);
+            
+            // 🔥 디버깅: 원본 데이터의 이미지 필드 확인
+            if (__DEV__ && likedPosts.length > 0) {
+                console.log('📸 원본 찜 데이터 이미지 필드 샘플:', 
+                    likedPosts.slice(0, 3).map(post => ({
+                        id: post.id,
+                        title: post.title,
+                        mainImageUrl: post.mainImageUrl,
+                        images: post.images,
+                        imageUrl: post.imageUrl,
+                        image: post.image
+                    }))
+                );
+            }
+            
             return;
         }
         
-        // 2단계: 폴백 - 기존 방식이지만 최적화된 버전
+        // 2단계: 폴백 - 전체 피드에서 찜한 포스트 필터링 🔥 원본 데이터 사용
         console.log('🔄 폴백: 전체 피드에서 찜한 포스트 필터링...');
-        const allPosts = await fetchAccompanyFeedWithCacheApi(currentUserId);
+        const allPosts = await fetchAccompanyFeedRawWithCacheApi(currentUserId);
         
         if (allPosts.length === 0) {
             setDibsList([]);
@@ -85,25 +107,61 @@ const fetchDibsDataOptimized = useCallback(async (sortKey = dibsSortKey) => {
             return;
         }
 
+        // 🔥 디버깅: 원본 피드 데이터의 이미지 필드 확인
+        if (__DEV__ && allPosts.length > 0) {
+            console.log('📸 원본 피드 데이터 이미지 필드 샘플:', 
+                allPosts.slice(0, 3).map(post => ({
+                    id: post.id,
+                    title: post.title,
+                    mainImageUrl: post.mainImageUrl,
+                    images: post.images,
+                    imageUrl: post.imageUrl,
+                    image: post.image
+                }))
+            );
+        }
+
         // 최대 30개만 처리 (성능 보호)
         const limitedPosts = allPosts.slice(0, 30);
-        const accompanyIds = limitedPosts.map(post => post.id);
+        const accompanyIds = limitedPosts.map(post => post.id?.toString() || Math.random().toString());
         
         // 🚀 최적화된 일괄 좋아요 조회
-        const likesMap = await getMultipleAccompanyLikesOptimizedApi(
+        const likesMap = await getMultipleAccompanyLikesApi(
             accompanyIds, 
             currentUserId
         );
         
         // 좋아요한 포스트만 필터링
-        let likedAccompanyPosts = limitedPosts.filter(post => 
-            likesMap[post.id] === true
-        );
+        let likedAccompanyPosts = limitedPosts.filter(post => {
+            const postId = post.id?.toString() || Math.random().toString();
+            return likesMap[postId] === true;
+        });
+
+        // 🔥 이미지 URL 보정: images[0] → mainImageUrl
+        likedAccompanyPosts = likedAccompanyPosts.map(post => ({
+            ...post,
+            mainImageUrl: post.mainImageUrl || (post.images && post.images.length > 0 ? post.images[0] : null)
+        }));
+
+        // 🔥 디버깅: 필터링된 찜 목록의 이미지 필드 확인
+        if (__DEV__ && likedAccompanyPosts.length > 0) {
+            console.log('📸 필터링된 원본 찜 데이터 이미지 필드 샘플:', 
+                likedAccompanyPosts.slice(0, 3).map(post => ({
+                    id: post.id,
+                    title: post.title,
+                    mainImageUrl: post.mainImageUrl,
+                    images: post.images,
+                    imageUrl: post.imageUrl,
+                    image: post.image,
+                    _source: 'rawFeedCache'
+                }))
+            );
+        }
 
         // 클라이언트 정렬 적용 (백엔드 정렬 실패 시)
         switch (sortKey) {
             case 'closestTrip':
-                likedAccompanyPosts.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+                likedAccompanyPosts.sort((a, b) => new Date(a.tripStartDate) - new Date(b.tripStartDate));
                 break;
             case 'closestRecruitment':
                 likedAccompanyPosts.sort((a, b) => new Date(a.recruitmentEndDate) - new Date(b.recruitmentEndDate));
