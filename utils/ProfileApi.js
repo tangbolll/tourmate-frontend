@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { Platform, Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
@@ -11,12 +11,11 @@ const getBaseURL = () => {
         if (Platform.OS === 'android') {
             return 'http://10.0.2.2:8080'; // Keep for Android emulator
         }
-        // For web and other platforms in development
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
         if (Platform.OS === 'web') {
             return 'http://localhost:8080';
         }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+        // Fallback for other development platforms or if Platform.OS is not 'android' or 'web'
+        return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
     } else {
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
@@ -186,4 +185,30 @@ export const fetchCommentsApi = async (accompanyId) => {
             }) || [],
         };
     });
+};
+
+export const resetPasswordNoEmailApi = async (email) => {
+  try {
+    const response = await axios.post(`${API_URL}/api/auth/reset-password-no-email`, { email });
+    return response.data; // This should be the new temporary password
+  } catch (error) {
+    console.error("Password reset (no email) failed:", error.response?.data || error.message);
+    throw error.response?.data || error.message;
+  }
+};
+
+export const changePasswordApi = async (currentPassword, newPassword) => {
+  try {
+    const token = await AsyncStorage.getItem('jwtToken');
+    const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+    const response = await axios.post(`${API_URL}/api/auth/change-password`, {
+      currentPassword,
+      newPassword,
+    }, { headers });
+    return response.data; // Or handle success message
+  } catch (error) {
+    console.error("Password change failed:", error.response?.data || error.message);
+    throw error.response?.data || error.message;
+  }
 };

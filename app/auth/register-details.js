@@ -10,7 +10,8 @@ import {
     Platform, 
     Keyboard 
 } from 'react-native';
-import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
+
+
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,6 +21,11 @@ import {
     handleLoginApi 
 } from '../../utils/ProfileApi';
 import { useAuth } from '../../context/AuthContext';
+
+const getDaysInMonth = (year, month) => {
+    if (!year || !month) return 31; // Default to 31 if year or month not selected
+    return new Date(year, month, 0).getDate();
+};
 
 const RegisterDetailsScreen = () => {
     const router = useRouter();
@@ -39,6 +45,34 @@ const RegisterDetailsScreen = () => {
     const [year, setYear] = useState('');
     const [month, setMonth] = useState('');
     const [day, setDay] = useState('');
+
+    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
+    const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
+    const [isDayDropdownOpen, setIsDayDropdownOpen] = useState(false);
+
+    // Generate years for dropdown
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString()); // Last 100 years
+
+    // Generate months for dropdown
+    const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+
+    const [dynamicDays, setDynamicDays] = useState([]); // New state for dynamic days
+
+    useEffect(() => {
+        if (year && month) {
+            const daysCount = getDaysInMonth(parseInt(year), parseInt(month));
+            const newDays = Array.from({ length: daysCount }, (_, i) => (i + 1).toString().padStart(2, '0'));
+            setDynamicDays(newDays);
+
+            // If the current day is greater than the new max days, reset day
+            if (day && parseInt(day) > daysCount) {
+                setDay(''); // Reset day if it's out of range for the new month/year
+            }
+        } else {
+            setDynamicDays(Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'))); // Default to 31
+        }
+    }, [year, month, day]); // Include day in dependency to re-evaluate if day needs reset
 
     // Keyboard visibility listener
     useEffect(() => {
@@ -168,41 +202,112 @@ const RegisterDetailsScreen = () => {
             </View>
 
             {/* Date of Birth Input */}
-            <View style={styles.inputGroup}>
+            <View style={styles.dobInputGroup}>
                 <Text style={styles.label}>생년월일</Text>
                 <Text style={styles.subLabel}>개인정보는 안전하게 보호됩니다</Text>
-                  <View style={styles.dobInputContainer}>
-                    <TextInput
-                        style={[styles.input, styles.dobInput]}
-                        placeholder="2002"
-                        placeholderTextColor="#999"
-                        value={year}
-                        onChangeText={setYear}
-                        keyboardType="numeric"
-                        maxLength={4}
-                    />
+                <View style={styles.dobInputContainer}>
+                    {/* Year Dropdown */}
+                    <View style={styles.dropdownContainer}>
+                        <TouchableOpacity
+                            style={styles.dropdownButton}
+                            onPress={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                        >
+                            <Text style={[styles.dropdownText, !year && styles.placeholderText]}>
+                                {year || '년'}
+                            </Text>
+                            <Ionicons
+                                name={isYearDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
+                                size={20}
+                                color="#9E9E9E"
+                            />
+                        </TouchableOpacity>
+                        {isYearDropdownOpen && (
+                            <ScrollView style={styles.dropdownMenu} nestedScrollEnabled={true}>
+                                {years.map((y) => (
+                                    <TouchableOpacity
+                                        key={y}
+                                        style={styles.dropdownItem}
+                                        onPress={() => {
+                                            setYear(y);
+                                            setIsYearDropdownOpen(false);
+                                        }}
+                                    >
+                                        <Text style={styles.dropdownItemText}>{y}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        )}
+                    </View>
                     <Text style={styles.dateUnit}>년</Text>
-                    <TextInput
-                        style={[styles.input, styles.dobInput]}
-                        placeholder="10"
-                        placeholderTextColor="#999"
-                        value={month}
-                        onChangeText={setMonth}
-                        keyboardType="numeric"
-                        maxLength={2}
-                    />
+
+                    {/* Month Dropdown */}
+                    <View style={styles.dropdownContainer}>
+                        <TouchableOpacity
+                            style={styles.dropdownButton}
+                            onPress={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
+                        >
+                            <Text style={[styles.dropdownText, !month && styles.placeholderText]}>
+                                {month || '월'}
+                            </Text>
+                            <Ionicons
+                                name={isMonthDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
+                                size={20}
+                                color="#9E9E9E"
+                            />
+                        </TouchableOpacity>
+                        {isMonthDropdownOpen && (
+                            <ScrollView style={styles.dropdownMenu} nestedScrollEnabled={true}>
+                                {months.map((m) => (
+                                    <TouchableOpacity
+                                        key={m}
+                                        style={styles.dropdownItem}
+                                        onPress={() => {
+                                            setMonth(m);
+                                            setIsMonthDropdownOpen(false);
+                                        }}
+                                    >
+                                        <Text style={styles.dropdownItemText}>{m}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        )}
+                    </View>
                     <Text style={styles.dateUnit}>월</Text>
-                    <TextInput
-                        style={[styles.input, styles.dobInput]}
-                        placeholder="01"
-                        placeholderTextColor="#999"
-                        value={day}
-                        onChangeText={setDay}
-                        keyboardType="numeric"
-                        maxLength={2}
-                    />
+
+                    {/* Day Dropdown */}
+                    <View style={styles.dropdownContainer}>
+                        <TouchableOpacity
+                            style={styles.dropdownButton}
+                            onPress={() => setIsDayDropdownOpen(!isDayDropdownOpen)}
+                        >
+                            <Text style={[styles.dropdownText, !day && styles.placeholderText]}>
+                                {day || '일'}
+                            </Text>
+                            <Ionicons
+                                name={isDayDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
+                                size={20}
+                                color="#9E9E9E"
+                            />
+                        </TouchableOpacity>
+                        {isDayDropdownOpen && (
+                            <ScrollView style={styles.dropdownMenu} nestedScrollEnabled={true}>
+                                {dynamicDays.map((d) => (
+                                    <TouchableOpacity
+                                        key={d}
+                                        style={styles.dropdownItem}
+                                        onPress={() => {
+                                            setDay(d);
+                                            setIsDayDropdownOpen(false);
+                                        }}
+                                    >
+                                        <Text style={styles.dropdownItemText}>{d}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </ScrollView>
+                        )}
+                    </View>
                     <Text style={styles.dateUnit}>일</Text>
-                  </View>
+                </View>
             </View>
 
             {/* Nickname input */}
@@ -257,20 +362,15 @@ const RegisterDetailsScreen = () => {
                 </View>
             </View>
 
-            <KeyboardAwareScrollView
+            <ScrollView
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContainer}
-                enableOnAndroid={true}
-                enableAutomaticScroll={true}
-                extraScrollHeight={100}
-                keyboardShouldPersistTaps="handled"
-                extraHeight={Platform.OS === 'ios' ? 120 : 80}
                 showsVerticalScrollIndicator={false}
                 scrollEnabled={true}
                 nestedScrollEnabled={true}
             >
                 {renderContent()}
-            </KeyboardAwareScrollView>
+            </ScrollView>
 
             <View style={styles.fixedBottomButton}>
                 <TouchableOpacity
@@ -335,6 +435,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 20,
         paddingBottom: 100,
+        overflow: 'visible', // Ensure content can overflow
     },
     form: {
         width: '100%',
@@ -347,6 +448,10 @@ const styles = StyleSheet.create({
     },
     inputGroup: {
         marginBottom: 15,
+    },
+    dobInputGroup: {
+        marginBottom: 15,
+        zIndex: 10, // A high z-index to ensure it's above other input groups
     },
     label: {
         fontSize: 16,
@@ -382,6 +487,7 @@ const styles = StyleSheet.create({
     nicknameInputContainer: {
         position: 'relative',
         marginBottom: 15,
+        zIndex: 1, // Set a lower z-index than the dropdowns
     },
     nicknameInput: {
         height: 50,
@@ -466,21 +572,60 @@ const styles = StyleSheet.create({
     dobInputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 8,
-    },
-    dobInput: {
-        flex: 1,
-        minWidth: 60,
-        paddingVertical: 2,
-        paddingHorizontal: 10,
-        marginRight: 8,
-        marginTop: 2,
+        justifyContent: 'space-between', // Distribute space evenly
+        overflow: 'visible', // Allow content to overflow
     },
     dateUnit: {
         fontSize: 14,
         color: '#666',
         // minWidth: 8,
         marginRight: 8,
+    },
+    dropdownContainer: {
+        flex: 1,
+        position: 'relative',
+        zIndex: 998, // Significantly higher z-index
+        marginRight: 8, // Add margin to separate dropdowns
+    },
+    dropdownButton: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: 12,
+        backgroundColor: '#F5F5F5',
+        borderRadius: 8,
+        height: 50, // Match input height
+        borderWidth: 1,
+        borderColor: '#ccc',
+    },
+    dropdownText: {
+        fontSize: 16,
+        color: '#333',
+    },
+    placeholderText: {
+        color: '#9E9E9E',
+    },
+    dropdownMenu: {
+        backgroundColor: 'white',
+        borderRadius: 8,
+        marginTop: 8,
+        position: 'absolute',
+        top: '100%',
+        left: 0,
+        right: 0,
+        zIndex: 999, // Significantly higher z-index
+        borderWidth: 1,
+        borderColor: '#E0E0E0',
+        maxHeight: 200, // Limit height for scrollability
+    },
+    dropdownItem: {
+        padding: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: '#E0E0E0',
+    },
+    dropdownItemText: {
+        fontSize: 16,
+        color: '#333',
     },
     fixedBottomButton: {
         position: 'absolute',

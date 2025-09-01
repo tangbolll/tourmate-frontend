@@ -53,12 +53,15 @@ const LoginScreen = () => {
           <Text style={styles.loginButtonText}>로그인</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity
-          onPress={() => router.push('/auth/terms-agreement')}
-          style={styles.registerButton}
-        >
-          <Text style={styles.registerButtonText}>회원가입</Text>
-        </TouchableOpacity>
+        <View style={styles.linksContainer}>
+          <TouchableOpacity onPress={() => router.push('/auth/password-reset')}>
+            <Text style={styles.linkText}>비밀번호 찾기</Text>
+          </TouchableOpacity>
+          <Text style={styles.linkSeparator}>l</Text>
+          <TouchableOpacity onPress={() => router.push('/auth/terms-agreement')}>
+            <Text style={styles.linkText}>회원가입</Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -111,6 +114,22 @@ const styles = StyleSheet.create({
   registerButtonText: {
     color: 'black',
     fontSize: 14,
+  },
+  linksContainer: {
+    flexDirection: 'row',
+    marginTop: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  linkText: {
+    color: 'black',
+    fontSize: 14,
+    textDecorationLine: 'underline',
+  },
+  linkSeparator: {
+    color: 'black',
+    fontSize: 14,
+    marginHorizontal: 8,
   },
 });
 

@@ -1,6 +1,8 @@
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
+import Constants from 'expo-constants';
+import { Alert } from 'react-native';
 
 const setupAxiosInterceptor = () => {
   axios.interceptors.request.use(
@@ -35,16 +37,21 @@ const setupAxiosInterceptor = () => {
         try {
           await AsyncStorage.removeItem('jwtToken');
           await AsyncStorage.removeItem('userId');
-          Alert.alert(
-            '세션 만료',
-            '로그인 세션이 만료되었거나 권한이 없습니다. 다시 로그인해주세요.',
-            [{
-                text: '확인',
-                onPress: () => {
-                    router.replace('/auth/login');
-                }
-            }]
-          );
+          if (Constants.platform?.web) {
+            window.alert('세션 만료: 로그인 세션이 만료되었거나 권한이 없습니다. 다시 로그인해주세요.');
+            router.replace('/auth/login');
+          } else {
+            Alert.alert(
+              '세션 만료',
+              '로그인 세션이 만료되었거나 권한이 없습니다. 다시 로그인해주세요.',
+              [{
+                  text: '확인',
+                  onPress: () => {
+                      router.replace('/auth/login');
+                  }
+              }]
+            );
+          }
         } catch (e) {
           console.error('Error clearing AsyncStorage:', e);
         }

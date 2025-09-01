@@ -73,6 +73,7 @@ const SettingsScreen = () => {
       <ScrollView>
         <Section title="프로필 및 계정">
           <SettingItem label="프로필 및 계정 설정" isNav onPress={() => router.push('/profile/edit')} />
+          <SettingItem label="비밀번호 변경" isNav onPress={() => router.push('/profile/change-password')} />
         </Section>
 
         <Section title="알림설정">

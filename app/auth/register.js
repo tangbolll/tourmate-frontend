@@ -16,6 +16,23 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { checkEmailApi } from '../../utils/ProfileApi';
 
+// Validation functions
+const isValidEmail = (email) => {
+    const emailRegex = /^[\w.-]+@[\w.-]+\.[a-zA-Z]{2,6}$/;
+    return emailRegex.test(email);
+};
+
+const isValidPhoneNumber = (phoneNumber) => {
+    const phoneRegex = /^\d+$/;
+    return phoneRegex.test(phoneNumber);
+};
+
+const isValidPassword = (password) => {
+    const hasNumber = /\d/.test(password);
+    const hasLetter = /[a-zA-Z]/.test(password);
+    return hasNumber && hasLetter;
+};
+
 const RegisterScreen = () => {
     const router = useRouter();
     const { marketingConsent } = useLocalSearchParams();
@@ -55,6 +72,22 @@ const RegisterScreen = () => {
             Alert.alert('필수 정보 누락', '모든 필수 정보를 입력해주세요.');
             return;
         }
+
+        if (!isValidEmail(email)) {
+            Alert.alert('이메일 형식 오류', '올바른 이메일 주소 형식(예: user@example.com)을 입력해주세요.');
+            return;
+        }
+
+        if (!isValidPhoneNumber(phoneNumber)) {
+            Alert.alert('전화번호 형식 오류', '전화번호는 숫자만 입력해주세요.');
+            return;
+        }
+
+        if (!isValidPassword(password)) {
+            Alert.alert('비밀번호 형식 오류', '비밀번호는 숫자와 알파벳을 모두 포함해야 합니다.');
+            return;
+        }
+
         if (password !== confirmPassword) {
             Alert.alert('비밀번호 불일치', '비밀번호와 비밀번호 확인이 일치하지 않습니다.');
             return;
@@ -64,7 +97,8 @@ const RegisterScreen = () => {
             return;
         }
 
-        router.push({
+    
+    router.push({
             pathname: '/auth/register-details',
             params: {
                 password,

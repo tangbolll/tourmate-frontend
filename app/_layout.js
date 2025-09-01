@@ -31,6 +31,17 @@ function RootLayoutNav() {
             console.log('Navigation check:', { user, inAuthGroup });
 
             if (user && inAuthGroup) {
+                // Allow specific auth screens to be viewed by authenticated users
+                const allowedAuthScreens = [
+                    'auth/registration-success',
+                    'auth/register-details' // Allow register-details to proceed after login
+                ];
+
+                if (allowedAuthScreens.includes(segments.join('/'))) {
+                    console.log('Allowing authenticated user to view specific auth screen:', segments.join('/'));
+                    return; // Do not redirect
+                }
+                
                 console.log('Redirecting to tabs');
                 router.replace('/(tabs)');
             } else if (!user && !inAuthGroup) {
@@ -51,6 +62,7 @@ function RootLayoutNav() {
             <Stack.Screen name="auth/terms-agreement" />
             <Stack.Screen name="auth/register" />
             <Stack.Screen name="auth/register-details" />
+            <Stack.Screen name="auth/registration-success" />
         </Stack>
     );
 }

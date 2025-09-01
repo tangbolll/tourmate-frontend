@@ -23,6 +23,7 @@ const TermsAgreementScreen = () => {
         setTermsAgreed(newState);
         setPrivacyAgreed(newState);
         setMarketingAgreed(newState);
+        setLocationTermsAgreed(newState);
     };
 
     const handleRegister = () => {
