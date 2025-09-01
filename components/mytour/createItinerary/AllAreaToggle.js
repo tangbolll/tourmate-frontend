@@ -53,6 +53,7 @@ export default function AllAreaToggle({ onRegionSelect, selectedRegions = [], se
                             const text2 = await res2.text();
                             let json2;
                             try { json2 = JSON.parse(text2); } catch { return { ...area, regions: [] }; }
+                            
                             const subRegionsRaw = json2.response?.body?.items?.item || [];
                             const subRegionsArray = Array.isArray(subRegionsRaw) ? subRegionsRaw : [subRegionsRaw];
                             const regions = subRegionsArray.map((r) => ({

@@ -9,6 +9,8 @@ import Constants from 'expo-constants';
 import { Ionicons } from '@expo/vector-icons';
 import FloatingActionButtons from './FloatingActionButtons';
 import AttractionCard from './AttractionCard';
+import AsyncStorage from '@react-native-async-storage/async-storage'; 
+
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -62,12 +64,15 @@ const BottomSheet = ({
     // 1. regions 데이터를 '경기도 수원시' 형태의 단일 배열로 가공
     const flatRegionList = useMemo(() => {
         if (!regions) return [];
+
+        console.log('BottomSheet가 받은 regions 데이터:', JSON.stringify(regions, null, 2));
+
         return regions.flatMap(region =>
             region.sigungu.map(sgg => ({
-                displayName: `${region.name} ${sgg.name}`, // 예: '경기도 수원시'
-                regionKey: region.key,                     // API 요청에 필요한 지역 코드
-                sigunguKey: sgg.key,                       // API 요청에 필요한 시군구 코드
-                uniqueKey: `${region.key}-${sgg.key}`      // FlatList key로 사용할 고유 값
+                displayName: `${region.areaName} ${sgg.name}`, // 예: '경기도 수원시'
+                regionKey: region.areaCode,                     // API 요청에 필요한 지역 코드
+                sigunguKey: sgg.code,                       // API 요청에 필요한 시군구 코드
+                uniqueKey: `${region.areaCode}-${sgg.code}`      // FlatList key로 사용할 고유 값
             }))
         );
     }, [regions]);
@@ -125,23 +130,38 @@ const BottomSheet = ({
     useEffect(() => {
         if (!selectedLocation) return;
 
+
         const fetchAttractions = async () => {
             setIsLoading(true);
             setError(null);
-            setAttractions([]); // attractions state를 초기화
+            setAttractions([]);
             try {
+                // ✅ 2. 이제 AsyncStorage가 정상적으로 동작합니다.
+                const token = await AsyncStorage.getItem('jwtToken');
+                if (!token) throw new Error('인증 토큰이 없습니다.');
+
                 const { regionKey, sigunguKey } = selectedLocation;
                 const url = `${getBaseURL()}/api/myTour/tourInfo/${regionKey}?sigunguCode=${sigunguKey}`;
-                const response = await fetch(url);
+                
+                const response = await fetch(url, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
                 if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                 const data = await response.json();
                 let items = data?.response?.body?.items?.item || [];
                 if (!Array.isArray(items)) items = [items];
                 
-                setAttractions(items.filter(item => item.contenttypeid === '12'));
+                const validAttractions = items.filter(item => 
+                    item.contenttypeid === '12' && // 1. 관광지 타입이어야 하고
+                    item.contentid &&              // 2. ✅ ID가 반드시 존재해야 하며
+                    item.title                     // 3. ✅ 이름도 반드시 존재해야 함
+                );
+
+                setAttractions(validAttractions);
             } catch (e) {
                 setError(e);
-                console.error(e);
+                console.error("관광지 목록 로딩 실패:", e);
             } finally {
                 setIsLoading(false);
             }
@@ -154,11 +174,12 @@ const BottomSheet = ({
     ? attractions
     : attractions.filter(a => a.title?.toLowerCase().includes(searchText.toLowerCase()));
 
-    const isAttractionSelected = (id) => selectedAttractions.some(a => a.contentid === id);
+    const isAttractionSelected = (id) => selectedAttractions.some(a => a.id === id); // selectedAttractions 구조에 맞게 a.id로 수정
 
     const renderAttraction = ({ item }) => (
         <AttractionCard
-            key={item.contentid}
+            // ✅ key prop을 FlatList에서 renderItem으로 옮겨주면 경고가 사라집니다.
+            // key={item.contentid} 
             attraction={{
                 id: item.contentid,
                 typeId: item.contenttypeid,
@@ -169,32 +190,29 @@ const BottomSheet = ({
             }}
             isSelected={isAttractionSelected(item.contentid)}
             isExpanded={expandedSections[item.contentid]}
-            onToggle={() => onAttractionToggle({
-                id: item.contentid,
-                name: item.title,
-                image: item.firstimage
-            })}
+            onToggle={onAttractionToggle} // onToggle은 attraction 객체 전체를 넘겨주도록 수정
             onExpand={() => handleExpand(item)}
         />
     );
 
     const handleExpand = async (item) => {
         setExpandedSections(prev => ({ ...prev, [item.contentid]: !prev[item.contentid] }));
-
-        if (detailMap[item.contentid]) {
-            console.log("캐시된 상세 정보 사용:", detailMap[item.contentid]);
-            return;
-        }
+        if (detailMap[item.contentid]) return;
 
         try {
-            const [commonRes, introRes] = await Promise.all([
-                fetch(`${getBaseURL()}/api/myTour/commonInfo/${item.contentid}`),
-                fetch(`${getBaseURL()}/api/myTour/introInfo/${item.contentid}/${item.contenttypeid}`)
-            ]);
+            // ✅ 3. 여기도 AsyncStorage가 정상적으로 동작합니다.
+            const token = await AsyncStorage.getItem('jwtToken');
+            if (!token) throw new Error('인증 토큰이 없습니다.');
+            const headers = { 'Authorization': `Bearer ${token}` };
 
+            const [commonRes, introRes] = await Promise.all([
+                fetch(`${getBaseURL()}/api/myTour/commonInfo/${item.contentid}`, { headers }),
+                fetch(`${getBaseURL()}/api/myTour/introInfo/${item.contentid}/${item.contenttypeid}`, { headers })
+            ]);
+            
+            // ... (이하 데이터 처리 로직은 동일)
             const commonData = await commonRes.json();
             const introData = await introRes.json();
-
             const commonItem = commonData?.response?.body?.items?.item[0] || {};
             const introItem = introData?.response?.body?.items?.item[0] || {};
 
@@ -211,10 +229,12 @@ const BottomSheet = ({
                     usetime: introItem.usetime || ''
                 }
             }));
+
         } catch (e) {
             console.error("상세정보 불러오기 실패:", e);
         }
     };
+
 
     return (
         <Animated.View style={[styles.container, { transform: [{ translateY }] }]}>
@@ -274,7 +294,7 @@ const BottomSheet = ({
                             </Text>
                         </TouchableOpacity>
                     )}
-                    keyExtractor={(item) => item.uniqueKey}
+                    keyExtractor={(item, index) => String(item.contentid || `attraction-${index}`)}
                     showsHorizontalScrollIndicator={false}
                     style={styles.regionList}
                     contentContainerStyle={styles.regionListContent}

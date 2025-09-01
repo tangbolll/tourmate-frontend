@@ -69,7 +69,8 @@ export default function CreateItinerary() {
 
                 // sigungu 추가
                 regionMap.get(areaCode).sigungu.push({
-                    key: Number(r.code),
+                    // ✅ 'key'를 서버가 기대하는 'code'로 변경합니다.
+                    code: Number(r.code), 
                     name: r.name
                 });
             });
