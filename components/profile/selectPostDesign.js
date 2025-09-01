@@ -16,15 +16,39 @@ const { width } = Dimensions.get('window');
 // 148:100 비율을 유지하기 위한 상수
 const POSTCARD_RATIO = 100 / 148;
 
+// 각 탭별 이미지 파일 경로를 매핑하는 객체
+const designImages = {
+    Line: [
+        require('../../assets/postcardType/1.png'),
+        require('../../assets/postcardType/2.png'),
+        require('../../assets/postcardType/3.png'),
+        require('../../assets/postcardType/4.png'),
+        require('../../assets/postcardType/5.png'),
+    ],
+    Plain: [
+        require('../../assets/postcardType/6.png'),
+        require('../../assets/postcardType/7.png'),
+        require('../../assets/postcardType/8.png'),
+        require('../../assets/postcardType/9.png'),
+        require('../../assets/postcardType/10.png'),
+    ],
+    Image: [
+        require('../../assets/postcardType/11.png'),
+        require('../../assets/postcardType/12.png'),
+        require('../../assets/postcardType/13.png'),
+        require('../../assets/postcardType/14.png'),
+        require('../../assets/postcardType/15.png'),
+    ],
+};
+
 const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
-    // 백엔드 명세에 따라 'Line', 'Plain', 'Image' 탭을 1, 2, 3으로 매핑
     const tabs = {
         Line: 1,
         Plain: 2,
         Image: 3,
     };
     const [selectedTab, setSelectedTab] = useState('Line');
-    const [selectedDesign, setSelectedDesign] = useState(null); // 선택된 디자인의 ID
+    const [selectedDesign, setSelectedDesign] = useState(null);
 
     const handleDesignSelect = (designId) => {
         setSelectedDesign(designId);
@@ -32,7 +56,6 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
 
     const handleSavePress = () => {
         if (selectedDesign && onPostcardSelect) {
-            // 선택된 디자인의 ID(번호)를 부모 컴포넌트로 전달
             onPostcardSelect(selectedDesign);
             console.log('선택된 엽서 디자인 번호:', selectedDesign);
         }
@@ -44,25 +67,29 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
         }
     };
 
-    // 각 탭별 디자인 데이터
     const getDesignData = () => {
         const designs = [];
         const startIndex = (tabs[selectedTab] - 1) * 5 + 1;
         const endIndex = startIndex + 4;
-        
+
         for (let i = startIndex; i <= endIndex; i++) {
             designs.push({ id: i });
         }
-        
+
         return designs;
     };
-    
+
+    // 엽서 이미지 렌더링 함수 수정
     const renderPostcardDesign = (design) => {
         const isSelected = selectedDesign === design.id;
-        
+
+        // 현재 탭의 디자인 배열을 가져오고, 디자인 ID에 따라 올바른 인덱스를 계산
+        const tabDesigns = designImages[selectedTab];
+        const imageIndex = (design.id - 1) % 5;
+        const imageSource = tabDesigns[imageIndex];
+
         return (
             <View key={design.id} style={styles.postcardContainer}>
-                {/* 선택 체크 버튼 */}
                 <TouchableOpacity
                     style={[
                         styles.checkButton,
@@ -75,13 +102,12 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                     )}
                 </TouchableOpacity>
 
-                {/* 엽서 이미지 디자인 */}
                 <TouchableOpacity
                     style={[styles.postcardDesign, isSelected && styles.postcardDesignSelected]}
                     onPress={() => handleDesignSelect(design.id)}
                 >
                     <Image
-                        source={require(`../../assets/postCard/1.png`)} // 일단 1.png로 통일
+                        source={imageSource} // 수정된 부분: 동적으로 이미지 소스 설정
                         style={styles.postcardImage}
                     />
                 </TouchableOpacity>
@@ -91,7 +117,6 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* 헤더 */}
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>엽서 선택</Text>
                 <TouchableOpacity
@@ -102,7 +127,6 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                 </TouchableOpacity>
             </View>
 
-            {/* 탭 메뉴 */}
             <View style={styles.tabContainer}>
                 {Object.keys(tabs).map((tab) => (
                     <TouchableOpacity
@@ -113,7 +137,7 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                         ]}
                         onPress={() => {
                             setSelectedTab(tab);
-                            setSelectedDesign(null); // 탭 변경 시 선택 초기화
+                            setSelectedDesign(null);
                         }}
                     >
                         <Text
@@ -128,7 +152,6 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                 ))}
             </View>
 
-            {/* 엽서 디자인 목록 */}
             <ScrollView
                 style={styles.designList}
                 showsVerticalScrollIndicator={false}
@@ -136,7 +159,6 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                 {getDesignData().map((design) => renderPostcardDesign(design))}
             </ScrollView>
 
-            {/* 저장 버튼 */}
             <View style={styles.saveButtonContainer}>
                 <SaveButton
                     title="엽서 선택"
@@ -228,8 +250,7 @@ const styles = StyleSheet.create({
     },
     postcardDesign: {
         width: '100%',
-        // 148:100 비율에 맞춰 높이 계산
-        height: (width - 32) * POSTCARD_RATIO, 
+        height: (width - 32) * POSTCARD_RATIO,
         borderRadius: 8,
         overflow: 'hidden',
         elevation: 2,

@@ -22,9 +22,8 @@ const PostcardSlider = ({
                 contentContainerStyle={styles.slideContent}
             >
                 {postcards.map((postcard, index) => {
-                    // key prop에 고유하고 안정적인 값을 할당
-                    // postcard.id가 있으면 사용하고, 없으면 임시 키를 생성합니다.
-                    const key = postcard.id || `new-postcard-${index}`;
+                    // 수정된 부분: postcard.id, postcard.tempId, index 순으로 고유하고 안정적인 키를 찾습니다.
+                    const key = postcard.id || postcard.tempId || `new-postcard-${index}`;
                     
                     return (
                         <TouchableOpacity
