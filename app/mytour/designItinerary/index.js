@@ -567,6 +567,7 @@ const handleScheduleAdded = async (newScheduleData) => {
                 showActionButtons={showActionButtons}
                 onConfirmItinerary={handleConfirmItinerary}
                 onGoBack={() => setShowActionButtons(false)}
+                onAddToSchedule={handleAddSchedule}
             />
 
             <AiItineraryDesignPopup
