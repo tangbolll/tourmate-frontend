@@ -300,17 +300,19 @@ const BottomSheet = ({
                     contentContainerStyle={styles.regionListContent}
                 />
 
-                {isLoading && <ActivityIndicator size="large" color="#0000ff" style={{ marginTop: 200 }} />}
-                {error && <Text style={{ padding: 16 }}>데이터를 불러오는 데 실패했습니다.</Text>}
-                {!isLoading && !error && filteredAttractions.length === 0 && <Text style={{ padding: 16 }}>검색 결과가 없습니다.</Text>}
+                <View style={styles.listContainer}>
+                    {isLoading && <ActivityIndicator size="large" color="#0000ff" style={{ marginTop: 200 }} />}
+                    {error && <Text style={{ padding: 16 }}>데이터를 불러오는 데 실패했습니다.</Text>}
+                    {!isLoading && !error && filteredAttractions.length === 0 && <Text style={{ padding: 16 }}>검색 결과가 없습니다.</Text>}
 
-                <FlatList
-                    data={filteredAttractions}
-                    renderItem={renderAttraction}
-                    keyExtractor={(item) => String(item.contentid)}
-                    nestedScrollEnabled
-                    contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 320 }}
-                />
+                    <FlatList
+                        data={filteredAttractions}
+                        renderItem={renderAttraction}
+                        keyExtractor={(item, index) => String(item.contentid || `attraction-${index}`)}
+                        nestedScrollEnabled
+                        contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 150 }}
+                    />
+                </View>
             </View>
         </Animated.View>
     );
@@ -327,6 +329,7 @@ const styles = StyleSheet.create({
     handle: { width: 40, height: 4, backgroundColor: '#ddd', borderRadius: 2, alignSelf: 'center', marginTop: 8, marginBottom: 16 },
     contentContainer: {
         paddingTop: 0,
+        flex: 1,
     },
     header: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, alignItems: 'center', gap: 12 },
     searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, height: 44 },
@@ -336,6 +339,7 @@ const styles = StyleSheet.create({
     aiButtonText: { color: '#999', fontSize: 14, fontWeight: '500' },
     aiButtonTextActive: { color: '#fff' },
     regionList: {
+        flexGrow: 0,
         paddingVertical: 8,
     },
     regionListContent: {
@@ -360,6 +364,9 @@ const styles = StyleSheet.create({
     },
     regionButtonText: { color: '#666', fontSize: 14, fontWeight: '500' },
     selectedRegionButtonText: { color: '#fff' },
+    listContainer: {
+    flex: 1, // 남은 공간을 모두 차지하여 스크롤 영역을 만듭니다.
+    },
 });
 
 export default BottomSheet;

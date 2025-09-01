@@ -55,7 +55,7 @@ export const toggleTourFavorite = async (tourId, userId) => {
         // 1. 서버가 성공 신호(200번대)를 보내면, 본문의 boolean 값을 파싱하여 반환합니다.
         if (response.ok) {
             const data = await response.json();
-            return data.isFavorite; // 객체에서 boolean 값 추출하여 반환
+                        return data.isFavorite; // 객체에서 boolean 값 추출하여 반환 // 객체에서 boolean 값 추출하여 반환
         }
         
         // 2. 만약 성공이 아니라면 (400, 500번대 에러), 

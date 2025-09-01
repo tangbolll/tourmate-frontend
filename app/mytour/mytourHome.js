@@ -23,12 +23,12 @@ useEffect(() => {
     fetchMyTours();
 }, []);
 
-    const bookmarkedEvents = Array.isArray(tours) ? tours.filter(t => t.isFavorite) : [];
+    const bookmarkedEvents = Array.isArray(tours) ? tours.filter(t => t.favorite) : [];
 
     const handleBookmarkUpdate = (tourId) => {
         setTours(prev =>
             prev.map(t =>
-                t.id === tourId ? { ...t, isFavorite: !t.isFavorite } : t
+                t.id === tourId ? { ...t, favorite: !t.favorite } : t
             )
         );
     };

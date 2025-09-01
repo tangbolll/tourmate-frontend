@@ -128,14 +128,11 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
     };
     
     const handleBookmarkPress = async (tourId) => {
-        try {
-            await toggleTourFavorite(tourId, currentUserId);
-            
-            if (onBookmarkUpdate) {
-                onBookmarkUpdate(tourId);
-            }
-        } catch (error) {
-            console.error('Bookmark update error:', error);
+        console.log('1단계: MyTourTab의 별 버튼 클릭됨!');
+        
+        // 부모의 handleBookmarkToggle 호출 (tourId만 전달)
+        if (onBookmarkUpdate) {
+            onBookmarkUpdate(tourId);
         }
     };
 
@@ -271,7 +268,7 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
                                             title={tour.title}
                                             location={locationString}
                                             members={tour.participants || []}
-                                            isBookmarked={tour.isFavorite}
+                                            isBookmarked={tour.favorite}
                                             onPress={() => {
                                                 if (!isEditMode && onTourPress) {
                                                     onTourPress(tour.id);

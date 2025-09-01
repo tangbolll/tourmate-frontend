@@ -14,6 +14,8 @@ import { fetchMyTours, toggleTourFavorite } from '../../utils/MyTourApi';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '@/context/AuthContext';
 
+import { useFocusEffect } from '@react-navigation/native';
+
 
 
 export default function MyTourHome() {
@@ -25,19 +27,33 @@ export default function MyTourHome() {
     const [error, setError] = useState(null);
 
     const loadMyTours = useCallback(async () => {
-        // isLoading은 처음 로드할 때만 true로 설정합니다.
         if (!tours.length) setIsLoading(true);
         setError(null);
         try {
             const userId = await AsyncStorage.getItem('userId');
+            console.log('데이터 로드 시작 - userId:', userId);
+            
             const data = await fetchMyTours(userId);
+            console.log('서버에서 받은 데이터:', JSON.stringify(data, null, 2));
+            
+            // 각 투어의 즐겨찾기 상태 로깅
+            data.forEach(tour => {
+                console.log(`투어 ${tour.id}: favorite = ${tour.favorite}`);
+            });
+            
             setTours(data);
         } catch (e) {
             setError(e.message);
         } finally {
             setIsLoading(false);
         }
-    }, [tours.length]); // tours.length를 의존성에 추가
+    }, [tours.length]);
+
+    useFocusEffect(
+    useCallback(() => {
+        loadMyTours();
+    }, [])
+    );
 
     useEffect(() => {
         loadMyTours();
@@ -49,22 +65,38 @@ export default function MyTourHome() {
     };
 
     const handleBookmarkToggle = async (tourId) => {
+        console.log('1단계: MyTourHome의 즐겨찾기 버튼 클릭됨!');
+        
         try {
-            // 1. API를 호출하여 서버 상태를 변경하고, 최종 즐겨찾기 상태(boolean)를 받습니다.
-            const newIsFavorite = await toggleTourFavorite(tourId, currentUserId);
-
-            // 2. 반환된 최종 상태를 사용하여 UI를 직접, 그리고 최종적으로 업데이트합니다.
+            // 1. 낙관적 UI 업데이트 (즉시 UI 변경)
             setTours(prevTours =>
                 prevTours.map(tour =>
-                    tour.id === tourId ? { ...tour, isFavorite: newIsFavorite } : tour
+                    tour.id === tourId ? { ...tour, favorite: !tour.favorite } : tour
                 )
             );
-            console.log(`[성공] 즐겨찾기 상태 최종 반영 (tourId: ${tourId}, isFavorite: ${newIsFavorite})`);
+            console.log('2단계: UI 즉시 업데이트 완료');
+
+            // 2. API 호출
+            const newIsFavorite = await toggleTourFavorite(tourId, currentUserId);
+            console.log(`3단계: API 호출 완료, 서버 응답 (tourId: ${tourId}):`, newIsFavorite);
+
+            // 3. 서버 응답과 다르면 다시 수정 (실제로는 거의 발생하지 않음)
+            setTours(prevTours =>
+                prevTours.map(tour =>
+                    tour.id === tourId ? { ...tour, favorite: newIsFavorite } : tour
+                )
+            );
+            console.log(`4단계: 최종 상태 반영 (tourId: ${tourId}, favorite: ${newIsFavorite})`);
 
         } catch (error) {
-            // API 호출 자체에 실패한 경우
-            console.error('[실패] 즐겨찾기 토글 API 호출 에러:', error);
-            Alert.alert("오류", "즐겨찾기 상태 변경에 실패했습니다. 네트워크 상태를 확인해주세요.");
+            console.error('5단계: 에러 발생, 원상 복구');
+            // 에러 시 원상 복구
+            setTours(prevTours =>
+                prevTours.map(tour =>
+                    tour.id === tourId ? { ...tour, favorite: !tour.favorite } : tour
+                )
+            );
+            Alert.alert("오류", "즐겨찾기 상태 변경에 실패했습니다.");
         }
     };
 
@@ -78,12 +110,12 @@ export default function MyTourHome() {
 
     
 
-    const bookmarkedEvents = tours.filter(tour => tour.isFavorite);
+    const bookmarkedEvents = tours.filter(tour => tour.favorite);
 
     const handleBookmarkedEventUpdate = (eventId) => {
             const updatedTours = tours.map(tour =>
                 tour.id === eventId
-                    ? { ...tour, isFavorite: false }
+                    ? { ...tour, favorite: false }
                     : tour
             );
             setTours(updatedTours);
