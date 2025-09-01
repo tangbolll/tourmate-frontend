@@ -4,6 +4,7 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import PostDirectoryHeader from '../../components/profile/PostDirectoryHeader';
 import PostDirectoryFooter from '../../components/profile/PostDirectoryFooter';
+import PostExpanded from '../../components/profile/PostExpanded';
 
 import {
     getPostcardsByFolderApi,
@@ -28,6 +29,8 @@ export default function PostDirectory() {
     const [selectedPostcards, setSelectedPostcards] = useState(new Set());
     // 로딩 상태 관리
     const [isLoading, setIsLoading] = useState(true);
+    // 확장된 엽서 상태 관리 (추가된 부분)
+    const [expandedPostcard, setExpandedPostcard] = useState(null);
 
     // 디렉토리 ID가 변경될 때마다 엽서 데이터를 불러오는 useEffect
     useEffect(() => {
@@ -49,6 +52,14 @@ export default function PostDirectory() {
                     image: pc.imageUrl,
                     title: pc.content || '제목 없음',
                     date: pc.dateCreated ? pc.dateCreated.split('T')[0] : '날짜 없음',
+                    // 추가된 부분: PostExpanded에 필요한 필드 추가
+                    content: pc.content || '내용 없음',
+                    dateCreated: pc.dateCreated || '날짜 없음',
+                    folderName: directoryTitle,
+                    currentUserId: 'mockUserId', // 테스트용 mock user ID
+                    likeCount: pc.likeCount || 0,
+                    scrapCount: pc.scrapCount || 0,
+                    isPublic: pc.isPublic || false,
                 }));
                 setPostcards(formattedPostcards);
             } catch (error) {
@@ -61,7 +72,7 @@ export default function PostDirectory() {
         };
 
         fetchPostcards();
-    }, [directoryId]);
+    }, [directoryId, directoryTitle]);
 
 
     // 뒤로가기 처리
@@ -75,22 +86,22 @@ export default function PostDirectory() {
         setSelectedPostcards(new Set()); 
     }, []);
 
-    // 엽서 선택/해제 처리
-    const handlePostcardPress = useCallback((postcardId) => {
+    // 엽서 선택/해제 또는 상세 보기 처리
+    const handlePostcardPress = useCallback((postcard) => {
         if (!isSelectMode) {
             // 선택 모드가 아니면 엽서 상세 페이지로 이동
-            console.log('엽서 상세 페이지로 이동:', postcardId);
-            // TODO: 상세 페이지로 이동하는 라우팅 로직 구현
+            console.log('엽서 상세 페이지로 이동:', postcard.id);
+            setExpandedPostcard(postcard); // PostExpanded 컴포넌트 표시
             return;
         }
 
         // 선택 모드일 때만 선택/해제 처리
         setSelectedPostcards(prev => {
             const newSet = new Set(prev);
-            if (newSet.has(postcardId)) {
-                newSet.delete(postcardId);
+            if (newSet.has(postcard.id)) {
+                newSet.delete(postcard.id);
             } else {
-                newSet.add(postcardId);
+                newSet.add(postcard.id);
             }
             return newSet;
         });
@@ -176,6 +187,11 @@ export default function PostDirectory() {
         });
     }, [selectedPostcards, postcards, router, directoryTitle, startDate, endDate]);
 
+    // 확장된 엽서 닫기 함수
+    const handleCloseExpanded = useCallback(() => {
+        setExpandedPostcard(null);
+    }, []);
+
 
     if (isLoading) {
         return (
@@ -191,6 +207,16 @@ export default function PostDirectory() {
                     <Text style={styles.loadingText}>엽서를 불러오는 중...</Text>
                 </View>
             </View>
+        );
+    }
+
+    // PostExpanded가 표시될 때 전체 화면을 덮도록 렌더링
+    if (expandedPostcard) {
+        return (
+            <PostExpanded 
+                {...expandedPostcard}
+                onClose={handleCloseExpanded}
+            />
         );
     }
     
@@ -221,7 +247,7 @@ export default function PostDirectory() {
                                 // 3번째 아이템마다 marginRight 제거
                                 (index + 1) % 3 !== 0 && styles.postcardMarginRight
                             ]}
-                            onPress={() => handlePostcardPress(postcard.id)}
+                            onPress={() => handlePostcardPress(postcard)}
                             activeOpacity={0.8}
                         >
                             <View style={styles.imageContainer}>

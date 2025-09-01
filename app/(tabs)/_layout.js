@@ -16,7 +16,7 @@ export default function AppLayout() {
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    height: 80,
+                    height: 50,
                     paddingBottom: 10,
                     borderTopWidth: 0,
                     borderTopLeftRadius: 20,

@@ -7,7 +7,7 @@ import PostSection from '../../components/home/PostSection';
 
 const Home = () => {
     return (
-        <SafeAreaView style={styles.container}>
+        <>
             <HomeHeader />
         <ScrollView 
             style={styles.scrollView}
@@ -16,7 +16,7 @@ const Home = () => {
             <TourSection />
             <PostSection />
         </ScrollView>
-        </SafeAreaView>
+        </>
     );
 };
 

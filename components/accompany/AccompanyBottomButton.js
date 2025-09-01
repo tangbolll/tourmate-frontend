@@ -242,7 +242,7 @@ container: {
     backgroundColor: '#fff',
     paddingHorizontal: 16,
     paddingTop: 12, 
-    paddingBottom: 48, // 하단 패딩 확장
+    paddingBottom: 50, // 하단 패딩 확장
     minHeight: 80, 
     position: 'absolute',
     width: '100%',
@@ -252,7 +252,7 @@ container: {
     button: {
         flex: 1,
         paddingVertical: 12,
-        borderRadius: 12,
+        borderRadius: 18,
         alignItems: 'center',
         marginRight: 8,
     },
