@@ -4,13 +4,16 @@ import { StyleSheet, Text } from 'react-native';
 import React, { useEffect } from 'react';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import setupAxiosInterceptor from '../utils/axiosInterceptor';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
     return (
         <GestureHandlerRootView style={styles.container}>
-            <AuthProvider>
-                <RootLayoutNav />
-            </AuthProvider>
+            <SafeAreaView style={styles.safeArea}>
+                <AuthProvider>
+                    <RootLayoutNav />
+                </AuthProvider>
+            </SafeAreaView>
         </GestureHandlerRootView>
     );
 }
@@ -21,9 +24,8 @@ function RootLayoutNav() {
     const router = useRouter();
 
     useEffect(() => {
-        setupAxiosInterceptor(); // Call the setup function here
+        setupAxiosInterceptor();
         console.log('Auth status changed:', { user, loading, segments });
-        // Only navigate if loading is false (auth status has been determined)
         if (!loading) {
             const inAuthGroup = segments[0] === 'auth';
             console.log('Navigation check:', { user, inAuthGroup });
@@ -38,9 +40,8 @@ function RootLayoutNav() {
         }
     }, [user, segments, loading]);
 
-    // Optionally, render a loading screen while auth status is being determined
     if (loading) {
-        return <Text>Loading...</Text>; // Or a more sophisticated splash screen
+        return <Text>Loading...</Text>;
     }
 
     return (
@@ -56,6 +57,9 @@ function RootLayoutNav() {
 
 const styles = StyleSheet.create({
     container: {
+        flex: 1,
+    },
+    safeArea: {
         flex: 1,
     },
 });
