@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
-import { fetchUserProfileApi, updateUserProfileApi, checkNicknameApi } from '../../utils/ProfileApi';
+import { fetchUserProfileApi, updateUserProfileApi, checkNicknameApi, uploadProfileImageApi } from '../../utils/ProfileApi';
 import useUserStore from '../../context/userStore';
 
 const defaultProfile = require('../../assets/defaultProfile1.png');
@@ -34,6 +34,7 @@ const ProfileEditScreen = () => {
   const router = useRouter();
   const { userData, setUserData } = useUserStore(); // Use Zustand store
   const [originalUserData, setOriginalUserData] = useState(null); // New state to store original data
+  const [originalProfileImage, setOriginalProfileImage] = useState(null); // Add this line
 
   // Form state
   const [email, setEmail] = useState('');
@@ -69,6 +70,8 @@ const ProfileEditScreen = () => {
           setPhoneNumber(data.phoneNumber || '');
           setDob(data.dob || '');
           setGender(data.gender || '');
+          setProfileImage(data.profileImage || null); // Set current profile image
+          setOriginalProfileImage(data.profileImage || null); // Set original profile image
         }
       } catch (error) {
         console.error('Error fetching user data:', error);
@@ -102,7 +105,26 @@ const ProfileEditScreen = () => {
       }
 
       const userId = await AsyncStorage.getItem('userId');
-      const updatedData = { nickname, tags: actualTags }; // Filter before sending to backend
+      let updatedProfileImageUrl = profileImage; // Assume no change or already a URL
+
+      // Check if profileImage has changed and is a local URI (starts with 'file://')
+      if (profileImage && (profileImage.startsWith('file://') || profileImage.startsWith('data:')) && profileImage !== originalProfileImage) {
+        try {
+          // Upload the new profile image to S3
+          updatedProfileImageUrl = await uploadProfileImageApi(userId, profileImage);
+          setProfileImage(updatedProfileImageUrl); // Update state with S3 URL
+        } catch (uploadError) {
+          console.error('Error uploading profile image:', uploadError);
+          setFormFeedback({ message: '프로필 이미지 업로드에 실패했습니다.', type: 'error' });
+          return; // Stop save process if upload fails
+        }
+      } else if (profileImage === null && originalProfileImage !== null) {
+          // User explicitly removed profile image (set to null)
+          updatedProfileImageUrl = null;
+      }
+
+
+      const updatedData = { nickname, tags: actualTags, profileImage: updatedProfileImageUrl }; // Use the S3 URL or null
       await updateUserProfileApi(userId, updatedData);
       // After successful update, fetch the latest user data and update the store
       const updatedUserData = await fetchUserProfileApi(userId);
@@ -185,27 +207,35 @@ const ProfileEditScreen = () => {
     const originalNickname = originalUserData.nickname || '';
     const originalTags = originalUserData.tags ? originalUserData.tags.sort().join(' ') : '';
     const currentTags = tags.filter(tag => tag.trim() !== '').sort().join(' ');
+    const originalImg = originalProfileImage || null; // Get original image
+    const currentImg = profileImage || null; // Get current image
 
     const nicknameHasChanged = originalNickname !== nickname;
     const tagsHaveChanged = originalTags !== currentTags;
+    const profileImageHasChanged = originalImg !== currentImg; // Check image change
 
     // If nickname changed, it must be checked and available
     if (nicknameHasChanged && (!nicknameChecked || !nicknameAvailable)) {
       return false;
     }
 
-    // If nickname hasn't changed, but tags have, it's savable
-    if (!nicknameHasChanged && tagsHaveChanged) {
+    // If nickname hasn't changed, but tags or profile image have, it's savable
+    if (!nicknameHasChanged && (tagsHaveChanged || profileImageHasChanged)) {
       return true;
     }
 
-    // If nickname has changed and is valid, and tags may or may not have changed, it's savable
+    // If nickname has changed and is valid, and tags or profile image may or may not have changed, it's savable
     if (nicknameHasChanged && nicknameChecked && nicknameAvailable) {
       return true;
     }
 
+    // If only profile image has changed, it's savable
+    if (!nicknameHasChanged && !tagsHaveChanged && profileImageHasChanged) {
+        return true;
+    }
+
     return false; // No changes or invalid state
-  }, [nickname, tags, originalUserData, nicknameChecked, nicknameAvailable]);
+  }, [nickname, tags, originalUserData, nicknameChecked, nicknameAvailable, profileImage, originalProfileImage]);
 
   return (
     <SafeAreaView style={styles.container}>

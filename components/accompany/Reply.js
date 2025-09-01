@@ -20,7 +20,7 @@ const Reply = ({ profileImage, nickname, time, content, isHost, style }) => {
 
                 <View style={styles.contentContainer}>
                     <View style={styles.headerRow}>
-                        <Text style={styles.nickname}>{nickname}</Text>
+                        <Text style={styles.nickname}>{nickname || '익명 사용자'}</Text>
                         <Text style={styles.time}>· {time}</Text>
                         {isHost && <Text style={styles.hostLabel}>호스트</Text>}
                     </View>

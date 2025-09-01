@@ -16,7 +16,7 @@ const Comment = ({ profileImage, nickname, time, content, onReplyPress, isHost }
 
                 <View style={styles.contentContainer}>
                     <View style={styles.headerRow}>
-                        <Text style={styles.nickname}>{nickname}</Text>
+                        <Text style={styles.nickname}>{nickname || '익명 사용자'}</Text>
                         <Text style={styles.time}>· {time}</Text>
                         <TouchableOpacity onPress={onReplyPress}>
                             <Text style={styles.replyText}>답글</Text>
@@ -60,7 +60,6 @@ const styles = StyleSheet.create({
     headerRow: {
         flexDirection: 'row',
         alignItems: 'center',
-        flexWrap: 'wrap',
         marginBottom: 4,
     },
     nickname: {

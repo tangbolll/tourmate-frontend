@@ -121,3 +121,69 @@ export const checkEmailApi = async (email) => {
     throw new Error('이메일 확인 중 오류가 발생했습니다.');
   }
 };
+
+export const uploadProfileImageApi = async (userId, imageUri) => {
+    try {
+        const token = await AsyncStorage.getItem('jwtToken');
+        const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
+        console.log("Image URI:", imageUri);
+
+        const formData = new FormData();
+
+        // Base64 URI에서 MIME 타입과 데이터 분리
+        const base64Response = await fetch(imageUri);
+        const blob = await base64Response.blob();
+
+        // 파일 이름과 타입 설정 (여기서는 기본값 사용 또는 imageUri에서 추출)
+        const filename = `profile_image_${Date.now()}.jpeg`; // 적절한 파일 이름 생성
+        const type = blob.type || 'image/jpeg'; // Blob에서 타입 가져오기, 없으면 기본값
+
+        formData.append('image', blob, filename); // Blob 객체와 파일 이름 전달
+
+        console.log("FormData being sent:", formData);
+
+        const response = await axios.put(`${API_URL}/api/user/${userId}/profile-image`, formData, {
+            headers: {
+                ...headers,
+                'Content-Type': 'multipart/form-data',
+            },
+        });
+        return response.data;
+    } catch (error) {
+        console.error('Error uploading profile image:', error.response?.data || error.message);
+        throw error;
+    }
+};
+
+export const fetchCommentsApi = async (accompanyId) => {
+    const url = `${API_URL}/api/accompany/${accompanyId}/comments`;
+    console.log('🌐 댓글 조회 API 호출:', url);
+
+    const response = await fetch(url);
+    if (!response.ok) {
+        throw new Error('Failed to fetch comments');
+    }
+
+    const commentsData = await response.json();
+    return commentsData.map(comment => {
+        return {
+            id: comment.id?.toString(),
+            nickname: comment.userNickname,
+            time: comment.createdAt ? formatTimeAgo(comment.createdAt) : '방금 전',
+            content: comment.content,
+            profileImage: comment.authorProfileImage,
+            isHost: comment.hostComment,
+            replies: comment.replies?.map(reply => {
+                return {
+                    id: reply.id?.toString(),
+                    nickname: reply.userNickname,
+                    time: reply.createdAt ? formatTimeAgo(reply.createdAt) : '방금 전',
+                    content: reply.content,
+                    profileImage: reply.authorProfileImage,
+                    isHost: reply.hostComment,
+                };
+            }) || [],
+        };
+    });
+};

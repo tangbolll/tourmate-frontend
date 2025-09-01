@@ -354,22 +354,26 @@ export const fetchCommentsApi = async (accompanyId) => {
     }
 
     const commentsData = await response.json();
-    return commentsData.map(comment => ({
-        id: comment.id?.toString(),
-        nickname: comment.authorName,
-        time: comment.createdAt ? formatTimeAgo(comment.createdAt) : '방금 전',
-        content: comment.content,
-        profileImage: comment.authorProfileImage,
-        isHost: comment.isAuthor,
-        replies: comment.replies?.map(reply => ({
-            id: reply.id?.toString(),
-            nickname: reply.authorName,
-            time: reply.createdAt ? formatTimeAgo(reply.createdAt) : '방금 전',
-            content: reply.content,
-            profileImage: reply.authorProfileImage,
-            isHost: reply.isAuthor,
-        })) || [],
-    }));
+    return commentsData.map(comment => {
+        return {
+            id: comment.id?.toString(),
+            nickname: comment.userNickname,
+            time: comment.createdAt ? formatTimeAgo(comment.createdAt) : '방금 전',
+            content: comment.content,
+            profileImage: comment.authorProfileImage,
+            isHost: comment.hostComment,
+            replies: comment.replies?.map(reply => {
+                return {
+                    id: reply.id?.toString(),
+                    nickname: reply.userNickname,
+                    time: reply.createdAt ? formatTimeAgo(reply.createdAt) : '방금 전',
+                    content: reply.content,
+                    profileImage: reply.authorProfileImage,
+                    isHost: reply.hostComment,
+                };
+            }) || [],
+        };
+    });
 };
 
 // 댓글/답글을 저장하는 API 함수
