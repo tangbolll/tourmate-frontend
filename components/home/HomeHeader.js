@@ -5,7 +5,7 @@ import { router } from 'expo-router';
 
 const HomeHeader = () => {
     const handleNotificationPress = () => {
-        router.push('/Alarm');
+        router.push('/alarm');
     };
 
     return (
