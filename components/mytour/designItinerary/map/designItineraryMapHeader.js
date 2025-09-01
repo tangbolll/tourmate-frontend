@@ -47,7 +47,7 @@ const DesignItineraryMapHeader = ({
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: 'transparent',
+        backgroundColor: 'white',
     },
     header: {
         flexDirection: 'row',

@@ -43,6 +43,7 @@ const AddSchedule = ({
     const [startTime, setStartTime] = useState('07:30');
     const [endTime, setEndTime] = useState('08:30');
     const [location, setLocation] = useState('');
+    const [selectedLocationObject, setSelectedLocationObject] = useState(null); // ✅ 추가
     const [memo, setMemo] = useState('');
     const [currentSelectedDate, setCurrentSelectedDate] = useState('');
     const [showDateDropdown, setShowDateDropdown] = useState(false);
@@ -181,6 +182,7 @@ const AddSchedule = ({
 
     // --- 💡 3. 위치 검색 핸들러 함수 수정 ---
     const handleMeetLocationSearch = async (query) => {
+        setSelectedLocationObject(null);
         console.log('Searching for:', query);
         setLocation(query); // ❌ 오류 수정: setMeetLocationInput -> setLocation
 
@@ -223,6 +225,7 @@ const AddSchedule = ({
             Alert.alert('알림', '제목, 위치, 날짜는 필수 입력 항목입니다.');
             return;
         }
+        const locationData = selectedLocationObject || location.trim();
 
         const scheduleData = {
             id: existingSchedule?.id || null,
@@ -230,7 +233,7 @@ const AddSchedule = ({
             title: title.trim(),
             startTime,
             endTime,
-            location: location.trim(),
+            location: locationData,
             memo: memo.trim(),
             date: currentSelectedDate,
             travelId: currentTourId
@@ -348,7 +351,8 @@ const AddSchedule = ({
                                                 <TouchableOpacity
                                                     key={item.id || index}
                                                     onPress={() => {
-                                                        setLocation(item.place_name);
+                                                        setLocation(item.place_name);         
+                                                        setSelectedLocationObject(item);       
                                                         setShowSearchResults(false);
                                                         Keyboard.dismiss();
                                                     }}

@@ -67,6 +67,7 @@ export default function DesignItinerary() {
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [scheduleToDelete, setScheduleToDelete] = useState(null);
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
+    const [isAutoSaving, setIsAutoSaving] = useState(false); 
     const [isManuallySaving, setIsManuallySaving] = useState(false); 
 
 
@@ -161,8 +162,8 @@ const getCleanScheduleData = (data) => {
             title: item.title,
             tag: item.tag,
             location: item.location,
-            latitude: item.latitude,
-            longitude: item.longitude,
+            latitude: item.y,
+            longitude: item.x,
             memo: item.memo
             // categoryColor, existingSchedule 등 제거
         }));
@@ -233,6 +234,8 @@ useEffect(() => {
     if (!isDataLoaded || !currentTourId) return;
 
     const updateServer = async () => {
+        setIsAutoSaving(true); // ✅ 저장 시작: 플래그를 true로 설정
+        console.log("🚀 자동 저장을 시작합니다...");
         try {
             const safeScheduleData = getCleanScheduleData(scheduleData);
 
@@ -254,6 +257,9 @@ useEffect(() => {
             console.log("자동 저장 성공");
         } catch (error) {
             console.error("자동 저장 실패:", error);
+        } finally {
+            setIsAutoSaving(false); // ✅ 저장 종료: 성공하든 실패하든 플래그를 false로 되돌림
+            console.log("🏁 자동 저장이 종료되었습니다.");
         }
     };
 
@@ -305,62 +311,75 @@ useEffect(() => {
     };
 
     // 일정 추가/수정 핸들러
-    const handleScheduleAdded = async (newScheduleData) => {
-        setScheduleLoading(true);
-        try {
-            if (!currentTourId) {
-                Alert.alert("알림", "먼저 여행을 저장한 후 일정을 추가할 수 있습니다.");
-                return;
-            }
+const handleScheduleAdded = async (newScheduleData) => {
+    // ===================== 💡 1. 디버깅 로그 추가 =====================
+    console.log('[DEBUG] handleScheduleAdded가 받은 데이터:', JSON.stringify(newScheduleData, null, 2));
+    // =================================================================
 
-            let locationName = '';
-            let latitude = null;
-            let longitude = null;
+    setScheduleLoading(true);
+    try {
+        if (!currentTourId) {
+            Alert.alert("알림", "먼저 여행을 저장한 후 일정을 추가할 수 있습니다.");
+            return;
+        }
 
-            if (newScheduleData.location) {
-                if (typeof newScheduleData.location === 'string') {
-                    locationName = newScheduleData.location;
-                } else if (typeof newScheduleData.location === 'object') {
-                    locationName = newScheduleData.location.place_name || '';
-                    // 좌표가 존재하면 숫자로 변환, 없으면 null
-                    latitude = newScheduleData.location.y ? parseFloat(newScheduleData.location.y) : null;
-                    longitude = newScheduleData.location.x ? parseFloat(newScheduleData.location.x) : null;
+        let locationName = '';
+        let latitude = null;
+        let longitude = null;
+
+        // ✅ 2. 더 안전하게 location 객체를 처리하는 로직
+        if (newScheduleData.location) {
+            if (typeof newScheduleData.location === 'string') {
+                locationName = newScheduleData.location;
+            } 
+            // location이 객체이고, x, y 속성이 있는지 명확하게 확인
+            else if (typeof newScheduleData.location === 'object' && newScheduleData.location.x && newScheduleData.location.y) {
+                locationName = newScheduleData.location.place_name || '';
+                
+                // x, y 값이 유효한 숫자인지 한 번 더 확인 후 변환
+                const parsedLat = parseFloat(newScheduleData.location.y);
+                const parsedLng = parseFloat(newScheduleData.location.x);
+
+                if (!isNaN(parsedLat)) {
+                    latitude = parsedLat;
+                }
+                if (!isNaN(parsedLng)) {
+                    longitude = parsedLng;
                 }
             }
-
-            const payload = {
-                travelId: currentTourId,
-                date: newScheduleData.date,
-                timeSlot: `${newScheduleData.startTime} ~ ${newScheduleData.endTime}`,
-                title: newScheduleData.title,
-                tag: newScheduleData.category || 'CUSTOM',
-                location: locationName,
-                latitude,
-                longitude,
-                memo: newScheduleData.memo || ''
-            };
-
-            console.log('Final payload:', payload);
-
-
-
-            if (schedulePopupData?.existingSchedule?.id) {
-                await updateTravelSchedule(schedulePopupData.existingSchedule.id, payload);
-            } else {
-                await createTravelSchedule(payload);
-            }
-
-
-            await fetchTourData();
-        } catch (error) {
-            
-            console.error('일정 저장 에러:', error, await error?.response?.text?.());
-            Alert.alert('오류', '일정 저장에 실패했습니다.');
-        } finally {
-            setScheduleLoading(false);
-            handleCloseAddSchedulePopup();
         }
-    };
+
+        const payload = {
+            travelId: currentTourId,
+            date: newScheduleData.date,
+            timeSlot: `${newScheduleData.startTime} ~ ${newScheduleData.endTime}`,
+            title: newScheduleData.title,
+            tag: newScheduleData.category || 'CUSTOM',
+            location: locationName,
+            latitude,
+            longitude,
+            memo: newScheduleData.memo || ''
+        };
+
+        // 페이로드도 다시 한번 확인
+        console.log('Final payload being sent to server:', payload);
+
+        if (schedulePopupData?.existingSchedule?.id) {
+            await updateTravelSchedule(schedulePopupData.existingSchedule.id, payload);
+        } else {
+            await createTravelSchedule(payload);
+        }
+
+        await fetchTourData();
+    } catch (error) {
+        console.error('일정 저장 에러:', error, await error?.response?.text?.());
+        Alert.alert('오류', '일정 저장에 실패했습니다.');
+    } finally {
+        setScheduleLoading(false);
+        handleCloseAddSchedulePopup();
+    }
+};
+
     // 일정 삭제 핸들러 - 팝업창에서
     const performDeleteSchedule = async (scheduleId) => {
         console.log(`[Delete Flow] Starting deletion for schedule ID: ${scheduleId}`);
