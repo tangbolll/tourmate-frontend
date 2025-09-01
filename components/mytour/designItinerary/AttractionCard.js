@@ -28,28 +28,11 @@ const AttractionCard = ({
 
     return (
         <View style={styles.attractionContainer}>
-            {/* + 버튼 */}
-            <TouchableOpacity
-                style={[
-                    styles.addButton,
-                    isSelected && styles.selectedAddButton
-                ]}
-                onPress={() => onToggle(attraction)}
-            >
-                {isSelected ? (
-                    <Ionicons name="checkmark-sharp" size={18} color="#666" />
-                ) : (
-                    <Ionicons name="add-sharp" size={18} color="#fff" />
-                )}
-            </TouchableOpacity>
+            
 
             <View style={styles.attractionCard}>
                 {/* 제목 + 펼치기 버튼 */}
                 <View style={styles.attractionHeader}>
-                    <View style={styles.attractionInfo}>
-                        <Text style={styles.attractionName}>{attraction?.name || '이름 없음'}</Text>                        
-                    </View>
-                    
                     <TouchableOpacity
                         style={styles.expandButton}
                         onPress={() => onExpand(attraction.id)}
@@ -59,6 +42,12 @@ const AttractionCard = ({
                             size={20}
                             color="#666"
                         />
+                    </TouchableOpacity>
+                    <View style={styles.attractionInfo}>
+                        <Text style={styles.attractionName}>{attraction?.name || '이름 없음'}</Text>                        
+                    </View>
+                    <TouchableOpacity style={styles.addToScheduleButton}>
+                        <Text style={styles.addToScheduleButtonText}>시간표에 추가</Text>
                     </TouchableOpacity>
                 </View>
                 
@@ -156,6 +145,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
+        height: 48,
     },
     attractionInfo: { 
         flex: 1,
@@ -170,7 +160,8 @@ const styles = StyleSheet.create({
         color: '#333' 
     },
     expandButton: { 
-        padding: 4 
+        padding: 2,
+        marginRight: 8,
     },
     attractionDetails: { 
         paddingHorizontal: 16, 
@@ -218,6 +209,16 @@ const styles = StyleSheet.create({
         marginTop: 8,
         alignSelf: 'flex-end',
         textDecorationLine: 'underline',
+    },
+    addToScheduleButton: {
+        backgroundColor: '#f0f0f0',
+        borderRadius: 4,
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+    },
+    addToScheduleButtonText: {
+        fontSize: 12,
+        fontWeight: '500',
     },
 });
 

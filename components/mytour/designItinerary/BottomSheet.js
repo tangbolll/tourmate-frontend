@@ -340,7 +340,8 @@ const styles = StyleSheet.create({
     aiButtonTextActive: { color: '#fff' },
     regionList: {
         flexGrow: 0,
-        paddingVertical: 8,
+        paddingTop: 4,
+        paddingBottom: 12,
     },
     regionListContent: {
         alignItems: 'center',
@@ -369,4 +370,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default BottomSheet;
+export default BottomSheet;    
