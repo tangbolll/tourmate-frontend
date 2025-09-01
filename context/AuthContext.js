@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Platform, Alert } from 'react-native'; // 이 줄 추가
 
 const AuthContext = createContext(null);
 
@@ -117,13 +118,51 @@ export function AuthProvider({ children }) {
     };
 
     const signOut = async () => {
-        try {
-            await AsyncStorage.removeItem('jwtToken');
-            await AsyncStorage.removeItem('userId');
-            setUser(null);
-            setCurrentUserId(null);
-        } catch (e) {
-            console.error("Failed to sign out:", e);
+        if (Platform.OS === 'web') {
+            const confirmLogout = confirm('현재 계정에서 로그아웃하시겠습니까?');
+            if (confirmLogout) {
+                try {
+                    await AsyncStorage.removeItem('jwtToken');
+                    await AsyncStorage.removeItem('userId');
+                    setUser(null);
+                    setCurrentUserId(null);
+                    console.log('로그아웃 성공 (웹)');
+                } catch (e) {
+                    console.error("Failed to sign out (web):", e);
+                    alert('로그아웃에 실패했습니다.');
+                }
+            } else {
+                console.log('로그아웃 취소 (웹)');
+            }
+        } else {
+            // 모바일 환경 (Alert.alert 사용)
+            Alert.alert(
+                '로그아웃', // 제목
+                '현재 계정에서 로그아웃하시겠습니까?', // 메시지
+                [
+                    {
+                        text: '네', // 두 번째 버튼
+                        onPress: async () => {
+                            try {
+                                await AsyncStorage.removeItem('jwtToken');
+                                await AsyncStorage.removeItem('userId');
+                                setUser(null);
+                                setCurrentUserId(null);
+                                console.log('로그아웃 성공 (모바일)');
+                            } catch (e) {
+                                console.error("Failed to sign out (mobile):", e);
+                                Alert.alert('로그아웃 실패', '로그아웃에 실패했습니다.');
+                            }
+                        },
+                    },
+                    {
+                        text: '아니오', // 첫 번째 버튼
+                        onPress: () => console.log('로그아웃 취소'),
+                        style: 'cancel',
+                    },
+                ],
+                { cancelable: false }
+            );
         }
     };
 

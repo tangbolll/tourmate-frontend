@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,6 +7,8 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { fetchUserProfileApi, updateUserProfileApi, checkNicknameApi, uploadProfileImageApi } from '../../utils/ProfileApi';
 import useUserStore from '../../context/userStore';
+
+import { useAuth } from '../../context/AuthContext';
 
 const defaultProfile = require('../../assets/defaultProfile1.png');
 
@@ -60,6 +62,7 @@ const ProfileEditScreen = () => {
         const userId = await AsyncStorage.getItem('userId');
         if (userId) {
           const data = await fetchUserProfileApi(userId);
+          console.log("Fetched user data:", data); // 이 줄 추가
           setUserData(data); // Update Zustand store
           setOriginalUserData(data); // Set original data
           setEmail(data.email || '');
@@ -132,18 +135,30 @@ const ProfileEditScreen = () => {
       setOriginalUserData(updatedUserData); // Update original data to reflect saved changes
       
       setFormFeedback({ message: '프로필이 성공적으로 업데이트되었습니다.', type: 'success' });
+
+      // 알림창 추가
+      if (Platform.OS === 'web') {
+        alert('프로필이 성공적으로 업데이트되었습니다.');
+      } else {
+        Alert.alert('업데이트 완료', '프로필이 성공적으로 업데이트되었습니다.');
+      }
+
       setNicknameCheckMessage(''); // Clear nickname check message after successful save
 
     } catch (error) {
       console.error('Error updating profile:', error);
       setFormFeedback({ message: '프로필 업데이트에 실패했습니다.', type: 'error' });
+      // 에러 알림도 추가
+      if (Platform.OS === 'web') {
+        alert('프로필 업데이트에 실패했습니다.');
+      } else {
+        Alert.alert('업데이트 실패', '프로필 업데이트에 실패했습니다.');
+      }
     }
   };
 
   const handleDeleteAccount = () => {
-    // Since Alert is not working, we use console.log
-    console.log("회원탈퇴 버튼 클릭됨. 여기에 실제 탈퇴 로직(API 호출) 및 확인 절차를 추가해야 합니다.");
-    // Example: router.push('/account/delete-confirm');
+    router.push('/profile/delete-account/step1'); // 첫 번째 탈퇴 화면으로 이동
   };
 
   const handleNicknameCheck = useCallback(async () => {
@@ -205,8 +220,8 @@ const ProfileEditScreen = () => {
     if (!originalUserData) return false; // No original data yet
 
     const originalNickname = originalUserData.nickname || '';
-    const originalTags = originalUserData.tags ? originalUserData.tags.sort().join(' ') : '';
-    const currentTags = tags.filter(tag => tag.trim() !== '').sort().join(' ');
+    const originalTags = originalUserData.tags ? JSON.stringify(originalUserData.tags) : '[]';
+    const currentTags = JSON.stringify(tags.filter(tag => tag.trim() !== ''));
     const originalImg = originalProfileImage || null; // Get original image
     const currentImg = profileImage || null; // Get current image
 
