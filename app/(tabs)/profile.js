@@ -13,12 +13,13 @@ import { useAuth } from '@/context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { fetchUserProfileApi } from '../../utils/ProfileApi';
 
-import { 
-    createPostcardWithNewFolderApi, 
-    updateFolderApi, 
+import {
+    createPostcardWithNewFolderApi,
+    updateFolderApi,
     deleteFolderApi,
     getFoldersByUserApi,
     handleApiError,
+    getFavoritePostcardsApi // 추가: 즐겨찾기 엽서 API 임포트
 } from '../../utils/PostCardApi';
 
 export default function ProfileHome() {
@@ -26,14 +27,14 @@ export default function ProfileHome() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('board');
     const [folders, setFolders] = useState([]);
+    const [favoritePostcards, setFavoritePostcards] = useState([]); // 추가: 즐겨찾기 엽서 상태
     const [createPopupVisible, setCreatePopupVisible] = useState(false);
     const [selectPopupVisible, setSelectPopupVisible] = useState(false);
     const [popupMode, setPopupMode] = useState('create');
     const [editingFolder, setEditingFolder] = useState(null);
     const { userData, setUserData } = useUserStore();
 
-    // 폴더 목록을 서버에서 불러오는 함수를 useCallback으로 정의
-    // 이 함수는 userEmail이 변경될 때만 새로 생성됩니다.
+    // 폴더 목록을 서버에서 불러오는 함수
     const fetchFolders = useCallback(async (email) => {
         if (!email) {
             console.log("⚠️ userEmail이 없으므로 폴더 목록을 불러오지 않습니다.");
@@ -46,9 +47,24 @@ export default function ProfileHome() {
         } catch (error) {
             handleApiError(error, '폴더 목록 조회');
         }
-    }, []); // 이 함수는 userEmail에 의존하지 않으므로, 의존성 배열을 비워둡니다.
+    }, []);
 
-    // 컴포넌트 마운트 시 사용자 데이터와 폴더 목록 불러오기
+    // 즐겨찾기 엽서 목록을 서버에서 불러오는 함수
+    const fetchFavoritePostcards = useCallback(async (email) => {
+        if (!email) {
+            console.log("⚠️ userEmail이 없으므로 즐겨찾기 엽서 목록을 불러오지 않습니다.");
+            return;
+        }
+        try {
+            const fetchedPostcards = await getFavoritePostcardsApi(email);
+            setFavoritePostcards(fetchedPostcards);
+            console.log("✅ 즐겨찾기 엽서 목록을 성공적으로 불러왔습니다:", fetchedPostcards);
+        } catch (error) {
+            handleApiError(error, '즐겨찾기 엽서 목록 조회');
+        }
+    }, []);
+
+    // 컴포넌트 마운트 시 사용자 데이터와 폴더 목록, 즐겨찾기 엽서 목록 불러오기
     useEffect(() => {
         const fetchData = async () => {
             try {
@@ -57,8 +73,9 @@ export default function ProfileHome() {
                     const data = await fetchUserProfileApi(userId);
                     setUserData(data);
                     if (data?.email) {
-                        // 사용자 이메일이 있을 때만 폴더를 가져옵니다.
+                        // 사용자 이메일이 있을 때만 데이터를 가져옵니다.
                         fetchFolders(data.email);
+                        fetchFavoritePostcards(data.email); // 추가: 즐겨찾기 엽서 데이터 불러오기
                     }
                 }
             } catch (error) {
@@ -66,10 +83,9 @@ export default function ProfileHome() {
             }
         };
         fetchData();
-    }, [fetchFolders]);
+    }, [fetchFolders, fetchFavoritePostcards]); // 의존성 배열에 fetchFavoritePostcards 추가
 
-    // userData?.email을 사용하여 userEmail 변수 정의
-    const userEmail = userData?.email; 
+    const userEmail = userData?.email;
 
     // 폴더 생성/수정 팝업 열기
     const handleCreateFolder = useCallback(() => {
@@ -88,12 +104,12 @@ export default function ProfileHome() {
     // WritePost 페이지로 네비게이션
     const navigateToWritePost = useCallback((folderData) => {
         const params = {};
-        
+
         const directoryId = folderData?.folderId || folderData?.id;
         if (directoryId) {
             params.directoryId = String(directoryId);
         }
-        
+
         const directoryName = folderData?.title || folderData?.name;
         if (directoryName) {
             params.directoryName = directoryName;
@@ -105,9 +121,9 @@ export default function ProfileHome() {
         if (folderData.endDate) {
             params.endDate = folderData.endDate;
         }
-        
+
         console.log('Navigating to WritePost with params:', params);
-        
+
         router.push({
             pathname: '/profile/writePost',
             params: params
@@ -128,12 +144,12 @@ export default function ProfileHome() {
                     postcard: {
                         content: '',
                         imageUrl: '',
-                        postcardType: 1, 
+                        postcardType: 1,
                     },
                 };
                 console.log('새 폴더 및 엽서 생성 API 호출 준비:', requestBody);
                 const response = await createPostcardWithNewFolderApi(requestBody);
-                
+
                 console.log('⭐ 새 폴더 생성 API 응답:', response);
 
                 Alert.alert('성공', '새 폴더가 생성되었습니다.');
@@ -189,16 +205,22 @@ export default function ProfileHome() {
     const renderTabContent = useCallback(() => {
         switch (activeTab) {
             case 'board':
-                return <PostBoardTab userEmail={userEmail} />;
+                return <PostBoardTab
+                    userEmail={userEmail}
+                    favoritePostcards={favoritePostcards} // 추가: 즐겨찾기 엽서 데이터 전달
+                />;
             case 'directory':
-                return <PostDirectoryTab 
-                    onEditFolder={handleEditFolder} 
+                return <PostDirectoryTab
+                    onEditFolder={handleEditFolder}
                     folders={folders}
                 />;
             default:
-                return <PostBoardTab userEmail={userEmail}/>;
+                return <PostBoardTab
+                    userEmail={userEmail}
+                    favoritePostcards={favoritePostcards} // 추가: 즐겨찾기 엽서 데이터 전달
+                />;
         }
-    }, [activeTab, handleEditFolder, folders, userEmail]);
+    }, [activeTab, handleEditFolder, folders, userEmail, favoritePostcards]);
 
     if (!userData) {
         return <View style={[styles.container, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}><Text>Loading profile...</Text></View>;
@@ -207,15 +229,15 @@ export default function ProfileHome() {
     return (
         <View style={styles.container}>
             <ProfileHeader userData={userData} />
-            <PostTabHeader 
+            <PostTabHeader
                 activeTab={activeTab}
-                onTabPress={handleTabPress} 
+                onTabPress={handleTabPress}
             />
             <View style={styles.tabContent}>
                 {renderTabContent()}
             </View>
-            
-            <AddPostFloatingButton 
+
+            <AddPostFloatingButton
                 onOptionSelect={handleFloatingButtonOption}
             />
 
