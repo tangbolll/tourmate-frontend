@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, Text, Image } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, Image, TextInput } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import PostcardOverlay from './PostcardOverlay';
 
@@ -31,7 +31,11 @@ const PostcardSelectionArea = ({
     isOverlayVisible,
     onOverlayClose,
     onWritePress,
-    onDrawPress
+    onDrawPress,
+    postcardContent, // 엽서 텍스트 내용
+    onContentChange, // 텍스트 변경 핸들러
+    isTextEditing, // 텍스트 편집 상태
+    textInputRef // TextInput 참조
 }) => {
     return (
         <View style={styles.container}>
@@ -41,7 +45,7 @@ const PostcardSelectionArea = ({
                     selectedPostcard && styles.postcardAreaSelected
                 ]}
                 onPress={onAreaPress}
-                disabled={!isEditMode || isSaved}
+                disabled={!isEditMode}
             >
                 {selectedPostcard ? (
                     // 엽서가 선택되면 해당 이미지 경로를 사용하여 이미지 렌더링
@@ -51,6 +55,24 @@ const PostcardSelectionArea = ({
                             source={postcardImages[selectedPostcard?.code]}
                             style={styles.postcardImage}
                         />
+                        {isTextEditing ? (
+                            // 텍스트 편집 모드일 때 투명한 TextInput 렌더링
+                            <TextInput
+                                ref={textInputRef}
+                                style={styles.postcardTextInput}
+                                multiline
+                                value={postcardContent}
+                                onChangeText={onContentChange}
+                                autoFocus={true}
+                                placeholder="엽서에 글을 써주세요..."
+                                placeholderTextColor="#000"
+                            />
+                        ) : (
+                            // 텍스트 편집 모드가 아닐 때 텍스트 렌더링
+                            <Text style={styles.postcardTextDisplay}>
+                                {postcardContent}
+                            </Text>
+                        )}
                         <PostcardOverlay
                             isVisible={isOverlayVisible}
                             onClose={onOverlayClose}
@@ -116,6 +138,33 @@ const styles = StyleSheet.create({
         fontSize: 16,
         color: '#999',
         fontWeight: '500',
+    },
+    // 엽서 위에 글을 쓰는 TextInput 스타일 추가
+    postcardTextInput: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        fontSize: 16,
+        color: '#000', // 텍스트 색상
+        textAlign: 'center',
+        textAlignVertical: 'center',
+        paddingHorizontal: 16,
+        backgroundColor: 'transparent',
+    },
+    // 텍스트가 표시될 때의 스타일 추가
+    postcardTextDisplay: {
+        position: 'absolute',
+        top: 0,
+        left: 0,
+        right: 0,
+        bottom: 0,
+        fontSize: 16,
+        color: '#000',
+        textAlign: 'center',
+        textAlignVertical: 'center',
+        paddingHorizontal: 16,
     },
 });
 

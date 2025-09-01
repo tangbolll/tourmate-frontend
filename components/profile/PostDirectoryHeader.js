@@ -55,7 +55,7 @@ const styles = StyleSheet.create({
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
         height: 70,
-        marginTop: 50,
+        marginTop: 0,
     },
     backButton: {
         padding: 8,

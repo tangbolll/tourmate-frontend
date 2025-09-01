@@ -8,7 +8,7 @@ import PostSection from '../../components/home/PostSection';
 const Home = () => {
     return (
         <>
-            <HomeHeader />
+        <HomeHeader />
         <ScrollView 
             style={styles.scrollView}
             showsVerticalScrollIndicator={false}
