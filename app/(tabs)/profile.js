@@ -19,9 +19,6 @@ import {
     deleteFolderApi,
     getFoldersByUserApi,
     handleApiError,
-    checkToken,
-    testServerConnection,
-    createPostcardInExistingFolderApi,
 } from '../../utils/PostCardApi';
 
 export default function ProfileHome() {
@@ -116,40 +113,6 @@ export default function ProfileHome() {
             params: params
         });
     }, [router]);
-
-    // 엽서 저장 로직
-    const handleSavePostcard = useCallback(async (folderId, postcardData) => {
-        try {
-            if (folderId) {
-                console.log('기존 폴더에 엽서 저장:', folderId);
-                const response = await createPostcardInExistingFolderApi(folderId, postcardData);
-                Alert.alert('성공', '엽서가 기존 폴더에 저장되었습니다.');
-                console.log('엽서 저장 성공:', response);
-            } else {
-                console.log('새 폴더에 엽서 저장');
-                const requestBody = {
-                    userEmail: userEmail,
-                    folder: {
-                        title: postcardData.title || '새 폴더',
-                        startDate: postcardData.startDate,
-                        endDate: postcardData.endDate,
-                    },
-                    postcard: {
-                        content: postcardData.content,
-                        imageUrl: postcardData.imageUrl,
-                        postcardType: postcardData.postcardType,
-                    },
-                };
-                const response = await createPostcardWithNewFolderApi(requestBody);
-                Alert.alert('성공', '새 폴더와 함께 엽서가 저장되었습니다.');
-                console.log('새 폴더에 엽서 저장 성공:', response);
-            }
-            await fetchFolders(userEmail);
-
-        } catch (error) {
-            handleApiError(error, '엽서 저장');
-        }
-    }, [userEmail, fetchFolders]);
 
     const handleSave = useCallback(async (folderData) => {
         setCreatePopupVisible(false);

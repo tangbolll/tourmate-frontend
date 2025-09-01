@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 // ============================================================================
 
 // 기본 API URL을 가져오는 함수 (환경 설정에 따라)
-    const getBaseURL = () => {
+const getBaseURL = () => {
     // 개발 모드일 때
     if (__DEV__) {
         if (Platform.OS === 'android') {
@@ -24,7 +24,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
     else {
         return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
     }
-    };
+};
 const API_URL = getBaseURL();
 
 // 백엔드 폴더 데이터를 프론트엔드 형식으로 변환하는 함수
@@ -112,7 +112,7 @@ export const handleApiError = (error, apiName = 'API') => {
     }
 };
 
-// 재시도 로직이 포함된 fetch 함수
+// 재시도 로직이 포함된 fetch 함수 (JSON용)
 const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 15000) => {
     // 💡 AsyncStorage에서 토큰 가져오기
     const token = await AsyncStorage.getItem('jwtToken'); 
@@ -156,6 +156,78 @@ const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 150
             }
 
             console.log(`✅ API 호출 성공 (시도 ${attempt}/${maxRetries})`);
+            return response;
+
+        } catch (error) {
+            clearTimeout(timeoutId);
+            
+            if (attempt === maxRetries) {
+                if (error.name === 'AbortError') {
+                    throw new Error(`엽서 API 서버 응답 시간이 초과되었습니다.`);
+                }
+                throw error;
+            }
+
+            console.warn(`⚠️ 시도 ${attempt} 실패, ${1000 * attempt}ms 후 재시도...`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+    }
+};
+
+// 재시도 로직이 포함된 fetch 함수 (FormData용)
+const fetchWithRetryMultipart = async (url, options = {}, maxRetries = 2, timeoutMs = 15000) => {
+    // 💡 AsyncStorage에서 토큰 가져오기
+    const token = await AsyncStorage.getItem('jwtToken'); 
+    
+    const headers = {
+        'Content-Type': 'multipart/form-data',
+        ...(options.headers || {}),
+    };
+    
+    // 토큰이 존재하면 헤더에 추가
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+    
+    // FormData의 경우 Content-Type을 설정하지 않음 (브라우저가 자동 설정)
+
+    const mergedOptions = {
+        ...options,
+        headers,
+    };
+
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        try {
+            console.log(`🔄 Multipart API 호출 시도 ${attempt}/${maxRetries}: ${url}`);
+            
+            // ⭐⭐⭐ 디버깅을 위해 FormData 내용을 로깅합니다. ⭐⭐⭐
+            if (mergedOptions.body instanceof FormData) {
+                console.log('📦 전송될 FormData 내용:');
+                for (let pair of mergedOptions.body.entries()) {
+                    console.log(` -> ${pair[0]}:`, typeof pair[1] === 'string' ? pair[1].substring(0, 50) + '...' : 'File Object');
+                }
+            }
+
+            const response = await fetch(url, {
+                ...mergedOptions,
+                signal: controller.signal
+            });
+            
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                // 403 에러일 경우 추가 로그 출력
+                if (response.status === 403) {
+                    console.error("❌ 403 Forbidden: 인증 토큰이 없거나 유효하지 않습니다.");
+                }
+                throw new Error(`HTTP ${response.status}: ${response.statusText || errorText}`);
+            }
+
+            console.log(`✅ Multipart API 호출 성공 (시도 ${attempt}/${maxRetries})`);
             return response;
 
         } catch (error) {
@@ -226,20 +298,34 @@ export const getFoldersByUserApi = async (userEmail) => {
     }
 };
 
-// 2. 새 폴더 생성과 함께 엽서 생성
-export const createPostcardWithNewFolderApi = async (folderAndPostcardData) => {
+// 2. 새 폴더 생성과 함께 엽서 생성 - FormData로 수정
+export const createPostcardWithNewFolderApi = async (folderData, postcardData, imageFile = null) => {
     const url = `${API_URL}/api/postcards/folders`;
     console.log('🌐 새 폴더에 엽서 생성 API 호출:', url);
+    console.log('📁 폴더 데이터:', folderData);
+    console.log('📮 엽서 데이터:', postcardData);
+    console.log('🖼️ 이미지 파일:', imageFile ? '있음' : '없음', imageFile);
 
     await checkToken(); // 토큰 확인 (디버깅용)
 
     try {
-        const response = await fetchWithRetry(url, {
+        const formData = new FormData();
+        
+        formData.append('folderData', JSON.stringify(folderData));
+        formData.append('postcardData', JSON.stringify(postcardData));
+        
+        // ⭐ 핵심 수정: 이미지를 Blob으로 변환하여 추가 ⭐
+        if (imageFile) {
+            const fileName = imageFile.uri.split('/').pop();
+            const fileType = imageFile.type; 
+            const response = await fetch(imageFile.uri);
+            const blob = await response.blob();
+            formData.append('image', blob, fileName);
+        }
+
+        const response = await fetchWithRetryMultipart(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(folderAndPostcardData),
+            body: formData,
         });
         return await response.json();
     } catch (error) {
@@ -287,27 +373,40 @@ export const deleteFolderApi = async (folderId) => {
 // # 섹션 3: 엽서 관련 API
 // ============================================================================
 
-// 5. 기존 폴더에 엽서 생성
-export const createPostcardInExistingFolderApi = async (folderId, postcardData) => {
+// 5. 기존 폴더에 엽서 생성 - FormData로 수정
+export const createPostcardInExistingFolderApi = async (folderId, postcardData, imageFile = null) => {
     const url = `${API_URL}/api/postcards/folders/${folderId}`;
-    console.log('🌐 기존 폴더에 엽서 생성 API 호출:', url);
 
     try {
-        const response = await fetchWithRetry(url, {
+        const formData = new FormData();
+        formData.append('postcardData', JSON.stringify(postcardData));
+        
+        if (imageFile) {
+            const fileName = imageFile.uri.split('/').pop();
+            const fileType = imageFile.type || 'image/jpeg';
+            const response = await fetch(imageFile.uri);
+            const blob = await response.blob();
+            
+            // ⭐ 이 부분을 수정합니다.
+            // FormData.append()에 파일 이름과 타입 객체만 전달
+            formData.append('image', {
+                uri: imageFile.uri, // URI는 필요하지 않을 수 있지만, 안전을 위해 포함
+                name: fileName,
+                type: fileType,
+            });
+        }
+        
+        const response = await fetchWithRetryMultipart(url, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(postcardData),
+            body: formData,
         });
         const result = await response.json();
-        // API 응답의 실제 구조를 확인하기 위한 로그 추가
-        console.log('⭐ 기존 폴더에 엽서 생성 API 응답:', result);
         return result;
     } catch (error) {
         throw error;
     }
 };
+
 
 // 6. 폴더별 엽서 목록 조회
 export const getPostcardsByFolderApi = async (folderId) => {
@@ -335,18 +434,31 @@ export const getPostcardByIdApi = async (postcardId) => {
     }
 };
 
-// 8. 엽서 수정
-export const updatePostcardApi = async (postcardId, postcardData) => {
+// 8. 엽서 수정 - FormData로 수정
+export const updatePostcardApi = async (postcardId, postcardData, imageFile = null) => {
     const url = `${API_URL}/api/postcards/${postcardId}`;
-    console.log('🌐 엽서 수정 API 호출:', url);
-
     try {
-        const response = await fetchWithRetry(url, {
+        const formData = new FormData();
+        
+        formData.append('postcardData', JSON.stringify(postcardData));
+        
+        if (imageFile) {
+            const fileName = imageFile.uri.split('/').pop();
+            const fileType = imageFile.type || 'image/jpeg';
+            const response = await fetch(imageFile.uri);
+            const blob = await response.blob();
+            
+            // ⭐ 이 부분을 수정합니다.
+            formData.append('image', {
+                uri: imageFile.uri,
+                name: fileName,
+                type: fileType,
+            });
+        }
+
+        const response = await fetchWithRetryMultipart(url, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(postcardData),
+            body: formData,
         });
         return await response.json();
     } catch (error) {
@@ -451,34 +563,7 @@ export const unlikePostcardApi = async (postcardId, userId) => {
     }
 };
 
-// 15. 엽서 공개범위 수정 (즐겨찾기)
-export const toggleFavoriteApi = async (postcardId) => {
-    const url = `${API_URL}/api/postcards/${postcardId}/favorite`;
-    console.log('🌐 엽서 공개범위 수정 API 호출:', url);
-
-    try {
-        const response = await fetchWithRetry(url, {
-            method: 'PATCH',
-        });
-        return null; // 204 No Content 응답
-    } catch (error) {
-        throw error;
-    }
-};
-
-// 16. 즐겨찾기 엽서 목록 조회
-export const getFavoritePostcardsApi = async (userEmail) => {
-    const url = `${API_URL}/api/postcards/favorites?userEmail=${encodeURIComponent(userEmail)}`;
-    console.log('🌐 즐겨찾기 엽서 목록 조회 API 호출:', url);
-    
-    try {
-        const response = await fetchWithRetry(url);
-        return await response.json();
-    } catch (error) {
-        throw error;
-    }
-};
-
+// ⭐ 수정: 함수 이름과 엔드포인트가 백엔드와 일치하도록 변경
 // 엽서 공개범위 토글
 export const togglePostcardPublicScopeApi = async (postcardId) => {
     const url = `${API_URL}/api/postcards/${postcardId}/toggle-public`;
@@ -513,6 +598,19 @@ export const updatePostcardPublicDetailsApi = async (postcardId, publicDetails) 
             method: 'PUT',
             body: JSON.stringify(publicDetails),
         });
+        return await response.json();
+    } catch (error) {
+        throw error;
+    }
+};
+
+// 16. 즐겨찾기 엽서 목록 조회
+export const getFavoritePostcardsApi = async (userEmail) => {
+    const url = `${API_URL}/api/postcards/favorites?userEmail=${encodeURIComponent(userEmail)}`;
+    console.log('🌐 즐겨찾기 엽서 목록 조회 API 호출:', url);
+    
+    try {
+        const response = await fetchWithRetry(url);
         return await response.json();
     } catch (error) {
         throw error;
