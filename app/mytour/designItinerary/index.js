@@ -460,19 +460,29 @@ const handleScheduleAdded = async (newScheduleData) => {
     const handleMemberAdd = (newMember) => setMembers(prev => [...prev, newMember]);
 
     const handleAddSchedule = (day, date, hour, attraction, locationValue = '') => {
+    
+    console.log('전달받은 attraction:', JSON.stringify(attraction, null, 2));
+    console.log('전달받은 locationValue:', locationValue);
+
+    
     const title = attraction?.name || '';
 
     setLocation(locationValue);
 
-    setSchedulePopupData({
+    const popupData = {
         selectedDay: day,
-        selectedDate: date || (period.startDate ? dayjs(period.startDate).add(day -1, 'day').format('YYYY-MM-DD') : null),
+        selectedDate: date || (period.startDate ? dayjs(period.startDate).add(day - 1, 'day').format('YYYY-MM-DD') : null),
         selectedHour: hour,
         existingSchedule: null,
         location: locationValue,
-        title: title   // 이 부분을 추가하여 schedulePopupData에 title 포함
-    });
+        title: title
+    };
 
+    // 💡 2. 이제 선언된 변수를 사용하므로 에러가 나지 않습니다.
+    console.log('팝업으로 보낼 데이터 (popupData):', popupData);
+
+    // 💡 3. 상태 업데이트에도 동일한 변수를 사용합니다.
+    setSchedulePopupData(popupData);
     setShowAddSchedulePopup(true);
     };
 

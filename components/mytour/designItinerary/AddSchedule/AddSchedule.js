@@ -40,6 +40,7 @@ const AddSchedule = ({
     initialTitle = '',
     initialLocation = ''
 }) => {
+    console.log('DesignItinerary로부터 받은 모든 props:', initialTitle, initialLocation);
     const [category, setCategory] = useState('숙소');
     const [title, setTitle] = useState('');
     const [startTime, setStartTime] = useState('07:30');

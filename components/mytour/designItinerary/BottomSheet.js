@@ -192,7 +192,7 @@ const BottomSheet = ({
             isExpanded={expandedSections[item.contentid]}
             onToggle={onAttractionToggle}
             onExpand={() => handleExpand(item)}
-            onAddToSchedule={(attraction) => {
+            onAddToSchedule={(day, time, index, attraction, locationValue) => {
             if (isAIGenerating) {
                 handleToggleAiAttraction(attraction.id);
             } else {
