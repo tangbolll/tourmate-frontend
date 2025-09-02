@@ -7,9 +7,9 @@ const AttractionCard = ({
   attraction,
   isSelected,
   isExpanded,
-  onToggle,
+  onToggleSelection, // AI 모드용
   onExpand,
-  onAddToSchedule,
+  onAddToSchedule,   // 일반 모드용
   isAIGenerating = false, // 기본값 설정
 }) => {
   const [isTextExpanded, setIsTextExpanded] = useState(false);
@@ -147,7 +147,7 @@ const AttractionCard = ({
             console.log('✅ 현재 선택 상태:', isSelected);
             console.log('🔄 동작 예상:', isSelected ? '선택 해제' : '선택 추가');
             console.log('📊 전체 관광지 정보:', attraction);
-            onAddToSchedule(attraction);
+            onToggleSelection(attraction);
           }}
         >
           <Ionicons 

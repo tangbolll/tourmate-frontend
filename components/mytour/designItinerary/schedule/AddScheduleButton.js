@@ -13,7 +13,7 @@ const AddScheduleButton = ({ onPress, dayNumber }) => {
             onPress={handlePress}
             activeOpacity={0.7}
         >
-            <Ionicons name="add" size={20} color="#666" />
+            <Ionicons name="add-circle" size={20} color="#666" />
             <Text style={styles.buttonText}>일정 추가</Text>
         </TouchableOpacity>
     );

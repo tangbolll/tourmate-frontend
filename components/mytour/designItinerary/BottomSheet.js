@@ -191,21 +191,16 @@ const BottomSheet = ({
             isSelected={isAIGenerating ? isAiAttractionSelected(item.contentid) : selectedAttractions.some(a => a.id === item.contentid)}
             isExpanded={expandedSections[item.contentid]}
             onToggle={onAttractionToggle}
+
+            // 👇 역할 1: 일반 모드용 prop은 부모로부터 받은 onAddToSchedule을 그대로 전달
+            onAddToSchedule={onAddToSchedule} 
             onExpand={() => handleExpand(item)}
-            onAddToSchedule={(day, time, index, attraction, locationValue) => {
-            if (isAIGenerating) {
+
+            // 👇 역할 2: AI 모드용 prop은 handleToggleAiAttraction 함수와 연결
+            onToggleSelection={(attraction) => {
                 handleToggleAiAttraction(attraction.id);
-            } else {
-                const locationValue = attraction.detailInfo?.addr || attraction.name || '';
-                onAddToSchedule(
-                1,
-                null,
-                null,
-                attraction,
-                locationValue
-                );
-            }
             }}
+
             isAIGenerating={isAIGenerating}
         />
     );
