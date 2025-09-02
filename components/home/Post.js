@@ -48,7 +48,7 @@ const Post = ({ postData, onDataUpdate }) => {
         likeCount: currentLikeCount,
         scrapCount: currentScrapCount,
         timeAgo: postData?.createdAt ? formatChatTimestamp(new Date(postData.createdAt)) : '알 수 없음',
-        location: postData?.location || '위치 정보 없음',
+        location: postData?.location,
         date: formatPostDate(postData?.createdAt),
         isLiked: isLiked,
         isScraped: isBookmarked,
@@ -150,6 +150,12 @@ const Post = ({ postData, onDataUpdate }) => {
     const handleLoginRequired = () => {
         Alert.alert('알림', '로그인이 필요한 기능입니다.');
     };
+    
+    // 위치 정보가 없을 때 표시할 문자열
+    const authorAndDate = `${data.author} · ${data.date}`;
+    // 위치 정보가 있을 때 표시할 문자열
+    const fullUserInfo = `${data.author} · ${data.location} · ${data.date}`;
+    
 
     return (
         <View style={styles.container}>
@@ -163,7 +169,7 @@ const Post = ({ postData, onDataUpdate }) => {
                     <View style={styles.userDetails}>
                         <Text style={styles.postcardName}>{data.title}</Text>
                         <Text style={styles.userLocation}>
-                            {data.author} · {data.location} · {data.date}
+                            {data.location ? fullUserInfo : authorAndDate}
                         </Text>
                     </View>
                 </View>
