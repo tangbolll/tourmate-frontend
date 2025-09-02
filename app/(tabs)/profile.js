@@ -84,7 +84,7 @@ export default function ProfileHome() {
             }
         };
         fetchData();
-    }, [fetchFolders, fetchFavoritePostcards]); // 의존성 배열에 fetchFavoritePostcards 추가
+    }, [fetchFolders, fetchFavoritePostcards, setUserData]); // 의존성 배열에 setUserData 추가
 
     const userEmail = userData?.email;
 
@@ -133,6 +133,13 @@ export default function ProfileHome() {
 
     const handleSave = useCallback(async (folderData) => {
         setCreatePopupVisible(false);
+
+        // ✅ userEmail이 유효한지 먼저 확인합니다.
+        if (!userEmail) {
+            Alert.alert('오류', '사용자 정보를 불러올 수 없습니다. 다시 로그인 해주세요.');
+            return; // userEmail이 없으면 API 호출을 중단합니다.
+        }
+
         try {
             if (popupMode === 'create') {
                 const requestBody = {
@@ -149,7 +156,8 @@ export default function ProfileHome() {
                     },
                 };
                 console.log('새 폴더 및 엽서 생성 API 호출 준비:', requestBody);
-                const response = await createPostcardWithNewFolderApi(requestBody);
+                // ⭐ 수정: createPostcardWithNewFolderApi 함수가 기대하는 형식에 맞게 인자 전달
+                const response = await createPostcardWithNewFolderApi(requestBody.folder, requestBody.postcard);
 
                 console.log('⭐ 새 폴더 생성 API 응답:', response);
 
