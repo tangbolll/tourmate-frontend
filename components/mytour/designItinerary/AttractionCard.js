@@ -9,7 +9,7 @@ const AttractionCard = ({
   onToggle,
   onExpand,
   onAddToSchedule,
-  
+  isAIGenerating = false, // 기본값 설정
 }) => {
   const [isTextExpanded, setIsTextExpanded] = useState(false);
 
@@ -34,7 +34,10 @@ const AttractionCard = ({
     <View style={styles.attractionContainer}>
       <View style={styles.attractionCard}>
         {/* 제목 + 펼치기 버튼 */}
-        <View style={styles.attractionHeader}>
+        <View style={[
+          styles.attractionHeader,
+          isAIGenerating && isSelected && styles.selectedHeader
+        ]}>
           <TouchableOpacity
             style={styles.expandButton}
             onPress={() => onExpand(attraction.id)}
@@ -54,12 +57,24 @@ const AttractionCard = ({
               {attraction?.name || '이름 없음'}
             </Text>
           </View>
-          <TouchableOpacity
-            style={styles.addToScheduleButton}
-            onPress={() => onAddToSchedule(attraction)}
-          >
-            <Text style={styles.addToScheduleButtonText}>시간표에 추가</Text>
-          </TouchableOpacity>
+          {!isAIGenerating && (
+            // 일반 모드에서는 기존 버튼
+            <TouchableOpacity
+              style={styles.addToScheduleButton}
+              onPress={() => {
+                const locationValue = attraction.detailInfo?.addr || attraction.name || '';
+                onAddToSchedule(
+                  1,           // dayIndex
+                  null,        // timeSlot
+                  null,        // index
+                  attraction,  // attraction
+                  locationValue // location
+                );
+              }}
+            >
+              <Text style={styles.addToScheduleButtonText}>시간표에 추가</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* 펼침 상태 */}
@@ -118,6 +133,29 @@ const AttractionCard = ({
           </View>
         )}
       </View>
+      
+      {/* AI 모드에서는 + 버튼을 박스 밖으로 */}
+      {isAIGenerating && (
+        <TouchableOpacity
+          style={[
+            styles.addButton,
+            isSelected && styles.selectedAddButton
+          ]}
+          onPress={() => {
+            console.log('🎯 클릭된 관광지:', attraction?.name);
+            console.log('✅ 현재 선택 상태:', isSelected);
+            console.log('🔄 동작 예상:', isSelected ? '선택 해제' : '선택 추가');
+            console.log('📊 전체 관광지 정보:', attraction);
+            onAddToSchedule(attraction);
+          }}
+        >
+          <Ionicons 
+            name={isSelected ? "checkmark" : "add"} 
+            size={20} 
+            color={isSelected ? "#000" : "#fff"} 
+          />
+        </TouchableOpacity>
+      )}
     </View>
   );
 };
@@ -126,7 +164,7 @@ const styles = StyleSheet.create({
   attractionContainer: {
     flexDirection: 'row',
     marginBottom: 12,
-    alignItems: 'flex-start',
+    alignItems: 'center',
   },
   addButton: {
     width: 32,
@@ -135,13 +173,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#000',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
-    marginTop: 8,
+    marginLeft: 8,
   },
   selectedAddButton: {
     backgroundColor: '#f0f0f0',
-    borderWidth: 1,
-    borderColor: '#ddd',
   },
   attractionCard: {
     flex: 1,

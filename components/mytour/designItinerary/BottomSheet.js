@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import FloatingActionButtons from './FloatingActionButtons';
 import AttractionCard from './AttractionCard';
 import AsyncStorage from '@react-native-async-storage/async-storage'; 
+import AiItineraryDesignPopup from './AiItineraryDesignPopup'; 
 
 
 const { height: screenHeight } = Dimensions.get('window');
@@ -45,7 +46,8 @@ const contentTypeMap = {
 const BottomSheet = ({
     regions, onAttractionToggle,
     onAiItineraryPress, showActionButtons = false,
-    onConfirmItinerary, onRecommendAgain, onGoBack, onAddToSchedule
+    onConfirmItinerary, onRecommendAgain, onGoBack, onAddToSchedule,
+    onCreateSchedule, periodType, startDate, endDate, nights, days, travelId // 새로 추가된 prop
 }) => {
     const [searchText, setSearchText] = useState('');
     const [expandedSections, setExpandedSections] = useState({});
@@ -251,6 +253,8 @@ const BottomSheet = ({
     const [isAIGenerating, setIsAIGenerating] = useState(false);
     const [aiSelectedAttractions, setAiSelectedAttractions] = useState([]);
     const [selectedAttractions, setSelectedAttractions] = useState([]);
+    const [showAiPopup, setShowAiPopup] = useState(false);
+    const [tempSelectedAttractions, setTempSelectedAttractions] = useState([]);
 
 
     // AI 일정 생성 시작
@@ -271,6 +275,124 @@ const BottomSheet = ({
     const handleAIGenerateEnd = () => {
     setIsAIGenerating(false);
     setSelectedAttractions([]);
+    };
+
+    // 일정 생성 버튼 클릭 핸들러 (AI 모드용)
+    const handleCreateSchedule = () => {
+        const selectedAttractionsData = attractions
+            .filter(attraction => aiSelectedAttractions.includes(attraction.contentid))
+            .map(attraction => ({
+                id: attraction.contentid,
+                name: attraction.title,
+                image: attraction.firstimage,
+                typeId: attraction.contenttypeid,
+                typeName: contentTypeMap[attraction.contenttypeid] || '기타',
+                detailInfo: detailMap[attraction.contentid] || null
+            }));
+
+        console.log('🎯 AI 모드 - 일정 생성 버튼 클릭!');
+        console.log('📋 선택된 관광지 목록:', selectedAttractionsData);
+        console.log('📊 선택된 관광지 개수:', selectedAttractionsData.length);
+        
+        setTempSelectedAttractions(selectedAttractionsData); // Store the data
+        setShowAiPopup(true); // Show the popup
+    };
+
+    
+    const convertDateStringsToISO = (dateStrings) => {
+        return dateStrings.map(ds => {
+            // '9.1 (월)' → '2025-09-01' 변환 구현
+            const match = ds.match(/(\d{1,2})\.(\d{1,2})/);
+            if (!match) return ds; // 포맷이 안 맞으면 그대로 반환
+            const month = match[1].padStart(2, '0');
+            const day = match[2].padStart(2, '0');
+            return `2025-${month}-${day}`;
+        });
+    };
+
+    // startDate, endDate 사이 모든 날짜를 ISO 배열로 생성
+    const generateFullDateList = (startDate, endDate) => {
+        const dates = [];
+        let current = new Date(startDate);
+        const end = new Date(endDate);
+
+        while (current <= end) {
+            const isoDate = current.toISOString().split('T')[0]; // YYYY-MM-DD
+            dates.push(isoDate);
+            current.setDate(current.getDate() + 1);
+        }
+
+        return dates;
+    };
+
+    // 사용자의 여행 스타일 선호를 enum으로 매핑하는 함수
+    const mapPreferenceToStyleEnum = (preference) => {
+        if (!preference) return null;
+        const lowerPref = preference.toLowerCase();
+        if (lowerPref.includes('부지런')) return 'TIGHT';
+        if (lowerPref.includes('느긋') || lowerPref.includes('편안')) return 'RELAXED';
+        // 기본값
+        return 'RELAXED';
+    };
+
+    // AI 일정 생성 함수 내 수정 부분
+    const handleAiPopupConfirm = async (result) => {
+        try {
+            console.log("AI 일정 생성 준비 데이터: ", result);
+            const travelId = travelId; // 필요시 변수명 확인 필요
+
+            // 전체 날짜 선택시 startDate~endDate 기간 배열 생성
+            const dates = result.selectedDates.includes('전체')
+                ? generateFullDateList(startDate, endDate)
+                : convertDateStringsToISO(result.selectedDates);
+
+            // 여행 스타일 매핑
+            const style = mapPreferenceToStyleEnum(result.selectedPreference);
+
+            const requestBody = {
+                travelId,
+                dates,
+                style,
+                attractionList: tempSelectedAttractions.map(a => ({
+                    id: a.id,
+                    name: a.name,
+                    image: a.image,
+                    typeId: a.typeId,
+                    typeName: a.typeName
+                }))
+            };
+
+            console.log('서버 전송 데이터:', JSON.stringify(requestBody, null, 2));
+
+            const token = await AsyncStorage.getItem('jwtToken');
+            if (!token) throw new Error('인증 토큰이 없습니다.');
+
+            const url = `${getBaseURL()}/api/ai/generate-suggestions`;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: { 
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
+
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+            const data = await response.json();
+            console.log('서버 응답:', data);
+
+            if (onCreateSchedule) {
+                onCreateSchedule(tempSelectedAttractions, result);
+            }
+
+        } catch (error) {
+            console.error('AI 일정 생성 중 오류:', error);
+        } finally {
+            setShowAiPopup(false);
+            setTempSelectedAttractions([]);
+        }
     };
 
     return (
@@ -303,7 +425,7 @@ const BottomSheet = ({
                             <Ionicons name="search" size={20} color="#666" style={{ marginRight: 8 }} />
                             <TextInput
                             style={styles.searchInput}
-                            placeholder="관심있는 관광지를 검색해보세요!"
+                            placeholder="먼저 관심있는 관광지를 검색해보세요!"
                             placeholderTextColor="#999"
                             value={searchText}
                             onChangeText={setSearchText}
@@ -313,10 +435,22 @@ const BottomSheet = ({
 
                         {!isAIGenerating && (
                             <TouchableOpacity
-                            style={[styles.aiButton, styles.aiButtonActive]}
-                            onPress={handleAIGenerateStart}
+                                style={[styles.aiButton, styles.aiButtonActive]}
+                                onPress={handleAIGenerateStart}
                             >
-                            <Text style={[styles.aiButtonText, styles.aiButtonTextActive]}>AI 일정</Text>
+                                <Text style={[styles.aiButtonText, styles.aiButtonTextActive]}>AI 일정</Text>
+                            </TouchableOpacity>
+                        )}
+
+                        {isAIGenerating && (
+                            <TouchableOpacity
+                                style={[styles.aiButton, styles.aiButtonActive, aiSelectedAttractions.length === 0 && styles.aiButtonDisabled]}
+                                onPress={handleCreateSchedule}
+                                disabled={aiSelectedAttractions.length === 0}
+                            >
+                                <Text style={[styles.aiButtonText, styles.aiButtonTextActive, aiSelectedAttractions.length === 0 && styles.aiButtonTextDisabled]}>
+                                    일정 생성
+                                </Text>
                             </TouchableOpacity>
                         )}
                         </View>
@@ -374,6 +508,20 @@ const BottomSheet = ({
                 </TouchableOpacity>
                 )}
 
+                {showAiPopup && (
+                <AiItineraryDesignPopup
+                visible={showAiPopup}
+                onClose={() => setShowAiPopup(false)}
+                onConfirm={handleAiPopupConfirm}
+                periodType={periodType}   // 부모에서 실제 값 넘기기
+                startDate={startDate}
+                endDate={endDate}
+                nights={nights}
+                days={days}
+                selectedAttractions={tempSelectedAttractions}
+                />
+                )}
+
             </View>
         </Animated.View>
     );
@@ -396,10 +544,27 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, height: 44
   },
   searchInput: { flex: 1, fontSize: 16, color: '#333' },
-  aiButton: { backgroundColor: '#f0f0f0', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 8 },
+  buttonContainer: { 
+    flexDirection: 'row', 
+    gap: 8 
+  },
+  aiButton: { 
+    backgroundColor: '#f0f0f0', 
+    paddingHorizontal: 10, 
+    height: 44,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center'
+  },
   aiButtonActive: { backgroundColor: '#000' },
-  aiButtonText: { color: '#999', fontSize: 14, fontWeight: '500' },
+  aiButtonDisabled: { backgroundColor: '#ccc' },
+  aiButtonText: { 
+    color: '#999', 
+    fontSize: 13, 
+    fontWeight: '500' 
+  },
   aiButtonTextActive: { color: '#fff' },
+  aiButtonTextDisabled: { color: '#999' },
   aiGeneratingHeader: {
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -407,7 +572,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomColor: '#ddd',
     backgroundColor: '#fafafa',
-    marginBottom: 10,  // 이 줄을 추가해 아래에 간격 부여
+    marginBottom: 10,
   },
   aiGeneratingText: { fontSize: 14, fontWeight: '600' },
   aiGeneratingEndText: { fontSize: 14, color: '#007AFF' },
@@ -433,4 +598,4 @@ const styles = StyleSheet.create({
 });
 
 
-export default BottomSheet;    
+export default BottomSheet;

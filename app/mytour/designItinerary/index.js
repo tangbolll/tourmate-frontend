@@ -583,6 +583,12 @@ const handleScheduleAdded = async (newScheduleData) => {
                 onConfirmItinerary={handleConfirmItinerary}
                 onGoBack={() => setShowActionButtons(false)}
                 onAddToSchedule={handleAddSchedule}
+                periodType={period.type}
+                startDate={period.startDate}
+                endDate={period.endDate}
+                nights={period.nights}
+                days={period.days}
+                travelId={currentTourId}
             />
 
             <AiItineraryDesignPopup
