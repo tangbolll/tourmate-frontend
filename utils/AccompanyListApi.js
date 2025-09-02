@@ -76,16 +76,50 @@ api.interceptors.response.use(
     }
 );
 
-// 백엔드 데이터를 프론트엔드 형식으로 변환하는 함수
-// 🔥 최적화: 불필요한 디버그 로그 제거
+// 1. 전체 피드 데이터 가져오기
+export const fetchAccompanyFeedApi = async (currentUserId) => {
+    console.log('🚀🚀🚀 fetchAccompanyFeedApi 호출 시작!', currentUserId);
+    try {
+        const response = await api.get('/api/accompany/home', {
+            params: { id: currentUserId },
+        });
+        
+        console.log('🚀🚀🚀 fetchAccompanyFeedApi 응답 받음:', response.data);
+        
+        // 🔥 여기서 변환 함수 호출!
+        const transformedData = transformAccompanyData(response.data);
+        console.log('🚀🚀🚀 변환된 데이터:', transformedData);
+        
+        return transformedData; // 변환된 데이터 반환
+    } catch (error) {
+        console.log('🚀🚀🚀 fetchAccompanyFeedApi 에러:', error);
+        throw error;
+    }
+};
+
+// transformAccompanyData 함수도 디버깅 추가:
 export const transformAccompanyData = (accompanyData) => {
     if (!accompanyData || !Array.isArray(accompanyData)) return [];
 
     return accompanyData.map((item) => {
         const transformedId = item.id?.toString() || Math.random().toString();
-        // 🔥 'images' 배열을 사용하여 'mainImageUrl'을 설정합니다.
         const mainImageUrl = item.mainImageUrl || (item.images && item.images.length > 0 ? item.images[0] : null);
-        console.log('Accompany Image URL:', mainImageUrl);
+        
+        // 🔥 디버깅: 날짜 필드들 확인
+        console.log('📅 날짜 디버깅:', {
+            postId: item.id,
+            tripStartDate: item.tripStartDate,
+            tripEndDate: item.tripEndDate,
+            원본_tripStartDate_타입: typeof item.tripStartDate,
+            원본_tripEndDate_타입: typeof item.tripEndDate
+        });
+        
+        const tags = [
+            item.gender === 'ALL' ? '성별무관' : item.gender,
+            ...(item.category || []),
+            ...(item.ageGroup || []),
+            ...(item.tag || []),
+        ].filter(Boolean);
 
         return {
             id: transformedId,
@@ -95,35 +129,16 @@ export const transformAccompanyData = (accompanyData) => {
             meetingPoint: item.meetPlace || '',
             currentParticipants: item.currentParticipants || item.member?.length || 0,
             maxRecruit: item.maxRecruit || 0,
-            //mainImageUrl: item.images && item.images.length > 0 ? item.images[0] : null,
-            mainImageUrl: mainImageUrl, // ✨ 수정된 변수 사용
-            tags: [
-                item.gender === 'ALL' ? '성별무관' : item.gender,
-                ...(item.category || []),
-                ...(item.ageGroup || []),
-                ...(item.tag || []),
-            ].filter(Boolean),
-            
-            tripStartDate: item.tripStartDate, 
-            tripEndDate: item.tripEndDate,
+            mainImageUrl: mainImageUrl,
+            tags: tags,
+            tripStartDate: item.tripStartDate,  // 🔥 이 필드들이 중요
+            tripEndDate: item.tripEndDate,      // 🔥 이 필드들이 중요
             hostId: item.userId || null,
             status: item.accompanyStatus || '상태 미정',
             likeCount: item.likeCount || 0,
             userApplicationStatus: item.userApplicationStatus || null,
         };
     });
-};
-
-// 1. 전체 피드 데이터 가져오기
-export const fetchAccompanyFeedApi = async (currentUserId) => {
-    try {
-        const response = await api.get('/api/accompany/home', {
-            params: { id: currentUserId },
-        });
-        return response.data; // Changed this line
-    } catch (error) {
-        throw error;
-    }
 };
 
 // 2. 내가 만든 동행 데이터 가져오기
@@ -141,12 +156,17 @@ export const fetchMyCreatedAccompanyApi = async (currentUserId) => {
 // 3. 신청한 동행 목록 데이터 가져오기
 export const fetchMyAppliedAccompanyApi = async (currentUserId) => {
     try {
-        // 🔥 최적화: 타임아웃 재정의
         const response = await api.get('/api/accompany/my-applications', {
             params: { id: currentUserId },
-            timeout: 20000,
         });
-        return transformAccompanyData(response.data);
+        
+        console.log('🚀 Applied 원본 데이터:', response.data);
+        
+        // 🔥 여기서 변환 함수 호출!
+        const transformedData = transformAccompanyData(response.data);
+        console.log('🚀 Applied 변환된 데이터:', transformedData);
+        
+        return transformedData; // 변환된 데이터 반환
     } catch (error) {
         throw error;
     }
