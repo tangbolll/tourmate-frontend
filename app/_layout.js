@@ -45,8 +45,11 @@ function RootLayoutNav() {
                 console.log('Redirecting to tabs');
                 router.replace('/(tabs)');
             } else if (!user && !inAuthGroup) {
-                console.log('Redirecting to login');
-                router.replace('/auth/login');
+                const isPublicRoute = segments[0] === '(public)';
+                if (!isPublicRoute) {
+                    console.log('Redirecting to login');
+                    router.replace('/auth/login');
+                }
             }
         }
     }, [user, segments, loading]);

@@ -89,7 +89,7 @@ const TermsAgreementScreen = () => {
                     onPress={() => setTermsAgreed(!termsAgreed)}
                     isRequired
                     showViewContent
-                    viewContentPath='/profile/terms-and-policies/terms-of-service'
+                    viewContentPath='/(public)/terms-and-policies/terms-of-service'
                 />
                 <Checkbox
                     label="개인정보 수집 및 이용 동의"
@@ -97,7 +97,7 @@ const TermsAgreementScreen = () => {
                     onPress={() => setPrivacyAgreed(!privacyAgreed)}
                     isRequired
                     showViewContent
-                    viewContentPath='/profile/terms-and-policies/privacy-policy'
+                    viewContentPath='/(public)/terms-and-policies/privacy-policy'
                 />
                 <Checkbox
                     label="위치기반서비스 이용약관 동의"
@@ -105,14 +105,14 @@ const TermsAgreementScreen = () => {
                     onPress={() => setLocationTermsAgreed(!locationTermsAgreed)}
                     isRequired
                     showViewContent
-                    viewContentPath='/profile/terms-and-policies/location-terms'
+                    viewContentPath='/(public)/terms-and-policies/location-terms'
                 />
                 <Checkbox
                     label="마케팅 수신 동의"
                     isChecked={marketingAgreed}
                     onPress={() => setMarketingAgreed(!marketingAgreed)}
                     showViewContent
-                    viewContentPath='/profile/terms-and-policies/marketing-policy' // Assuming a marketing policy screen
+                    viewContentPath='/(public)/terms-and-policies/marketing-policy' // Assuming a marketing policy screen
                 />
             </ScrollView>
 
