@@ -387,72 +387,79 @@ const Chat = () => {
         }
     }, [messages]);
 
-    // 초기 데이터 로드
-    useEffect(() => {
-        const loadChatData = async () => {
-    if (!chatRoomId && !postId) {
-        setError('잘못된 접근입니다.');
-        setLoading(false);
-        return;
-    }
-
-    try {
-        setLoading(true);
-        setError(null);
-        
-        console.log('🚀 채팅방 초기화 시작');
-        console.log('📝 파라미터:', { chatRoomId, postId });
-        
-        let roomData;
-        
-        // 1. 채팅방 정보 가져오기
-        if (chatRoomId) {
-            roomData = await fetchOrCreateChatRoom(chatRoomId, true);
-        } else if (postId) {
-            roomData = await fetchOrCreateChatRoom(postId, false);
-        }
-        
-        if (!roomData) {
-            setError('채팅방을 불러올 수 없습니다.');
+// 초기 데이터 로드
+useEffect(() => {
+    const loadChatData = async () => {
+        if (!chatRoomId && !postId) {
+            setError('잘못된 접근입니다.');
+            setLoading(false);
             return;
         }
-        
-        console.log('🏠 채팅방 데이터:', roomData);
-        setChatRoom(roomData);
-        
-        // 2. 동행 게시물 정보 가져오기
-        const accompanyIdToUse = roomData.accompanyId || postId;
-        console.log('🎯 동행 ID:', accompanyIdToUse);
-        
-        if (accompanyIdToUse) {
-            try {
-                const postInfo = await getAccompanyPostInfo(accompanyIdToUse);
-                console.log('📋 동행 정보:', postInfo);
-                setAccompanyInfo(postInfo);
-            } catch (error) {
-                console.error('동행 정보 조회 실패:', error);
-                // 동행 정보 조회 실패해도 계속 진행
-            }
-        }
-        
-        // 3. 기존 메시지 목록 가져오기
-        const messages = await fetchMessages(roomData.id, currentUserId);
-        console.log('💬 메시지 개수:', messages.length);
-        setMessages(messages);
-        
-        console.log('✅ 채팅방 초기화 완료');
-        
-    } catch (error) {
-        console.error('❌ 채팅 데이터 로드 실패:', error);
-        setError('채팅방을 불러올 수 없습니다.');
-        Alert.alert('오류', '채팅방 연결에 실패했습니다.');
-    } finally {
-        setLoading(false);
-    }
-}; 
 
-        loadChatData();
-    }, [chatRoomId, postId]);
+        // 🔧 currentUserId가 없으면 로딩을 기다림
+        if (!currentUserId) {
+            console.log('⏳ currentUserId 로딩 대기 중...');
+            return;
+        }
+
+        try {
+            setLoading(true);
+            setError(null);
+            
+            console.log('🚀 채팅방 초기화 시작');
+            console.log('📝 파라미터:', { chatRoomId, postId, currentUserId });
+            
+            let roomData;
+            
+            // 1. 채팅방 정보 가져오기
+            if (chatRoomId) {
+                roomData = await fetchOrCreateChatRoom(chatRoomId, true);
+            } else if (postId) {
+                roomData = await fetchOrCreateChatRoom(postId, false);
+            }
+            
+            if (!roomData) {
+                setError('채팅방을 불러올 수 없습니다.');
+                return;
+            }
+            
+            console.log('🏠 채팅방 데이터:', roomData);
+            setChatRoom(roomData);
+            
+            // 2. 동행 게시물 정보 가져오기
+            const accompanyIdToUse = roomData.accompanyId || postId;
+            console.log('🎯 동행 ID:', accompanyIdToUse);
+            
+            if (accompanyIdToUse) {
+                try {
+                    // 🔧 currentUserId를 두 번째 매개변수로 전달
+                    const postInfo = await getAccompanyPostInfo(accompanyIdToUse, currentUserId);
+                    console.log('📋 동행 정보:', postInfo);
+                    setAccompanyInfo(postInfo);
+                } catch (error) {
+                    console.error('동행 정보 조회 실패:', error);
+                    // 동행 정보 조회 실패해도 계속 진행
+                }
+            }
+            
+            // 3. 기존 메시지 목록 가져오기
+            const messages = await fetchMessages(roomData.id, currentUserId);
+            console.log('💬 메시지 개수:', messages.length);
+            setMessages(messages);
+            
+            console.log('✅ 채팅방 초기화 완료');
+            
+        } catch (error) {
+            console.error('❌ 채팅 데이터 로드 실패:', error);
+            setError('채팅방을 불러올 수 없습니다.');
+            Alert.alert('오류', '채팅방 연결에 실패했습니다.');
+        } finally {
+            setLoading(false);
+        }
+    }; 
+
+    loadChatData();
+}, [chatRoomId, postId, currentUserId]); // 🔧 currentUserId도 의존성에 추가
     
     // 메시지 전송 핸들러
     const handleSend = () => {
