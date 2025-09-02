@@ -1,9 +1,9 @@
-// import TypeTestMain from './typeTest/index';
-// import Home from './(tabs)';
+import TypeTestMain from './typeTest/index';
+import Home from './(tabs)';
 
-// export default function Index() {
-//     return <TypeTestMain />;
-// }
+export default function Index() {
+    return <TypeTestMain />;
+}
 
 // 이것도 나중에 지울게요 - 탱
 // import React, { useEffect } from 'react';
