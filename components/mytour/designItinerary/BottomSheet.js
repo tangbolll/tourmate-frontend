@@ -45,7 +45,7 @@ const contentTypeMap = {
 const BottomSheet = ({
     regions, onAttractionToggle, selectedAttractions = [],
     onAiItineraryPress, showActionButtons = false,
-    onConfirmItinerary, onRecommendAgain, onGoBack
+    onConfirmItinerary, onRecommendAgain, onGoBack, onAddToSchedule
 }) => {
     const [searchText, setSearchText] = useState('');
     const [expandedSections, setExpandedSections] = useState({});
@@ -178,8 +178,6 @@ const BottomSheet = ({
 
     const renderAttraction = ({ item }) => (
         <AttractionCard
-            // ✅ key prop을 FlatList에서 renderItem으로 옮겨주면 경고가 사라집니다.
-            // key={item.contentid} 
             attraction={{
                 id: item.contentid,
                 typeId: item.contenttypeid,
@@ -190,8 +188,20 @@ const BottomSheet = ({
             }}
             isSelected={isAttractionSelected(item.contentid)}
             isExpanded={expandedSections[item.contentid]}
-            onToggle={onAttractionToggle} // onToggle은 attraction 객체 전체를 넘겨주도록 수정
+            onToggle={onAttractionToggle} // attraction 객체 전체를 인자로 넘긴다고 가정
             onExpand={() => handleExpand(item)}
+            onAddToSchedule={(attraction) => {
+            const locationValue = attraction.detailInfo?.addr || attraction.name || '';
+            console.log('BottomSheet onAddToSchedule 호출:', { name: attraction.name, location: locationValue });
+
+            onAddToSchedule(
+                1,           // day (예시)
+                null,        // date
+                null,        // hour
+                attraction,  // attraction 객체
+                locationValue    // location 인자에 이름 또는 주소 전달
+            );
+            }}
         />
     );
 
@@ -265,7 +275,6 @@ const BottomSheet = ({
 
                     <TouchableOpacity
                         style={[styles.aiButton, selectedAttractions.length > 0 && styles.aiButtonActive]}
-                        disabled={selectedAttractions.length === 0}
                         onPress={onAiItineraryPress}
                     >
                         <Text style={[styles.aiButtonText, selectedAttractions.length > 0 && styles.aiButtonTextActive]}>AI 일정</Text>
