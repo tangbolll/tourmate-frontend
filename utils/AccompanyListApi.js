@@ -10,7 +10,7 @@ const api = axios.create({
     baseURL: (() => {
         let baseUrl;
         if (__DEV__) {
-            baseUrl = Platform.OS === 'android' ? 'http://10.0.2.2:8080' : Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
+            baseUrl = Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
         }
         else {
             baseUrl = Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL';

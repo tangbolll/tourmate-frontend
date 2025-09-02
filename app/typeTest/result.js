@@ -179,7 +179,7 @@ export default function Result() {
     }
 
     const handleGoHome = () => {
-        router.push('/');
+        router.replace('/(tabs)');
     };
 
     const handleSetProfile = async () => {
@@ -196,7 +196,6 @@ export default function Result() {
             //await AsyncStorage.setItem('userTravelType', travelType);
             
             // (tabs)/index.js로 이동
-            router.replace('/'); // Go to home first
             router.push('/profile/edit'); // Then push profile settings
         } catch (error) {
             console.error('프로필 설정 오류:', error);
