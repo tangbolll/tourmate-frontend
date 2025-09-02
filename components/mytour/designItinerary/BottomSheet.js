@@ -43,7 +43,7 @@ const contentTypeMap = {
 };
 
 const BottomSheet = ({
-    regions, onAttractionToggle, selectedAttractions = [],
+    regions, onAttractionToggle,
     onAiItineraryPress, showActionButtons = false,
     onConfirmItinerary, onRecommendAgain, onGoBack, onAddToSchedule
 }) => {
@@ -186,22 +186,25 @@ const BottomSheet = ({
                 image: item.firstimage,
                 detailInfo: detailMap[item.contentid] || null
             }}
-            isSelected={isAttractionSelected(item.contentid)}
+            isSelected={isAIGenerating ? isAiAttractionSelected(item.contentid) : selectedAttractions.some(a => a.id === item.contentid)}
             isExpanded={expandedSections[item.contentid]}
-            onToggle={onAttractionToggle} // attraction 객체 전체를 인자로 넘긴다고 가정
+            onToggle={onAttractionToggle}
             onExpand={() => handleExpand(item)}
             onAddToSchedule={(attraction) => {
-            const locationValue = attraction.detailInfo?.addr || attraction.name || '';
-            console.log('BottomSheet onAddToSchedule 호출:', { name: attraction.name, location: locationValue });
-
-            onAddToSchedule(
-                1,           // day (예시)
-                null,        // date
-                null,        // hour
-                attraction,  // attraction 객체
-                locationValue    // location 인자에 이름 또는 주소 전달
-            );
+            if (isAIGenerating) {
+                handleToggleAiAttraction(attraction.id);
+            } else {
+                const locationValue = attraction.detailInfo?.addr || attraction.name || '';
+                onAddToSchedule(
+                1,
+                null,
+                null,
+                attraction,
+                locationValue
+                );
+            }
             }}
+            isAIGenerating={isAIGenerating}
         />
     );
 
@@ -245,12 +248,46 @@ const BottomSheet = ({
         }
     };
 
+    const [isAIGenerating, setIsAIGenerating] = useState(false);
+    const [aiSelectedAttractions, setAiSelectedAttractions] = useState([]);
+    const [selectedAttractions, setSelectedAttractions] = useState([]);
+
+
+    // AI 일정 생성 시작
+    const handleAIGenerateStart = () => setIsAIGenerating(true);
+
+    // 관광지 중복 선택 토글
+    const handleToggleAiAttraction = (attractionId) => {
+    setAiSelectedAttractions(prev =>
+        prev.includes(attractionId)
+        ? prev.filter(id => id !== attractionId)
+        : [...prev, attractionId]
+    );
+    };
+
+    const isAiAttractionSelected = (id) => aiSelectedAttractions.includes(id);
+
+    // 일정생성 끝내기
+    const handleAIGenerateEnd = () => {
+    setIsAIGenerating(false);
+    setSelectedAttractions([]);
+    };
 
     return (
+
         <Animated.View style={[styles.container, { transform: [{ translateY }] }]}>
             <View {...panResponder.panHandlers} ref={panResponderHandleRef}>
                 <View style={styles.handle} />
             </View>
+
+            {isAIGenerating && (
+                <View style={styles.aiGeneratingHeader}>
+                <Text style={styles.aiGeneratingText}>AI 일정 생성 중입니다.</Text>
+                <TouchableOpacity onPress={handleAIGenerateEnd}>
+                    <Text style={styles.aiGeneratingEndText}>일정생성 끝내기</Text>
+                </TouchableOpacity>
+                </View>
+            )}
 
             <FloatingActionButtons
                 showActionButtons={showActionButtons}
@@ -262,24 +299,27 @@ const BottomSheet = ({
 
             <View style={styles.contentContainer}>
                 <View style={styles.header}>
-                    <View style={styles.searchContainer}>
-                        <Ionicons name="search" size={20} color="#666" style={{ marginRight: 8 }} />
-                        <TextInput
+                        <View style={styles.searchContainer}>
+                            <Ionicons name="search" size={20} color="#666" style={{ marginRight: 8 }} />
+                            <TextInput
                             style={styles.searchInput}
                             placeholder="관심있는 관광지를 검색해보세요!"
                             placeholderTextColor="#999"
                             value={searchText}
                             onChangeText={setSearchText}
-                        />
-                    </View>
+                            editable={!isAIGenerating}
+                            />
+                        </View>
 
-                    <TouchableOpacity
-                        style={[styles.aiButton, selectedAttractions.length > 0 && styles.aiButtonActive]}
-                        onPress={onAiItineraryPress}
-                    >
-                        <Text style={[styles.aiButtonText, selectedAttractions.length > 0 && styles.aiButtonTextActive]}>AI 일정</Text>
-                    </TouchableOpacity>
-                </View>
+                        {!isAIGenerating && (
+                            <TouchableOpacity
+                            style={[styles.aiButton, styles.aiButtonActive]}
+                            onPress={handleAIGenerateStart}
+                            >
+                            <Text style={[styles.aiButtonText, styles.aiButtonTextActive]}>AI 일정</Text>
+                            </TouchableOpacity>
+                        )}
+                        </View>
 
                 <FlatList
                     data={flatRegionList}
@@ -322,61 +362,75 @@ const BottomSheet = ({
                         contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 150 }}
                     />
                 </View>
+
+                {/* AI 일정 생성 중일 때 생성하기 버튼 */}
+                {isAIGenerating && (
+                <TouchableOpacity
+                    style={styles.generateButton}
+                    onPress={() => onAiItineraryPress(aiSelectedAttractions)}
+                    disabled={aiSelectedAttractions.length === 0}
+                >
+                    <Text style={styles.generateButtonText}>생성하기</Text>
+                </TouchableOpacity>
+                )}
+
             </View>
         </Animated.View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: {
-        position: 'absolute',
-        left: 0, right: 0, bottom: 0, height: screenHeight,
-        backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20,
-        shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5,
-        justifyContent: 'flex-start',
-    },
-    handle: { width: 40, height: 4, backgroundColor: '#ddd', borderRadius: 2, alignSelf: 'center', marginTop: 8, marginBottom: 16 },
-    contentContainer: {
-        paddingTop: 0,
-        flex: 1,
-    },
-    header: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, alignItems: 'center', gap: 12 },
-    searchContainer: { flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, height: 44 },
-    searchInput: { flex: 1, fontSize: 16, color: '#333' },
-    aiButton: { backgroundColor: '#f0f0f0', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 8 },
-    aiButtonActive: { backgroundColor: '#000' },
-    aiButtonText: { color: '#999', fontSize: 14, fontWeight: '500' },
-    aiButtonTextActive: { color: '#fff' },
-    regionList: {
-        flexGrow: 0,
-        paddingTop: 4,
-        paddingBottom: 12,
-    },
-    regionListContent: {
-        alignItems: 'center',
-        paddingHorizontal: 16,
-    },
-    regionButton: {
-        paddingHorizontal: 16,
-        paddingVertical: 8,
-        borderRadius: 20,
-        borderWidth: 1,
-        borderColor: '#ddd',
-        marginRight: 8,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#fff',
-        height: 36,
-    },
-    selectedRegionButton: {
-        backgroundColor: '#000',
-        borderColor: '#000',
-    },
-    regionButtonText: { color: '#666', fontSize: 14, fontWeight: '500' },
-    selectedRegionButtonText: { color: '#fff' },
-    listContainer: {
-    flex: 1, // 남은 공간을 모두 차지하여 스크롤 영역을 만듭니다.
-    },
+  container: {
+    position: 'absolute',
+    left: 0, right: 0, bottom: 0, height: screenHeight,
+    backgroundColor: '#fff', borderTopLeftRadius: 20, borderTopRightRadius: 20,
+    shadowColor: '#000', shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.25,
+    shadowRadius: 3.84, elevation: 5,
+    justifyContent: 'flex-start',
+  },
+  handle: { width: 40, height: 4, backgroundColor: '#ddd', borderRadius: 2, alignSelf: 'center', marginTop: 8, marginBottom: 16 },
+  contentContainer: { paddingTop: 0, flex: 1 },
+  header: { flexDirection: 'row', paddingHorizontal: 16, paddingBottom: 16, alignItems: 'center', gap: 12 },
+  searchContainer: {
+    flex: 1, flexDirection: 'row', alignItems: 'center', backgroundColor: '#fff',
+    borderWidth: 1, borderColor: '#ddd', borderRadius: 8, paddingHorizontal: 12, height: 44
+  },
+  searchInput: { flex: 1, fontSize: 16, color: '#333' },
+  aiButton: { backgroundColor: '#f0f0f0', paddingHorizontal: 16, paddingVertical: 12, borderRadius: 8 },
+  aiButtonActive: { backgroundColor: '#000' },
+  aiButtonText: { color: '#999', fontSize: 14, fontWeight: '500' },
+  aiButtonTextActive: { color: '#fff' },
+  aiGeneratingHeader: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    borderBottomColor: '#ddd',
+    backgroundColor: '#fafafa',
+    marginBottom: 10,  // 이 줄을 추가해 아래에 간격 부여
+  },
+  aiGeneratingText: { fontSize: 14, fontWeight: '600' },
+  aiGeneratingEndText: { fontSize: 14, color: '#007AFF' },
+  generateButton: {
+    backgroundColor: '#000',
+    borderRadius: 8,
+    padding: 16,
+    margin: 16,
+    alignItems: 'center',
+  },
+  generateButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  regionList: { flexGrow: 0, paddingTop: 4, paddingBottom: 12 },
+  regionListContent: { alignItems: 'center', paddingHorizontal: 16 },
+  regionButton: {
+    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20, borderWidth: 1,
+    borderColor: '#ddd', marginRight: 8, justifyContent: 'center', alignItems: 'center',
+    backgroundColor: '#fff', height: 36,
+  },
+  selectedRegionButton: { backgroundColor: '#000', borderColor: '#000' },
+  regionButtonText: { color: '#666', fontSize: 14, fontWeight: '500' },
+  selectedRegionButtonText: { color: '#fff' },
+  listContainer: { flex: 1 }
 });
+
 
 export default BottomSheet;    

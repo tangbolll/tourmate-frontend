@@ -3,7 +3,7 @@ import { View, TextInput, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
 const ScheduleLocationInput = ({ location, setLocation, onChangeText }) => {
-    console.log('ScheduleLocationInput location prop:', location);
+    console.log('', location);
 
     return (
         <View style={commonStyles.section}>

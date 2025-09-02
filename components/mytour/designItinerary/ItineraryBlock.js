@@ -289,7 +289,7 @@ const TimeBlock = ({
                 onPress={handlePress}
                 activeOpacity={0.7}
             >
-                <Text style={styles.emptyBlockText}>+</Text>
+                
             </TouchableOpacity>
         );
     }
