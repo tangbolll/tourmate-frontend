@@ -38,7 +38,7 @@ export const getBaseURL = () => {
 
 
 
-const defaultProfile = require('../../../assets/defaultProfile1.png');
+const defaultProfile = require('../../../assets/defaultProfile.png');
 
 const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd, tourId }) => {
     const participants = members.length;

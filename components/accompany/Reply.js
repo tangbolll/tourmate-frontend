@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image} from 'react-native';
 
-const defaultProfile = require('../../assets/defaultProfile1.png');
+const defaultProfile = require('../../assets/defaultProfile.png');
 
 const Reply = ({ profileImage, nickname, time, content, isHost, style }) => {
     const profileSrc = profileImage

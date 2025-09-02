@@ -19,7 +19,7 @@ const Alarm = () => {
         {
             id: '2',
             userName: '동행승인',
-            userImage: require('../assets/defaultProfile1.png'),
+            userImage: require('../assets/defaultProfile.png'),
             timeAgo: '1시간 전',
             message: '동행 신청이 수락되었어요!\n그룹채팅에 참여해보세요.',
             actionType: 'accept',
@@ -28,7 +28,7 @@ const Alarm = () => {
         {
             id: '3',
             userName: '동행신청',
-            userImage: require('../assets/defaultProfile2.png'),
+            userImage: require('../assets/defaultProfile.png'),
             timeAgo: '1일 전',
             message: '주리를 틀어라 · 여 · 21세\n#맛집조아 #맛집탐방',
             actionType: 'request',

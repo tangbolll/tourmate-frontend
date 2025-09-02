@@ -5,9 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 // 기본 프로필 이미지들
 const defaultProfiles = [
-  require('../../assets/defaultProfile.png'),
-  require('../../assets/defaultProfile1.png'),
-  require('../../assets/defaultProfile2.png'),
+  require('../../assets/defaultProfile.png')
 ];
 
 const GroupChatList = ({ photo, title, message, participants, timestamp, unreadCount, onPress, onSwipeLeft }) => {

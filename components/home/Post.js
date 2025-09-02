@@ -14,7 +14,7 @@ import { toggleLikePostcard, toggleScrapPostcard } from '../../utils/HomePostApi
 import { formatChatTimestamp, formatPostDate } from '../../utils/timeUtils';
 import { useAuth } from '../../context/AuthContext';
 
-const defaultProfile = require('../../assets/defaultProfile2.png');
+const defaultProfile = require('../../assets/defaultProfile.png');
 
 const Post = ({ postData, onDataUpdate }) => {
     const { currentUserId } = useAuth();
