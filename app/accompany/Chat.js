@@ -592,7 +592,7 @@ useEffect(() => {
                 )}
             </ScrollView>
 
-            {/* 확장 버튼 클릭 시 노출되는 하단 버튼 영역 */}
+            {/* 확장 버튼 클릭 시 노출되는 하단 버튼 영역
             {showActions && (
                 <View style={styles.bottomButtons}>
                     <TouchableOpacity style={styles.actionButtonTop}>
@@ -602,7 +602,7 @@ useEffect(() => {
                         <Text style={styles.actionButtonText}>사진/동영상 전송하기</Text>
                     </TouchableOpacity>
                 </View>
-            )}
+            )} */}
 
             {/* 메시지 입력 영역 */}
             <KeyboardAvoidingView
@@ -610,9 +610,9 @@ useEffect(() => {
                 keyboardVerticalOffset={10}
                 style={styles.inputContainer}
             >
-                <TouchableOpacity style={styles.addButton} onPress={toggleActions}>
+                {/* <TouchableOpacity style={styles.addButton} onPress={toggleActions}>
                     <Feather name={showActions ? "x" : "plus"} size={24} color="black" />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
                 <View style={styles.inputWrapper}>
                     <TextInput
                         style={styles.input}
