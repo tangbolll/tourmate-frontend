@@ -3,18 +3,19 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-nati
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
+import setupAxiosInterceptor from '../../utils/axiosInterceptor';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const InquiryHistoryScreen = () => {
   const router = useRouter();
   const [inquiries, setInquiries] = useState([]);
+  const api = setupAxiosInterceptor();
 
   useEffect(() => {
     const fetchInquiries = async () => {
       try {
         const token = await AsyncStorage.getItem('jwtToken');
-        const response = await axios.get('http://localhost:8080/api/inquiries', {
+        const response = await api.get('/api/inquiries', {
           headers: {
             Authorization: `Bearer ${token}`,
           },

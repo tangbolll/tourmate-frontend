@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'rea
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import axios from 'axios';
+import setupAxiosInterceptor from '../../utils/axiosInterceptor';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const InquiryDetailScreen = () => {
@@ -11,6 +11,7 @@ const InquiryDetailScreen = () => {
   const { id } = useLocalSearchParams();
   const [inquiry, setInquiry] = useState(null);
   const [loading, setLoading] = useState(true);
+  const api = setupAxiosInterceptor();
 
   useEffect(() => {
     const fetchInquiryDetail = async () => {
@@ -21,7 +22,7 @@ const InquiryDetailScreen = () => {
           router.replace('/auth/login');
           return;
         }
-        const response = await axios.get(`http://localhost:8080/api/inquiries/${id}`, {
+        const response = await api.get(`/api/inquiries/${id}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

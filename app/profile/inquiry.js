@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity, TextInput, Alert 
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import setupAxiosInterceptor from '../../utils/axiosInterceptor';
 
 const InquiryScreen = () => {
   const router = useRouter();
+  const api = setupAxiosInterceptor();
   const [isTypeDropdownOpen, setIsTypeDropdownOpen] = useState(false);
   const [selectedType, setSelectedType] = useState('질문 유형을 선택해주세요');
   const [inquiryContent, setInquiryContent] = useState('');
@@ -31,17 +32,11 @@ const InquiryScreen = () => {
 
     try {
       const token = await AsyncStorage.getItem('jwtToken');
-      await axios.post('http://localhost:8080/api/inquiries',
-        {
+      console.log("API instance base URL:", api.defaults.baseURL);
+      await api.post('/api/inquiries', {
           type: selectedType,
           content: inquiryContent
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      });
       Alert.alert('성공', '문의사항이 성공적으로 접수되었습니다!');
       setSelectedType('질문 유형을 선택해주세요');
       setInquiryContent('');

@@ -2,10 +2,17 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
+import { getBaseURL } from './MyTourApi';
 import { Alert } from 'react-native';
 
 const setupAxiosInterceptor = () => {
-  axios.interceptors.request.use(
+  const api = axios.create({});
+
+  const API_BASE_URL = getBaseURL();
+  console.log("API_URL inside axiosInterceptor:", API_BASE_URL);
+  api.defaults.baseURL = API_BASE_URL;
+
+  api.interceptors.request.use(
     async (config) => {
       const token = await AsyncStorage.getItem('jwtToken');
       if (token) {
@@ -18,15 +25,13 @@ const setupAxiosInterceptor = () => {
     }
   );
 
-  axios.interceptors.response.use(
+  api.interceptors.response.use(
     response => response,
     async error => {
       const originalRequest = error.config;
       const status = error.response?.status;
 
-      // 💡 401 또는 403 에러 발생 시 처리
       if (status === 401 || status === 403) {
-        // 이미 재시도한 요청이면 무한 루프 방지
         if (originalRequest._retry) {
             return Promise.reject(error);
         }
@@ -59,10 +64,11 @@ const setupAxiosInterceptor = () => {
         return Promise.reject(error);
       }
 
-      // 다른 에러는 그대로 전파
       return Promise.reject(error);
     }
   );
+
+  return api;
 };
 
 export default setupAxiosInterceptor;

@@ -64,7 +64,6 @@
       "typedRoutes": true
     },
     "extra": {
-
       "API_BASE_URL_DEV": "http://172.30.1.55:8080"
     }
   }
