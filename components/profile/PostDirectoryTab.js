@@ -1,4 +1,3 @@
-// PostDirectoryTab.js
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -10,7 +9,7 @@ export const PostDirectoryTab = ({ folders, onEditFolder }) => {
         router.push({
             pathname: '/profile/postDirectory',
             params: {
-                directoryId: folder.id, // ✅ folderId -> directoryId로 수정
+                directoryId: folder.id, 
                 title: folder.title,
                 startDate: folder.startDate,
                 endDate: folder.endDate,
@@ -54,15 +53,15 @@ export const PostDirectoryTab = ({ folders, onEditFolder }) => {
                     {folders.length > 0 ? (
                         folders.map((folder) => (
                             <TouchableOpacity
-                                key={folder.id}
+                                key={folder.folderId} 
                                 style={styles.directoryCard}
                                 onPress={() => handleDirectoryPress(folder)}
-                                onLongPress={() => onEditFolder(folder)} // 길게 누르면 수정 팝업 열기
+                                onLongPress={() => onEditFolder(folder)}
                                 activeOpacity={0.8}
                             >
                                 <View style={styles.imageContainer}>
                                     <Image
-                                        source={{ uri: folder.postcards && folder.postcards.length > 0 ? folder.postcards[0].image : 'https://via.placeholder.com/400x300.png?text=No+Image' }}
+                                        source={{ uri: folder.thumbnailUrl || 'https://via.placeholder.com/400x300.png?text=No+Image' }}
                                         style={styles.directoryImage}
                                         resizeMode="cover"
                                     />
@@ -98,8 +97,8 @@ const styles = StyleSheet.create({
     grid: {
         flexDirection: 'row',
         flexWrap: 'wrap',
-        justifyContent: 'flex-start', // 카드 왼쪽 정렬
-        gap: 12, // 카드 사이 간격
+        justifyContent: 'flex-start',
+        gap: 12,
     },
     directoryCard: {
         width: '31%',
@@ -113,11 +112,14 @@ const styles = StyleSheet.create({
         shadowOpacity: 0.25,
         shadowRadius: 4,
         elevation: 5,
+        borderRadius: 8, // 카드 모서리를 둥글게
     },
     imageContainer: {
         width: '100%',
         aspectRatio: 1.48,
         backgroundColor: '#f0f0f0',
+        borderRadius: 8, // 이미지 컨테이너 모서리를 둥글게
+        overflow: 'hidden',
     },
     directoryImage: {
         width: '100%',

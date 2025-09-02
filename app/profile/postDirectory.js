@@ -1,11 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Text, Alert } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Text, Alert, ActivityIndicator } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import PostDirectoryHeader from '../../components/profile/PostDirectoryHeader';
 import PostDirectoryFooter from '../../components/profile/PostDirectoryFooter';
 import PostExpanded from '../../components/profile/PostExpanded';
-import { ActivityIndicator } from 'react-native';
 
 import {
     getPostcardsByFolderApi,
@@ -20,8 +19,9 @@ export default function PostDirectory() {
     // URL 파라미터에서 디렉토리 정보 가져오기
     const directoryId = params.directoryId || null;
     const directoryTitle = params.title || 'Busan';
-    const startDate = params.startDate || '2021.03.04';
-    const endDate = params.endDate || '2021.03.06';
+    // 날짜 포맷 변경 (YYYY-MM-DD -> YYYY.MM.DD)
+    const startDate = params.startDate ? params.startDate.replace(/-/g, '.') : '날짜 미상';
+    const endDate = params.endDate ? params.endDate.replace(/-/g, '.') : '날짜 미상';
 
     // 엽서 데이터 상태
     const [postcards, setPostcards] = useState([]);
@@ -32,9 +32,6 @@ export default function PostDirectory() {
     const [isLoading, setIsLoading] = useState(true);
     // 확장된 엽서 상태 관리 (추가된 부분)
     const [expandedPostcard, setExpandedPostcard] = useState(null);
-
-    // 날짜 범위 포맷팅
-    const formattedDateRange = `${startDate} - ${endDate}`;
 
     // 디렉토리 ID가 변경될 때마다 엽서 데이터를 불러오는 useEffect
     useEffect(() => {
@@ -64,6 +61,10 @@ export default function PostDirectory() {
                     likeCount: pc.likeCount || 0,
                     scrapCount: pc.scrapCount || 0,
                     isPublic: pc.isPublic || false,
+                    // 추가: PostExpanded가 참조할 필드 추가
+                    postcardId: pc.postcardId,
+                    imageUrl: pc.imageUrl,
+                    typeImageUrl: pc.typeImageUrl,
                 }));
                 setPostcards(formattedPostcards);
             } catch (error) {
@@ -95,8 +96,13 @@ export default function PostDirectory() {
         if (!isSelectMode) {
             // 선택 모드가 아니면 엽서 상세 페이지로 이동
             console.log('엽서 상세 페이지로 이동:', postcard.id);
-            // 엽서 상세 API 호출 로직 제거, 기존 데이터로 상세 페이지 표시
-            setExpandedPostcard(postcard);
+            // PostExpanded에 필요한 모든 데이터를 명시적으로 전달
+            // PostExpanded 내부에서 상세 API를 호출하는 로직을 제거하고 이미 받은 데이터로 표시하도록 변경
+            setExpandedPostcard({
+                ...postcard,
+                postcardId: postcard.id,
+                imageUrl: postcard.image
+            });
             return;
         }
 
@@ -172,6 +178,7 @@ export default function PostDirectory() {
     }, [selectedPostcards]);
 
     const handleShare = useCallback(() => {
+        // 1. 선택된 엽서 데이터 필터링
         const selectedPostcardsData = postcards.filter(postcard => selectedPostcards.has(postcard.id));
 
         if (selectedPostcardsData.length === 0) {
@@ -179,23 +186,81 @@ export default function PostDirectory() {
             return;
         }
 
-        console.log('선택된 엽서 공유:', selectedPostcardsData);
+        // 2. 공유에 필요한 핵심 데이터만 추출
+        const simplifiedPostcards = selectedPostcardsData.map(pc => ({
+            postcardId: pc.postcardId,
+            imageUrl: pc.imageUrl,
+            content: pc.content,
+            dateCreated: pc.dateCreated,
+            typeImageUrl: pc.typeImageUrl, // 엽서 타입 이미지 추가
+            // 필요한 다른 필드가 있다면 여기에 추가
+        }));
 
+        console.log('선택된 엽서 공유:', simplifiedPostcards);
+
+        // 3. useRouter를 통해 데이터 전달
         router.push({
             pathname: 'profile/sharePost',
             params: {
-                selectedPostcards: JSON.stringify(selectedPostcardsData),
+                // 객체를 JSON 문자열로 변환하여 전달
+                selectedPostcards: JSON.stringify(simplifiedPostcards),
+                // 날짜와 제목은 문자열 그대로 전달
                 directoryTitle: directoryTitle,
-                startDate: startDate,
-                endDate: endDate,
+                startDate: params.startDate || '날짜 미상', // params에서 원본 날짜 포맷 그대로 전달
+                endDate: params.endDate || '날짜 미상',
             }
         });
-    }, [selectedPostcards, postcards, router, directoryTitle, startDate, endDate]);
+    }, [selectedPostcards, postcards, router, directoryTitle, params.startDate, params.endDate]);
 
     // 확장된 엽서 닫기 함수
     const handleCloseExpanded = useCallback(() => {
         setExpandedPostcard(null);
     }, []);
+    
+    // 이미지 로딩 상태를 관리하고 오류 시 대체 이미지를 표시하는 컴포넌트
+    const ImageWithLoading = ({ uri, style }) => {
+        const [imageLoading, setImageLoading] = useState(true);
+        const [hasError, setHasError] = useState(false);
+
+        const handleError = () => {
+            setImageLoading(false);
+            setHasError(true);
+            console.error('❌ 이미지 로딩 실패:', uri);
+        };
+
+        const handleLoad = () => {
+            setImageLoading(false);
+            setHasError(false);
+            console.log('✅ 이미지 로딩 성공:', uri);
+        };
+
+        // 이미지 로딩 오류 시 기본 대체 이미지 URL
+        const fallbackImageUri = 'https://placehold.co/600x400/FFF/000?text=Image+Not+Found';
+
+        return (
+            <View style={[style, styles.imageWrapper]}>
+                {imageLoading && <ActivityIndicator size="small" color="#0000ff" style={styles.activityIndicator} />}
+                {hasError ? (
+                    <View style={style}>
+                        <Image
+                            source={{ uri: fallbackImageUri }}
+                            style={styles.fullImage} // 이미지 스타일을 별도로 관리하여 뷰에 꽉 차게
+                            resizeMode="cover"
+                        />
+                       <Text style={styles.errorText}>이미지를 불러오지 못했습니다.</Text>
+                    </View>
+                ) : (
+                    <Image
+                        source={{ uri }}
+                        style={[styles.fullImage, { opacity: imageLoading ? 0 : 1 }]}
+                        resizeMode="cover"
+                        onLoad={handleLoad}
+                        onError={handleError}
+                    />
+                )}
+            </View>
+        );
+    };
 
     // 엽서를 불러오는 동안 로딩 상태를 보여줍니다.
     if (isLoading) {
@@ -203,7 +268,8 @@ export default function PostDirectory() {
             <View style={styles.container}>
                 <PostDirectoryHeader
                     title={directoryTitle}
-                    dateRange={formattedDateRange}
+                    startDate={startDate}
+                    endDate={endDate}
                     onBackPress={handleBackPress}
                     showActionButton={false}
                 />
@@ -232,7 +298,8 @@ export default function PostDirectory() {
             {/* 헤더 */}
             <PostDirectoryHeader
                 title={directoryTitle}
-                dateRange={formattedDateRange}
+                startDate={startDate}
+                endDate={endDate}
                 onBackPress={handleBackPress}
                 onSelectPress={handleSelectToggle}
                 isSelectMode={isSelectMode}
@@ -257,10 +324,9 @@ export default function PostDirectory() {
                             activeOpacity={0.8}
                         >
                             <View style={styles.imageContainer}>
-                                <Image
-                                    source={{ uri: postcard.image }}
+                                <ImageWithLoading
+                                    uri={postcard.image}
                                     style={styles.postcardImage}
-                                    resizeMode="cover"
                                 />
 
                                 {/* 선택 모드일 때 체크 표시 */}
@@ -365,10 +431,34 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         backgroundColor: '#f0f0f0',
         borderRadius: 8,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     postcardImage: {
         width: '100%',
         height: '100%',
+        borderRadius: 8,
+    },
+    imageWrapper: {
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    fullImage: {
+        width: '100%',
+        height: '100%',
+    },
+    activityIndicator: {
+        position: 'absolute',
+    },
+    errorText: {
+        textAlign: 'center',
+        fontSize: 10,
+        color: '#888',
+        padding: 4,
+        position: 'absolute',
+        bottom: 0,
+        width: '100%',
+        backgroundColor: 'rgba(255, 255, 255, 0.7)',
         borderRadius: 8,
     },
     checkContainer: {

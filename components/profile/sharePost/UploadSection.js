@@ -20,7 +20,7 @@ const UploadSection = ({ onUpload, isEnabled }) => {
 const styles = StyleSheet.create({
     uploadSection: {
         padding: 16,
-        paddingBottom: 32,
+        paddingBottom: 0,
     },
     uploadNotice: {
         fontSize: 12,

@@ -8,7 +8,7 @@ import {
     Text,
     RefreshControl // 새로고침 기능을 위해 추가합니다.
 } from 'react-native';
-import PostExpanded from './PostExpanded'; // 기존 경로를 유지합니다.
+import PostExpanded from './PostExpanded';
 
 const PostBoardTab = ({ 
     userEmail, 
@@ -21,16 +21,19 @@ const PostBoardTab = ({
     const [showDetail, setShowDetail] = useState(false);
     const [refreshing, setRefreshing] = useState(false); // 새로고침 상태를 관리합니다.
 
+    // 엽서 클릭 시 상세 보기
     const handlePostcardPress = (postcard) => {
         setSelectedPostcard(postcard);
         setShowDetail(true);
     };
 
+    // 상세 보기 닫기
     const handleCloseDetail = () => {
         setShowDetail(false);
         setSelectedPostcard(null);
     };
 
+    // 당겨서 새로고침 핸들러
     const handleRefresh = async () => {
         setRefreshing(true);
         if (onRefresh) {
@@ -40,7 +43,7 @@ const PostBoardTab = ({
     };
 
     // PostExpanded에서 스크랩/좋아요 상태가 변경될 때 호출
-    const handleDataUpdate = (postcardId, actionType, wasActive) => {
+    const handleLocalDataUpdate = (postcardId, actionType, wasActive) => {
         // 상위 컴포넌트에 전달 (스크랩 목록에서 제거 등을 위해)
         if (onDataUpdate) {
             onDataUpdate(postcardId, actionType, wasActive);
@@ -74,6 +77,7 @@ const PostBoardTab = ({
         }
     };
 
+    // 엽서 아이템을 렌더링하는 함수
     const renderPostcardItems = () => {
         if (!favoritePostcards || favoritePostcards.length === 0) {
             return (
@@ -140,7 +144,7 @@ const PostBoardTab = ({
                     visible={showDetail}
                     postData={selectedPostcard}
                     onClose={handleCloseDetail}
-                    onDataUpdate={handleDataUpdate} 
+                    onDataUpdate={handleLocalDataUpdate} // ⭐ 수정
                     currentUserId={currentUserId}
                 />
             )}
