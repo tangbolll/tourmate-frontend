@@ -9,7 +9,7 @@ export const PostDirectoryTab = ({ folders, onEditFolder }) => {
         router.push({
             pathname: '/profile/postDirectory',
             params: {
-                directoryId: folder.folderId, 
+                directoryId: folder.id, 
                 title: folder.title,
                 startDate: folder.startDate,
                 endDate: folder.endDate,

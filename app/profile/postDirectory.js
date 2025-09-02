@@ -178,6 +178,7 @@ export default function PostDirectory() {
     }, [selectedPostcards]);
 
     const handleShare = useCallback(() => {
+        // 1. 선택된 엽서 데이터 필터링
         const selectedPostcardsData = postcards.filter(postcard => selectedPostcards.has(postcard.id));
 
         if (selectedPostcardsData.length === 0) {
@@ -185,18 +186,31 @@ export default function PostDirectory() {
             return;
         }
 
-        console.log('선택된 엽서 공유:', selectedPostcardsData);
+        // 2. 공유에 필요한 핵심 데이터만 추출
+        const simplifiedPostcards = selectedPostcardsData.map(pc => ({
+            postcardId: pc.postcardId,
+            imageUrl: pc.imageUrl,
+            content: pc.content,
+            dateCreated: pc.dateCreated,
+            typeImageUrl: pc.typeImageUrl, // 엽서 타입 이미지 추가
+            // 필요한 다른 필드가 있다면 여기에 추가
+        }));
 
+        console.log('선택된 엽서 공유:', simplifiedPostcards);
+
+        // 3. useRouter를 통해 데이터 전달
         router.push({
             pathname: 'profile/sharePost',
             params: {
-                selectedPostcards: JSON.stringify(selectedPostcardsData),
+                // 객체를 JSON 문자열로 변환하여 전달
+                selectedPostcards: JSON.stringify(simplifiedPostcards),
+                // 날짜와 제목은 문자열 그대로 전달
                 directoryTitle: directoryTitle,
-                startDate: startDate,
-                endDate: endDate,
+                startDate: params.startDate || '날짜 미상', // params에서 원본 날짜 포맷 그대로 전달
+                endDate: params.endDate || '날짜 미상',
             }
         });
-    }, [selectedPostcards, postcards, router, directoryTitle, startDate, endDate]);
+    }, [selectedPostcards, postcards, router, directoryTitle, params.startDate, params.endDate]);
 
     // 확장된 엽서 닫기 함수
     const handleCloseExpanded = useCallback(() => {
