@@ -7,7 +7,8 @@ const AttractionCard = ({
     isSelected,
     isExpanded,
     onToggle,
-    onExpand
+    onExpand,
+    onAddToSchedule,
 }) => {
     // '더보기' 기능을 위한 상태 변수
     const [isTextExpanded, setIsTextExpanded] = useState(false);
@@ -46,9 +47,12 @@ const AttractionCard = ({
                     <View style={styles.attractionInfo}>
                         <Text style={styles.attractionName}>{attraction?.name || '이름 없음'}</Text>                        
                     </View>
-                    <TouchableOpacity style={styles.addToScheduleButton}>
-                        <Text style={styles.addToScheduleButtonText}>시간표에 추가</Text>
-                    </TouchableOpacity>
+                        <TouchableOpacity
+                            style={styles.addToScheduleButton}
+                            onPress={() => onAddToSchedule(attraction)}  // 여기 onPress 추가
+                        >
+                            <Text style={styles.addToScheduleButtonText}>시간표에 추가</Text>
+                        </TouchableOpacity>
                 </View>
                 
                 {/* 펼침 상태 */}

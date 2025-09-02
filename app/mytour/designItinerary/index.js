@@ -69,6 +69,8 @@ export default function DesignItinerary() {
     const [isEditModalVisible, setIsEditModalVisible] = useState(false);
     const [isAutoSaving, setIsAutoSaving] = useState(false); 
     const [isManuallySaving, setIsManuallySaving] = useState(false); 
+    const [location, setLocation] = useState('');
+
 
 
 
@@ -456,22 +458,38 @@ const handleScheduleAdded = async (newScheduleData) => {
         setMembers(prev => prev.filter(member => member.userId !== memberToDelete.userId));
     };
     const handleMemberAdd = (newMember) => setMembers(prev => [...prev, newMember]);
-    const handleAddSchedule = (day, date, hour) => {
+
+    const handleAddSchedule = (day, date, hour, attraction, locationValue = '') => {
+        console.log('handleAddSchedule 인자:', {attraction, location});
+
         if (!currentTourId) {
             return Alert.alert("알림", "먼저 여행을 저장한 후 일정을 추가할 수 있습니다.");
         }
-                const dateForDay = date || (period.startDate ? dayjs(period.startDate).add(day - 1, 'day').format('YYYY-MM-DD') : null);
+        const dateForDay = date || (period.startDate ? dayjs(period.startDate).add(day - 1, 'day').format('YYYY-MM-DD') : null);
+        
         console.log(`[handleAddSchedule] day: ${day}, date: ${date}, period.startDate: ${period.startDate}, calculated dateForDay: ${dateForDay}`);
-        setSchedulePopupData({ selectedDay: day, selectedDate: dateForDay, selectedHour: hour, existingSchedule: null });
+        
+        setLocation(locationValue);
+
+        setSchedulePopupData({ 
+        selectedDay: day, 
+        selectedDate: dateForDay, 
+        selectedHour: hour, 
+        existingSchedule: null,
+        location: locationValue  // 위치 정보 추가
+        });
         setShowAddSchedulePopup(true);
     };
+
+
     const handleTimeBlockClick = (blockData) => {
         const popupData = {
             selectedDay: blockData.day,
             selectedDate: blockData.date, // 💡 `date`를 `selectedDate`로 매핑
             hour: blockData.hour,
             minute: blockData.minute,
-            existingSchedule: blockData.existingSchedule
+            existingSchedule: blockData.existingSchedule,
+            location: location, 
         };
         setSchedulePopupData(popupData);
         setShowAddSchedulePopup(true);
@@ -603,6 +621,9 @@ const handleScheduleAdded = async (newScheduleData) => {
                     periodType={period.type}
                     startDate={period.startDate}
                     endDate={period.endDate}
+
+                    location={location}           // 위치 상태 전달
+                    setLocation={setLocation}     // 상태 변경 함수 전달
                 />
             )}
 
