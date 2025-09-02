@@ -4,7 +4,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 
 import dayjs from 'dayjs';
 
-// 컴포넌트 Imports
+// 컴포넌트 ImportsW
 import DesignItineraryHeader from '../../../components/mytour/designItinerary/designItineraryHeader';
 import DateSelectButtons from '../../../components/mytour/designItinerary/DateSelectButtons';
 import BottomSheet from '../../../components/mytour/designItinerary/BottomSheet';
@@ -355,11 +355,11 @@ const handleScheduleAdded = async (newScheduleData) => {
             travelId: currentTourId,
             date: newScheduleData.date,
             timeSlot: `${newScheduleData.startTime} ~ ${newScheduleData.endTime}`,
-            title: newScheduleData.title,
+            attributeTitle: newScheduleData.title,
             tag: newScheduleData.category || 'CUSTOM',
             location: locationName,
-            latitude,
-            longitude,
+            latitude: latitude !== null ? latitude : 0.0,
+            longitude: longitude !== null ? longitude : 0.0,
             memo: newScheduleData.memo || ''
         };
 
@@ -369,6 +369,7 @@ const handleScheduleAdded = async (newScheduleData) => {
         if (schedulePopupData?.existingSchedule?.id) {
             await updateTravelSchedule(schedulePopupData.existingSchedule.id, payload);
         } else {
+            console.log('🔴 서버로 전송 직전 최종 데이터:', JSON.stringify(payload, null, 2));
             await createTravelSchedule(payload);
         }
 
@@ -634,6 +635,7 @@ const handleScheduleAdded = async (newScheduleData) => {
                 periodType={period.type}
                 startDate={period.startDate}
                 endDate={period.endDate}
+                days={period.days}
                 
                 initialTitle={schedulePopupData.title || ''}
                 initialLocation={schedulePopupData.location || ''}

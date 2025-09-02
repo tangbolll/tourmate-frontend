@@ -38,9 +38,11 @@ const AddSchedule = ({
     onScheduleDelete,
     currentTourId,
     initialTitle = '',
-    initialLocation = ''
+    initialLocation = '',
+
 }) => {
     console.log('DesignItinerary로부터 받은 모든 props:', initialTitle, initialLocation);
+    console.log(`[AddSchedule] 팝업이 받음 - periodType: ${periodType}, startDate: ${startDate}, endDate: ${endDate}, days: ${days}`);
     const [category, setCategory] = useState('숙소');
     const [title, setTitle] = useState('');
     const [startTime, setStartTime] = useState('07:30');
@@ -143,7 +145,8 @@ const AddSchedule = ({
             }
         }
         return dateList;
-    }, [periodType, startDate, endDate, days]);
+        // 👇 로직에 필요한 periodType, startDate, endDate, days 만 남깁니다.
+    }, [periodType, startDate, endDate, days]); 
 
     useEffect(() => {
         if (visible) {
