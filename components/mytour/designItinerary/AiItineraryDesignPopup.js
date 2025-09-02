@@ -12,6 +12,23 @@ import { Ionicons } from '@expo/vector-icons';
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
+const getBaseURL = () => {
+// 개발 모드일 때
+if (__DEV__) {
+    if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:8080';
+    }
+    if (Platform.OS === 'web') {
+    return 'http://localhost:8080';
+    }
+    return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+} 
+// 배포(프로덕션) 모드일 때
+else {
+    return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+}
+};
+
 const AiItineraryDesignPopup = ({ 
     visible, 
     onClose, 
@@ -107,6 +124,24 @@ const AiItineraryDesignPopup = ({
     };
 
     const { leftColumn, rightColumn } = getDateColumns();
+
+    // 백엔드에 데이터 전달
+    const handleAiPopupConfirm = async (result) => {
+    try {
+        // 예시 API 요청, 실제 URL 및 요청 내용에 맞게 수정 필요
+        const response = await fetch(`${getBaseURL()}/api/ai/generate-suggestions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(result),
+        });
+        const data = await response.json();
+        console.log('백엔드 응답:', data);
+        // 성공 처리 (예: 팝업 닫기, 알림 등)
+    } catch (error) {
+        console.error('백엔드 전송 실패:', error);
+        // 실패 처리 (예: 에러 표시)
+    }
+    };
 
     return (
         <Modal
