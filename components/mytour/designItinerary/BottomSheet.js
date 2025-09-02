@@ -191,17 +191,16 @@ const BottomSheet = ({
             onToggle={onAttractionToggle} // attraction 객체 전체를 인자로 넘긴다고 가정
             onExpand={() => handleExpand(item)}
             onAddToSchedule={(attraction) => {
-                console.log('BottomSheet onAddToSchedule 호출, attraction:', attraction);
-                const attractionName = (attraction && typeof attraction === 'object' && 'name' in attraction) ? attraction.name : '';
-                const attractionLocation = (attraction && attraction.detailInfo && attraction.detailInfo.addr) ? attraction.detailInfo.addr : '';
-                onAddToSchedule(
-                    1,
-                    null,
-                    null,
-                    attraction,
-                    attractionName,
-                    attractionLocation
-                );
+            const locationValue = attraction.detailInfo?.addr || attraction.name || '';
+            console.log('BottomSheet onAddToSchedule 호출:', { name: attraction.name, location: locationValue });
+
+            onAddToSchedule(
+                1,           // day (예시)
+                null,        // date
+                null,        // hour
+                attraction,  // attraction 객체
+                locationValue    // location 인자에 이름 또는 주소 전달
+            );
             }}
         />
     );
@@ -276,7 +275,6 @@ const BottomSheet = ({
 
                     <TouchableOpacity
                         style={[styles.aiButton, selectedAttractions.length > 0 && styles.aiButtonActive]}
-                        disabled={selectedAttractions.length === 0}
                         onPress={onAiItineraryPress}
                     >
                         <Text style={[styles.aiButtonText, selectedAttractions.length > 0 && styles.aiButtonTextActive]}>AI 일정</Text>

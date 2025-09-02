@@ -36,7 +36,9 @@ const AddSchedule = ({
     days,
     existingSchedule,
     onScheduleDelete,
-    currentTourId
+    currentTourId,
+    initialTitle = '',
+    initialLocation = ''
 }) => {
     const [category, setCategory] = useState('숙소');
     const [title, setTitle] = useState('');
@@ -74,6 +76,29 @@ const AddSchedule = ({
 
     const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
     const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
+
+    useEffect(() => {
+    if (visible) {
+      if (existingSchedule) {
+        setTitle(existingSchedule.title || '');
+        setLocation(existingSchedule.location || '');
+        // 기타 기존 상태 초기화
+      } else {
+        setTitle(initialTitle);
+        setLocation(initialLocation);
+        // 기타 초기화
+      }
+    }
+  }, [visible, existingSchedule, initialTitle, initialLocation]);
+
+
+    useEffect(() => {
+    if (location !== undefined) {
+        setLocation(location);
+        console.log('AddSchedule 내부 useEffect - location 상태 초기화:', location);
+    }
+    }, [location]);
+
 
     // ... (키보드 및 날짜 관련 useEffect 로직은 변경 없음) ...
     useEffect(() => {
@@ -138,8 +163,8 @@ const AddSchedule = ({
                 setMemoHeight(existingSchedule.memo ? Math.max(40, existingSchedule.memo.split('\n').length * 20 + 20) : 40);
             } else {
                 setCategory('숙소');
-                setTitle('');
-                setLocation('');
+                setTitle(initialTitle || '');
+                setLocation(initialLocation || '');
                 setMemo('');
                 setMemoHeight(40);
                 if (selectedDate) {
@@ -176,6 +201,7 @@ const AddSchedule = ({
             // --- 💡 2. 모달이 닫힐 때 검색 결과 초기화 ---
             setShowSearchResults(false);
             setSearchResults([]);
+            setLocation('');
             // ---------------------------------------
         }
     }, [visible]);
@@ -465,6 +491,6 @@ const styles = StyleSheet.create({
         color: '#666',
     }
 });
-// ------------------------------------
 
 export default AddSchedule;
+

@@ -460,25 +460,20 @@ const handleScheduleAdded = async (newScheduleData) => {
     const handleMemberAdd = (newMember) => setMembers(prev => [...prev, newMember]);
 
     const handleAddSchedule = (day, date, hour, attraction, locationValue = '') => {
-        console.log('handleAddSchedule 인자:', {attraction, location});
+    const title = attraction?.name || '';
 
-        if (!currentTourId) {
-            return Alert.alert("알림", "먼저 여행을 저장한 후 일정을 추가할 수 있습니다.");
-        }
-        const dateForDay = date || (period.startDate ? dayjs(period.startDate).add(day - 1, 'day').format('YYYY-MM-DD') : null);
-        
-        console.log(`[handleAddSchedule] day: ${day}, date: ${date}, period.startDate: ${period.startDate}, calculated dateForDay: ${dateForDay}`);
-        
-        setLocation(locationValue);
+    setLocation(locationValue);
 
-        setSchedulePopupData({ 
-        selectedDay: day, 
-        selectedDate: dateForDay, 
-        selectedHour: hour, 
+    setSchedulePopupData({
+        selectedDay: day,
+        selectedDate: date || (period.startDate ? dayjs(period.startDate).add(day -1, 'day').format('YYYY-MM-DD') : null),
+        selectedHour: hour,
         existingSchedule: null,
-        location: locationValue  // 위치 정보 추가
-        });
-        setShowAddSchedulePopup(true);
+        location: locationValue,
+        title: title   // 이 부분을 추가하여 schedulePopupData에 title 포함
+    });
+
+    setShowAddSchedulePopup(true);
     };
 
 
@@ -494,9 +489,11 @@ const handleScheduleAdded = async (newScheduleData) => {
         setSchedulePopupData(popupData);
         setShowAddSchedulePopup(true);
     };
+    
     const handleCloseAddSchedulePopup = () => {
-        setShowAddSchedulePopup(false);
-        setSchedulePopupData(null);
+    setShowAddSchedulePopup(false);
+    setSchedulePopupData(null);
+    setLocation('');  // 위치 상태 초기화
     };
 
     const formatDateRange = () => {
@@ -611,20 +608,20 @@ const handleScheduleAdded = async (newScheduleData) => {
             )}
 
             {showAddSchedulePopup && schedulePopupData && (
-                <AddSchedule
-                    visible={showAddSchedulePopup}
-                    {...schedulePopupData}
-                    onClose={handleCloseAddSchedulePopup}
-                    onScheduleAdded={handleScheduleAdded}
-                    onScheduleDelete={performDeleteSchedule}
-                    currentTourId={currentTourId}
-                    periodType={period.type}
-                    startDate={period.startDate}
-                    endDate={period.endDate}
-
-                    location={location}           // 위치 상태 전달
-                    setLocation={setLocation}     // 상태 변경 함수 전달
-                />
+            <AddSchedule
+                visible={showAddSchedulePopup}
+                {...schedulePopupData}
+                onClose={handleCloseAddSchedulePopup}
+                onScheduleAdded={handleScheduleAdded}
+                onScheduleDelete={performDeleteSchedule}
+                currentTourId={currentTourId}
+                periodType={period.type}
+                startDate={period.startDate}
+                endDate={period.endDate}
+                
+                initialTitle={schedulePopupData.title || ''}
+                initialLocation={schedulePopupData.location || ''}
+            />
             )}
 
             {showConfirmModal && (
