@@ -5,14 +5,34 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 const defaultImage = require('../../assets/defaultBackground.png');
 
 export default function AccompanyCard({
-    date, 
+    tripStartDate,  // 🔥 date 대신 tripStartDate 사용
+    tripEndDate,    // 🔥 tripEndDate 추가
     title, 
     location, 
     imageUrl, 
     onPress, 
-    userApplicationStatus // 새로 추가된 status prop
+    userApplicationStatus
 }) {
-    // status에 따른 버튼 라벨 결정
+    // 🔥 날짜 포맷팅 함수 추가
+    const formatDateRange = () => {
+        if (!tripStartDate) return '';
+        
+        const start = new Date(tripStartDate);
+        const end = tripEndDate ? new Date(tripEndDate) : null;
+        
+        const formatDate = (date) => {
+            const month = date.getMonth() + 1;
+            const day = date.getDate();
+            return `${month}/${day}`;
+        };
+        
+        if (end && tripStartDate !== tripEndDate) {
+            return `${formatDate(start)}-${formatDate(end)}`;
+        } else {
+            return formatDate(start);
+        }
+    };
+
     const getButtonLabel = () => {
         if (userApplicationStatus) {
             switch (userApplicationStatus) {
@@ -42,7 +62,7 @@ export default function AccompanyCard({
                 <View style={styles.overlay}>
                     {/* 상단 날짜 */}
                     <View style={styles.topRow}>
-                        <Text style={styles.date}>{date}</Text>
+                        <Text style={styles.date}>{formatDateRange()}</Text> {/* 🔥 포맷된 날짜 사용 */}
                     </View>
 
                     {/* 타이틀 */}

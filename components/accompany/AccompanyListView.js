@@ -175,20 +175,31 @@ const AccompanyListView = ({
                 <View style={styles.cardsContainer}>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.cardsScroll}>
                         {myAppliedAccompanyList && myAppliedAccompanyList.length > 0 ? (
-                            myAppliedAccompanyList.map((item, index) => (
-                                <AccompanyCard
-                                    key={item.id || `card-${index}`}
-                                    {...item}
-                                    imageUrl={item.mainImageUrl}
-                                    onPress={() => navigateToPost(item.id)}
-                                    userApplicationStatus={item.userApplicationStatus}
-                                />
-                            ))
-                        ) : (
-                            <View style={styles.emptyCardState}>
-                                <Text style={styles.emptyCardStateText}>신청한 동행이 없어요.</Text>
-                            </View>
-                        )}
+    myAppliedAccompanyList.map((item, index) => {
+        // 🔥 디버깅: 카드에 전달되는 데이터 확인
+        console.log('🎴 카드 데이터 확인:', {
+            id: item.id,
+            title: item.title,
+            tripStartDate: item.tripStartDate,
+            tripEndDate: item.tripEndDate
+        });
+        
+        return (
+            <AccompanyCard
+                key={item.id || `card-${index}`}
+                {...item}
+                imageUrl={item.mainImageUrl}
+                onPress={() => navigateToPost(item.id)}
+                userApplicationStatus={item.userApplicationStatus}
+            />
+        );
+    })
+) : (
+    // 빈 상태 표시
+    <View style={styles.emptyCardState}>
+        <Text style={styles.emptyCardStateText}>신청한 동행이 없어요.</Text>
+    </View>
+)}
                     </ScrollView>
                 </View>
             )}
