@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Text, Alert, ActivityIndicator } from 'react-native';
+import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Text, Alert } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import PostDirectoryHeader from '../../components/profile/PostDirectoryHeader';
@@ -13,6 +13,14 @@ import {
 } from '../../utils/PostCardApi';
 
 export default function PostDirectory() {
+    const router = useRouter(); 
+    const params = useLocalSearchParams();
+    
+    // URL 파라미터에서 디렉토리 정보 가져오기
+    const directoryId = params.directoryId || null;
+    const directoryTitle = params.title || 'Busan';
+    const startDate = params.startDate || '2021.03.04';
+    const endDate = params.endDate || '2021.03.06';
     const router = useRouter(); 
     const params = useLocalSearchParams();
     
@@ -47,29 +55,29 @@ export default function PostDirectory() {
                 const data = await getPostcardsByFolderApi(directoryId);
                 console.log('✅ 엽서 데이터 불러오기 성공:', data);
 
-                const formattedPostcards = data.map(pc => ({
-                    id: pc.postcardId,
-                    image: pc.imageUrl,
-                    title: pc.content || '제목 없음',
-                    date: pc.dateCreated ? pc.dateCreated.split('T')[0] : '날짜 없음',
-                    // PostExpanded에 필요한 필드를 여기에서 미리 정의
-                    content: pc.content || '내용 없음',
-                    dateCreated: pc.dateCreated || '날짜 없음',
-                    folderName: directoryTitle,
-                    currentUserId: 'mockUserId', // 테스트용 mock user ID
-                    likeCount: pc.likeCount || 0,
-                    scrapCount: pc.scrapCount || 0,
-                    isPublic: pc.isPublic || false,
-                }));
-                setPostcards(formattedPostcards);
-            } catch (error) {
-                console.error('❌ 엽서 데이터 불러오기 실패:', error);
-                handleApiError(error, '엽서 데이터 불러오기');
-                Alert.alert('오류', '엽서 데이터를 불러오는 데 실패했습니다.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
+                const formattedPostcards = data.map(pc => ({
+                    id: pc.postcardId,
+                    image: pc.imageUrl,
+                    title: pc.content || '제목 없음',
+                    date: pc.dateCreated ? pc.dateCreated.split('T')[0] : '날짜 없음',
+                    // PostExpanded에 필요한 필드를 여기에서 미리 정의
+                    content: pc.content || '내용 없음',
+                    dateCreated: pc.dateCreated || '날짜 없음',
+                    folderName: directoryTitle,
+                    currentUserId: 'mockUserId', // 테스트용 mock user ID
+                    likeCount: pc.likeCount || 0,
+                    scrapCount: pc.scrapCount || 0,
+                    isPublic: pc.isPublic || false,
+                }));
+                setPostcards(formattedPostcards);
+            } catch (error) {
+                console.error('❌ 엽서 데이터 불러오기 실패:', error);
+                handleApiError(error, '엽서 데이터 불러오기');
+                Alert.alert('오류', '엽서 데이터를 불러오는 데 실패했습니다.');
+            } finally {
+                setIsLoading(false);
+            }
+        };
 
         fetchPostcards();
     }, [directoryId, directoryTitle]);
@@ -86,15 +94,15 @@ export default function PostDirectory() {
         setSelectedPostcards(new Set()); 
     }, []);
 
-    // 엽서 선택/해제 또는 상세 보기 처리
-    const handlePostcardPress = useCallback((postcard) => {
-        if (!isSelectMode) {
-            // 선택 모드가 아니면 엽서 상세 페이지로 이동
-            console.log('엽서 상세 페이지로 이동:', postcard.id);
-            // 엽서 상세 API 호출 로직 제거, 기존 데이터로 상세 페이지 표시
-            setExpandedPostcard(postcard);
-            return;
-        }
+    // 엽서 선택/해제 또는 상세 보기 처리
+    const handlePostcardPress = useCallback((postcard) => {
+        if (!isSelectMode) {
+            // 선택 모드가 아니면 엽서 상세 페이지로 이동
+            console.log('엽서 상세 페이지로 이동:', postcard.id);
+            // 엽서 상세 API 호출 로직 제거, 기존 데이터로 상세 페이지 표시
+            setExpandedPostcard(postcard);
+            return;
+        }
 
         // 선택 모드일 때만 선택/해제 처리
         setSelectedPostcards(prev => {
@@ -193,48 +201,46 @@ export default function PostDirectory() {
         setExpandedPostcard(null);
     }, []);
 
-    // 엽서를 불러오는 동안 로딩 상태를 보여줍니다.
-    if (isLoading) {
-        return (
-            <View style={styles.container}>
-                <PostDirectoryHeader
-                    title={directoryTitle}
-                    startDate={startDate}
-                    endDate={endDate}
-                    onBackPress={handleBackPress}
-                    showActionButton={false}
-                />
-                <View style={styles.loadingContainer}>
-                    <ActivityIndicator size="large" color="#0000ff" />
-                    <Text style={styles.loadingText}>엽서를 불러오는 중...</Text>
-                </View>
-            </View>
-        );
-    }
+    // 엽서를 불러오는 동안 로딩 상태를 보여줍니다.
+    if (isLoading) {
+        return (
+            <View style={styles.container}>
+                <PostDirectoryHeader
+                    title={directoryTitle}
+                    dateRange={formattedDateRange}
+                    onBackPress={handleBackPress}
+                    showActionButton={false}
+                />
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color="#0000ff" />
+                    <Text style={styles.loadingText}>엽서를 불러오는 중...</Text>
+                </View>
+            </View>
+        );
+    }
 
-    // PostExpanded가 표시될 때 전체 화면을 덮도록 렌더링
-    if (expandedPostcard) {
-        return (
-            <PostExpanded 
-                visible={true}
-                postData={expandedPostcard}
-                onClose={handleCloseExpanded}
-                currentUserId={'mockUserId'}
-            />
-        );
-    }
-    
-    return (
-        <View style={styles.container}>
-            {/* 헤더 */}
-            <PostDirectoryHeader
-                title={directoryTitle}
-                startDate={startDate}
-                endDate={endDate}
-                onBackPress={handleBackPress}
-                onSelectPress={handleSelectToggle}
-                isSelectMode={isSelectMode}
-            />
+    // PostExpanded가 표시될 때 전체 화면을 덮도록 렌더링
+    if (expandedPostcard) {
+        return (
+            <PostExpanded 
+                visible={true}
+                postData={expandedPostcard}
+                onClose={handleCloseExpanded}
+                currentUserId={'mockUserId'}
+            />
+        );
+    }
+    
+    return (
+        <View style={styles.container}>
+            {/* 헤더 */}
+            <PostDirectoryHeader
+                title={directoryTitle}
+                dateRange={formattedDateRange}
+                onBackPress={handleBackPress}
+                onSelectPress={handleSelectToggle}
+                isSelectMode={isSelectMode}
+            />
 
             {/* 엽서 그리드 */}
             <ScrollView 

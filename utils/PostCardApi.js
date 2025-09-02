@@ -298,40 +298,6 @@ export const getFoldersByUserApi = async (userEmail) => {
     }
 };
 
-// 💡 새로운 함수 추가: 폴더 목록을 가져온 후, 각 폴더의 엽서 목록까지 가져와서 병합
-export const getFoldersWithPostcardsApi = async (userEmail) => {
-    console.log('🌐 폴더 및 엽서 데이터 일괄 조회 API 호출');
-    try {
-        // 1단계: 모든 폴더 목록 불러오기
-        const rawFolders = await getFoldersByUserApi(userEmail);
-        const folders = transformFolderData(rawFolders);
-
-        // 2단계: 각 폴더의 엽서 목록을 비동기적으로 동시에 불러오기
-        const fetchPostcardsPromises = folders.map(async (folder) => {
-            try {
-                const postcards = await getPostcardsByFolderApi(folder.folderId);
-                return { ...folder, postcards: transformPostcardData(postcards) };
-            } catch (error) {
-                // 특정 폴더의 엽서 조회에 실패해도 나머지 작업은 계속 진행
-                console.error(`❌ 폴더 ${folder.folderId}의 엽서 목록 조회 실패:`, error);
-                return { ...folder, postcards: [] }; // 빈 배열로 처리
-            }
-        });
-        
-        // 모든 Promise가 완료될 때까지 기다림
-        const foldersWithPostcards = await Promise.all(fetchPostcardsPromises);
-        console.log('✅ 모든 폴더와 엽서 데이터 병합 완료:', foldersWithPostcards);
-
-        return foldersWithPostcards;
-
-    } catch (error) {
-        // 폴더 목록 조회 자체에 실패한 경우
-        handleApiError(error, '폴더 및 엽서 데이터 조회');
-        throw error;
-    }
-};
-
-
 // 2. 새 폴더 생성과 함께 엽서 생성 - FormData로 수정
 export const createPostcardWithNewFolderApi = async (folderData, postcardData, imageFile = null) => {
     const url = `${API_URL}/api/postcards/folders`;
@@ -449,7 +415,6 @@ export const getPostcardsByFolderApi = async (folderId) => {
 
     try {
         const response = await fetchWithRetry(url);
-        console.log('✅ 폴더별 엽서 목록 조회 성공:', response);
         return await response.json();
     } catch (error) {
         throw error;

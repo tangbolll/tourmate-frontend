@@ -17,7 +17,7 @@ import {
     createPostcardWithNewFolderApi,
     updateFolderApi,
     deleteFolderApi,
-    getFoldersWithPostcardsApi,
+    getFoldersByUserApi,
     handleApiError,
     getFavoritePostcardsApi // 추가: 즐겨찾기 엽서 API 임포트
 } from '../../utils/PostCardApi';
@@ -41,12 +41,11 @@ export default function ProfileHome() {
             return;
         }
         try {
-            // ✅ getFoldersWithPostcardsApi를 호출합니다.
-            const fetchedFolders = await getFoldersWithPostcardsApi(email);
+            const fetchedFolders = await getFoldersByUserApi(email);
             setFolders(fetchedFolders);
-            console.log("✅ 폴더 및 엽서 목록을 성공적으로 불러왔습니다:", fetchedFolders);
+            console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", fetchedFolders);
         } catch (error) {
-            handleApiError(error, '폴더 및 엽서 목록 조회');
+            handleApiError(error, '폴더 목록 조회');
         }
     }, []);
 

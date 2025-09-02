@@ -205,9 +205,8 @@ const Step1 = ({
 
                 <Text style={styles.label}>여행장소</Text>
                 <View style={styles.inputWrapper}>
-                    <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
+                    <MaterialIcons name="location-pin" size={16} color="#888" style={styles.icon} />
                     <TextInput
-                        style={styles.inputWithIcon}
                         placeholder="여행장소를 입력해주세요."
                         placeholderTextColor="#888"
                         value={locationInput}
@@ -217,8 +216,8 @@ const Step1 = ({
 
                 <Text style={styles.label}>여행기간</Text>
                 <TouchableOpacity onPress={openCalendar} style={styles.inputWrapper}>
-                    <FontAwesome6 name="calendar-check" size={16} color="black" style={styles.icon} />
-                    <Text style={[styles.inputWithIcon, {
+                    <FontAwesome6 name="calendar-check" size={16} color="#888" style={styles.icon} />
+                    <Text style={[ {
                         color: startDate && endDate ? '#000' : '#888',
                         lineHeight: 20,
                     }]}>
@@ -253,10 +252,9 @@ const Step1 = ({
 
                 <Text style={styles.label}>모이는 장소</Text>
                 <View style={styles.inputWrapper}>
-                    <MaterialIcons name="location-pin" size={16} color="black" style={styles.icon} />
+                    <MaterialIcons name="location-pin" size={16} color="#888" style={styles.icon} />
                     <TextInput
-                        style={styles.inputWithIcon}
-                        placeholder="위치 추가"
+                        placeholder="모이는 장소를 입력해주세요. (지하철역, 랜드마크 등)"
                         placeholderTextColor="#888"
                         value={meetLocationInput}
                         onChangeText={handleMeetLocationSearch}
@@ -291,6 +289,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 10,
         paddingVertical: 12,
         marginBottom: 12,
+        backgroundColor: '#fff',
     },
     icon: {
         marginRight: 4,

@@ -76,6 +76,7 @@ const SettingsScreen = () => {
           <SettingItem label="비밀번호 변경" isNav onPress={() => router.push('/profile/change-password')} />
         </Section>
 
+        {/*
         <Section title="알림설정">
           <ToggleItem
             label="앱 푸쉬알림"
@@ -102,10 +103,13 @@ const SettingsScreen = () => {
             onValueChange={setPostcardEnabled}
           />
         </Section>
+        */}
 
+        {/*
         <Section title="서비스 설정">
-            <ServiceItem label="위치 서비스" value="앱 사용 중 허용" onPress={() => { /* Open Location Settings */ }} />
+            <ServiceItem label="위치 서비스" value="앱 사용 중 허용" onPress={() => {}} />
         </Section>
+        */}
 
         <Section title="고객센터">
           <SettingItem label="공지사항" isNav onPress={() => router.push('/profile/notice')} />

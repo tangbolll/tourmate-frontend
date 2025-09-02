@@ -69,7 +69,7 @@ export default function CreateItinerary() {
 
                 // sigungu 추가
                 regionMap.get(areaCode).sigungu.push({
-                    // 'key'를 서버가 기대하는 'code'로 변경합니다.
+                    // ✅ 'key'를 서버가 기대하는 'code'로 변경합니다.
                     code: Number(r.code), 
                     name: r.name
                 });
@@ -87,7 +87,7 @@ export default function CreateItinerary() {
             // 4️⃣ 서버로 전송할 payload 구성
             const payload = {
                 title: itineraryTitle || getTitle(),
-                regions: regionsPayload,
+                regions: regionsPayload,   // ✅ DTO 구조에 맞춘 regions
                 periodType: periodData.type === 'date' ? 1 : 2,
                 startDate,
                 endDate,
