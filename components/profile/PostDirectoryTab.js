@@ -1,4 +1,3 @@
-// PostDirectoryTab.js
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -10,7 +9,7 @@ export const PostDirectoryTab = ({ folders, onEditFolder }) => {
         router.push({
             pathname: '/profile/postDirectory',
             params: {
-                directoryId: folder.id, // ✅ folderId -> directoryId로 수정
+                directoryId: folder.folderId, // ✅ folderId를 사용하도록 수정
                 title: folder.title,
                 startDate: folder.startDate,
                 endDate: folder.endDate,
@@ -62,7 +61,12 @@ export const PostDirectoryTab = ({ folders, onEditFolder }) => {
                             >
                                 <View style={styles.imageContainer}>
                                     <Image
-                                        source={{ uri: folder.postcards && folder.postcards.length > 0 ? folder.postcards[0].image : 'https://via.placeholder.com/400x300.png?text=No+Image' }}
+                                        source={{
+                                            uri:
+                                                folder.postcards && folder.postcards.length > 0 && folder.postcards[0].imageUrl
+                                                    ? folder.postcards[0].imageUrl
+                                                    : 'https://via.placeholder.com/400x300.png?text=No+Image',
+                                        }}
                                         style={styles.directoryImage}
                                         resizeMode="cover"
                                     />

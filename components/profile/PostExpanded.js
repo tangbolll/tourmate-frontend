@@ -8,12 +8,10 @@ import {
     Modal,
     ScrollView,
     Dimensions,
-    Alert,
-    ActivityIndicator,
     ImageBackground,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { toggleLikePostcard, toggleScrapPostcard, fetchPostcardDetailApi} from '../../utils/HomePostApi';
+import { getPostcardByIdApi } from '../../utils/PostCardApi';
 
 const { width, height } = Dimensions.get('window');
 
@@ -53,22 +51,6 @@ const getPostcardTemplate = (typeImageUrl) => {
     }
 };
 
-// 날짜 포맷팅 함수
-const formatDate = (dateString) => {
-    if (!dateString) return '';
-    
-    try {
-        const date = new Date(dateString);
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}.${month}.${day}`;
-    } catch (error) {
-        console.error('날짜 포맷팅 오류:', error);
-        return '';
-    }
-};
-
 const PostExpanded = ({ 
     visible, 
     postData, 
@@ -76,53 +58,31 @@ const PostExpanded = ({
     onDataUpdate, 
     currentUserId 
 }) => {
-    // 서버에서 받은 데이터를 기반으로 초기 상태 설정
-    const [isLiked, setIsLiked] = useState(postData?.isLiked || false);
-    const [isScraped, setIsScraped] = useState(postData?.isScraped || false);
-    const [likeCount, setLikeCount] = useState(postData?.likeCount || 0);
-    const [scrapCount, setScrapCount] = useState(postData?.scrapCount || 0);
-    const [likeLoading, setLikeLoading] = useState(false);
-    const [scrapLoading, setScrapLoading] = useState(false);
-
-        // detail 데이터 상태
+    // detail 데이터 상태
     const [detailData, setDetailData] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
 
     // 목 데이터 (fallback용)
     const mockData = {
-        profileImage: 'https://via.placeholder.com/50',
-        postcardName: '부산의 바다 !',
-        userName: '추리를봐야',
-        location: '부산',
-        date: '2021.03.04',
         postcardImage: 'https://via.placeholder.com/400x300',
-        timeAgo: '5시간 전',
-        likeCount: 23,
-        scrapCount: 46,
-        postcardContent: '부산에다녀왔다\n넘즐거웠다\n엽서디자인 아직 안 넣었습니다 임시입니다\n놀래지마세용',
-        isLiked: false,
-        isScraped: false,
+        postcardContent: '엽서 내용이 없습니다',
         typeImageUrl: '../postcardType/1.png', // 기본 템플릿
         ...postData
     };
 
+    // detail 데이터 로드 (이전 API가 없다고 했으므로 이 로직은 주석 처리)
     useEffect(() => {
-    if (visible && postData?.postcardId && !detailData) {
-        loadDetailData();
-    }
+        // if (visible && postData?.postcardId && !detailData) {
+        //     loadDetailData();
+        // }
     }, [visible, postData?.postcardId]);
 
-        // detail 데이터 로드
     const loadDetailData = async () => {
         setDetailLoading(true);
         try {
-            const result = await fetchPostcardDetailApi(postData.postcardId);
-            if (result.success) {
-                setDetailData(result.data);
-            } else {
-                console.warn('Detail 로드 실패:', result.error);
-                // 실패해도 기본 데이터로 표시
-            }
+            // 이 API 호출은 더 이상 사용되지 않음
+            // const result = await getPostcardByIdApi(postData.postcardId);
+            // setDetailData(result);
         } catch (error) {
             console.error('Detail 로드 오류:', error);
             // 에러가 나도 기본 데이터로 표시
@@ -133,120 +93,15 @@ const PostExpanded = ({
 
     // 실제 표시할 데이터 (서버 데이터가 있으면 서버 데이터 우선)
     const displayData = {
-        postcardName: detailData?.title || postData?.title || postData?.postcardName || mockData.postcardName,
-        userName: detailData?.author || postData?.author || postData?.userName || mockData.userName,
-        location: detailData?.location || postData?.location || mockData.location,
-        date: detailData?.createdAt 
-            ? formatDate(detailData.createdAt) 
-            : (postData?.createdAt ? formatDate(postData.createdAt) : (postData?.date || mockData.date)),
-        postcardImage: detailData?.imageUrl || postData?.imageUrl || postData?.postcardImage || mockData.postcardImage,
+        postcardImage: detailData?.imageUrl || postData?.imageUrl || postData?.image || mockData.postcardImage,
         postcardContent: detailData?.content || postData?.content || postData?.postcardContent || mockData.postcardContent,
         templateImage: getPostcardTemplate(detailData?.typeImageUrl || postData?.typeImageUrl || mockData.typeImageUrl),
-        profileImage: postData?.profileImage || mockData.profileImage,
     };
 
-
-
-    // postData가 변경될 때마다 상태 동기화 (서버 데이터 우선)
+    // 추가: 이미지 URL이 올바른지 확인하는 로그
     useEffect(() => {
-        if (postData) {
-            setIsLiked(postData.isLiked || false);
-            setIsScraped(postData.isScraped || false);
-            setLikeCount(postData.likeCount || mockData.likeCount);
-            setScrapCount(postData.scrapCount || mockData.scrapCount);
-        }
-    }, [postData?.postcardId, postData?.isLiked, postData?.isScraped, postData?.likeCount, postData?.scrapCount]);
-
-    const handleLike = async () => {
-        if (likeLoading) return;
-
-        const postcardId = postData?.postcardId || mockData.postcardId;
-        if (!postcardId) {
-            Alert.alert('오류', '게시물 정보를 찾을 수 없습니다.');
-            return;
-        }
-
-        if (!currentUserId) {
-            Alert.alert('알림', '로그인이 필요합니다.');
-            return;
-        }
-
-        setLikeLoading(true);
-        try {
-            const result = await toggleLikePostcard(postcardId, isLiked, currentUserId);
-            
-            if (result.success) {
-                const newIsLiked = !isLiked;
-                const newLikeCount = newIsLiked 
-                    ? likeCount + 1 
-                    : Math.max(0, likeCount - 1);
-
-                // 로컬 상태 업데이트
-                setIsLiked(newIsLiked);
-                setLikeCount(newLikeCount);
-
-                // 부모 컴포넌트에 상태 업데이트 전달
-                if (onDataUpdate) {
-                    onDataUpdate(postcardId, 'like', isLiked);
-                }
-            } else {
-                Alert.alert('오류', result.error || '좋아요 처리 중 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            console.error('좋아요 처리 오류:', error);
-            Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
-        } finally {
-            setLikeLoading(false);
-        }
-    };
-
-    const handleScrap = async () => {
-        if (scrapLoading) return;
-
-        const postcardId = postData?.postcardId || mockData.postcardId;
-        if (!postcardId) {
-            Alert.alert('오류', '게시물 정보를 찾을 수 없습니다.');
-            return;
-        }
-
-        if (!currentUserId) {
-            Alert.alert('알림', '로그인이 필요합니다.');
-            return;
-        }
-
-        setScrapLoading(true);
-        try {
-            const result = await toggleScrapPostcard(postcardId, isScraped, currentUserId);
-            
-            if (result.success) {
-                const newIsScraped = !isScraped;
-                const newScrapCount = newIsScraped 
-                    ? scrapCount + 1 
-                    : Math.max(0, scrapCount - 1);
-
-                // 로컬 상태 업데이트
-                setIsScraped(newIsScraped);
-                setScrapCount(newScrapCount);
-
-                // 부모 컴포넌트에 상태 업데이트 전달
-                if (onDataUpdate) {
-                    onDataUpdate(postcardId, 'scrap', isScraped);
-                }
-            } else {
-                Alert.alert('오류', result.error || '스크랩 처리 중 오류가 발생했습니다.');
-            }
-        } catch (error) {
-            console.error('스크랩 처리 오류:', error);
-            Alert.alert('오류', '스크랩 처리 중 오류가 발생했습니다.');
-        } finally {
-            setScrapLoading(false);
-        }
-    };
-
-    // 로그인하지 않은 사용자를 위한 액션 핸들러
-    const handleLoginRequired = () => {
-        Alert.alert('알림', '로그인이 필요한 기능입니다.');
-    };
+        console.log('✅ PostExpanded에 전달된 이미지 URL:', displayData.postcardImage);
+    }, [displayData.postcardImage]);
 
     return (
         <Modal
@@ -272,17 +127,6 @@ const PostExpanded = ({
 
                 {/* 메인 콘텐츠 */}
                 <View style={styles.contentContainer}>
-                    {/* 엽서 제목 */}
-                    <Text style={styles.postcardTitle}>{displayData.postcardName}</Text>
-                    
-                    {/* 사용자 정보 */}
-                    <View style={styles.userInfo}>
-                        <Image source={{ uri: displayData.profileImage }} style={styles.profileImage} />
-                        <Text style={styles.userText}>
-                            {displayData.userName} · {displayData.location} · {displayData.date}
-                        </Text>
-                    </View>
-
                     {/* 엽서 이미지 */}
                     <View style={styles.imageSection}>
                         <Image source={{ uri: displayData.postcardImage }} style={styles.postcardImage} />
@@ -301,49 +145,6 @@ const PostExpanded = ({
                                 </ScrollView>
                             </View>
                         </ImageBackground>
-                    </View>
-
-                    {/* 하단 액션 버튼 */}
-                    <View style={styles.actionSection}>
-                        {/* 좋아요 버튼 */}
-                        <TouchableOpacity 
-                            style={[styles.actionButton, likeLoading && styles.actionButtonDisabled]} 
-                            onPress={currentUserId ? handleLike : handleLoginRequired}
-                            disabled={likeLoading}
-                        >
-                            <View style={styles.actionIcon}>
-                                {likeLoading ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Ionicons 
-                                        name={isLiked ? "heart" : "heart-outline"} 
-                                        size={28} 
-                                        color={isLiked ? "white" : "#fff"} 
-                                    />
-                                )}
-                            </View>
-                            <Text style={styles.actionCount}>{likeCount}</Text>
-                        </TouchableOpacity>
-                        
-                        {/* 스크랩 버튼 */}
-                        <TouchableOpacity 
-                            style={[styles.actionButton, scrapLoading && styles.actionButtonDisabled]} 
-                            onPress={currentUserId ? handleScrap : handleLoginRequired}
-                            disabled={scrapLoading}
-                        >
-                            <View style={styles.actionIcon}>
-                                {scrapLoading ? (
-                                    <ActivityIndicator size="small" color="#fff" />
-                                ) : (
-                                    <Ionicons 
-                                        name={isScraped ? "bookmark" : "bookmark-outline"} 
-                                        size={28} 
-                                        color={isScraped ? "white" : "#fff"} 
-                                    />
-                                )}
-                            </View>
-                            <Text style={styles.actionCount}>{scrapCount}</Text>
-                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
@@ -388,30 +189,6 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         marginTop: 60,
     },
-    postcardTitle: {
-        fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
-        paddingVertical: 15,
-        color: '#fff',
-        marginBottom: 10,
-    },
-    userInfo: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: 16,
-    },
-    profileImage: {
-        width: 20,
-        height: 20,
-        borderRadius: 10,
-        marginRight: 10,
-    },
-    userText: {
-        flex: 1,
-        fontSize: 14,
-        color: '#fff',
-    },
     imageSection: {
         paddingHorizontal: 15,
         paddingTop: 12,
@@ -439,13 +216,6 @@ const styles = StyleSheet.create({
         padding: 20,
         justifyContent: 'space-between',
     },
-    locationTitle: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#333',
-        textAlign: 'center',
-        marginBottom: 8,
-    },
     contentScrollArea: {
         flex: 1,
         marginVertical: 8,
@@ -455,38 +225,6 @@ const styles = StyleSheet.create({
         color: '#333',
         lineHeight: 18,
         textAlign: 'left',
-    },
-    dateText: {
-        fontSize: 11,
-        color: '#666',
-        textAlign: 'right',
-        marginTop: 8,
-    },
-    actionSection: {
-        flexDirection: 'row',
-        justifyContent: 'center',
-        alignItems: 'center',
-        gap: 40,
-    },
-    actionButton: {
-        alignItems: 'center',
-    },
-    actionButtonDisabled: {
-        opacity: 0.7,
-    },
-    actionIcon: {
-        width: 50,
-        height: 50,
-        borderRadius: 25,
-        backgroundColor: 'rgba(255, 255, 255, 0.2)',
-        justifyContent: 'center',
-        alignItems: 'center',
-        marginBottom: 5,
-    },
-    actionCount: {
-        fontSize: 16,
-        fontWeight: 'bold',
-        color: '#fff',
     },
 });
 
