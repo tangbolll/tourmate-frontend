@@ -69,7 +69,7 @@ const formatDate = (dateString) => {
     }
 };
 
-const PostExpanded = ({ 
+const OpenPostExpanded = ({ 
     visible, 
     postData, 
     onClose, 
@@ -83,6 +83,10 @@ const PostExpanded = ({
     const [scrapCount, setScrapCount] = useState(postData?.scrapCount || 0);
     const [likeLoading, setLikeLoading] = useState(false);
     const [scrapLoading, setScrapLoading] = useState(false);
+
+        // detail 데이터 상태
+    const [detailData, setDetailData] = useState(null);
+    const [detailLoading, setDetailLoading] = useState(false);
 
     // 목 데이터 (fallback용)
     const mockData = {
@@ -103,34 +107,60 @@ const PostExpanded = ({
     };
 
     useEffect(() => {
-        if (postData) {
-            // postData가 변경될 때마다 좋아요/스크랩 상태 동기화
-            setIsLiked(postData.isLiked || false);
-            setIsScraped(postData.isScraped || false);
-            setLikeCount(postData.likeCount || 0);
-            setScrapCount(postData.scrapCount || 0);
-        }
-    }, [postData]);
+    if (visible && postData?.postcardId && !detailData) {
+        loadDetailData();
+    }
+    }, [visible, postData?.postcardId]);
 
+        // detail 데이터 로드
+    const loadDetailData = async () => {
+        setDetailLoading(true);
+        try {
+            const result = await fetchPostcardDetailApi(postData.postcardId);
+            if (result.success) {
+                setDetailData(result.data);
+            } else {
+                console.warn('Detail 로드 실패:', result.error);
+                // 실패해도 기본 데이터로 표시
+            }
+        } catch (error) {
+            console.error('Detail 로드 오류:', error);
+            // 에러가 나도 기본 데이터로 표시
+        } finally {
+            setDetailLoading(false);
+        }
+    };
 
     // 실제 표시할 데이터 (서버 데이터가 있으면 서버 데이터 우선)
     const displayData = {
-        postcardName: postData?.title || postData?.postcardName || mockData.postcardName,
-        userName: postData?.author || postData?.userName || mockData.userName,
-        location: postData?.location || mockData.location,
-        date: postData?.dateCreated 
-            ? formatDate(postData.dateCreated) 
-            : (postData?.date || mockData.date),
-        postcardImage: postData?.image || postData?.imageUrl || postData?.postcardImage || mockData.postcardImage,
-        postcardContent: postData?.content || postData?.postcardContent || mockData.postcardContent,
-        templateImage: getPostcardTemplate(postData?.typeImageUrl || mockData.typeImageUrl),
+        postcardName: detailData?.title || postData?.title || postData?.postcardName || mockData.postcardName,
+        userName: detailData?.author || postData?.author || postData?.userName || mockData.userName,
+        location: detailData?.location || postData?.location || mockData.location,
+        date: detailData?.createdAt 
+            ? formatDate(detailData.createdAt) 
+            : (postData?.createdAt ? formatDate(postData.createdAt) : (postData?.date || mockData.date)),
+        postcardImage: detailData?.imageUrl || postData?.imageUrl || postData?.postcardImage || mockData.postcardImage,
+        postcardContent: detailData?.content || postData?.content || postData?.postcardContent || mockData.postcardContent,
+        templateImage: getPostcardTemplate(detailData?.typeImageUrl || postData?.typeImageUrl || mockData.typeImageUrl),
         profileImage: postData?.profileImage || mockData.profileImage,
     };
+
+
+
+    // postData가 변경될 때마다 상태 동기화 (서버 데이터 우선)
+    useEffect(() => {
+        if (postData) {
+            setIsLiked(postData.isLiked || false);
+            setIsScraped(postData.isScraped || false);
+            setLikeCount(postData.likeCount || mockData.likeCount);
+            setScrapCount(postData.scrapCount || mockData.scrapCount);
+        }
+    }, [postData?.postcardId, postData?.isLiked, postData?.isScraped, postData?.likeCount, postData?.scrapCount]);
 
     const handleLike = async () => {
         if (likeLoading) return;
 
-        const postcardId = postData?.id; // PostDirectory에서 전달하는 필드명으로 변경
+        const postcardId = postData?.postcardId || mockData.postcardId;
         if (!postcardId) {
             Alert.alert('오류', '게시물 정보를 찾을 수 없습니다.');
             return;
@@ -173,7 +203,7 @@ const PostExpanded = ({
     const handleScrap = async () => {
         if (scrapLoading) return;
 
-        const postcardId = postData?.id; // PostDirectory에서 전달하는 필드명으로 변경
+        const postcardId = postData?.postcardId || mockData.postcardId;
         if (!postcardId) {
             Alert.alert('오류', '게시물 정보를 찾을 수 없습니다.');
             return;
@@ -240,8 +270,19 @@ const PostExpanded = ({
                     </TouchableOpacity>
                 </View>
 
-                {/* 메인 콘텐츠 - 필요한 요소만 남김 */}
+                {/* 메인 콘텐츠 */}
                 <View style={styles.contentContainer}>
+                    {/* 엽서 제목 */}
+                    <Text style={styles.postcardTitle}>{displayData.postcardName}</Text>
+                    
+                    {/* 사용자 정보 */}
+                    <View style={styles.userInfo}>
+                        <Image source={{ uri: displayData.profileImage }} style={styles.profileImage} />
+                        <Text style={styles.userText}>
+                            {displayData.userName} · {displayData.location} · {displayData.date}
+                        </Text>
+                    </View>
+
                     {/* 엽서 이미지 */}
                     <View style={styles.imageSection}>
                         <Image source={{ uri: displayData.postcardImage }} style={styles.postcardImage} />
@@ -256,10 +297,53 @@ const PostExpanded = ({
                         >
                             <View style={styles.postcardOverlay}>
                                 <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
-                                    <Text style={styles.contentText}>{String(displayData.postcardContent || '')}</Text>
+                                    <Text style={styles.contentText}>{displayData.postcardContent}</Text>
                                 </ScrollView>
                             </View>
                         </ImageBackground>
+                    </View>
+
+                    {/* 하단 액션 버튼 */}
+                    <View style={styles.actionSection}>
+                        {/* 좋아요 버튼 */}
+                        <TouchableOpacity 
+                            style={[styles.actionButton, likeLoading && styles.actionButtonDisabled]} 
+                            onPress={currentUserId ? handleLike : handleLoginRequired}
+                            disabled={likeLoading}
+                        >
+                            <View style={styles.actionIcon}>
+                                {likeLoading ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Ionicons 
+                                        name={isLiked ? "heart" : "heart-outline"} 
+                                        size={28} 
+                                        color={isLiked ? "white" : "#fff"} 
+                                    />
+                                )}
+                            </View>
+                            <Text style={styles.actionCount}>{likeCount}</Text>
+                        </TouchableOpacity>
+                        
+                        {/* 스크랩 버튼 */}
+                        <TouchableOpacity 
+                            style={[styles.actionButton, scrapLoading && styles.actionButtonDisabled]} 
+                            onPress={currentUserId ? handleScrap : handleLoginRequired}
+                            disabled={scrapLoading}
+                        >
+                            <View style={styles.actionIcon}>
+                                {scrapLoading ? (
+                                    <ActivityIndicator size="small" color="#fff" />
+                                ) : (
+                                    <Ionicons 
+                                        name={isScraped ? "bookmark" : "bookmark-outline"} 
+                                        size={28} 
+                                        color={isScraped ? "white" : "#fff"} 
+                                    />
+                                )}
+                            </View>
+                            <Text style={styles.actionCount}>{scrapCount}</Text>
+                        </TouchableOpacity>
                     </View>
                 </View>
             </View>
@@ -406,4 +490,4 @@ const styles = StyleSheet.create({
     },
 });
 
-export default PostExpanded;
+export default OpenPostExpanded;
