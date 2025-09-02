@@ -19,7 +19,8 @@ import {
     deleteFolderApi,
     getFoldersByUserApi,
     handleApiError,
-    getFavoritePostcardsApi // 추가: 즐겨찾기 엽서 API 임포트
+    getFavoritePostcardsApi,
+    getPostcardsByFolderApi, // ⭐ 추가: 폴더별 엽서 목록 API 임포트
 } from '../../utils/PostCardApi';
 
 export default function ProfileHome() {
@@ -27,7 +28,7 @@ export default function ProfileHome() {
     const router = useRouter();
     const [activeTab, setActiveTab] = useState('board');
     const [folders, setFolders] = useState([]);
-    const [favoritePostcards, setFavoritePostcards] = useState([]); // 추가: 즐겨찾기 엽서 상태
+    const [favoritePostcards, setFavoritePostcards] = useState([]);
     const [createPopupVisible, setCreatePopupVisible] = useState(false);
     const [selectPopupVisible, setSelectPopupVisible] = useState(false);
     const [popupMode, setPopupMode] = useState('create');
@@ -41,9 +42,29 @@ export default function ProfileHome() {
             return;
         }
         try {
+            console.log("✅ 폴더 목록을 불러오기 시작합니다.");
             const fetchedFolders = await getFoldersByUserApi(email);
-            setFolders(fetchedFolders);
-            console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", fetchedFolders);
+
+            const foldersWithThumbnails = await Promise.all(
+                fetchedFolders.map(async (folder) => {
+                    try {
+                        // ⭐ 수정: folder.folderId를 사용하도록 변경
+                        const postcards = await getPostcardsByFolderApi(folder.id);
+                        const firstPostcardImage = postcards.length > 0 ? postcards[0].imageUrl : null;
+                        return {
+                            ...folder,
+                            thumbnailUrl: firstPostcardImage,
+                            postcards: postcards,
+                        };
+                    } catch (error) {
+                        console.error(`❌ 폴더 ID ${folder.id}의 엽서 불러오기 실패:`, error);
+                        return { ...folder, thumbnailUrl: null, postcards: [] };
+                    }
+                })
+            );
+
+            setFolders(foldersWithThumbnails);
+            console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", foldersWithThumbnails);
         } catch (error) {
             handleApiError(error, '폴더 목록 조회');
         }
@@ -73,9 +94,8 @@ export default function ProfileHome() {
                     const data = await fetchUserProfileApi(userId);
                     setUserData(data);
                     if (data?.email) {
-                        // 사용자 이메일이 있을 때만 데이터를 가져옵니다.
                         fetchFolders(data.email);
-                        fetchFavoritePostcards(data.email); // 추가: 즐겨찾기 엽서 데이터 불러오기
+                        fetchFavoritePostcards(data.email);
                     }
                 }
             } catch (error) {
@@ -83,7 +103,7 @@ export default function ProfileHome() {
             }
         };
         fetchData();
-    }, [fetchFolders, fetchFavoritePostcards, setUserData]); // 의존성 배열에 setUserData 추가
+    }, [fetchFolders, fetchFavoritePostcards, setUserData]);
 
     const userEmail = userData?.email;
 
@@ -215,7 +235,7 @@ export default function ProfileHome() {
             case 'board':
                 return <PostBoardTab
                     userEmail={userEmail}
-                    favoritePostcards={favoritePostcards} // 추가: 즐겨찾기 엽서 데이터 전달
+                    favoritePostcards={favoritePostcards}
                 />;
             case 'directory':
                 return <PostDirectoryTab
@@ -225,7 +245,7 @@ export default function ProfileHome() {
             default:
                 return <PostBoardTab
                     userEmail={userEmail}
-                    favoritePostcards={favoritePostcards} // 추가: 즐겨찾기 엽서 데이터 전달
+                    favoritePostcards={favoritePostcards}
                 />;
         }
     }, [activeTab, handleEditFolder, folders, userEmail, favoritePostcards]);
