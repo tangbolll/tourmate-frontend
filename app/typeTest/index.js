@@ -9,15 +9,28 @@ import {
     StatusBar,
     } from 'react-native';
 import { router } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function TypeTestMain() {
     const handleStartTest = () => {
         router.push('/typeTest/question');
     };
 
+    const handleGoHome = () => {
+        router.replace('/(tabs)');
+    };
+
     return (
         <SafeAreaView style={styles.container}>
         <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
+        
+        <View style={styles.header}>
+            <View style={styles.placeholder} />
+            <Text style={styles.headerTitle}>여행 성향 테스트</Text>
+            <TouchableOpacity style={styles.homeButton} onPress={handleGoHome}>
+                <Ionicons name="home-outline" size={24} color="black" />
+            </TouchableOpacity>
+        </View>
         
         <View style={styles.content}>
             <Text style={styles.title}>여행 성향 테스트</Text>
@@ -65,6 +78,26 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: '#ffffff',
+    },
+    header: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        borderBottomWidth: 1,
+        borderBottomColor: '#f0f0f0',
+    },
+    headerTitle: {
+        fontSize: 18,
+        fontWeight: '600',
+        color: '#333333',
+    },
+    placeholder: {
+        width: 24,
+    },
+    homeButton: {
+        padding: 5,
     },
     content: {
         flex: 1,

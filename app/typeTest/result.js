@@ -9,6 +9,7 @@ import {
     StatusBar,
     ScrollView,
 } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
@@ -225,7 +226,9 @@ export default function Result() {
                     <Text style={styles.backButtonText}>‹</Text>
                 </TouchableOpacity>
                 <Text style={styles.headerTitle}>여행 성향 테스트</Text>
-                <View style={styles.placeholder} />
+                <TouchableOpacity style={styles.headerHomeButton} onPress={handleGoHome}>
+                    <Ionicons name="home-outline" size={24} color="black" />
+                </TouchableOpacity>
             </View>
 
             {/* 진행률 바 (완료) */}
@@ -313,6 +316,12 @@ const styles = StyleSheet.create({
     },
     placeholder: {
         width: 40,
+    },
+    headerHomeButton: {
+        width: 40,
+        height: 40,
+        justifyContent: 'center',
+        alignItems: 'center',
     },
     progressContainer: {
         height: 3,
