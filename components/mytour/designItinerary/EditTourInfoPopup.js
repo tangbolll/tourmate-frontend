@@ -44,12 +44,12 @@ const EditTourInfoPopup = ({
         setShowCalendar(true);
     };
 
-    const handleDateSelect = (day) => {
-        const contextDate = (selectingDateType === 'start' ? startDate : endDate) || new Date();
-        const selectedDate = new Date(contextDate.getFullYear(), contextDate.getMonth(), day);
+    const handleDateSelect = (selectedDate) => {
         if (selectingDateType === 'start') {
             setStartDate(selectedDate);
-            if (endDate && selectedDate > endDate) setEndDate(selectedDate);
+            if (endDate && selectedDate > endDate) {
+                setEndDate(selectedDate);
+            }
         } else {
             if (startDate && selectedDate < startDate) {
                 Alert.alert("잘못된 날짜", "종료일은 시작일보다 빠를 수 없습니다.");

@@ -144,8 +144,9 @@ export const searchUsers = async (nickname) => {
         return []; // 검색어가 2글자 미만이면 요청하지 않음
     }
     try {
+        const headers = await getAuthHeaders(); // 인증 헤더를 가져옵니다.
         console.log("검색 API 호출:", `${getBaseURL()}/api/user/search?nickname=${nickname}`);
-        const response = await axios.get(`${getBaseURL()}/api/user/search?nickname=${encodeURIComponent(nickname)}`);
+        const response = await axios.get(`${getBaseURL()}/api/user/search?nickname=${encodeURIComponent(nickname)}`, { headers }); // 요청에 헤더를 포함합니다.
         return response.data;
     } catch (error) {
         console.error('Error searching users:', error);
