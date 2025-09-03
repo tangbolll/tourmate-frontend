@@ -51,9 +51,10 @@ export const PostDirectoryTab = ({ folders, onEditFolder }) => {
             <View style={styles.content}>
                 <View style={styles.grid}>
                     {folders.length > 0 ? (
-                        folders.map((folder) => (
+                        folders.map((folder, index) => ( // ✅ map 함수에 index 추가
                             <TouchableOpacity
-                                key={folder.folderId} 
+                                // ✅ folderId가 없을 경우, index를 활용하여 고유한 key 생성
+                                key={folder.folderId ? folder.folderId : `folder-${index}`} 
                                 style={styles.directoryCard}
                                 onPress={() => handleDirectoryPress(folder)}
                                 onLongPress={() => onEditFolder(folder)}
