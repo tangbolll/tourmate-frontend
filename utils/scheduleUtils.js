@@ -50,7 +50,7 @@ export const scheduleUtils = {
         return null;
     },
 
-    calculateBlockHeight: (startMinutes, endMinutes, dayNumber, daySlotInfo) => {
+                calculateBlockHeight: (startMinutes, endMinutes, dayNumber, daySlotInfo) => {
         let totalMinutesDuration = 0;
         let currentTime = startMinutes;
 
@@ -75,5 +75,20 @@ export const scheduleUtils = {
             return 30; // 30분으로 간주하여 최소 높이 보장
         }
         return totalMinutesDuration; // 분 단위로 반환
+    },
+
+    findNextScheduleStartTime: (dayNumber, currentMinutes, scheduleData) => {
+        const dayKey = `day${dayNumber}`;
+        const daySchedules = scheduleData[dayKey] || [];
+
+        let nextScheduleStartMinutes = 24 * 60; // Default to end of day (midnight)
+
+        for (const schedule of daySchedules) {
+            const scheduleStart = timeUtils.timeToMinutes(schedule.startTime);
+            if (scheduleStart > currentMinutes && scheduleStart < nextScheduleStartMinutes) {
+                nextScheduleStartMinutes = scheduleStart;
+            }
+        }
+        return nextScheduleStartMinutes;
     }
 };

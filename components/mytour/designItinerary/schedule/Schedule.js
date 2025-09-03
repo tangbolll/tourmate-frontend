@@ -5,6 +5,8 @@ import ShowExtraTime from './ShowExtraTime'; // 👈 세미콜론 하나 제거
 import AddScheduleButton from './AddScheduleButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+AsyncStorage.clear(); 
+
 // --- 헬퍼 함수들을 컴포넌트 밖으로 이동 ---
 const timeToMinutes = (timeString) => {
     if (!timeString || !timeString.includes(':')) return 0;
@@ -54,6 +56,8 @@ const Schedule = ({
     onScheduleDelete,
     onUpdateSchedule,
 }) => {
+    console.log(`[${selectedDay}일차] Schedule 컴포넌트가 받은 데이터:`, JSON.stringify(schedules, null, 2));
+
     const [hiddenExtraTimeIds, setHiddenExtraTimeIds] = useState([]);
 
     // [불러오기 로직]
@@ -73,6 +77,9 @@ const Schedule = ({
     }, [selectedDay]);
 
     const extraTimes = useMemo(() => calculateExtraTimes(schedules), [schedules]);
+
+    console.log("계산된 여유시간 배열:", extraTimes);
+
 
     const handleDeleteExtraTime = async (idToHide) => {
         try {
@@ -110,9 +117,15 @@ const Schedule = ({
                     <ShowExtraTime
                         key={extraTime.id}
                         duration={extraTime.duration}
-                        startTime={extraTime.startTime}
-                        endTime={extraTime.endTime}
-                        onAddSchedule={() => onAddSchedule(selectedDay, null, extraTime.startTime)}
+                        onAddSchedule={() => {
+                            const dataToSend = { 
+                                selectedDay: selectedDay, 
+                                startTime: extraTime.startTime, 
+                                endTime: extraTime.endTime 
+                            };
+                            console.log("✅ 1. Schedule.js에서 부모로 보내는 데이터:", dataToSend);
+                            onAddSchedule(dataToSend);
+                        }}
                         onDelete={handleDeleteExtraTime} 
                         extraTimeId={extraTime.id}
                     />

@@ -616,42 +616,60 @@ useEffect(() => {
     };
     const handleMemberAdd = (newMember) => setMembers(prev => [...prev, newMember]);
 
-    const handleAddSchedule = (day, date, hour, attraction, locationValue = '') => {
-        console.log('handleAddSchedule 호출:', { day, date, hour, attraction, locationValue });
-        console.log('현재 period:', period);
-        
-        const title = attraction?.name || '';
-        setLocation(locationValue);
+    const handleAddSchedule = (...args) => {
+    console.log("✅ 2. DesignItinerary.js가 받은 데이터(args):", args);
 
-        const popupData = {
-            selectedDay: day,
-            existingSchedule: null,
-            location: locationValue,
-            title: title
+    let options = {};
+    // 👇 1. 인자가 하나이고, 객체이며, startTime 속성을 가지고 있는지 확인합니다.
+    if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null && args[0].startTime !== undefined) {
+        // CASE A: 여유시간 추가에서 호출된 경우
+        options = args[0];
+    } else {
+        // CASE B: 그 외 다른 모든 경우
+        options = {
+            day: args[0],
+            date: args[1],
+            hour: args[2],
+            attraction: args[3],
+            locationValue: args[4] || ''
         };
+    }
 
-        // 🔥 periodType에 따라 다른 데이터 설정
-        if (period.type === 'date') {
-            // 날짜 기반: selectedDate 설정
-            popupData.selectedDate = date || (period.startDate ? dayjs(period.startDate).add(day - 1, 'day').format('YYYY-MM-DD') : null);
-            popupData.dayDescription = null;
-            console.log('날짜 기반 - selectedDate:', popupData.selectedDate);
-        } else if (period.type === 'duration') {
-            // 기간 기반: dayDescription 설정
-            popupData.selectedDate = null;
-            popupData.dayDescription = `Day ${day}`;
-            console.log('기간 기반 - dayDescription:', popupData.dayDescription);
-        }
 
-        if (hour) {
-            popupData.selectedHour = hour;
-        }
+    console.log('handleAddSchedule 호출:', options);
+    console.log('현재 period:', period);
 
-        console.log('팝업으로 보낼 최종 데이터 (popupData):', popupData);
+    // 2. 기존 로직을 통일된 options 객체를 사용하도록 수정합니다.
+    const title = options.attraction?.name || '';
+    // setLocation은 팝업에서 직접 관리하므로 여기서는 호출하지 않습니다.
 
-        setSchedulePopupData(popupData);
-        setShowAddSchedulePopup(true);
+    const popupData = {
+        selectedDay: options.day || options.selectedDay,
+        existingSchedule: null,
+        location: options.locationValue,
+        title: title,
+        // (핵심) options에 startTime, endTime이 있으면 그 값을 사용합니다.
+        startTime: options.startTime,
+        endTime: options.endTime,
+        // 기존 hour 방식도 유지합니다.
+        hour: options.hour,
     };
+
+    // 3. periodType에 따른 데이터 설정 로직은 그대로 유지합니다.
+    if (period.type === 'date') {
+        popupData.selectedDate = options.date || (period.startDate ? dayjs(period.startDate).add(popupData.selectedDay - 1, 'day').format('YYYY-MM-DD') : null);
+        popupData.dayDescription = null;
+    } else if (period.type === 'duration') {
+        popupData.selectedDate = null;
+        popupData.dayDescription = `Day ${popupData.selectedDay}`;
+    }
+
+    // 4. AddSchedule 팝업으로 최종 데이터를 전달합니다.
+    console.log('✅ 3. AddSchedule 팝업으로 보낼 최종 데이터:', popupData);
+    setSchedulePopupData(popupData);
+    setShowAddSchedulePopup(true);
+};
+
 
     const handleTimeBlockClick = (blockData) => {
         console.log('handleTimeBlockClick 호출:', blockData);
@@ -706,7 +724,7 @@ useEffect(() => {
             return (
                 <Schedule
                     schedules={daySchedules}
-                    onAddSchedule={() => handleAddSchedule(selectedDay)}
+                    onAddSchedule={handleAddSchedule}
                     onScheduleDelete={handleScheduleDelete}
                     onUpdateSchedule={schedule => handleTimeBlockClick({ existingSchedule: schedule, day: selectedDay })}
                     selectedDay={selectedDay}
@@ -747,6 +765,8 @@ useEffect(() => {
                 dateRange={dateInfo.displayText}
                 startDate={dateInfo.startDate}
                 endDate={dateInfo.endDate}
+                days={period.days}
+                nights={period.nights}
                 periodType={period.type}
                 onBackPress={handleBackPress}
                 onMemberPress={handleMemberPress}

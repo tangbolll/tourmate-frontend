@@ -32,10 +32,13 @@ export default function ItineraryMap() {
   const router = useRouter();
   const { tourId, itineraryTitle, periodData } = useLocalSearchParams();
 
-  console.log('1. useLocalSearchParams로 받은 데이터:', { tourId, itineraryTitle });
+  console.log("지도 화면이 받은 raw periodData:", periodData);
   
   const period = useMemo(() => {
-    return periodData ? JSON.parse(periodData) : {};
+    const parsed = periodData ? JSON.parse(periodData) : {};
+    // 👇 2. JSON 파싱 후의 객체에 nights와 days가 있는지 확인합니다.
+    console.log("파싱된 period 객체:", parsed);
+    return parsed;
   }, [periodData]);
 
 
@@ -46,55 +49,78 @@ export default function ItineraryMap() {
   const [selectedDay, setSelectedDay] = useState('all');
 
   // --- API 데이터 로딩 ---
-  useEffect(() => {
+useEffect(() => {
     if (!tourId) return;
+
     const fetchTourData = async () => {
-      try {
-        const token = await AsyncStorage.getItem('jwtToken');
-        if (!token) return;
+        try {
+            const token = await AsyncStorage.getItem('jwtToken');
+            if (!token) return;
 
-        const response = await axios.get(`${getBaseURL()}/api/travelSchedule/travel/${tourId}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        
-        const schedules = response.data;
-        if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
-          setScheduleData({});
-          return;
+            const response = await axios.get(`${getBaseURL()}/api/travelSchedule/travel/${tourId}`, {
+                headers: { Authorization: `Bearer ${token}` },
+            });
+            
+            const schedules = response.data;
+            if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
+                setScheduleData({});
+                return;
+            }
+
+            // --- 👇👇 여기가 핵심 수정 부분입니다 👇👇 ---
+
+            let groupedByDay = {};
+            const currentPeriodType = period.type; // useMemo로 이미 계산된 period 객체 사용
+
+            if (currentPeriodType === 'date') {
+                // ✅ 'date' 타입 여행 처리 (기존 로직 유지)
+                const validSchedules = schedules.filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
+                
+                if (validSchedules.length > 0) {
+                    const firstDate = new Date(validSchedules[0].date);
+                    groupedByDay = validSchedules.reduce((acc, item) => {
+                        const currentDate = new Date(item.date);
+                        const dayIndex = Math.floor((currentDate - firstDate) / (1000 * 60 * 60 * 24)) + 1;
+    
+                        if (!acc[dayIndex]) acc[dayIndex] = [];
+                        acc[dayIndex].push({
+                            id: item.id, name: item.title, category: item.tag,
+                            order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude
+                        });
+                        return acc;
+                    }, {});
+                }
+
+            } else if (currentPeriodType === 'duration') {
+                // ✅ 'duration' 타입 여행 처리 (새로운 로직 추가)
+                groupedByDay = schedules.reduce((acc, item) => {
+                    if (item.dayDescription) {
+                        const dayMatch = String(item.dayDescription).match(/\d+/);
+                        if (dayMatch && dayMatch[0]) {
+                            const dayIndex = dayMatch[0]; // "1", "2" 등
+                            if (!acc[dayIndex]) acc[dayIndex] = [];
+                            acc[dayIndex].push({
+                                id: item.id, name: item.title, category: item.tag,
+                                order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude
+                            });
+                        }
+                    }
+                    return acc;
+                }, {});
+            }
+            
+            setScheduleData(groupedByDay);
+
+            // --- 👆👆 여기까지가 핵심 수정 부분입니다 👆👆 ---
+
+        } catch (error) {
+            console.error('스케줄 불러오기 실패:', error);
         }
-
-        const validSchedules = schedules.filter(s => s.date);
-
-        if (validSchedules.length === 0) {
-          setScheduleData({});
-          return;
-        }
-
-        validSchedules.sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        const groupedByDay = validSchedules.reduce((acc, item) => {
-          const firstDate = new Date(validSchedules[0].date);
-          const currentDate = new Date(item.date);
-          
-          if (isNaN(firstDate.getTime()) || isNaN(currentDate.getTime())) return acc;
-
-          const dayIndex = Math.floor((currentDate - firstDate) / (1000 * 60 * 60 * 24)) + 1;
-
-          if (!acc[dayIndex]) acc[dayIndex] = [];
-          acc[dayIndex].push({
-            id: item.id, name: item.title, category: item.tag,
-            order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude
-          });
-          return acc;
-        }, {});
-        
-        setScheduleData(groupedByDay);
-      } catch (error) {
-        console.error('스케줄 불러오기 실패:', error);
-      }
     };
+
     fetchTourData();
-  }, [tourId]);
+}, [tourId, period.type]); // period.type도 의존성 배열에 추가
+
 
   // --- BottomSheet 연동 함수 ---
   const handleDayChange = (dayKey) => {
@@ -190,6 +216,8 @@ export default function ItineraryMap() {
         startDate={period.startDate}
         endDate={period.endDate}
         periodType={period.type}
+        nights={period.nights} 
+        days={period.days}
         onBackPress={() => router.back()}
         onMemberPress={() => console.log('멤버 아이콘 클릭')}
       />

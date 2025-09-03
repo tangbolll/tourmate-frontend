@@ -7,7 +7,9 @@ const DesignItineraryHeader = ({
     title, 
     dateRange, 
     startDate, 
-    endDate, 
+    endDate,
+    days,
+    nights, 
     periodType, 
     onBackPress,
     onMemberPress, 
@@ -41,6 +43,8 @@ const DesignItineraryHeader = ({
             type: periodType,
             startDate: startDate,
             endDate: endDate,
+            days: days,
+            nights: nights
             // '기간' 타입일 경우를 대비해 dateRange도 포함 (선택 사항)
             // nights, days 등 다른 정보도 있다면 여기에 추가할 수 있습니다.
         };

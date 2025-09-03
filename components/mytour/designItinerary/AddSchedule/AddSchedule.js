@@ -22,27 +22,34 @@ import ScheduleActions from './ScheduleActions';
 
 const { height: screenHeight } = Dimensions.get('window');
 
-const AddSchedule = ({
-    visible,
-    onClose,
-    onScheduleAdded,
-    selectedDay,
-    selectedDate,
-    hour,
-    minute,
-    periodType,
-    startDate,
-    endDate,
-    days,
-    existingSchedule,
-    onScheduleDelete,
-    currentTourId,
-    initialTitle = '',
-    initialLocation = '',
+const AddSchedule = (props) => {
+    // 👇 2. 컴포넌트가 받은 모든 props를 그대로 출력합니다.
+    console.log("✅ 4. AddSchedule 컴포넌트가 실제로 받은 모든 props:", props);
 
-}) => {
+    // 👇 3. props에서 필요한 값들을 직접 꺼내 씁니다.
+    const {
+        visible,
+        onClose,
+        onScheduleAdded,
+        selectedDay,
+        selectedDate,
+        hour,
+        minute,
+        startTime: propStartTime, // 별명은 그대로 사용
+        endTime: propEndTime,     // 별명은 그대로 사용
+        periodType,
+        startDate,
+        endDate,
+        days,
+        existingSchedule,
+        onScheduleDelete,
+        currentTourId,
+        initialTitle = '',
+        initialLocation = '',
+    } = props;
+
     console.log('DesignItinerary로부터 받은 모든 props:', initialTitle, initialLocation);
-    console.log(`[AddSchedule] 팝업이 받음 - periodType: ${periodType}, startDate: ${startDate}, endDate: ${endDate}, days: ${days}`);
+    console.log(`[AddSchedule] 팝업이 받음 - periodType: ${periodType}, startTime: ${startTime}, endTime: ${endTime}, days: ${days}`);
     const [category, setCategory] = useState('숙소');
     const [title, setTitle] = useState('');
     const [startTime, setStartTime] = useState('07:00');
@@ -79,21 +86,6 @@ const AddSchedule = ({
 
     const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
     const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
-
-    useEffect(() => {
-    if (visible) {
-      if (existingSchedule) {
-        setTitle(existingSchedule.title || '');
-        setLocation(existingSchedule.location || '');
-        // 기타 기존 상태 초기화
-      } else {
-        setTitle(initialTitle);
-        setLocation(initialLocation);
-        // 기타 초기화
-      }
-    }
-  }, [visible, existingSchedule, initialTitle, initialLocation]);
-
 
     useEffect(() => {
     if (location !== undefined) {
@@ -151,50 +143,54 @@ const AddSchedule = ({
     useEffect(() => {
         if (visible) {
             if (existingSchedule) {
+                // --- 수정 모드 ---
                 setCategory(existingSchedule.tag || '숙소');
                 setTitle(existingSchedule.title || '');
-                if (existingSchedule.startTime && existingSchedule.endTime) {
-                    setStartTime(existingSchedule.startTime);
-                    setEndTime(existingSchedule.endTime);
-                } else if (existingSchedule.timeSlot) {
-                    const [start, end] = existingSchedule.timeSlot.split(' ~ ');
-                    setStartTime(start || '07:30');
-                    setEndTime(end || '08:30');
-                }
+                setStartTime(existingSchedule.startTime || '07:00');
+                setEndTime(existingSchedule.endTime || '08:00');
                 setLocation(existingSchedule.location || '');
                 setMemo(existingSchedule.memo || '');
-                setCurrentSelectedDate(existingSchedule.date || '');
-                setMemoHeight(existingSchedule.memo ? Math.max(40, existingSchedule.memo.split('\n').length * 20 + 20) : 40);
+                setCurrentSelectedDate(existingSchedule.date || existingSchedule.dayDescription || '');
             } else {
+                // --- 추가 모드 ---
                 setCategory('숙소');
-                setTitle(initialTitle || '');
-                setLocation(initialLocation || '');
+                setTitle(initialTitle);      // initialTitle 사용
+                setLocation(initialLocation);  // initialLocation 사용
                 setMemo('');
-                setMemoHeight(40);
+                
+                // 날짜 초기화
                 if (selectedDate) {
                     setCurrentSelectedDate(selectedDate);
                 } else if (selectedDay && availableDates.length > 0) {
-                    const dayIndex = selectedDay - 1;
-                    if (dayIndex >= 0 && dayIndex < availableDates.length) {
-                        setCurrentSelectedDate(availableDates[dayIndex].value);
+                    const dayString = `${selectedDay}일차`;
+                    const foundDate = availableDates.find(d => d.value === dayString);
+                    if (foundDate) {
+                        setCurrentSelectedDate(foundDate.value);
+                    } else if (availableDates[selectedDay - 1]) {
+                        setCurrentSelectedDate(availableDates[selectedDay - 1].value);
                     }
-                } else if (availableDates.length > 0) {
-                    setCurrentSelectedDate(availableDates[0].value);
                 }
-                if (hour !== undefined && minute !== undefined) {
+
+                // 시간 초기화 (핵심!)
+                if (propStartTime && propEndTime) {
+                    // 1순위: 여유시간 추가 시 받은 시간
+                    setStartTime(propStartTime);
+                    setEndTime(propEndTime);
+                } else if (hour !== undefined && minute !== undefined) {
+                    // 2순위: 타임 블록 클릭 시 받은 시간
                     const initialHour = String(hour).padStart(2, '0');
                     const initialMinute = String(minute).padStart(2, '0');
                     const endHour = (hour + 1) % 24;
-                    const endHourString = String(endHour).padStart(2, '0');
                     setStartTime(`${initialHour}:${initialMinute}`);
-                    setEndTime(`${endHourString}:${initialMinute}`);
+                    setEndTime(`${String(endHour).padStart(2, '0')}:${initialMinute}`);
                 } else {
+                    // 3순위: 기본값
                     setStartTime('07:00');
                     setEndTime('08:00');
                 }
             }
         }
-    }, [visible, existingSchedule, selectedDay, selectedDate, hour, minute, availableDates]);
+    }, [visible, existingSchedule, props]); // props 전체를 의존성으로 두어 모든 변경에 반응
 
     useEffect(() => {
         if (!visible) {

@@ -213,7 +213,7 @@ const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd, tourId }) 
                             />
                             <View style={styles.memberInfoContainer}>
                                 <View style={styles.memberInfo}>
-                                    <Text style={styles.memberName}>{member.nickname}</Text>
+                                    <Text style={styles.memberName} numberOfLines={1}>{member.nickname}</Text>
                                     <Text style={styles.memberDetail}> · {member.gender} · {member.age}세</Text>
                                     {isOwner && <Text style={styles.hostLabel}>나</Text>}
                                 </View>
@@ -362,14 +362,16 @@ const styles = StyleSheet.create({
         flex: 1,
         marginLeft: 12,
         justifyContent: 'center',
+        marginRight: 8,
     },
     memberInfo: {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: 4,
-        flexWrap: 'wrap',
+        flexWrap: 'nowrap',
     },
     memberName: {
+        flexShrink: 1, 
         fontSize: 16,
         fontWeight: 'bold',
     },

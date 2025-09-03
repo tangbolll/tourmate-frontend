@@ -7,24 +7,27 @@ const DesignItineraryMapHeader = ({
     dateRange, 
     startDate, 
     endDate, 
-    periodType, 
+    periodType,
+    nights, 
+    days,   
     onBackPress,
     onMemberPress // 멤버 아이콘 클릭 핸들러 props로 받기
 }) => {
     const formatDate = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
-        const month = date.getMonth() + 1;
-        const day = date.getDate();
-        return `${month}.${day}`;
+        return `${date.getMonth() + 1}.${date.getDate()}`;
     };
+
 
     // 날짜 표시 로직
     const getDisplayDate = () => {
         if (periodType === 'date' && startDate && endDate) {
             return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+        } else if (periodType === 'duration' && nights && days) {
+            return `${nights}박 ${days}일`;
         }
-        return dateRange || '';
+        return ''; // 그 외의 경우는 빈 문자열 반환
     };
 
     return (
