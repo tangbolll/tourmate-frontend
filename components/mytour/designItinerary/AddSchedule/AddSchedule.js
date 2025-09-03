@@ -45,8 +45,8 @@ const AddSchedule = ({
     console.log(`[AddSchedule] 팝업이 받음 - periodType: ${periodType}, startDate: ${startDate}, endDate: ${endDate}, days: ${days}`);
     const [category, setCategory] = useState('숙소');
     const [title, setTitle] = useState('');
-    const [startTime, setStartTime] = useState('07:30');
-    const [endTime, setEndTime] = useState('08:30');
+    const [startTime, setStartTime] = useState('07:00');
+    const [endTime, setEndTime] = useState('08:00');
     const [location, setLocation] = useState('');
     const [selectedLocationObject, setSelectedLocationObject] = useState(null); // ✅ 추가
     const [memo, setMemo] = useState('');
@@ -189,8 +189,8 @@ const AddSchedule = ({
                     setStartTime(`${initialHour}:${initialMinute}`);
                     setEndTime(`${endHourString}:${initialMinute}`);
                 } else {
-                    setStartTime('07:30');
-                    setEndTime('08:30');
+                    setStartTime('07:00');
+                    setEndTime('08:00');
                 }
             }
         }
