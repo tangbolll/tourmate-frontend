@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 const getBaseURL = () => {
     if (__DEV__) {
         if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080'; // Keep for Android emulator
+            return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://10.0.2.2:8080';
         }
         if (Platform.OS === 'web') {
             return 'http://localhost:8080';
@@ -130,15 +130,11 @@ export const uploadProfileImageApi = async (userId, imageUri) => {
 
         const formData = new FormData();
 
-        // Base64 URI에서 MIME 타입과 데이터 분리
-        const base64Response = await fetch(imageUri);
-        const blob = await base64Response.blob();
-
-        // 파일 이름과 타입 설정 (여기서는 기본값 사용 또는 imageUri에서 추출)
-        const filename = `profile_image_${Date.now()}.jpeg`; // 적절한 파일 이름 생성
-        const type = blob.type || 'image/jpeg'; // Blob에서 타입 가져오기, 없으면 기본값
-
-        formData.append('image', blob, filename); // Blob 객체와 파일 이름 전달
+        formData.append('image', {
+          uri: imageUri,
+          name: `profile_image_${Date.now()}.jpeg`,
+          type: 'image/jpeg',
+        });
 
         console.log("FormData being sent:", formData);
 

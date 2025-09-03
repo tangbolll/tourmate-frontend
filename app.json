@@ -50,6 +50,7 @@
         "expo-build-properties",
         {
           "android": {
+            "usesCleartextTraffic": true,
             "extraMavenRepos": [
               "https://devrepo.kakao.com/nexus/content/groups/public/"
             ],
@@ -64,7 +65,7 @@
       "typedRoutes": true
     },
     "extra": {
-      "API_BASE_URL_DEV": "http://192.168.0.47:8080"
+      "API_BASE_URL_DEV": "http://192.168.55.105:8080"
     }
   }
 }

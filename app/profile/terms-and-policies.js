@@ -20,19 +20,19 @@ const TermsAndPoliciesScreen = () => {
                 <View style={{ width: 24 }} />
             </View>
             <ScrollView style={styles.content}>
-                <TouchableOpacity style={styles.itemContainer} onPress={() => navigateToDetail('/profile/terms-and-policies/terms-of-service')}>
+                <TouchableOpacity style={styles.itemContainer} onPress={() => navigateToDetail('/terms-and-policies/terms-of-service')}>
                     <Text style={styles.itemText}>서비스 이용약관</Text>
                     <Ionicons name="chevron-forward" size={20} color="#9E9E9E" />
                 </TouchableOpacity>
                 <View style={styles.divider} />
 
-                <TouchableOpacity style={styles.itemContainer} onPress={() => navigateToDetail('/profile/terms-and-policies/privacy-policy')}>
+                <TouchableOpacity style={styles.itemContainer} onPress={() => navigateToDetail('/terms-and-policies/privacy-policy')}>
                     <Text style={styles.itemText}>개인정보 처리방침</Text>
                     <Ionicons name="chevron-forward" size={20} color="#9E9E9E" />
                 </TouchableOpacity>
                 <View style={styles.divider} />
 
-                <TouchableOpacity style={styles.itemContainer} onPress={() => navigateToDetail('/profile/terms-and-policies/location-terms')}>
+                <TouchableOpacity style={styles.itemContainer} onPress={() => navigateToDetail('/terms-and-policies/location-terms')}>
                     <Text style={styles.itemText}>위치기반서비스 이용약관</Text>
                     <Ionicons name="chevron-forward" size={20} color="#9E9E9E" />
                 </TouchableOpacity>
