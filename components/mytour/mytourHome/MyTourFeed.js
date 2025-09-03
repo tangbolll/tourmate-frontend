@@ -8,7 +8,7 @@ const defaultImage = require('../../../assets/defaultBackground.png');
 const { width } = Dimensions.get('window');
 
 export default function MyTourFeed({
-    imageUrl,
+    imageSource,
     periodType,
     tourStartDate,
     tourEndDate,
@@ -99,7 +99,7 @@ export default function MyTourFeed({
             {/* 이미지 영역 */}
             <View style={styles.imageContainer}>
                 <Image 
-                    source={imageUrl ? { uri: imageUrl } : defaultImage}
+                    source={imageSource}
                     style={styles.image}
                     resizeMode="cover"
                 />

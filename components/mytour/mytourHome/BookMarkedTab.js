@@ -4,6 +4,10 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import BookmarkedEvent from './BookMarkedEvent';
 import Constants from 'expo-constants';
 import { handleBookmarkPress } from '../../../utils/MyTourApi';
+import imageMap from '../../../utils/imageMap';
+
+const defaultImage = require('../../../assets/defaultBackground.png');
+
 
 
 export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate, onTourPress }) {
@@ -62,6 +66,8 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate,
                             {bookmarkedEvents.map((event, index) => {
                                 // 기본값
                                 let locationString = '지역 정보 없음';
+                                const imageCode = event.regions?.[0]?.areaCode;
+                                const imageSource = imageMap[imageCode] || defaultImage;
 
                                 if (event.regions && event.regions.length > 0) {
                                     const firstRegion = event.regions[0];
@@ -92,10 +98,11 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate,
                                         periodType = {event.periodType}
                                         title={event.title}
                                         location={locationString} // 최종 문자열 전달
-                                        imageUrl={event.imageUrl || null}
+                                        imageSource={imageSource}
                                         isBookmarked={event.isBookmarked}
                                         onPress={() => onTourPress && onTourPress(event.id)}
                                         onBookmarkPress={() => handleBookmarkChange(event.id)}
+                                        
 
                                     />
                                 );

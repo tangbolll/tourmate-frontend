@@ -47,6 +47,8 @@ export default function CreateItinerary() {
     // 기간 변경 핸들러
     const handlePeriodChange = (data) => setPeriodData(data);
 
+
+
     // 작성 완료 버튼 핸들러
     const handleCompletePress = async () => {
         console.log("현재 선택된 regions state:", regions);

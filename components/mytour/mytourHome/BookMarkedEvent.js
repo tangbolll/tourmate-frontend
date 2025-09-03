@@ -12,7 +12,7 @@ export default function BookmarkedEvent({
     periodType,
     title, 
     location, 
-    imageUrl, 
+    imageSource, 
     isBookmarked = true,
     onPress, 
     onBookmarkPress
@@ -56,7 +56,7 @@ export default function BookmarkedEvent({
     return (
         <TouchableOpacity onPress={handleCardPress} style={styles.card}>
             <ImageBackground
-                source={imageUrl ? { uri: imageUrl } : defaultImage}
+                source={imageSource || defaultImage} 
                 style={styles.image}
             >
                 <View style={styles.darkOverlay} />

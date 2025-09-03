@@ -17,6 +17,10 @@ import { useAuth } from '../../../context/AuthContext';
 import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';     // isSameOrAfter 플러그인 불러오기
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';   // isSameOrBefore 플러그인도 필요합니다.
 
+import imageMap from '../../../utils/imageMap';
+const defaultImage = require('../../../assets/defaultBackground.png');
+
+
 dayjs.extend(isSameOrAfter);     // dayjs에 isSameOrAfter 플러그인 기능 추가
 dayjs.extend(isSameOrBefore);    // dayjs에 isSameOrBefore 플러그인 기능 추가
 
@@ -236,6 +240,9 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
                         <View style={styles.gridContainer}>
                             {filteredAndSortedTours.map((tour) => {
                                 let locationString = '지역 정보 없음';
+                                const imageCode = tour.regions?.[0]?.areaCode;
+                                const imageSource = imageMap[imageCode] || defaultImage;
+
 
                                 if (tour.regions && tour.regions.length > 0) {
                                     const firstRegion = tour.regions[0];
@@ -259,7 +266,7 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
                                 return (
                                     <View key={tour.id} style={styles.feedItem}>
                                         <MyTourFeed
-                                            imageUrl={tour.imageUrl || null}
+                                            imageSource={imageSource}
                                             periodType = {tour.periodType}
                                             tourStartDate={tour.startDate}
                                             tourEndDate={tour.endDate}

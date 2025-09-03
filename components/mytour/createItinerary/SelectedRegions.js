@@ -1,6 +1,8 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
+import imageMap from '../../../utils/imageMap';
+
 
 const defaultImage = require('../../../assets/defaultBackground.png');
 
@@ -20,7 +22,7 @@ const SelectedRegions = ({ selectedRegions, onRemoveRegion }) => {
                     <View key={item.key} style={styles.regionItem}>
                         <View style={styles.imageContainer}>
                             <Image 
-                                source={defaultImage}
+                                source={imageMap[item.parentCode] || defaultImage}
                                 style={styles.regionImage}
                                 resizeMode="cover"
                             />
@@ -49,7 +51,7 @@ const SelectedRegions = ({ selectedRegions, onRemoveRegion }) => {
 
 const styles = StyleSheet.create({
     container: {
-        backgroundColor: '#ddd',
+        backgroundColor: '#f2f2f2ff',
         paddingVertical: 10,
         paddingHorizontal: 12,
         width: '100%',

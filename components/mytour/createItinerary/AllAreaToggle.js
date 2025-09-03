@@ -11,6 +11,10 @@ import {
 } from 'react-native';
 import AntDesign from 'react-native-vector-icons/AntDesign';
 import Constants from 'expo-constants';
+import imageMap from '../../../utils/imageMap';
+
+const defaultImage = require('../../../assets/defaultBackground.png');
+
 
 export default function AllAreaToggle({ onRegionSelect, selectedRegions = [], searchText }) {
     const [areas, setAreas] = useState([]);
@@ -18,7 +22,6 @@ export default function AllAreaToggle({ onRegionSelect, selectedRegions = [], se
     const [loading, setLoading] = useState(false);
     const [filteredAreas, setFilteredAreas] = useState([]);
 
-    const defaultImage = require('../../../assets/defaultBackground.png');
 
     const getBaseURL = () => {
         if (__DEV__) {
@@ -128,7 +131,13 @@ export default function AllAreaToggle({ onRegionSelect, selectedRegions = [], se
                             >
                                 <View style={styles.countryInfo}>
                                     <View style={styles.imageContainer}>
-                                        <Image source={defaultImage} style={styles.countryImage} resizeMode="cover" />
+                                         <Image
+                                            // imageMap에서 country.code에 해당하는 이미지를 찾고,
+                                            // 만약 없으면(undefined) defaultImage를 사용합니다.
+                                            source={imageMap[country.code] || defaultImage}
+                                            style={styles.countryImage}
+                                            resizeMode="cover"
+                                        />
                                     </View>
                                     <View style={styles.countryDetails}>
                                         {!isExpanded ? (

@@ -5,7 +5,6 @@ import ShowExtraTime from './ShowExtraTime'; // 👈 세미콜론 하나 제거
 import AddScheduleButton from './AddScheduleButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-AsyncStorage.clear(); 
 
 // --- 헬퍼 함수들을 컴포넌트 밖으로 이동 ---
 const timeToMinutes = (timeString) => {
