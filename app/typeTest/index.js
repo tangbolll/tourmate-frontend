@@ -25,8 +25,6 @@ export default function TypeTestMain() {
         <StatusBar barStyle="dark-content" backgroundColor="#ffffff" />
         
         <View style={styles.header}>
-            <View style={styles.placeholder} />
-            <Text style={styles.headerTitle}>여행 성향 테스트</Text>
             <TouchableOpacity style={styles.homeButton} onPress={handleGoHome}>
                 <Ionicons name="home-outline" size={24} color="black" />
             </TouchableOpacity>
@@ -82,19 +80,11 @@ const styles = StyleSheet.create({
     header: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'flex-end',
         paddingHorizontal: 20,
         paddingVertical: 15,
         borderBottomWidth: 1,
         borderBottomColor: '#f0f0f0',
-    },
-    headerTitle: {
-        fontSize: 18,
-        fontWeight: '600',
-        color: '#333333',
-    },
-    placeholder: {
-        width: 24,
     },
     homeButton: {
         padding: 5,
