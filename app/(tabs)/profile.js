@@ -248,11 +248,11 @@ export default function ProfileHome() {
     }, [activeTab, handleEditFolder, folders, userEmail, favoritePostcards, handleDataUpdate, fetchData]);
 
     if (isLoading) {
-        return <View style={[styles.container, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}><Text>프로필을 불러오는 중입니다...</Text></View>;
+        return <View style={[styles.container, { backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }]}><Text>프로필을 불러오는 중입니다...</Text></View>;
     }
 
     if (!userData) {
-        return <View style={[styles.container, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}><Text>프로필을 불러오는 중입니다...</Text></View>;
+        return <View style={[styles.container, { backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }]}><Text>프로필을 불러오는 중입니다...</Text></View>;
     }
 
     return (

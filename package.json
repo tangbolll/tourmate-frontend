@@ -19,7 +19,7 @@
     "@expo/config-plugins": "~10.0.0",
     "@expo/vector-icons": "^14.1.0",
     "@react-native-async-storage/async-storage": "^2.2.0",
-    "@react-native-community/datetimepicker": "^8.4.2",
+    "@react-native-community/datetimepicker": "^8.4.4",
     "@react-native-kakao/core": "^2.4.0",
     "@react-native-kakao/user": "^2.4.0",
     "@react-native-masked-view/masked-view": "0.3.2",
