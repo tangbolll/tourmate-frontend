@@ -28,11 +28,11 @@ const PostcardTemplate = ({ template }) => {
                     {template.tab === 'Plain' && (
                         <View style={styles.templatePlainArea} />
                     )}
-                    {template.tab === 'Image' && (
+                    {/* {template.tab === 'Image' && (
                         <View style={styles.templateImageArea}>
                             <Text style={styles.templateImageText}>Image</Text>
                         </View>
-                    )}
+                    )} */}
                 </View>
             </View>
             <Text style={styles.postcardBottom}>This side for message</Text>

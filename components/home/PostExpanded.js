@@ -53,6 +53,141 @@ const getPostcardTemplate = (typeImageUrl) => {
     }
 };
 
+// 템플릿 번호 추출 함수
+const getTemplateNumber = (typeImageUrl) => {
+    if (!typeImageUrl) return 1;
+    
+    try {
+        const match = typeImageUrl.match(/(\d+)\.png$/);
+        if (match) {
+            return parseInt(match[1], 10);
+        }
+        return 1;
+    } catch (error) {
+        console.error('템플릿 번호 추출 오류:', error);
+        return 1;
+    }
+};
+
+// 템플릿별 텍스트 레이아웃 스타일 함수
+const getPostcardOverlayStyle = (templateNumber) => {
+    switch (templateNumber) {
+        case 1:
+            // 첫 번째 템플릿: 오른쪽에 텍스트
+            return {
+                width: '50%',
+                height: '70%',
+                position: 'absolute',
+                right: '-1%',
+                top: '32%',
+                padding: 15,
+                justifyContent: 'space-between',
+            };
+        case 2:
+            // 두 번째 템플릿: 양쪽에 텍스트
+            return {
+                width: '85%',
+                height: '70%',
+                padding: 15,
+                top: '3%',
+                justifyContent: 'space-between',
+                flexDirection: 'row',
+            };
+        case 3:
+            // 세 번째 템플릿: 전체적으로 텍스트
+            return {
+                width: '85%',
+                height: '70%',
+                top: '-5%',
+                left: '5%',
+                padding: 20,
+                justifyContent: 'center',
+            };
+        case 4:
+            // 네 번째 템플릿: 중간-하단 영역에 텍스트
+            return {
+                width: '80%',
+                height: '50%',
+                position: 'absolute',
+                bottom: '15%',
+                padding: 15,
+                top: '40%',
+                justifyContent: 'flex-start',
+            };
+        case 5:
+            // 다섯 번째 템플릿: 중간 영역에 텍스트, 날짜는 오른쪽 하단
+            return {
+                width: '80%',
+                height: '80%',
+                position: 'absolute',
+                top: '30%',
+                right: '1%',
+                padding: 15,
+                justifyContent: 'space-between',
+            };
+        case 6:
+            // 여섯 번째 템플릿: 중앙에 텍스트, 날짜는 하단
+            return {
+                width: '80%',
+                height: '50%',
+                top: '30%',
+                right: '-10%',
+                padding: 20,
+                justifyContent: 'space-between',
+            };
+        case 7:
+            // 일곱 번째 템플릿: 상단 영역에 텍스트
+            return {
+                width: '80%',
+                height: '50%',
+                position: 'absolute',
+                top: '40%',
+                right: '1%',
+                padding: 15,
+                justifyContent: 'flex-start',
+            };
+        case 8:
+            // 여덟 번째 템플릿: 상단과 중앙 영역
+            return {
+                width: '80%',
+                height: '65%',
+                position: 'absolute',
+                top: '50%',
+                right: '1%',
+                padding: 20,
+                justifyContent: 'space-between',
+            };
+        case 9:
+            // 아홉 번째 템플릿: 오른쪽 영역 (왼쪽 세로 텍스트 피해서)
+            return {
+                width: '70%',
+                height: '65%',
+                position: 'absolute',
+                top: '20%',
+                padding: 15,
+                justifyContent: 'center',
+            };
+        case 10:
+            // 열 번째 템플릿: 제목 아래 중앙 영역
+            return {
+                width: '80%',
+                height: '55%',
+                position: 'absolute',
+                top: '25%',
+                padding: 20,
+                justifyContent: 'flex-start',
+            };
+        default:
+            // 기본 스타일
+            return {
+                width: '80%',
+                height: '70%',
+                padding: 20,
+                justifyContent: 'space-between',
+            };
+    }
+};
+
 // 날짜 포맷팅 함수
 const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -84,7 +219,7 @@ const PostExpanded = ({
     const [likeLoading, setLikeLoading] = useState(false);
     const [scrapLoading, setScrapLoading] = useState(false);
 
-        // detail 데이터 상태
+    // detail 데이터 상태
     const [detailData, setDetailData] = useState(null);
     const [detailLoading, setDetailLoading] = useState(false);
 
@@ -99,7 +234,7 @@ const PostExpanded = ({
         timeAgo: '5시간 전',
         likeCount: 23,
         scrapCount: 46,
-        postcardContent: '부산에다녀왔다\n넘즐거웠다\n엽서디자인 아직 안 넣었습니다 임시입니다\n놀래지마세용',
+        postcardContent: '데이터 못 불러왔습니다\n죄송해요\n오른쪽 위 엑스 눌러서 나갔다 들어와봐유',
         isLiked: false,
         isScraped: false,
         typeImageUrl: '../postcardType/1.png', // 기본 템플릿
@@ -107,12 +242,12 @@ const PostExpanded = ({
     };
 
     useEffect(() => {
-    if (visible && postData?.postcardId && !detailData) {
-        loadDetailData();
-    }
+        if (visible && postData?.postcardId && !detailData) {
+            loadDetailData();
+        }
     }, [visible, postData?.postcardId]);
 
-        // detail 데이터 로드
+    // detail 데이터 로드
     const loadDetailData = async () => {
         setDetailLoading(true);
         try {
@@ -143,9 +278,11 @@ const PostExpanded = ({
         postcardContent: detailData?.content || postData?.content || postData?.postcardContent || mockData.postcardContent,
         templateImage: getPostcardTemplate(detailData?.typeImageUrl || postData?.typeImageUrl || mockData.typeImageUrl),
         profileImage: postData?.profileImage || mockData.profileImage,
+        typeImageUrl: detailData?.typeImageUrl || postData?.typeImageUrl || mockData.typeImageUrl,
     };
 
-
+    // 템플릿 번호 가져오기
+    const templateNumber = getTemplateNumber(displayData.typeImageUrl);
 
     // postData가 변경될 때마다 상태 동기화 (서버 데이터 우선)
     useEffect(() => {
@@ -248,6 +385,57 @@ const PostExpanded = ({
         Alert.alert('알림', '로그인이 필요한 기능입니다.');
     };
 
+    // 템플릿별 텍스트 렌더링 함수
+    const renderPostcardContent = () => {
+        const overlayStyle = getPostcardOverlayStyle(templateNumber);
+        
+        switch (templateNumber) {
+            case 1:
+                // 첫 번째 템플릿: 오른쪽에 텍스트
+                return (
+                    <View style={overlayStyle}>
+                        <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
+                            <Text style={styles.contentText}>{displayData.postcardContent}</Text>
+                        </ScrollView>
+                    </View>
+                );
+            
+            case 2:
+                // 두 번째 템플릿: 양쪽에 텍스트 (내용을 반으로 나누기)
+                const content = displayData.postcardContent || '';
+                const lines = content.split('\n');
+                const midPoint = Math.ceil(lines.length / 2);
+                const leftContent = lines.slice(0, midPoint).join('\n');
+                const rightContent = lines.slice(midPoint).join('\n');
+                
+                return (
+                    <View style={overlayStyle}>
+                        <View style={styles.halfTextContainer}>
+                            <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
+                                <Text style={styles.contentText}>{leftContent}</Text>
+                            </ScrollView>
+                        </View>
+                        <View style={styles.halfTextContainer}>
+                            <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
+                                <Text style={styles.contentText}>{rightContent}</Text>
+                            </ScrollView>
+                        </View>
+                    </View>
+                );
+            
+            case 3:
+            default:
+                // 세 번째 템플릿 및 기본: 전체적으로 텍스트
+                return (
+                    <View style={overlayStyle}>
+                        <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
+                            <Text style={styles.contentText}>{displayData.postcardContent}</Text>
+                        </ScrollView>
+                    </View>
+                );
+        }
+    };
+
     return (
         <Modal
             visible={visible}
@@ -295,11 +483,7 @@ const PostExpanded = ({
                             style={styles.postcardContainer}
                             resizeMode="contain"
                         >
-                            <View style={styles.postcardOverlay}>
-                                <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
-                                    <Text style={styles.contentText}>{displayData.postcardContent}</Text>
-                                </ScrollView>
-                            </View>
+                            {renderPostcardContent()}
                         </ImageBackground>
                     </View>
 
@@ -433,11 +617,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    postcardOverlay: {
-        width: '80%',
-        height: '70%',
-        padding: 20,
-        justifyContent: 'space-between',
+    // 템플릿 2번용 반반 나누기 스타일
+    halfTextContainer: {
+        flex: 1,
+        paddingHorizontal: 10,
     },
     locationTitle: {
         fontSize: 16,
@@ -451,9 +634,9 @@ const styles = StyleSheet.create({
         marginVertical: 8,
     },
     contentText: {
-        fontSize: 14,
+        fontSize: 12,
         color: '#333',
-        lineHeight: 18,
+        lineHeight: 20,
         textAlign: 'left',
     },
     dateText: {

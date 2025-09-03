@@ -23,7 +23,7 @@ const designImages = {
         require('../../assets/postcardType/2.png'),
         require('../../assets/postcardType/3.png'),
         require('../../assets/postcardType/4.png'),
-        require('../../assets/postcardType/5.png'),
+        // require('../../assets/postcardType/5.png'),
     ],
     Plain: [
         require('../../assets/postcardType/6.png'),
@@ -32,20 +32,20 @@ const designImages = {
         require('../../assets/postcardType/9.png'),
         require('../../assets/postcardType/10.png'),
     ],
-    Image: [
-        require('../../assets/postcardType/11.png'),
-        require('../../assets/postcardType/12.png'),
-        require('../../assets/postcardType/13.png'),
-        require('../../assets/postcardType/14.png'),
-        require('../../assets/postcardType/15.png'),
-    ],
+    // Image: [
+    //     require('../../assets/postcardType/11.png'),
+    //     require('../../assets/postcardType/12.png'),
+    //     require('../../assets/postcardType/13.png'),
+    //     require('../../assets/postcardType/14.png'),
+    //     require('../../assets/postcardType/15.png'),
+    // ],
 };
 
 const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
     const tabs = {
         Line: 1,
         Plain: 2,
-        Image: 3,
+        // Image: 3,
     };
     const [selectedTab, setSelectedTab] = useState('Line');
     const [selectedDesign, setSelectedDesign] = useState(null);
@@ -68,16 +68,17 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
     };
 
     const getDesignData = () => {
-        const designs = [];
-        const startIndex = (tabs[selectedTab] - 1) * 5 + 1;
-        const endIndex = startIndex + 4;
+    const designs = [];
+    const startIndex = (tabs[selectedTab] - 1) * 5 + 1;
+    const imageCount = designImages[selectedTab].length; // 실제 이미지 개수
+    const endIndex = startIndex + imageCount - 1; // 개수에 맞춰 조정
 
-        for (let i = startIndex; i <= endIndex; i++) {
-            designs.push({ id: i });
-        }
+    for (let i = startIndex; i <= endIndex; i++) {
+        designs.push({ id: i });
+    }
 
-        return designs;
-    };
+    return designs;
+};
 
     // 엽서 이미지 렌더링 함수 수정
     const renderPostcardDesign = (design) => {
