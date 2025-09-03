@@ -16,7 +16,25 @@ import {
     getPostcardsByFolderApi,
     deletePostcardApi,
     updatePostcardApi,
-} from "../../utils/PostCardApi"
+} from "../../utils/PostCardApi";
+
+const postcardTemplates = {
+    1: require('../../assets/postcardType/1.png'),
+    2: require('../../assets/postcardType/2.png'),
+    3: require('../../assets/postcardType/3.png'),
+    4: require('../../assets/postcardType/4.png'),
+    5: require('../../assets/postcardType/5.png'),
+    6: require('../../assets/postcardType/6.png'),
+    7: require('../../assets/postcardType/7.png'),
+    8: require('../../assets/postcardType/8.png'),
+    9: require('../../assets/postcardType/9.png'),
+    10: require('../../assets/postcardType/10.png'),
+    11: require('../../assets/postcardType/11.png'),
+    12: require('../../assets/postcardType/12.png'),
+    13: require('../../assets/postcardType/13.png'),
+    14: require('../../assets/postcardType/14.png'),
+    15: require('../../assets/postcardType/15.png'),
+};
 
 const WritePost = () => {
     const router = useRouter();
@@ -26,8 +44,8 @@ const WritePost = () => {
     const [directoryInfo, setDirectoryInfo] = useState({
         id: params.directoryId || null,
         name: params.directoryName || '',
-        startDate: params.startDate ? new Date(params.startDate) : null,
-        endDate: params.endDate ? new Date(params.endDate) : null,
+        startDate: params.startDate || null,
+        endDate: params.endDate || null,
     });
 
     // 엽서 목록 상태
@@ -50,8 +68,8 @@ const WritePost = () => {
         const fetchPostcards = async () => {
             const newDirectoryId = params.directoryId || null;
             const newDirectoryName = params.directoryName || '';
-            const newStartDate = params.startDate ? new Date(params.startDate) : null;
-            const newEndDate = params.endDate ? new Date(params.endDate) : null;
+            const newStartDate = params.startDate || null;
+            const newEndDate = params.endDate || null;
 
             setDirectoryInfo({
                 id: newDirectoryId,
@@ -68,7 +86,8 @@ const WritePost = () => {
                     const formattedPostcards = existingPostcards.map(pc => ({
                         id: pc.postcardId,
                         image: pc.imageUrl,
-                        postcardTemplate: { code: pc.postcardType, thumbnail: null },
+                        // ✨ 수정: 필드명을 postcardTypeId로 변경
+                        postcardTemplate: pc.postcardTypeId ? { code: pc.postcardTypeId, thumbnail: postcardTemplates[pc.postcardTypeId] || null } : null,
                         content: pc.content || '',
                         isSaved: true,
                         isFavorite: pc.isFavorite || false,
@@ -110,14 +129,6 @@ const WritePost = () => {
 
         fetchPostcards();
     }, [params.directoryId, params.directoryName, params.startDate, params.endDate]);
-
-    // 날짜 포맷팅 함수
-    const formatDate = useCallback((date) => {
-        if (!date || isNaN(date.getTime())) return '';
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${month}.${day}`;
-    }, []);
 
     // 갤러리에서 이미지 선택
     const pickImage = useCallback(async () => {
@@ -261,7 +272,7 @@ const WritePost = () => {
     const handlePostcardDesignSelect = useCallback((selectedDesignCode) => {
         const postcardDesignObject = {
             code: selectedDesignCode,
-            thumbnail: null
+            thumbnail: postcardTemplates[selectedDesignCode] || null, // 로컬 이미지 경로를 썸네일로 사용
         };
 
         setSelectedPostcard(postcardDesignObject);
@@ -424,7 +435,7 @@ const WritePost = () => {
     }, [currentIndex, postcards]);
 
     const handleDownload = useCallback(() => {
-        Alert.alert('다운로드', '모든 엽서가 갤러리에 저장되었습니다.');
+        Alert.alert('준비중', '다운로드 기능은 아직 준비 중입니다. 곧 만나보실 수 있도록 최선을 다하겠습니다!');
     }, []);
 
     const handleShare = useCallback(() => {
@@ -437,8 +448,8 @@ const WritePost = () => {
         const queryParams = {
             directoryId: directoryInfo.id,
             directoryTitle: directoryInfo.name,
-            startDate: directoryInfo.startDate?.toISOString(),
-            endDate: directoryInfo.endDate?.toISOString(),
+            startDate: directoryInfo.startDate,
+            endDate: directoryInfo.endDate,
             selectedPostcardId: currentPostcard.id
         };
 
@@ -463,8 +474,8 @@ const WritePost = () => {
                 {/* 헤더 */}
                 <PostDirectoryHeader
                     title={directoryInfo.name}
-                    startDate={directoryInfo.startDate ? `2021.${formatDate(directoryInfo.startDate)}` : '2021.03.04'}
-                    endDate={directoryInfo.endDate ? formatDate(directoryInfo.endDate) : '03.06'}
+                    startDate={directoryInfo.startDate}
+                    endDate={directoryInfo.endDate}
                     onBackPress={() => router.back()}
                     showActionButton={false}
                 />

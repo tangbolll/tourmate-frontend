@@ -65,6 +65,7 @@ export default function PostDirectory() {
                     postcardId: pc.postcardId,
                     imageUrl: pc.imageUrl,
                     typeImageUrl: pc.typeImageUrl,
+                    postcardTypeId: pc.postcardTypeId, // ✅ 이 부분 추가
                 }));
                 setPostcards(formattedPostcards);
             } catch (error) {
@@ -130,11 +131,11 @@ export default function PostDirectory() {
             params: {
                 directoryId: directoryId,
                 directoryName: directoryTitle,
-                startDate: startDate,
-                endDate: endDate,
+                startDate: params.startDate,
+                endDate: params.endDate,
             }
         });
-    }, [isSelectMode, router, directoryId, directoryTitle, startDate, endDate]);
+    }, [isSelectMode, router, directoryId, directoryTitle, params.startDate, params.endDate]);
 
     // 푸터 액션 처리
     const handleDelete = useCallback(async () => {
@@ -193,7 +194,7 @@ export default function PostDirectory() {
             content: pc.content,
             dateCreated: pc.dateCreated,
             typeImageUrl: pc.typeImageUrl, // 엽서 타입 이미지 추가
-            // 필요한 다른 필드가 있다면 여기에 추가
+            postcardTypeId: pc.postcardTypeId, // ✅ 추가: 엽서 타입 ID
         }));
 
         console.log('선택된 엽서 공유:', simplifiedPostcards);

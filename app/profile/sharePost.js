@@ -56,7 +56,8 @@ const sharePost = () => {
                         id: postcard.postcardId,
                         image: postcard.imageUrl, // 사용자가 촬영한 사진
                         postcardTemplate: { 
-                            image: postcard.typeImageUrl, // 엽서 배경 이미지
+                            // 엽서 배경 이미지를 typeId로 전달합니다.
+                            typeId: postcard.postcardTypeId, 
                             content: postcard.content, // 엽서에 작성된 내용
                         },
                     }));
@@ -345,7 +346,7 @@ const sharePost = () => {
     const unuploadedPostcards = selectedPostcards.filter(postcard => 
         !uploadStatus[postcard.id]?.isUploaded
     );
-    const isUploadEnabled = unuploadedPostcards.length > 0 && unuploadedPostcards.some(postcard => {
+    const isUploadAllEnabled = unuploadedPostcards.length > 0 && unuploadedPostcards.some(postcard => {
         const details = postcardDetails[postcard.id];
         return details && details.title && details.location && details.date;
     });
@@ -389,7 +390,10 @@ const sharePost = () => {
                         {/* 엽서 템플릿 영역 */}
                         <View style={styles.postcardSection}>
                             {/* 엽서 이미지와 텍스트를 함께 표시하도록 props를 전달합니다. */}
-                            <PostcardTemplate template={currentPostcard?.postcardTemplate} />
+                            <PostcardTemplate template={{ 
+                                typeId: currentPostcard?.postcardTemplate?.typeId,
+                                content: currentPostcard?.postcardTemplate?.content
+                            }} />
                         </View>
                     </>
                 )}
@@ -401,7 +405,7 @@ const sharePost = () => {
                     onUpload={() => handleIndividualUpload(currentPostcard?.id)}
                     onUploadAll={handleUpload}
                     isEnabled={isCurrentPostcardUploadEnabled}
-                    isUploadAllEnabled={isUploadEnabled}
+                    isUploadAllEnabled={isUploadAllEnabled}
                     isUploading={currentUploadStatus.isUploading}
                     isUploaded={currentUploadStatus.isUploaded}
                     unuploadedCount={unuploadedPostcards.length}
