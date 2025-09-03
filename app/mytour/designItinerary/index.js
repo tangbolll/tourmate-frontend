@@ -125,7 +125,10 @@ export default function DesignItinerary() {
                             return;
                         }
                         
-                        const dayNumber = scheduleDate.diff(tripStartDate, 'day') + 1;
+                        const normalizedScheduleDate = scheduleDate.startOf('day');
+                        const normalizedTripStartDate = tripStartDate.startOf('day');
+                        const dayNumber = normalizedScheduleDate.diff(normalizedTripStartDate, 'day') + 1;
+                        
                         console.log(`🔍 [Debug] 스케줄 ${schedule.id}: ${schedule.date} -> day${dayNumber}`);
                         
                         if (dayNumber >= 1) {
@@ -148,17 +151,35 @@ export default function DesignItinerary() {
                     console.log('🔍 [Debug] 기간 기반 여행 - dayDescription 기준 매핑');
                     
                     data.schedules.forEach((schedule, index) => {
-                        if (!schedule || !schedule.dayDescription) {
-                            console.warn(`🚨 [Debug] 스케줄 ${schedule?.id}의 dayDescription이 null:`, schedule);
-                            return;
+                        // 1. 스케줄 객체 자체가 없는 경우에만 건너뜁니다.
+                        if (!schedule) return; 
+
+                        let dayKey;
+
+                        if (schedule.dayDescription) {
+                            // 2. dayDescription이 있는 경우, 숫자만 추출합니다.
+                            const dayMatch = schedule.dayDescription.match(/\d+/);
+                            
+                            if (dayMatch && dayMatch[0]) {
+                                // "Day 1" -> "1" 추출 성공!
+                                dayKey = `day${dayMatch[0]}`;
+                            } else {
+                                // "Day" 같은 글자만 있고 숫자가 없는 경우 -> 1일차로 간주
+                                dayKey = 'day1';
+                                console.warn(`🚨 스케줄 ${schedule.id}의 dayDescription 형식이 이상해 Day 1에 배정합니다.`);
+                            }
+                        } else {
+                            // 3. (핵심) dayDescription이 null인 경우 -> 1일차로 강제 할당!
+                            dayKey = 'day1';
+                            console.warn(`🚨 스케줄 ${schedule.id}의 dayDescription이 없어 Day 1에 배정합니다.`);
                         }
                         
-                        // dayDescription에서 day 번호 추출 (임시 디버깅용)
-                        const dayKey = `day${schedule.dayDescription}`;
+                        // --- 아래 로직은 기존과 동일합니다 ---
+                        console.log(`✅ [Debug] 스케줄 ${schedule.id}: ${schedule.dayDescription} -> ${dayKey} (최종)`);
                         
-                        console.log(`🔍 [Debug] 스케줄 ${schedule.id}: ${schedule.dayDescription} -> ${dayKey}`);
-                        
-                        if (!mappedScheduleData[dayKey]) mappedScheduleData[dayKey] = [];
+                        if (!mappedScheduleData[dayKey]) {
+                            mappedScheduleData[dayKey] = [];
+                        }
                         
                         const style = scheduleUtils.getCategoryStyle(schedule.tag);
                         const scheduleWithColor = {
