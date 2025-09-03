@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, Alert } from 'react';
 import { 
     View, 
     StyleSheet, 
@@ -23,21 +23,36 @@ const PostcardGridView = ({
     const [showDetail, setShowDetail] = useState(false);
 
     const handlePostcardPress = (postcardId) => {
-        // 선택된 엽서 데이터 찾기
-        const postcardData = postcardList.find(p => 
-            p.id === postcardId || p.postcardId === postcardId
-        );
+    
+    // postcardId가 undefined인 경우를 대비한 처리
+    if (!postcardId || postcardId === 'undefined') {
+        return;
+    }
+    
+    // 선택된 엽서 데이터 찾기
+    const postcardData = postcardList.find(p => {
+        const pId = p.id || p.postcardId;
+
+        return pId === postcardId;
+    });
+    
+    
+    if (postcardData) {
+        // 새로운 객체를 만들어서 React가 변경을 감지하도록 함
+        const newPostcardData = {
+            ...postcardData,
+            _timestamp: Date.now()
+        };
         
-        if (postcardData) {
-            setSelectedPostcard(postcardData);
-            setShowDetail(true);
-        }
-        
-        // 부모 컴포넌트에도 알림
-        if (onPostcardPress) {
-            onPostcardPress(postcardId);
-        }
-    };
+        setSelectedPostcard(newPostcardData);
+        setShowDetail(true);
+    } else {
+    }
+    
+    if (onPostcardPress) {
+        onPostcardPress(postcardId);
+    }
+};
 
     const handleCloseDetail = () => {
         setShowDetail(false);
@@ -152,14 +167,15 @@ const PostcardGridView = ({
 
             {/* 엽서 상세 모달 */}
             {showDetail && selectedPostcard && (
-                <PostExpanded
-                    visible={showDetail}
-                    postData={selectedPostcard}
-                    onClose={handleCloseDetail}
-                    onDataUpdate={handleDataUpdate} 
-                    currentUserId={currentUserId} // currentUserId 전달
-                />
-            )}
+    <PostExpanded
+        key={`postcard-${selectedPostcard.postcardId || selectedPostcard.id}-${Date.now()}`}
+        visible={showDetail}
+        postData={selectedPostcard}
+        onClose={handleCloseDetail}
+        onDataUpdate={handleDataUpdate} 
+        currentUserId={currentUserId}
+    />
+)}
         </>
     );
 };

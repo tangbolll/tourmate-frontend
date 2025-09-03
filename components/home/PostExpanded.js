@@ -242,29 +242,45 @@ const PostExpanded = ({
     };
 
     useEffect(() => {
-        if (visible && postData?.postcardId && !detailData) {
-            loadDetailData();
-        }
-    }, [visible, postData?.postcardId]);
+    if (visible && postData?.postcardId) {
+        // 모든 관련 상태 초기화
+        setDetailData(null);
+        setDetailLoading(false);
+        
+        // postData 기반으로 초기 상태 설정
+        setIsLiked(postData?.isLiked || false);
+        setIsScraped(postData?.isScraped || false);
+        setLikeCount(postData?.likeCount || 0);
+        setScrapCount(postData?.scrapCount || 0);
+        
+        // 새로운 detail 데이터 로드
+        loadDetailData();
+    } else if (!visible) {
+        // 모달이 닫힐 때 데이터 정리
+        setDetailData(null);
+        setDetailLoading(false);
+    }
+}, [visible, postData?.postcardId]);
 
     // detail 데이터 로드
-    const loadDetailData = async () => {
-        setDetailLoading(true);
-        try {
-            const result = await fetchPostcardDetailApi(postData.postcardId);
-            if (result.success) {
-                setDetailData(result.data);
-            } else {
-                console.warn('Detail 로드 실패:', result.error);
-                // 실패해도 기본 데이터로 표시
-            }
-        } catch (error) {
-            console.error('Detail 로드 오류:', error);
-            // 에러가 나도 기본 데이터로 표시
-        } finally {
-            setDetailLoading(false);
+    const loadDetailData = async (targetPostcardId = null) => {
+    const postcardId = targetPostcardId || postData?.postcardId;
+    if (!postcardId) return;
+    
+    setDetailLoading(true);
+    try {
+        const result = await fetchPostcardDetailApi(postcardId);
+        if (result.success) {
+            setDetailData(result.data);
+        } else {
+            console.warn('Detail 로드 실패:', result.error);
         }
-    };
+    } catch (error) {
+        console.error('Detail 로드 오류:', error);
+    } finally {
+        setDetailLoading(false);
+    }
+};
 
     // 실제 표시할 데이터 (서버 데이터가 있으면 서버 데이터 우선)
     const displayData = {
@@ -283,16 +299,6 @@ const PostExpanded = ({
 
     // 템플릿 번호 가져오기
     const templateNumber = getTemplateNumber(displayData.typeImageUrl);
-
-    // postData가 변경될 때마다 상태 동기화 (서버 데이터 우선)
-    useEffect(() => {
-        if (postData) {
-            setIsLiked(postData.isLiked || false);
-            setIsScraped(postData.isScraped || false);
-            setLikeCount(postData.likeCount || mockData.likeCount);
-            setScrapCount(postData.scrapCount || mockData.scrapCount);
-        }
-    }, [postData?.postcardId, postData?.isLiked, postData?.isScraped, postData?.likeCount, postData?.scrapCount]);
 
     const handleLike = async () => {
         if (likeLoading) return;

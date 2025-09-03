@@ -199,68 +199,92 @@ const DibsorScrap = ({ router }) => {
 
     // 🚀 스크랩 데이터 로딩 - `getScrappedPostcardsApi` 사용
     const fetchScrapDataOptimized = useCallback(async (sortKey = scrapSortKey) => {
-        if (loadingRef.current || (scrapLoaded && scrapList.length > 0 && sortKey === scrapSortKey)) return;
+    if (loadingRef.current || (scrapLoaded && scrapList.length > 0 && sortKey === scrapSortKey)) return;
+    
+    try {
+        loadingRef.current = true;
+        setLoading(true);
         
-        try {
-            loadingRef.current = true;
-            setLoading(true);
-            
-            console.log('🔍 스크랩 데이터 로딩 시작...', { sortKey });
-            
-            // `getScrappedPostcardsApi` 함수 호출
-            const scrappedPostcards = await getScrappedPostcardsApi(currentUserId, sortKey);
+        console.log('스크랩 데이터 로딩 시작...', { sortKey });
+        
+        const scrappedPostcards = await getScrappedPostcardsApi(currentUserId, sortKey);
+        
+        // 원본 데이터 구조 확인
+        console.log('원본 스크랩 데이터 첫 번째 항목:', scrappedPostcards[0]);
+        console.log('사용 가능한 ID 필드들:', {
+            id: scrappedPostcards[0]?.id,
+            postcardId: scrappedPostcards[0]?.postcardId,
+            postcard_id: scrappedPostcards[0]?.postcard_id,
+            _id: scrappedPostcards[0]?._id,
+            uid: scrappedPostcards[0]?.uid,
+        });
+        console.log('첫 번째 항목의 모든 키들:', Object.keys(scrappedPostcards[0] || {}));
 
-            if (scrappedPostcards) {
-                // 엽서 데이터를 적절한 형태로 변환
-                const formattedScrapData = scrappedPostcards.map(postcard => ({
-                    postcardId: postcard.id,
-                    id: postcard.id, // 호환성을 위해
-                    image: postcard.imageUrl,
+        if (scrappedPostcards) {
+            // ID 필드 찾기 및 안전한 변환
+            const formattedScrapData = scrappedPostcards.map((postcard, index) => {
+                // 여러 가능한 ID 필드 중에서 값이 있는 것 찾기
+                const postcardId = postcard.id || 
+                                  postcard.postcardId || 
+                                  postcard.postcard_id || 
+                                  postcard._id || 
+                                  postcard.uid ||
+                                  `temp_id_${index}`; // 최후의 수단
+
+                console.log(`${index}번째 엽서 ID: ${postcardId} (원본: ${postcard.id})`);
+
+                return {
+                    postcardId: postcardId,
+                    id: postcardId, // 호환성을 위해
+                    image: postcard.imageUrl || postcard.image,
                     title: postcard.title,
                     location: postcard.location,
                     date: postcard.createdAt ? new Date(postcard.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음',
                     author: postcard.author,
                     authorDate: `${postcard.author} · ${postcard.location} · ${postcard.createdAt ? new Date(postcard.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음'}`,
-                    imageUrl: postcard.imageUrl,
+                    imageUrl: postcard.imageUrl || postcard.image,
                     likeCount: postcard.likeCount || 0,
                     scrapCount: postcard.scrapCount || 0,
                     isLiked: postcard.isLiked || false,
-                    isScrapped: true, // 스크랩 목록이므로 항상 true
-                    scrappedAt: postcard.scrappedAt, // 스크랩한 날짜 추가
-                    // PostExpanded에서 필요한 필드들
+                    isScrapped: true,
+                    isScraped: true, // PostExpanded에서 사용
+                    scrappedAt: postcard.scrappedAt,
                     postcardName: postcard.title,
                     userName: postcard.author,
                     createdAt: postcard.createdAt,
                     content: postcard.content,
                     typeImageUrl: postcard.typeImageUrl,
-                    startDate: postcard.startDate // 여행 시작일 추가
-                }));
-                
-                setScrapList(formattedScrapData);
-                setScrapLoaded(true);
-                setScrapSortKey(sortKey);
-                
-                console.log('✅ 스크랩 데이터 로드 완료:', formattedScrapData.length, '개');
-                
-            } else {
-                console.error('❌ 스크랩 데이터 로드 실패: API 호출 결과가 null입니다.');
-                setScrapList([]);
-                Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
-                setScrapLoaded(true);
-                setScrapSortKey(sortKey);
-            }
+                    startDate: postcard.startDate
+                };
+            });
             
-        } catch (error) {
-            console.error('❌ 스크랩 데이터 로드 실패:', error);
+            console.log('변환된 데이터 첫 번째 항목 ID 확인:', formattedScrapData[0]?.postcardId);
+            
+            setScrapList(formattedScrapData);
+            setScrapLoaded(true);
+            setScrapSortKey(sortKey);
+            
+            console.log('스크랩 데이터 로드 완료:', formattedScrapData.length, '개');
+            
+        } else {
+            console.error('스크랩 데이터 로드 실패: API 호출 결과가 null입니다.');
             setScrapList([]);
             Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
             setScrapLoaded(true);
             setScrapSortKey(sortKey);
-        } finally {
-            loadingRef.current = false;
-            setLoading(false);
         }
-    }, [currentUserId, scrapLoaded, scrapList.length, scrapSortKey]);
+        
+    } catch (error) {
+        console.error('스크랩 데이터 로드 실패:', error);
+        setScrapList([]);
+        Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
+        setScrapLoaded(true);
+        setScrapSortKey(sortKey);
+    } finally {
+        loadingRef.current = false;
+        setLoading(false);
+    }
+}, [currentUserId, scrapLoaded, scrapList.length, scrapSortKey]);
 
     // 🔥 초기 로딩 최적화
     useEffect(() => {
