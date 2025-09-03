@@ -5,7 +5,9 @@ import { Ionicons } from '@expo/vector-icons';
 const ShowSchedule = ({ 
     schedule, 
     onDelete,
-    categoryColor = '#4A90E2' 
+    categoryColor = '#4A90E2',
+    isAiSuggestion = false, // AI 제안 여부
+    onSelect,               // 카드 클릭 시 호출될 함수
 }) => {
     // 더 강력한 방어 코드
     if (!schedule || typeof schedule !== 'object') {
@@ -48,7 +50,12 @@ const ShowSchedule = ({
     };
 
     return (
-        <View style={styles.container}>
+        // --- 💡 2. View를 TouchableOpacity로 변경하고, 조건부 스타일과 onPress 이벤트 추가 ---
+        <TouchableOpacity 
+            style={[styles.container, isAiSuggestion && styles.aiCard]} // AI 제안일 경우 aiCard 스타일 적용
+            onPress={() => onSelect && onSelect(safeSchedule)} // 클릭 시 onSelect 호출
+            activeOpacity={0.8}
+        >
             {/* 왼쪽 삭제 버튼 */}
             <TouchableOpacity 
                 style={styles.deleteButton}
@@ -61,7 +68,7 @@ const ShowSchedule = ({
             {/* 둥근 컬러바 */}
             <View style={[styles.colorBar, { backgroundColor: categoryColor }]} />
             
-            {/* 일정 내용 */}
+            {/* 일정 내용 (기존과 동일) */}
             <View style={styles.content}>
                 <View style={styles.header}>
                     <View style={styles.timeContainer}>
@@ -80,11 +87,12 @@ const ShowSchedule = ({
                     </View>
                 )}
                 
-                {safeSchedule.memo && (
-                    <Text style={styles.memoText}>{safeSchedule.memo}</Text>
-                )}
+                {/* 💡 참고: 팁(memo) 표시는 여기서 하지 않습니다.
+                  부모 컴포넌트(ItineraryScreen)의 모달에서 
+                  isAiSuggestion이 true일 때만 이 memo 값을 보여주게 됩니다.
+                */}
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 
@@ -94,6 +102,11 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         alignItems: 'stretch',
         minHeight: 80,
+    },
+    aiCard: {
+    borderWidth: 2,
+    borderColor: '#007BFF',
+    borderStyle: 'dashed',
     },
     deleteButton: {
         width: 24,

@@ -330,18 +330,15 @@ const BottomSheet = ({
         return 'RELAXED';
     };
 
-    // AI 일정 생성 함수 내 수정 부분
+    // handleAiPopupConfirm 함수 수정
     const handleAiPopupConfirm = async (result) => {
         try {
             console.log("AI 일정 생성 준비 데이터: ", result);
-            const travelId = travelId; // 필요시 변수명 확인 필요
-
-            // 전체 날짜 선택시 startDate~endDate 기간 배열 생성
+            
             const dates = result.selectedDates.includes('전체')
                 ? generateFullDateList(startDate, endDate)
                 : convertDateStringsToISO(result.selectedDates);
 
-            // 여행 스타일 매핑
             const style = mapPreferenceToStyleEnum(result.selectedPreference);
 
             const requestBody = {
@@ -375,20 +372,57 @@ const BottomSheet = ({
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-            const data = await response.json();
-            console.log('서버 응답:', data);
+            const aiResponseData = await response.json();
+            console.log('서버 AI 응답:', aiResponseData);
 
+            // ✅ 핵심: AI 응답을 부모 컴포넌트로 전달
             if (onCreateSchedule) {
-                onCreateSchedule(tempSelectedAttractions, result);
+                onCreateSchedule(tempSelectedAttractions, result, aiResponseData);
             }
 
         } catch (error) {
             console.error('AI 일정 생성 중 오류:', error);
+            Alert.alert('오류', 'AI 일정 생성에 실패했습니다.');
         } finally {
             setShowAiPopup(false);
             setTempSelectedAttractions([]);
+            setIsAIGenerating(false); // AI 모드 종료
+            setAiSelectedAttractions([]); // 선택된 관광지 초기화
         }
     };
+
+    // 3. AI 스케줄 컨트롤 컴포넌트 (새로 생성)
+
+    const AiScheduleControls = ({ onConfirm, onRetry, onRevert }) => {
+        return (
+            <View style={styles.aiControlsContainer}>
+                <Text style={styles.aiControlsTitle}>AI 추천 일정을 확인해보세요!</Text>
+                <View style={styles.aiControlsButtons}>
+                    <TouchableOpacity 
+                        style={[styles.aiControlButton, styles.revertButton]} 
+                        onPress={onRevert}
+                    >
+                        <Text style={styles.aiControlButtonText}>되돌리기</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                        style={[styles.aiControlButton, styles.retryButton]} 
+                        onPress={onRetry}
+                    >
+                        <Text style={styles.aiControlButtonText}>다시 추천</Text>
+                    </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                        style={[styles.aiControlButton, styles.confirmButton]} 
+                        onPress={onConfirm}
+                    >
+                        <Text style={[styles.aiControlButtonText, styles.confirmButtonText]}>확정하기</Text>
+                    </TouchableOpacity>
+                </View>
+            </View>
+        );
+    };
+
 
     return (
 
@@ -590,6 +624,62 @@ const styles = StyleSheet.create({
   regionButtonText: { color: '#666', fontSize: 14, fontWeight: '500' },
   selectedRegionButtonText: { color: '#fff' },
   listContainer: { flex: 1 }
+});
+
+const aiControlStyles = StyleSheet.create({
+    aiControlsContainer: {
+        position: 'absolute',
+        top: 60,
+        left: 16,
+        right: 16,
+        backgroundColor: '#fff',
+        borderRadius: 12,
+        padding: 16,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 8,
+        elevation: 8,
+        zIndex: 100,
+    },
+    aiControlsTitle: {
+        fontSize: 16,
+        fontWeight: '600',
+        textAlign: 'center',
+        marginBottom: 16,
+        color: '#333',
+    },
+    aiControlsButtons: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        gap: 8,
+    },
+    aiControlButton: {
+        flex: 1,
+        paddingVertical: 12,
+        paddingHorizontal: 16,
+        borderRadius: 8,
+        alignItems: 'center',
+    },
+    revertButton: {
+        backgroundColor: '#f5f5f5',
+        borderWidth: 1,
+        borderColor: '#ddd',
+    },
+    retryButton: {
+        backgroundColor: '#007AFF',
+    },
+    confirmButton: {
+        backgroundColor: '#34C759',
+    },
+    aiControlButtonText: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: '#666',
+    },
+    confirmButtonText: {
+        color: '#fff',
+    },
 });
 
 

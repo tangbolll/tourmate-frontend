@@ -1,12 +1,11 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { View, ScrollView, StyleSheet, Text } from 'react-native';
 import ShowSchedule from './ShowSchedule';
-import ShowExtraTime from './ShowExtraTime'; // 👈 세미콜론 하나 제거
+import ShowExtraTime from './ShowExtraTime';
 import AddScheduleButton from './AddScheduleButton';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-
-// --- 헬퍼 함수들을 컴포넌트 밖으로 이동 ---
+// --- 헬퍼 함수들 ---
 const timeToMinutes = (timeString) => {
     if (!timeString || !timeString.includes(':')) return 0;
     const [hours, minutes] = timeString.split(':').map(Number);
@@ -46,20 +45,19 @@ const calculateExtraTimes = (scheduleList) => {
     return extraTimes;
 };
 
-
-// --- Schedule 컴포넌트 (하나로 합침) ---
+// --- Schedule 컴포넌트 ---
 const Schedule = ({ 
     schedules = [],
     selectedDay,
     onAddSchedule,
     onScheduleDelete,
     onUpdateSchedule,
+    onSelectSchedule, // 💡 1. 부모로부터 onSelectSchedule prop을 받습니다.
 }) => {
     console.log(`[${selectedDay}일차] Schedule 컴포넌트가 받은 데이터:`, JSON.stringify(schedules, null, 2));
 
     const [hiddenExtraTimeIds, setHiddenExtraTimeIds] = useState([]);
 
-    // [불러오기 로직]
     useEffect(() => {
         const loadHiddenIds = async () => {
             if (!selectedDay) return;
@@ -76,9 +74,6 @@ const Schedule = ({
     }, [selectedDay]);
 
     const extraTimes = useMemo(() => calculateExtraTimes(schedules), [schedules]);
-
-    console.log("계산된 여유시간 배열:", extraTimes);
-
 
     const handleDeleteExtraTime = async (idToHide) => {
         try {
@@ -105,6 +100,9 @@ const Schedule = ({
                 <ShowSchedule
                     key={schedule.id}
                     schedule={schedule}
+                    isAiSuggestion={schedule.isAiSuggestion}
+                    // 💡 2. 받은 onSelectSchedule을 onSelect prop으로 그대로 전달합니다.
+                    onSelect={onSelectSchedule}
                     categoryColor={schedule.categoryColor}
                     onDelete={() => onScheduleDelete(schedule.id, selectedDay)}
                     onUpdate={() => onUpdateSchedule(schedule)}
@@ -144,19 +142,17 @@ const Schedule = ({
                 {schedules && schedules.length > 0 ? (
                     renderScheduleItems()
                 ) : (
-                    // ✨ 이 부분을 새로운 View로 감싸줍니다.
-                <View style={styles.emptyContainer}>
-                    <Text style={styles.emptyText}>등록된 일정이 없습니다.</Text>
-                </View>
-            )}
-            
-            {/* ✨ 일정 추가 버튼은 스케줄이 있든 없든 항상 보이도록 조건문 밖으로 이동 */}
-            <AddScheduleButton 
-                onPress={() => onAddSchedule && onAddSchedule(selectedDay)}
-            />
-        </ScrollView>
-    </View>
-);
+                    <View style={styles.emptyContainer}>
+                        <Text style={styles.emptyText}>등록된 일정이 없습니다.</Text>
+                    </View>
+                )}
+                
+                <AddScheduleButton 
+                    onPress={() => onAddSchedule && onAddSchedule(selectedDay)}
+                />
+            </ScrollView>
+        </View>
+    );
 };
 
 const styles = StyleSheet.create({
@@ -172,9 +168,9 @@ const styles = StyleSheet.create({
         paddingBottom: 32,
     },
     emptyContainer: {
-    flex: 1, 
-    justifyContent: 'center', 
-    alignItems: 'center',     
+        flex: 1, 
+        justifyContent: 'center', 
+        alignItems: 'center',    
     },
     emptyText: {
         textAlign: 'center',
