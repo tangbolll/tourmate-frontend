@@ -74,7 +74,7 @@ const NoticeDetailScreen = () => {
   // 데이터가 없을 경우 처리
   if (!noticeItem) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="black" />
@@ -85,12 +85,12 @@ const NoticeDetailScreen = () => {
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>공지사항을 찾을 수 없습니다.</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="black" />
@@ -112,7 +112,7 @@ const NoticeDetailScreen = () => {
           <Text style={styles.noticeContent}>{noticeItem.content}</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

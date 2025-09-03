@@ -53,7 +53,7 @@ const FAQDetailScreen = () => {
   // 데이터가 없을 경우 처리
   if (!faqItem) {
     return (
-      <SafeAreaView style={styles.container}>
+      <View style={styles.container}>
         <View style={styles.header}>
           <TouchableOpacity onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={24} color="black" />
@@ -64,12 +64,12 @@ const FAQDetailScreen = () => {
         <View style={styles.errorContainer}>
           <Text style={styles.errorText}>데이터를 찾을 수 없습니다.</Text>
         </View>
-      </SafeAreaView>
+      </View>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="black" />
@@ -92,7 +92,7 @@ const FAQDetailScreen = () => {
           <Text style={styles.faqAnswer}>{faqItem.answer}</Text>
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

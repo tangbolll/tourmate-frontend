@@ -48,7 +48,7 @@ const InquiryScreen = () => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       {/* 헤더 */}
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
@@ -128,7 +128,7 @@ const InquiryScreen = () => {
           <Text style={styles.saveButtonText}>저장</Text>
         </TouchableOpacity>
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

@@ -63,7 +63,6 @@ const styles = StyleSheet.create({
     },
     content: {
         flex: 1,
-        paddingHorizontal: 16,
         paddingTop: 10,
     },
     itemContainer: {
@@ -71,6 +70,7 @@ const styles = StyleSheet.create({
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingVertical: 15,
+        paddingHorizontal: 16,
         backgroundColor: 'white',
     },
     itemText: {
