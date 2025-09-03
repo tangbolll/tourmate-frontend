@@ -4,18 +4,12 @@ import SelectDibsOrScrap from '../../components/wishlist/SelectDibsOrScrap';
 import DibsScrapListView from '../../components/wishlist/DibsorScrapListView';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { 
-    fetchAccompanyFeedWithCacheApi,
-    fetchLikedAccompanyPostsApi, 
     fetchLikedAccompanyPostsRawApi,
     fetchAccompanyFeedRawWithCacheApi, 
-    getMultipleAccompanyLikesOptimizedApi, 
     toggleLikeApi,
     clearFeedCache,
     handleApiError
 } from '../../utils/AccompanyListApi';
-import { 
-    fetchUserScrappedPostcardsApi 
-} from '../../utils/HomePostApi';
 import {
     getScrappedPostcardsApi // 추가: 엽서 API 파일에서 함수 임포트
 } from '../../utils/PostCardApi';
@@ -41,6 +35,58 @@ const DibsorScrap = ({ router }) => {
     // 🔥 API 호출 중복 방지를 위한 ref
     const loadingRef = useRef(false);
     const abortControllerRef = useRef(null);
+
+    // 변환: 찜 데이터의 태그 배열 생성
+    const transformTagsForDibsList = (item) => {
+
+    
+    const tags = [];
+    
+    // 성별 처리 (문자열)
+    if (item.gender) {
+        if (item.gender === 'ALL') {
+            tags.push('성별무관');
+        } else {
+            tags.push(item.gender); // "여자만", "남자만" 등
+        }
+    }
+    
+    // 카테고리 처리 (배열)
+    if (Array.isArray(item.category)) {
+        tags.push(...item.category);
+    } else if (item.category) {
+        tags.push(item.category);
+    }
+    
+    // 나이그룹 처리 (배열)
+    if (Array.isArray(item.ageGroup)) {
+        item.ageGroup.forEach(age => {
+            if (age === 'ALL') {
+                tags.push('나이무관');
+            } else {
+                tags.push(age);
+            }
+        });
+    } else if (item.ageGroup) {
+        if (item.ageGroup === 'ALL') {
+            tags.push('나이무관');
+        } else {
+            tags.push(item.ageGroup);
+        }
+    }
+    
+    // 기타 태그 처리 (배열)
+    if (Array.isArray(item.tag)) {
+        tags.push(...item.tag);
+    } else if (item.tag) {
+        tags.push(item.tag);
+    }
+    
+    const finalTags = tags.filter(Boolean);
+    
+    return finalTags;
+};
+
     
     // 🚀 수정된 찜 데이터 로딩 - 원본 데이터 사용
     const fetchDibsDataOptimized = useCallback(async (sortKey = dibsSortKey) => {
@@ -63,12 +109,38 @@ const DibsorScrap = ({ router }) => {
             if (likedPosts !== null) {
                 // ✅ 전용 API가 성공한 경우 (원본 데이터 그대로 사용)
                 console.log('✅ 전용 API로 찜 데이터 로드 완료:', likedPosts.length, '개');
+                console.log('🔍 원본 데이터 구조:', {
+                    id: likedPosts[0]?.id,
+                    gender: likedPosts[0]?.gender,
+                    category: likedPosts[0]?.category,
+                    ageGroup: likedPosts[0]?.ageGroup,
+                    tag: likedPosts[0]?.tag,
+                    tags: likedPosts[0]?.tags
+                });
                 
                 // 🔥 이미지 URL 보정: images[0] → mainImageUrl
-                const processedLikedPosts = likedPosts.map(post => ({
-                    ...post,
-                    mainImageUrl: post.mainImageUrl || (post.images && post.images.length > 0 ? post.images[0] : null)
-                }));
+                const processedLikedPosts = likedPosts.map(post => {
+    const transformedTags = transformTagsForDibsList(post);
+    
+    return {
+        ...post,
+        mainImageUrl: post.mainImageUrl || (post.images && post.images.length > 0 ? post.images[0] : null),
+        tags: transformedTags,        // DibsScrapListView에서 사용
+        tag: transformedTags,         // 호환성을 위해
+    };
+});
+
+
+// 추가 디버깅: 최종 데이터 확인
+console.log('🔍 최종 변환된 데이터 샘플:', {
+    id: processedLikedPosts[0]?.id,
+    title: processedLikedPosts[0]?.title,
+    originalGender: likedPosts[0]?.gender,
+    originalCategory: likedPosts[0]?.category,
+    originalAgeGroup: likedPosts[0]?.ageGroup,
+    transformedTags: processedLikedPosts[0]?.tags,
+    transformedTag: processedLikedPosts[0]?.tag
+});
                 
                 setDibsList(processedLikedPosts);
                 
@@ -130,37 +202,44 @@ const DibsorScrap = ({ router }) => {
             const accompanyIds = limitedPosts.map(post => post.id?.toString() || Math.random().toString());
             
             // 🚀 최적화된 일괄 좋아요 조회
-            const likesMap = await getMultipleAccompanyLikesApi(
-                accompanyIds, 
-                currentUserId
-            );
-            
-            // 좋아요한 포스트만 필터링
-            let likedAccompanyPosts = limitedPosts.filter(post => {
-                const postId = post.id?.toString() || Math.random().toString();
-                return likesMap[postId] === true;
-            });
+const likesMap = await getMultipleAccompanyLikesApi(
+    accompanyIds, 
+    currentUserId
+);
 
-            // 🔥 이미지 URL 보정: images[0] → mainImageUrl
-            likedAccompanyPosts = likedAccompanyPosts.map(post => ({
-                ...post,
-                mainImageUrl: post.mainImageUrl || (post.images && post.images.length > 0 ? post.images[0] : null)
-            }));
+// ✅ 1단계: 먼저 좋아요한 포스트만 필터링
+let likedAccompanyPosts = limitedPosts.filter(post => {
+    const postId = post.id?.toString() || Math.random().toString();
+    return likesMap[postId] === true;
+});
 
-            // 🔥 디버깅: 필터링된 찜 목록의 이미지 필드 확인
-            if (__DEV__ && likedAccompanyPosts.length > 0) {
-                console.log('📸 필터링된 원본 찜 데이터 이미지 필드 샘플:', 
-                    likedAccompanyPosts.slice(0, 3).map(post => ({
-                        id: post.id,
-                        title: post.title,
-                        mainImageUrl: post.mainImageUrl,
-                        images: post.images,
-                        imageUrl: post.imageUrl,
-                        image: post.image,
-                        _source: 'rawFeedCache'
-                    }))
-                );
-            }
+// ✅ 2단계: 그 다음 이미지 URL 보정 + 태그 변환
+likedAccompanyPosts = likedAccompanyPosts.map(post => {
+    const transformedTags = transformTagsForDibsList(post);
+    
+    return {
+        ...post,
+        mainImageUrl: post.mainImageUrl || (post.images && post.images.length > 0 ? post.images[0] : null),
+        tags: transformedTags,        // DibsScrapListView에서 사용
+        tag: transformedTags,         // 호환성을 위해
+    };
+});
+
+// 🔥 디버깅: 필터링된 찜 목록의 이미지 필드 확인
+if (__DEV__ && likedAccompanyPosts.length > 0) {
+    console.log('📸 필터링된 원본 찜 데이터 이미지 필드 샘플:', 
+        likedAccompanyPosts.slice(0, 3).map(post => ({
+            id: post.id,
+            title: post.title,
+            mainImageUrl: post.mainImageUrl,
+            images: post.images,
+            imageUrl: post.imageUrl,
+            image: post.image,
+            tags: post.tags, // 변환된 태그도 확인
+            _source: 'rawFeedCache'
+        }))
+    );
+}
 
             // 클라이언트 정렬 적용 (백엔드 정렬 실패 시)
             switch (sortKey) {

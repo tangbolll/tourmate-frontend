@@ -35,59 +35,69 @@ const DibsScrapListView = ({
     const filterTags = (tags) => {
         if (!tags || !Array.isArray(tags)) return [];
         
-        const genderTags = ['남자만', '여자만', '남녀무관'];
+        const genderTags = ['남자만', '여자만', '성별무관'];
         const categoryTags = [
             '투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '액티비티', '힐링', '역사유적', '박물관/미술관'
         ];
-        const ageTags = ['10대', '20대', '30대', '40대', '50대', '60대+', '전연령'];
+        const ageTags = ['10대', '20대', '30대', '40대', '50대', '60대+', '나이무관'];
         
         return tags.filter(tag => {
-            return genderTags.includes(tag) || (categoryTags.includes(tag) && !ageTags.includes(tag));
+            return genderTags.includes(tag) || (categoryTags.includes(tag) || ageTags.includes(tag));
         });
     };
 
-    const renderFeedItems = () => {
-        if (loading) {
-            return (
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>로딩 중...</Text>
-                </View>
-            );
-        }
+const renderFeedItems = () => {
+    if (loading) {
+        return (
+            <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>로딩 중...</Text>
+            </View>
+        );
+    }
 
-        const currentData = getCurrentTabData();
-        
-        // ✅ currentData가 유효한 배열인지 먼저 확인
-        if (!currentData || !Array.isArray(currentData) || currentData.length === 0) {
-            return (
-                <View style={styles.emptyState}>
-                    <Text style={styles.emptyStateText}>
-                        {selectedTab === '찜'
-                            ? '아직 찜한 동행이 없습니다.\n마음에 드는 동행을 찜해보세요!'
-                            : '아직 스크랩한 엽서가 없습니다.\n마음에 드는 엽서를 스크랩해보세요!'}
-                    </Text>
-                </View>
-            );
-        }
+    const currentData = getCurrentTabData();
+    
+    if (!currentData || !Array.isArray(currentData) || currentData.length === 0) {
+        return (
+            <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>
+                    {selectedTab === '찜'
+                        ? '아직 찜한 동행이 없습니다.\n마음에 드는 동행을 찜해보세요!'
+                        : '아직 스크랩한 엽서가 없습니다.\n마음에 드는 엽서를 스크랩해보세요!'}
+                </Text>
+            </View>
+        );
+    }
 
-        return currentData.map((post) => (
-            <AccompanyFeed
-                key={post.id}
-                {...post}
-                id={post.id}
-                date={post.date}
-                title={post.title}
-                tags={filterTags(post.tag)}
-                location={post.location}
-                participants={post.participants}
-                maxParticipants={post.maxParticipants}
-                imageUrl={post.imageUrl}
-                liked={!!likedPosts[post.id]}
-                onPressLike={() => handlePressLike(post.id)}
-                onPress={() => navigateToPost(post.id)}
-            />
-        ));
-    };
+    return currentData.map((post) => {
+
+    
+    // 🔥 안전한 태그 처리: tags 또는 tag 필드 사용
+    const postTags = post.tags || post.tag || [];
+
+    
+    const filteredTags = filterTags(postTags);
+
+    
+    return (
+        <AccompanyFeed
+            key={post.id}
+            {...post}
+            id={post.id}
+            date={post.date}
+            title={post.title}
+            tags={filteredTags}  // 🔥 중요: 이 값이 실제로 전달되는지 확인
+            location={post.location}
+            participants={post.participants}
+            maxParticipants={post.maxParticipants}
+            imageUrl={post.imageUrl}
+            liked={!!likedPosts[post.id]}
+            onPressLike={() => handlePressLike(post.id)}
+            onPress={() => navigateToPost(post.id)}
+        />
+    );
+});
+};
 
     return (
         <>
