@@ -63,11 +63,17 @@ export default function ItineraryMap() {
           return;
         }
 
-        schedules.sort((a, b) => new Date(a.date) - new Date(b.date));
+        const validSchedules = schedules.filter(s => s.date);
+
+        if (validSchedules.length === 0) {
+          setScheduleData({});
+          return;
+        }
+
+        validSchedules.sort((a, b) => new Date(a.date) - new Date(b.date));
         
-        const groupedByDay = schedules.reduce((acc, item) => {
-          if (!item.date) return acc;
-          const firstDate = new Date(schedules[0].date);
+        const groupedByDay = validSchedules.reduce((acc, item) => {
+          const firstDate = new Date(validSchedules[0].date);
           const currentDate = new Date(item.date);
           
           if (isNaN(firstDate.getTime()) || isNaN(currentDate.getTime())) return acc;

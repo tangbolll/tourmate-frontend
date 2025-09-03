@@ -107,7 +107,7 @@ export default function CreateItinerary() {
             Alert.alert('저장 완료', '여행 일정이 성공적으로 저장되었습니다.');
 
             // 다음 페이지로 이동
-            router.push({
+            router.replace({
                 pathname: './designItinerary',
                 params: {
                     tourId: newTour.id,

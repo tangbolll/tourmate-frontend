@@ -255,7 +255,23 @@ const AddSchedule = ({
             Alert.alert('알림', '제목, 위치, 날짜는 필수 입력 항목입니다.');
             return;
         }
+        let datePayload = {};
+        
         const locationData = selectedLocationObject || location.trim();
+
+        if (typeof currentSelectedDate === 'string' && currentSelectedDate.includes('일차')) {
+            // "2일차" 처럼 '일차'가 포함된 문자열이면 dayDescription에 값을 넣습니다.
+            datePayload = {
+                date: null,
+                dayDescription: currentSelectedDate,
+            };
+        } else {
+            // "2025-09-03" 처럼 '일차'가 없는 일반 날짜 문자열이면 date에 값을 넣습니다.
+            datePayload = {
+                date: currentSelectedDate,
+                dayDescription: null,
+            };
+        }
 
         const scheduleData = {
             id: existingSchedule?.id || null,
@@ -265,8 +281,8 @@ const AddSchedule = ({
             endTime,
             location: locationData,
             memo: memo.trim(),
-            date: currentSelectedDate,
-            travelId: currentTourId
+            travelId: currentTourId,
+            ...datePayload,
         };
         onScheduleAdded(scheduleData);
         onClose();

@@ -44,7 +44,10 @@ const BottomSheet = ({
         onLocationSelect(location); // 부모에게 선택된 위치 정보를 전달
     };
 
-    const daysList = Object.keys(itineraryData).map(d => parseInt(d, 10));
+    const daysList = Object.keys(itineraryData).map(key => {
+        const match = key.match(/\d+/);
+        return match ? parseInt(match[0], 10) : null;
+    }).filter(day => day !== null).sort((a, b) => a - b);
     const currentDayItinerary = itineraryData[selectedDay] || [];
 
     // --- 이 부분이 다시 추가되었습니다 ---
