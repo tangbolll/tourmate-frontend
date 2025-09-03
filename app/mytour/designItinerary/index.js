@@ -153,19 +153,8 @@ export default function DesignItinerary() {
                             return;
                         }
                         
-                        // dayDescription에서 day 번호 추출
-                        let dayKey = schedule.dayDescription.toLowerCase();
-                        if (!dayKey.startsWith('day')) {
-                            const dayMatch = schedule.dayDescription.match(/(\d+)/);
-                            if (dayMatch) {
-                                dayKey = `day${dayMatch[1]}`;
-                            } else {
-                                console.warn(`🚨 [Debug] dayDescription 형식을 인식할 수 없음: ${schedule.dayDescription}`);
-                                return;
-                            }
-                        } else {
-                            dayKey = dayKey.replace(/\s+/g, '');
-                        }
+                        // dayDescription에서 day 번호 추출 (임시 디버깅용)
+                        const dayKey = `day${schedule.dayDescription}`;
                         
                         console.log(`🔍 [Debug] 스케줄 ${schedule.id}: ${schedule.dayDescription} -> ${dayKey}`);
                         
