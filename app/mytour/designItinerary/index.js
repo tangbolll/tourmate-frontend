@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { View, StyleSheet, SafeAreaView, Alert, Text, ActivityIndicator, Platform, Modal, TouchableOpacity } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import axios from 'axios';
+import Constants from 'expo-constants';
 import dayjs from 'dayjs';
 
 // 컴포넌트 Imports
@@ -15,6 +17,8 @@ import Schedule from '../../../components/mytour/designItinerary/schedule/Schedu
 import AddSchedule from '../../../components/mytour/designItinerary/AddSchedule/AddSchedule';
 import { scheduleUtils } from '../../../utils/scheduleUtils';
 import EditTourInfoPopup from '../../../components/mytour/designItinerary/EditTourInfoPopup';
+
+
 
 // API Imports
 import { 
@@ -37,6 +41,23 @@ const useDebounce = (value, delay) => {
         return () => clearTimeout(handler);
     }, [value, delay]);
     return debouncedValue;
+};
+
+const getBaseURL = () => {
+// 개발 모드일 때
+if (__DEV__) {
+    if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:8080';
+    }
+    if (Platform.OS === 'web') {
+    return 'http://localhost:8080';
+    }
+    return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+} 
+// 배포(프로덕션) 모드일 때
+else {
+    return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+}
 };
 
 export default function DesignItinerary() {
@@ -179,9 +200,6 @@ export default function DesignItinerary() {
                     <TouchableOpacity style={styles.aiControlButton} onPress={onRevert}>
                         <Text style={styles.aiControlButtonText}>취소</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.aiControlButton} onPress={onRetry}>
-                        <Text style={styles.aiControlButtonText}>다시 생성</Text>
-                    </TouchableOpacity>
                     <TouchableOpacity style={[styles.aiControlButton, styles.aiConfirmButton]} onPress={onConfirm}>
                         <Text style={[styles.aiControlButtonText, styles.aiConfirmButtonText]}>확정</Text>
                     </TouchableOpacity>
@@ -196,13 +214,10 @@ export default function DesignItinerary() {
         try {
             setIsAiLoading(true);
             
-            // AI 응답을 스케줄 형식으로 변환
-            const transformedSchedules = transformAIResponseToSchedules(aiResponseData);
+            // ✅ await 추가
+            const transformedSchedules = await transformAIResponseToSchedules(aiResponseData, currentTourId);
             
-            // AI 임시 일정에 저장
             setAiSchedules({ ...transformedSchedules });
-            
-            // AI 버튼들 표시
             setIsAiBottomSheetVisible(true);
             
             console.log('AI 일정 임시 저장 완료:', transformedSchedules);
@@ -216,57 +231,82 @@ export default function DesignItinerary() {
     };
 
     // AI 응답을 스케줄 형식으로 변환하는 함수
-    const transformAIResponseToSchedules = (aiData) => {
+    const transformAIResponseToSchedules = async (aiData, travelId, period = { type: 'date' }) => {
         const schedules = {};
-        
-        console.log('🔍 AI 응답 변환 시작:', aiData);
-        
-        if (!aiData || typeof aiData !== 'object') {
-            console.warn('AI 응답 데이터가 없습니다.');
-            return schedules;
-        }
-        
+        if (!aiData || typeof aiData !== 'object') return schedules;
+
+        const parseTime = (timeStr) => {
+            const [h, m] = timeStr.split(':').map(Number);
+            return h * 60 + m;
+        };
+
+        const isOverlapping = (existingSchedules, newSchedule) => {
+            return existingSchedules.some(s => {
+                const sStart = parseTime(s.startTime);
+                const sEnd = parseTime(s.endTime);
+                const nStart = parseTime(newSchedule.startTime);
+                const nEnd = parseTime(newSchedule.endTime);
+                return nStart < sEnd && nEnd > sStart;
+            });
+        };
+
         let dayIndex = 1;
         Object.keys(aiData).forEach(dateKey => {
             const dayKey = `day${dayIndex}`;
-            const dayActivities = aiData[dateKey];
-            
-            console.log(`🔍 처리 중: ${dateKey} -> ${dayKey}`, dayActivities);
-            
-            if (Array.isArray(dayActivities)) {
-                schedules[dayKey] = dayActivities.map((activity, activityIndex) => {
-                    const startHour = 9 + (activityIndex * 3);
-                    const endHour = startHour + (activity.stayDuration || 2);
-                    
-                    const schedule = {
-                        id: `ai_${Date.now()}_${Math.random()}_${activityIndex}`,
-                        title: activity.scheduleTitle || activity.attractionName || '일정',
-                        startTime: `${startHour.toString().padStart(2, '0')}:00`,
-                        endTime: `${endHour.toString().padStart(2, '0')}:00`,
-                        location: activity.location || activity.attractionName || '',
-                        memo: activity.tip || '',
-                        tag: activity.scheduleType || 'ATTRACTION',
-                        isAiSuggestion: true,
-                        categoryColor: scheduleUtils.getCategoryStyle(activity.scheduleType || 'ATTRACTION').borderColor
-                    };
-                    
-                    if (period.type === 'date') {
-                        schedule.date = dateKey;
-                    } else if (period.type === 'duration') {
-                        schedule.dayDescription = `Day ${dayIndex}`;
-                    }
-                    
-                    console.log(`✅ 변환된 스케줄:`, schedule);
-                    return schedule;
-                });
-            }
-            
+            const dayActivities = Array.isArray(aiData[dateKey]) ? aiData[dateKey] : [];
+            schedules[dayKey] = [];
+
+            const existingDaySchedules = combinedScheduleData[dayKey] || [];
+
+            dayActivities.forEach((activity, activityIndex) => {
+                // 1️⃣ 기존 일정 끝나는 시간 기준
+                let startTimeMinutes = 9 * 60; // 기본 9:00
+                if (existingDaySchedules.length > 0) {
+                    const latestEnd = existingDaySchedules
+                        .map(s => parseTime(s.endTime))
+                        .sort((a, b) => b - a)[0];
+                    startTimeMinutes = Math.max(startTimeMinutes, latestEnd);
+                }
+
+                // 2️⃣ AI 일정 길이
+                const duration = (activity.stayDuration || 2) * 60;
+                let endTimeMinutes = startTimeMinutes + duration;
+
+                // 3️⃣ 겹치면 30분씩 밀기
+                while (isOverlapping(existingDaySchedules, {
+                    startTime: `${Math.floor(startTimeMinutes/60).toString().padStart(2,'0')}:${(startTimeMinutes%60).toString().padStart(2,'0')}`,
+                    endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`
+                })) {
+                    startTimeMinutes += 30;
+                    endTimeMinutes = startTimeMinutes + duration;
+                }
+
+                const schedule = {
+                    id: `ai_${Date.now()}_${Math.random()}_${activityIndex}`,
+                    title: activity.scheduleTitle || activity.attractionName || '일정',
+                    startTime: `${Math.floor(startTimeMinutes/60).toString().padStart(2,'0')}:${(startTimeMinutes%60).toString().padStart(2,'0')}`,
+                    endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`,
+                    location: activity.location || activity.attractionName || '',
+                    memo: activity.tip || '',
+                    tag: activity.scheduleType || 'ATTRACTION',
+                    isAiSuggestion: true,
+                    categoryColor: scheduleUtils.getCategoryStyle(activity.scheduleType || 'ATTRACTION').borderColor,
+                };
+
+                if (period.type === 'date') schedule.date = dateKey;
+                else schedule.dayDescription = `Day ${dayIndex}`;
+
+                existingDaySchedules.push(schedule);
+                schedules[dayKey].push(schedule);
+            });
+
             dayIndex++;
         });
-        
-        console.log('🎯 최종 변환 결과:', schedules);
+
         return schedules;
     };
+
+
 
     // 나머지 기존 함수들은 동일하게 유지...
     const fetchTourData = useCallback(async () => {
