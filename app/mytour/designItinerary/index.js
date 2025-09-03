@@ -415,6 +415,43 @@ useEffect(() => {
                 payload.dayDescription = newScheduleData.dayDescription || `Day ${newScheduleData.selectedDay}`;
             }
 
+            // 시간 중복 검사
+            const timeToMinutes = (timeString) => {
+                if (!timeString || !timeString.includes(':')) return 0;
+                const [hours, minutes] = timeString.split(':').map(Number);
+                return (hours || 0) * 60 + (minutes || 0);
+            };
+
+            const checkOverlap = (newSchedule, existingSchedules) => {
+                const newStart = timeToMinutes(newSchedule.startTime);
+                const newEnd = timeToMinutes(newSchedule.endTime);
+
+                for (const existingSchedule of existingSchedules) {
+                    const existingStart = timeToMinutes(existingSchedule.startTime);
+                    const existingEnd = timeToMinutes(existingSchedule.endTime);
+
+                    if (newStart < existingEnd && existingStart < newEnd) {
+                        return true; // 중복 발견
+                    }
+                }
+                return false; // 중복 없음
+            };
+
+            const dayKey = newScheduleData.date 
+                ? dayjs(newScheduleData.date).diff(dayjs(period.startDate), 'day') + 1 
+                : parseInt((newScheduleData.dayDescription || '').match(/\d+/)[0], 10);
+            
+            const existingSchedulesForDay = scheduleData[`day${dayKey}`] || [];
+
+            // 수정 모드일 경우, 현재 수정 중인 스케줄은 중복 검사에서 제외
+            const schedulesToCheck = existingSchedulesForDay.filter(s => s.id !== newScheduleData.id);
+
+            if (checkOverlap(newScheduleData, schedulesToCheck)) {
+                Alert.alert('오류', '선택한 시간에 이미 다른 일정이 있습니다.');
+                setScheduleLoading(false);
+                return; // 저장 방지
+            }
+
             if (schedulePopupData?.existingSchedule?.id) {
                 console.log('[handleScheduleAdded] 기존 스케줄 업데이트 중...');
                 await updateTravelSchedule(schedulePopupData.existingSchedule.id, payload);

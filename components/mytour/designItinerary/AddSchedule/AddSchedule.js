@@ -255,6 +255,21 @@ const AddSchedule = ({
             Alert.alert('알림', '제목, 위치, 날짜는 필수 입력 항목입니다.');
             return;
         }
+
+        // Time validation
+        const timeToMinutes = (timeString) => {
+            const [hours, minutes] = timeString.split(':').map(Number);
+            return hours * 60 + minutes;
+        };
+
+        const startMinutes = timeToMinutes(startTime);
+        const endMinutes = timeToMinutes(endTime);
+
+        if (startMinutes >= endMinutes) {
+            Alert.alert('오류', '종료 시간은 시작 시간보다 늦어야 합니다.');
+            return;
+        }
+
         let datePayload = {};
         
         const locationData = selectedLocationObject || location.trim();
