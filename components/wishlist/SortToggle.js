@@ -58,11 +58,11 @@ export const SortToggle = ({ onSortChange, selectedTab = '찜' }) => {
             return [
                 {
                     key: 'scrapped',
-                    label: '스크랩한 엽서순'
+                    label: '최근 스크랩순'
                 },
                 {
                     key: 'closestTrip',
-                    label: '여행시작일 가까운순'
+                    label: '최근 여행시작일순'
                 },
 
             ];

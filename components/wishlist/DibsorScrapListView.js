@@ -35,7 +35,7 @@ const DibsScrapListView = ({
     const filterTags = (tags) => {
         if (!tags || !Array.isArray(tags)) return [];
         
-        const genderTags = ['남자만', '여자만', '성별무관'];
+        const genderTags = ['남자만', '여자만', '남녀무관'];
         const categoryTags = [
             '투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '액티비티', '힐링', '역사유적', '박물관/미술관'
         ];
@@ -77,7 +77,7 @@ const DibsScrapListView = ({
                 id={post.id}
                 date={post.date}
                 title={post.title}
-                tags={filterTags(post.tags)}
+                tags={filterTags(post.tag)}
                 location={post.location}
                 participants={post.participants}
                 maxParticipants={post.maxParticipants}

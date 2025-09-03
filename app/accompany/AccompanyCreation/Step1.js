@@ -207,6 +207,7 @@ const Step1 = ({
                 <View style={styles.inputWrapper}>
                     <MaterialIcons name="location-pin" size={16} color="#888" style={styles.icon} />
                     <TextInput
+                        style={styles.inputWithIcon}
                         placeholder="여행장소를 입력해주세요."
                         placeholderTextColor="#888"
                         value={locationInput}
@@ -217,9 +218,8 @@ const Step1 = ({
                 <Text style={styles.label}>여행기간</Text>
                 <TouchableOpacity onPress={openCalendar} style={styles.inputWrapper}>
                     <FontAwesome6 name="calendar-check" size={16} color="#888" style={styles.icon} />
-                    <Text style={[ {
+                    <Text style={[styles.inputWithIconText, {
                         color: startDate && endDate ? '#000' : '#888',
-                        lineHeight: 20,
                     }]}>
                         {getDateRangeText()}
                     </Text>
@@ -254,6 +254,7 @@ const Step1 = ({
                 <View style={styles.inputWrapper}>
                     <MaterialIcons name="location-pin" size={16} color="#888" style={styles.icon} />
                     <TextInput
+                        style={styles.inputWithIcon}
                         placeholder="모이는 장소를 입력해주세요. (지하철역, 랜드마크 등)"
                         placeholderTextColor="#888"
                         value={meetLocationInput}
@@ -292,7 +293,7 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     icon: {
-        marginRight: 4,
+        marginRight: 8,
     },
     input: {
         height: 44,
@@ -305,14 +306,22 @@ const styles = StyleSheet.create({
         marginBottom: 12,
         color: '#000',
         backgroundColor: '#fff',
+        // 여행 제목의 텍스트와 플레이스홀더 수직 중앙 정렬
+        textAlignVertical: 'center',
         lineHeight: 20,
     },
+    // 아이콘이 있는 인풋 컴포넌트 스타일
     inputWithIcon: {
-        height: 44,
         flex: 1,
         fontSize: 14,
-        marginLeft: 8,
         color: '#000',
+        padding: 0, 
+        textAlignVertical: 'center',
+    },
+    // 아이콘이 있는 텍스트 컴포넌트 스타일
+    inputWithIconText: {
+        flex: 1,
+        fontSize: 14,
         textAlignVertical: 'center',
     },
     textArea: {

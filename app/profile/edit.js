@@ -253,7 +253,7 @@ const ProfileEditScreen = () => {
   }, [nickname, tags, originalUserData, nicknameChecked, nicknameAvailable, profileImage, originalProfileImage]);
 
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color="black" />
@@ -341,7 +341,7 @@ const ProfileEditScreen = () => {
         </View>
 
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 };
 

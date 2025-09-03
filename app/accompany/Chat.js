@@ -947,7 +947,7 @@ const styles = StyleSheet.create({
         paddingRight: 4,
         marginRight: 8,
         backgroundColor: 'white',
-        marginBottom: 30,
+        marginBottom: 55,
     },
     input: {
         flex: 1,

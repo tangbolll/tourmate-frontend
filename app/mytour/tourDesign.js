@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
     floatingButtonContainer: {
         paddingTop: 12,
         backgroundColor: '#f9fafb',
-        paddingBottom: 38,
+        //paddingBottom: 38,
         borderTopColor: '#f0f0f0',
         borderTopWidth: 1,
     },

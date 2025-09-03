@@ -5,17 +5,17 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 const defaultImage = require('../../assets/defaultBackground.png');
 
 export default function AccompanyCard({
-    tripStartDate,  // 🔥 date 대신 tripStartDate 사용
-    tripEndDate,    // 🔥 tripEndDate 추가
+    tripStartDate,
+    tripEndDate,
     title, 
     location, 
     imageUrl, 
     onPress, 
     userApplicationStatus
 }) {
-    // 🔥 날짜 포맷팅 함수 추가
+    // 날짜 포맷팅 함수 수정
     const formatDateRange = () => {
-        if (!tripStartDate) return '';
+        if (!tripStartDate) return '날짜 미정'; // 빈 문자열 대신 기본값 반환
         
         const start = new Date(tripStartDate);
         const end = tripEndDate ? new Date(tripEndDate) : null;
@@ -62,22 +62,22 @@ export default function AccompanyCard({
                 <View style={styles.overlay}>
                     {/* 상단 날짜 */}
                     <View style={styles.topRow}>
-                        <Text style={styles.date}>{formatDateRange()}</Text> {/* 🔥 포맷된 날짜 사용 */}
+                        <Text style={styles.date}>{formatDateRange()}</Text>
                     </View>
 
-                    {/* 타이틀 */}
+                    {/* 타이틀 - 빈 값 체크 추가 */}
                     <Text
                         style={styles.title}
                         numberOfLines={2}
                         ellipsizeMode="tail"
                     >
-                        {title}
+                        {title || '제목 없음'}
                     </Text>
 
-                    {/* 장소 */}
+                    {/* 장소 - 빈 값 체크 추가 */}
                     <View style={styles.locationRow}>
                         <Icon name="map-marker" size={16} color="#fff" />
-                        <Text style={styles.location}>{location}</Text>
+                        <Text style={styles.location}>{location || '위치 미정'}</Text>
                     </View>
 
                     {/* 상태별 버튼 */}

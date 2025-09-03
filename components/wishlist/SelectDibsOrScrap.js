@@ -46,10 +46,13 @@ const SelectDibsOrScrap = ({ selectedTab, setSelectedTab, onSortChange }) => {
                 </View>
                 
                 {/* 정렬 토글 */}
-                <SortToggle
-                    selectedTab={selectedTab}
-                    onSortChange={onSortChange}
-                />
+                {/* SortToggle을 감싸는 View에 marginRight를 주어 왼쪽으로 이동 */}
+                <View style={styles.sortToggleWrapper}> 
+                    <SortToggle
+                        selectedTab={selectedTab}
+                        onSortChange={onSortChange}
+                    />
+                </View>
             </View>
         </View>
     );
@@ -104,6 +107,9 @@ const styles = StyleSheet.create({
     tabTextActive: {
         color: '#fff',
     },
+    sortToggleWrapper: {
+        marginRight: 8, // SortToggle을 왼쪽으로 8px 이동
+    }
 });
 
 export default SelectDibsOrScrap;

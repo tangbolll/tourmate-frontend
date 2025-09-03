@@ -742,11 +742,11 @@ export default function AccompanyPost() {
                         />
                         <Conditions
                             gender={accompanyData?.accompanyInfo?.gender}
-                                                        ageRange={Array.from(accompanyData?.accompanyInfo?.ageGroup || [])}
+                            ageRange={Array.from(accompanyData?.accompanyInfo?.ageRange || [])}
                         />
                         <Categories
                             category={Array.from(accompanyData?.accompanyInfo?.category || [])}
-                            tags={Array.from(accompanyData?.accompanyInfo?.tag || [])}
+                            tags={Array.from(accompanyData?.accompanyInfo?.tags || [])}
                         />
 
                         {/* 댓글 섹션 제목 (항상 표시) */}
