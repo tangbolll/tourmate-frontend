@@ -286,7 +286,12 @@ const AccompanyList = () => {
         const tags = [];
         if (filters.gender) tags.push(filters.gender);
         if (filters.age) tags.push(filters.age);
-        if (filters.travelPeriod) tags.push(filters.travelPeriod);
+        if (filters.travelPeriod) {
+            const periodTag = typeof filters.travelPeriod === 'string'
+                ? filters.travelPeriod
+                : filters.travelPeriod.formatted; // 객체면 formatted만
+            if (periodTag) tags.push(periodTag);
+        }        
         if (filters.travelLocation) tags.push(filters.travelLocation);
         tags.push(...filters.categories);
         return tags;
@@ -312,9 +317,46 @@ const AccompanyList = () => {
         handleCalendarSelect: (range) => {
             const { startDate, endDate } = range;
             const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
-            setFilters(prev => ({ ...prev, travelPeriod: formatted }));
+
+            setFilters(prev => {
+                const newFilters = { ...prev, travelPeriod: formatted };
+                // 즉시 filteredPosts 업데이트
+                let allPosts = [];
+                if (selectedTab === 'mine') allPosts = [...myCreatedAccompanyList];
+                else if (selectedTab === 'feed') allPosts = [...feedList];
+                else if (selectedTab === 'applied') allPosts = [...myAppliedAccompanyList];
+
+                let filtered = [...allPosts];
+
+                if (searchText) {
+                    const searchLower = searchText.toLowerCase();
+                    filtered = filtered.filter(post =>
+                        post.title?.toLowerCase().includes(searchLower) ||
+                        post.location?.toLowerCase().includes(searchLower)
+                    );
+                }
+
+                if (newFilters.gender) filtered = filtered.filter(post => post.tags?.includes(newFilters.gender) || post.tags?.includes('성별무관'));
+                if (newFilters.age) filtered = filtered.filter(post => post.tags?.includes(newFilters.age) || post.tags?.includes('나이무관'));
+                if (newFilters.categories.length > 0) filtered = filtered.filter(post => newFilters.categories.some(cat => post.tags?.includes(cat)));
+                if (newFilters.travelLocation) filtered = filtered.filter(post => post.location?.toLowerCase().includes(newFilters.travelLocation.toLowerCase()));
+                if (newFilters.travelPeriod) {
+                    const [startStr, endStr] = newFilters.travelPeriod.split('~').map(s => s.trim());
+                    const startDate = dayjs(startStr, 'M월 D일(ddd)').toDate();
+                    const endDate = dayjs(endStr, 'M월 D일(ddd)').toDate();
+
+                    filtered = filtered.filter(post => {
+                        const tripStart = new Date(post.tripStartDate);
+                        const tripEnd = new Date(post.tripEndDate);
+                        return tripStart <= endDate && tripEnd >= startDate;
+                    });
+}
+                setFilteredPosts(filtered);
+
+                return newFilters;
+            });
+
             setCalendarVisible(false);
-            setTimeout(() => setShowFilterPopup(true), 300);
         },
         getAllTags,
         handleRemoveTag,

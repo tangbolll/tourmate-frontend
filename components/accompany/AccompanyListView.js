@@ -147,8 +147,7 @@ const AccompanyListView = ({
                 filters={filters}
                 setFilters={setFilters}
                 onOpenCalendar={() => {
-                    handleCloseFilterPopup();
-                    setTimeout(() => setCalendarVisible(true), 300);
+                    setCalendarVisible(true); // FilterPopup 닫지 않고 캘린더 열기
                 }}
             />
 

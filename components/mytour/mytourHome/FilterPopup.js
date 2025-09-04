@@ -3,6 +3,7 @@ import { View, Text, Modal, TouchableOpacity, StyleSheet, TextInput, TouchableWi
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import Icon2 from 'react-native-vector-icons/MaterialIcons';
 
+
 const FilterPopup = ({ visible, onClose = () => {}, onApply, onReset, filters, setFilters, onOpenCalendar }) => {
     const { travelPeriod, travelLocation } = filters;
     

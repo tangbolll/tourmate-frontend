@@ -47,17 +47,17 @@ export default function MyTourHeader({ onSortChange, onFilterPress, onFilterAppl
         const { startDate, endDate } = range; 
 
         if (!startDate || !endDate) {
+            // 재설정 → travelPeriod 비우기
             setFilters(prev => ({ ...prev, travelPeriod: '' }));
         } else {
-            // startDate가 있으면 기존 방식대로 날짜를 포맷합니다.
+            // 선택 → 날짜 포맷
             const formatted = `${dayjs(startDate).locale('ko').format('M월 D일(ddd)')} ~ ${dayjs(endDate).locale('ko').format('M월 D일(ddd)')}`;
             setFilters(prev => ({ ...prev, travelPeriod: formatted }));
         }
-        
+
+        // 캘린더 닫고, 다시 필터 팝업 열기
         setCalendarVisible(false);
-        setTimeout(() => {
-            setShowFilterPopup(true);
-        }, 300);
+        setTimeout(() => setShowFilterPopup(true), 300);
     };
 
     const isLocalFilterActive = !!(filters.travelPeriod || filters.travelLocation);

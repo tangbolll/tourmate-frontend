@@ -29,14 +29,8 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
     }, [visible]);
 
     const applyFilters = () => {
-        if (range.startDate && range.endDate) {
-            try {
-                onSelectDates(range);
-            } catch (error) {
-                console.error('Error in onSelectDates:', error);
-            }
-            closeModal();
-        }
+        onSelectDates(range); // startDate/endDate가 null이어도 호출
+        closeModal();
     };
 
     const closeModal = () => {
@@ -138,8 +132,7 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                 {/* Calendar */}
                 <CalendarPicker
                     key={currentMonth.toString()}
-                    month={currentMonth.getMonth()}
-                    year={currentMonth.getFullYear()}
+                    onMonthChange={(date) => setCurrentMonth(date)}
                     customDatesStyles={null}
                     monthYearHeaderWrapperStyle={{ display: 'none' }}
                     allowRangeSelection
@@ -167,13 +160,10 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
 
                 {/* Apply Button */}
                 <TouchableOpacity 
-                style={[
-                    styles.applyButton, 
-                    (!range.startDate || !range.endDate) && styles.disabledButton
-                ]} 
-                onPress={applyFilters}
-                disabled={!range.startDate || !range.endDate}
-                activeOpacity={0.7}
+                    style={styles.applyButton} 
+                    onPress={applyFilters}
+                    disabled={false} // 항상 활성화
+                    activeOpacity={0.7}
                 >
                 <Text style={styles.applyButtonText}>적용하기</Text>
                 </TouchableOpacity>

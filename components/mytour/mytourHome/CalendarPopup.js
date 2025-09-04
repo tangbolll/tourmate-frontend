@@ -19,20 +19,20 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
     const [currentMonth, setCurrentMonth] = useState(dayjs());
 
     useEffect(() => {
-        visible
-            ? setCurrentMonth(dayjs()) // 모달이 열릴 때: 현재 날짜로 초기화
-            : setRange({ startDate: null, endDate: null }) // 모달이 닫힐 때: 선택 초기화
+        if (visible) {
+            setCurrentMonth(dayjs()); // 모달이 열릴 때 현재 날짜 표시
+            // setRange({ startDate: null, endDate: null }) <- 제거, 선택 초기화는 재설정 버튼에서만
+        }
     }, [visible]);
 
     const applyFilters = () => {
-        if (range.startDate && range.endDate) {
-            try {
-                onSelectDates(range);
-            } catch (error) {
-                console.error('Error in onSelectDates:', error);
-            }
-            closeModal();
+        try {
+            // 빈 상태도 그대로 전달
+            onSelectDates(range); 
+        } catch (error) {
+            console.error('Error in onSelectDates:', error);
         }
+        closeModal();
     };
 
     const closeModal = () => {
@@ -124,8 +124,7 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
 
                 {/* Calendar */}
                 <CalendarPicker
-                    month={currentMonth.month()}
-                    year={currentMonth.year()}
+                    onMonthChange={(date) => setCurrentMonth(dayjs(date))}
                     customDatesStyles={null}
                     monthYearHeaderWrapperStyle={{ display: 'none' }}
                     allowRangeSelection
@@ -153,13 +152,10 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
 
                 {/* Apply Button */}
                 <TouchableOpacity 
-                style={[
-                    styles.applyButton, 
-                    (!range.startDate || !range.endDate) && styles.disabledButton
-                ]} 
-                onPress={applyFilters}
-                disabled={!range.startDate || !range.endDate}
-                activeOpacity={0.7}
+                    style={[styles.applyButton]} 
+                    onPress={applyFilters}
+                    disabled={false} // 항상 활성화
+                    activeOpacity={0.7}
                 >
                 <Text style={styles.applyButtonText}>적용하기</Text>
                 </TouchableOpacity>

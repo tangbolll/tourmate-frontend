@@ -28,7 +28,9 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
     const setTravelLocation = (value) => setFilters({ ...filters, travelLocation: value });
 
     const applyFilters = () => {
-        if (onApply) onApply(filters);
+        if (onApply) {
+            onApply({ ...filters }); // 최신값 복사
+        }
         onClose();
     };
 
@@ -51,12 +53,19 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
 
     const handleCalendarSelect = ({ startDate, endDate }) => {
         if (startDate && endDate) {
-        const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
-        setFilters({ ...filters, travelPeriod: formatted });
+            // 문자열로 보여주고 싶으면 formatted 따로 만들어서 UI에만 사용
+            const formatted = `${dayjs(startDate).format('YYYY.MM.DD')} ~ ${dayjs(endDate).format('YYYY.MM.DD')}`;
+            
+            // filters에는 실제 Date 객체로 저장
+            setFilters({ 
+                ...filters, 
+                travelPeriod: { startDate, endDate, formatted } 
+            });
+        } else {
+            setFilters({ ...filters, travelPeriod: null });
         }
-        closeCalendar();
+        setCalendarVisible(false);
     };
-
 
     return (
         <>
@@ -86,16 +95,22 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
                 {/* Travel Period */}
                 <View style={styles.sectionContainer}>
                     <Text style={styles.sectionTitle}>동행기간</Text>
-                    <TouchableOpacity 
-                        onPress={onOpenCalendar} 
-                        activeOpacity={0.7}
+                    <TouchableOpacity
+                        onPress={() => setCalendarVisible(true)}
                         style={styles.inputContainer}
                     >
                         <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
                         <Text style={[styles.input, !travelPeriod && styles.placeholder]}>
-                            {travelPeriod || "여행기간을 선택해주세요."}
+                            {travelPeriod?.formatted || "여행기간을 선택해주세요."}
                         </Text>
+
                     </TouchableOpacity>
+
+                    <CalendarPopup
+                        visible={calendarVisible}
+                        onClose={() => setCalendarVisible(false)}
+                        onSelectDates={handleCalendarSelect}
+                    />
                 </View>
 
                 {/* Location */}
