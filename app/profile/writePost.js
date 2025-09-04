@@ -93,8 +93,29 @@ const WritePost = () => {
                         isFavorite: pc.isFavorite || false,
                     }));
 
-                    if (formattedPostcards.length > 0) {
-                        setPostcards([...formattedPostcards, { id: null, image: null, postcardTemplate: null, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() }]);
+                    const newPostcard = { id: null, image: null, postcardTemplate: null, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
+                    const allPostcards = [...formattedPostcards, newPostcard];
+                    setPostcards(allPostcards);
+
+                    if (params.postcardId) {
+                        const selectedIndex = formattedPostcards.findIndex(p => p.id == params.postcardId);
+                        if (selectedIndex !== -1) {
+                            setCurrentIndex(selectedIndex);
+                            setSelectedImage(formattedPostcards[selectedIndex].image);
+                            setSelectedPostcard(formattedPostcards[selectedIndex].postcardTemplate);
+                            setPostcardContent(formattedPostcards[selectedIndex].content || '');
+                            setIsSaved(true);
+                            setIsEditMode(false);
+                        }
+                    } else if (params.newlyCreated === 'true') {
+                        const newIndex = allPostcards.length - 1;
+                        setCurrentIndex(newIndex);
+                        setSelectedImage(null);
+                        setSelectedPostcard(null);
+                        setPostcardContent('');
+                        setIsSaved(false);
+                        setIsEditMode(true);
+                    } else if (formattedPostcards.length > 0) {
                         setCurrentIndex(0);
                         setSelectedImage(formattedPostcards[0].image);
                         setSelectedPostcard(formattedPostcards[0].postcardTemplate);
@@ -102,8 +123,6 @@ const WritePost = () => {
                         setIsSaved(true);
                         setIsEditMode(false);
                     } else {
-                        const newPostcard = { id: null, image: null, postcardTemplate: null, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
-                        setPostcards([newPostcard]);
                         setCurrentIndex(0);
                         setSelectedImage(null);
                         setSelectedPostcard(null);
@@ -128,7 +147,7 @@ const WritePost = () => {
         };
 
         fetchPostcards();
-    }, [params.directoryId, params.directoryName, params.startDate, params.endDate]);
+    }, [params.directoryId, params.directoryName, params.startDate, params.endDate, params.newlyCreated, params.postcardId]);
 
     // 갤러리에서 이미지 선택
     const pickImage = useCallback(async () => {

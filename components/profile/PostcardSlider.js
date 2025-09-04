@@ -1,30 +1,48 @@
-import React from 'react';
+import React, { useRef, useImperativeHandle, useEffect } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-const PostcardSlider = ({ 
+const PostcardSlider = React.forwardRef(({ 
     postcards, 
     currentIndex, 
     onSelectPostcard, 
     onAddNewPostcard, 
     isEditMode, 
     isSaved 
-}) => {
+}, ref) => {
+    const scrollViewRef = useRef(null);
+
+    useImperativeHandle(ref, () => ({
+        scrollToEnd: (options) => {
+            scrollViewRef.current?.scrollToEnd(options);
+        },
+        scrollTo: (options) => {
+            scrollViewRef.current?.scrollTo(options);
+        },
+    }));
+
+    useEffect(() => {
+        if (scrollViewRef.current && currentIndex !== null) {
+            const itemWidth = 148 * 0.7;
+            const gap = 12;
+            const addButtonWidth = 148 * 0.7 + 12; // Add button width + gap
+            const xOffset = addButtonWidth + (itemWidth + gap) * currentIndex;
+            scrollViewRef.current.scrollTo({ x: xOffset, animated: true });
+        }
+    }, [currentIndex]);
+
     return (
         <View style={styles.slideContainer}>
             <ScrollView
+                ref={scrollViewRef}
                 horizontal
                 showsHorizontalScrollIndicator={false}
                 contentContainerStyle={styles.slideContent}
             >
                 {/* 새 엽서 추가 버튼 - 맨 왼쪽에 위치 */}
                 <TouchableOpacity 
-                    style={[
-                        styles.addButton,
-                        (!isEditMode || isSaved) && styles.addButtonDisabled
-                    ]} 
-                    onPress={onAddNewPostcard}
-                    disabled={!isEditMode || isSaved}
+                    style={styles.addButton} 
+                    onPress={onAddNewPostcard} // 여기 수정
                 >
                     <Feather 
                         name="plus" 
@@ -35,7 +53,7 @@ const PostcardSlider = ({
 
                 {postcards.map((postcard, index) => (
                     <TouchableOpacity
-                        key={postcard.id}
+                        key={postcard.id || postcard.tempId}
                         style={[
                             styles.slideItem,
                             currentIndex === index && styles.slideItemActive
@@ -65,7 +83,7 @@ const PostcardSlider = ({
             </ScrollView>
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     slideContainer: {

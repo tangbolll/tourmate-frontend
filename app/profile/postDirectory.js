@@ -33,6 +33,8 @@ export default function PostDirectory() {
     // 확장된 엽서 상태 관리 (추가된 부분)
     const [expandedPostcard, setExpandedPostcard] = useState(null);
 
+    
+
     // 디렉토리 ID가 변경될 때마다 엽서 데이터를 불러오는 useEffect
     useEffect(() => {
         const fetchPostcards = async () => {
@@ -60,13 +62,16 @@ export default function PostDirectory() {
                     currentUserId: 'mockUserId', // 테스트용 mock user ID
                     likeCount: pc.likeCount || 0,
                     scrapCount: pc.scrapCount || 0,
-                    isPublic: pc.isPublic || false,
+                    isPublic: pc.publicScope === 1,
                     // 추가: PostExpanded가 참조할 필드 추가
                     postcardId: pc.postcardId,
                     imageUrl: pc.imageUrl,
                     typeImageUrl: pc.typeImageUrl,
                     postcardTypeId: pc.postcardTypeId, // ✅ 이 부분 추가
                 }));
+                
+                console.log('📌 formattedPostcards:', formattedPostcards);
+
                 setPostcards(formattedPostcards);
             } catch (error) {
                 console.error('❌ 엽서 데이터 불러오기 실패:', error);
@@ -99,10 +104,15 @@ export default function PostDirectory() {
             console.log('엽서 상세 페이지로 이동:', postcard.id);
             // PostExpanded에 필요한 모든 데이터를 명시적으로 전달
             // PostExpanded 내부에서 상세 API를 호출하는 로직을 제거하고 이미 받은 데이터로 표시하도록 변경
-            setExpandedPostcard({
-                ...postcard,
-                postcardId: postcard.id,
-                imageUrl: postcard.image
+            router.push({
+                pathname: 'profile/writePost',
+                params: {
+                    directoryId: directoryId,
+                    directoryName: directoryTitle,
+                    startDate: params.startDate,
+                    endDate: params.endDate,
+                    postcardId: postcard.id, // Pass the ID of the clicked postcard
+                }
             });
             return;
         }
@@ -133,6 +143,8 @@ export default function PostDirectory() {
                 directoryName: directoryTitle,
                 startDate: params.startDate,
                 endDate: params.endDate,
+                createNew: 'true',
+                newlyCreated: 'true',
             }
         });
     }, [isSelectMode, router, directoryId, directoryTitle, params.startDate, params.endDate]);
@@ -179,39 +191,70 @@ export default function PostDirectory() {
     }, [selectedPostcards]);
 
     const handleShare = useCallback(() => {
-        // 1. 선택된 엽서 데이터 필터링
-        const selectedPostcardsData = postcards.filter(postcard => selectedPostcards.has(postcard.id));
+    // 1. 선택된 엽서 데이터 필터링
+    const selectedPostcardsData = postcards.filter(postcard =>
+        selectedPostcards.has(postcard.id)
+    );
 
-        if (selectedPostcardsData.length === 0) {
-            Alert.alert('알림', '공유할 엽서를 선택해주세요.');
-            return;
+    if (selectedPostcardsData.length === 0) {
+        Alert.alert('알림', '공유할 엽서를 선택해주세요.');
+        return;
+    }
+
+    const total = selectedPostcardsData.length;
+    const alreadyShared = selectedPostcardsData.filter(pc => pc.isPublic).length;
+    const notSharedPostcards = selectedPostcardsData.filter(pc => !pc.isPublic);
+
+    if (notSharedPostcards.length === 0) {
+        Alert.alert('알림', '이미 공유된 엽서만 선택되어 있습니다. \n다른 엽서를 선택하세요.');
+        return;
+    }
+
+    if (alreadyShared > 0) {
+        if (alreadyShared === total) {
+            // ✅ 모두 이미 공유된 경우
+            Alert.alert('알림', '선택한 모든 엽서는 이미 공개된 엽서입니다.');
+        } else {
+            // 일부만 공개된 경우
+            Alert.alert(
+                '안내',
+                `${total}개 중 ${alreadyShared}개는 이미 공개된 엽서입니다.\n나머지 ${notSharedPostcards.length}개만 공개로 설정됩니다.`,
+                [
+                    { text: '취소', style: 'cancel' },
+                    { text: '확인', onPress: () => proceedShare(notSharedPostcards) },
+                ]
+            );
         }
+    } else {
+        // 전부 공개 안 된 경우 → 바로 공유 처리
+        proceedShare(notSharedPostcards);
+    }
 
-        // 2. 공유에 필요한 핵심 데이터만 추출
-        const simplifiedPostcards = selectedPostcardsData.map(pc => ({
-            postcardId: pc.postcardId,
-            imageUrl: pc.imageUrl,
-            content: pc.content,
-            dateCreated: pc.dateCreated,
-            typeImageUrl: pc.typeImageUrl, // 엽서 타입 이미지 추가
-            postcardTypeId: pc.postcardTypeId, // ✅ 추가: 엽서 타입 ID
-        }));
-
-        console.log('선택된 엽서 공유:', simplifiedPostcards);
-
-        // 3. useRouter를 통해 데이터 전달
-        router.push({
-            pathname: 'profile/sharePost',
-            params: {
-                // 객체를 JSON 문자열로 변환하여 전달
-                selectedPostcards: JSON.stringify(simplifiedPostcards),
-                // 날짜와 제목은 문자열 그대로 전달
-                directoryTitle: directoryTitle,
-                startDate: params.startDate || '날짜 미상', // params에서 원본 날짜 포맷 그대로 전달
-                endDate: params.endDate || '날짜 미상',
-            }
-        });
     }, [selectedPostcards, postcards, router, directoryTitle, params.startDate, params.endDate]);
+
+    // 공유 처리 로직 따로 함수로 분리
+    const proceedShare = (postcardsToShare) => {
+    const simplifiedPostcards = postcardsToShare.map(pc => ({
+        postcardId: pc.postcardId,
+        imageUrl: pc.imageUrl,
+        content: pc.content,
+        dateCreated: pc.dateCreated,
+        typeImageUrl: pc.typeImageUrl,
+        postcardTypeId: pc.postcardTypeId,
+    }));
+
+    console.log('선택된 엽서 공유:', simplifiedPostcards);
+
+    router.push({
+        pathname: 'profile/sharePost',
+        params: {
+        selectedPostcards: JSON.stringify(simplifiedPostcards),
+        directoryTitle: directoryTitle,
+        startDate: params.startDate || '날짜 미상',
+        endDate: params.endDate || '날짜 미상',
+        },
+    });
+    };
 
     // 확장된 엽서 닫기 함수
     const handleCloseExpanded = useCallback(() => {

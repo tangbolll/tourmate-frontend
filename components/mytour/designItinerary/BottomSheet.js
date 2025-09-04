@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import {
     View, Text, StyleSheet, TextInput, TouchableOpacity,
-    Animated, PanResponder, Dimensions, FlatList, ActivityIndicator, Platform
+    Animated, PanResponder, Dimensions, FlatList, ActivityIndicator, Platform, Alert 
 } from 'react-native';
 // Note: These imports are for the React Native environment and will not resolve in a web browser.
 // The code is intended for an Expo/React Native project.
@@ -253,7 +253,20 @@ const BottomSheet = ({
 
 
     // AI 일정 생성 시작
-    const handleAIGenerateStart = () => setIsAIGenerating(true);
+    const handleAIGenerateStart = () => {
+        // '기간' 기반(duration) 여행일 경우 기능 제한
+        if (periodType === 'duration') {
+            Alert.alert(
+                "업데이트 준비 중", // 팝업 제목
+                "일자별 AI 일정 생성은 아직 준비중입니다! 다음 업데이트에 만나요", // 팝업 메시지
+                [{ text: "확인" }] // 버튼
+            );
+            return; // AI 생성 모드로 진입하지 않고 함수를 종료합니다.
+        }
+
+        // '날짜' 기반(date) 여행일 경우에만 기존 로직 실행
+        setIsAIGenerating(true);
+    };
 
     // 관광지 중복 선택 토글
     const handleToggleAiAttraction = (attractionId) => {
