@@ -806,7 +806,7 @@ export default function AccompanyPost() {
                     <AccompanyBottomButton
                         isHost={isHost}
                         accompanyStatus={accompanyData?.accompanyInfo?.status}
-                        userApplicationStatus={userApplicationStatusLocal}
+                        userApplicationStatus={accompanyData?.accompanyInfo?.userApplicationStatus}
                         onPress={isHost ? handleClosedPress : handleApplicationPress}
                         likes={likeCount}
                         isLiked={isLiked}
