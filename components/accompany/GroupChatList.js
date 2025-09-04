@@ -1,44 +1,70 @@
 import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Platform } from 'react-native';
 import { PanGestureHandler, State } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
+import Constants from 'expo-constants';
 
 // 기본 프로필 이미지들
 const defaultProfiles = [
   require('../../assets/defaultProfile.png')
 ];
 
+// API 베이스 URL 설정 (copied from HomePostApi.js)
+const getBaseURL = () => {
+    if (__DEV__) {
+        if (Platform.OS === 'android') {
+            return 'http://10.0.2.2:8080';
+        }
+        return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
+    } else {
+        return Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL';
+    }
+};
+
+const API_URL = getBaseURL();
+
+const getFullImageUrl = (imagePath) => {
+    if (!imagePath || imagePath.startsWith('http')) {
+        return imagePath;
+    }
+    return `${API_URL}${imagePath}`;
+};
+
 const GroupChatList = ({ photo, title, message, participants, timestamp, unreadCount, onPress, onSwipeLeft }) => {
   const translateX = useRef(new Animated.Value(0)).current;
 
   // 겹쳐진 프로필 렌더링 함수
   const renderProfileImages = () => {
-    // 참가자가 1명일 때
-    if (participants === 1) {
+    if (!participants || participants.length === 0) {
       return (
-        <View style={styles.avatarContainer}>
-          <Image 
-            source={defaultProfiles[0]} 
-            style={styles.singleAvatar}
-          />
-        </View>
+        <Image 
+          source={defaultProfiles[0]} 
+          style={styles.singleAvatar}
+        />
+      );
+    }
+    
+    if (participants.length === 1) {
+      return (
+        <Image 
+          source={{ uri: getFullImageUrl(participants[0].profileImage) }} 
+          style={styles.singleAvatar}
+        />
       );
     }
     
     // 2명일 때
-    if (participants === 2) {
+    if (participants.length === 2) {
       return (
-        <View style={styles.avatarContainer}>
-          <View style={styles.multipleAvatarsContainer}>
-            <Image 
-              source={defaultProfiles[1]} 
-              style={[styles.avatar, styles.backAvatar]}
-            />
-            <Image 
-              source={defaultProfiles[0]} 
-              style={[styles.avatar, styles.frontAvatar]}
-            />
-          </View>
+        <View style={styles.multipleAvatarsContainer}>
+          <Image 
+            source={{ uri: getFullImageUrl(participants[1].profileImage) }} 
+            style={[styles.avatar, styles.backAvatar]}
+          />
+          <Image 
+            source={{ uri: getFullImageUrl(participants[0].profileImage) }} 
+            style={[styles.avatar, styles.frontAvatar]}
+          />
         </View>
       );
     }
@@ -48,15 +74,15 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
       <View style={styles.avatarContainer}>
         <View style={styles.multipleAvatarsContainer}>
           <Image 
-            source={defaultProfiles[2]} 
+            source={{ uri: getFullImageUrl(participants[2].profileImage) }} 
             style={[styles.avatar, styles.thirdAvatar]}
           />
           <Image 
-            source={defaultProfiles[1]} 
+            source={{ uri: getFullImageUrl(participants[1].profileImage) }} 
             style={[styles.avatar, styles.backAvatar]}
           />
           <Image 
-            source={defaultProfiles[0]} 
+            source={{ uri: getFullImageUrl(participants[0].profileImage) }} 
             style={[styles.avatar, styles.frontAvatar]}
           />
         </View>
@@ -134,7 +160,7 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
                   <Text style={styles.chatTitle} numberOfLines={1} ellipsizeMode="clip">
                     {title}
                   </Text>
-                  <Text style={styles.participants} numberOfLines={1}> · {participants}명</Text>
+                  <Text style={styles.participants} numberOfLines={1}> · {participants.length}명</Text>
                 </View>
                 <Text style={styles.timestamp}>{timestamp}</Text>
               </View>

@@ -74,7 +74,7 @@ export const getMyChatRooms = async (userId) => {
             
             const transformed = {
                 id: item.id,
-                participants: participantCount,
+                participants: item.participants,
                 // roomName을 title로 매핑
                 title: item.roomName || item.title || '제목 없음',
                 // accompanyId 추가 (백엔드에서 추가한 필드)

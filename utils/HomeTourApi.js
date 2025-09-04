@@ -51,7 +51,7 @@ export const transformTourData = (tourData) => {
             periodType: item.periodType,
             isFavorite: item.isFavorite,
             // 멤버 정보는 아직 API가 없으므로 빈 배열
-            members: []
+            members: item.members || []
         };
     });
 };

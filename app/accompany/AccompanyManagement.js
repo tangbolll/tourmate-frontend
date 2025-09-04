@@ -229,9 +229,7 @@ const AccompanyManagement = () => {
                 participantsIds: data.participants?.map(part => ({ id: part.id, type: typeof part.id }))
             });
 
-            // Add new console logs here
-            console.log('Raw API data - Applicants profileImage:', data.applicants?.map(app => app.profileImage));
-            console.log('Raw API data - Participants profileImage:', data.participants?.map(part => part.profileImage));
+            
             
             setAccompanyData(data); // Update Zustand store
             
@@ -457,7 +455,7 @@ const AccompanyManagement = () => {
                             nestedScrollEnabled={true}
                             contentContainerStyle={styles.scrollContentContainer}
                         >
-                            {console.log('Applicants array before rendering:', applicants)} 
+                             
                             {applicants.map(applicant => renderApplicant(applicant))}
                             {applicants.length === 0 && (
                                 <View style={styles.emptyContainer}>
