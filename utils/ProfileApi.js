@@ -1,26 +1,10 @@
-import Constants from 'expo-constants';
-import { Alert, Platform } from 'react-native';
+import { Alert } from 'react-native';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { API_URL } from './apiConfig';
 
-// API 베이스 URL 설정
-const getBaseURL = () => {
-    if (__DEV__) {
-        if (Platform.OS === 'android') {
-            return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://10.0.2.2:8080';
-        }
-        if (Platform.OS === 'web') {
-            return 'http://localhost:8080';
-        }
-        // Fallback for other development platforms or if Platform.OS is not 'android' or 'web'
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
-    } else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-    }
-};
-const API_URL = getBaseURL();
 console.log("API_URL being used:", API_URL);
 
 

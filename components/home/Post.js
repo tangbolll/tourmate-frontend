@@ -19,18 +19,7 @@ import Constants from 'expo-constants';
 const defaultProfile = require('../../assets/defaultProfile.png');
 
 // API 베이스 URL 설정 (copied from HomePostApi.js)
-const getBaseURL = () => {
-    if (__DEV__) {
-        if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080';
-        }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
-    } else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL';
-    }
-};
 
-const API_URL = getBaseURL();
 
 const getFullImageUrl = (imagePath) => {
     if (!imagePath || imagePath.startsWith('http')) {

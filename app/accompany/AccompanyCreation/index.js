@@ -18,22 +18,7 @@ import { useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-    const getBaseURL = () => {
-    // 개발 모드일 때
-    if (__DEV__) {
-        if (Platform.OS === 'android') {
-        return 'http://10.0.2.2:8080';
-        }
-        if (Platform.OS === 'web') {
-        return 'http://localhost:8080';
-        }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } 
-    // 배포(프로덕션) 모드일 때
-    else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-    }
-    };
+    import { API_URL } from '../../../utils/apiConfig';
 
 const AccompanyCreation = () => {
 
@@ -239,7 +224,7 @@ const handleSubmit = async () => {
             console.log('📤 FormData 생성 완료');
             console.log('📝 전송할 데이터:', accompanyData);
 
-            const url = `${getBaseURL()}/api/accompany/create`;
+            
             console.log('🌐 API URL:', url);
 
             const response = await axios.post(url, formData, {

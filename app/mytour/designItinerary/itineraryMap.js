@@ -5,7 +5,7 @@ import BottomSheet from '../../../components/mytour/designItinerary/map/BottomSh
 import DesignItineraryMapHeader from '../../../components/mytour/designItinerary/map/designItineraryMapHeader';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import Constants from 'expo-constants';
+import { getBaseURL } from '../../../utils/apiConfig';
 
 // --- 플랫폼별 지도 컴포넌트 로딩 로직 ---
 let MapView = null;
@@ -17,16 +17,6 @@ if (Platform.OS !== 'web') {
   Marker = RnMaps.Marker;
 }
 // --- 끝 ---
-
-const getBaseURL = () => {
-  if (__DEV__) {
-    if (Platform.OS === 'android') return 'http://10.0.2.2:8080';
-    if (Platform.OS === 'web') return 'http://localhost:8080';
-    return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-  } else {
-    return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-  }
-};
 
 export default function ItineraryMap() {
   const router = useRouter();

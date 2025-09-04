@@ -5,6 +5,7 @@ import { searchUsers } from '../../../utils/MyTourApi';
 import axios from 'axios';
 import Constants from 'expo-constants';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getBaseURL } from '../../../utils/apiConfig';
 
 
 
@@ -22,19 +23,7 @@ const useDebounce = (value, delay) => {
 
 
 // API 기본 URL을 가져오는 헬퍼 함수
-export const getBaseURL = () => {
-    if (__DEV__) {
-        if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080';
-        }
-        if (Platform.OS === 'web') {
-            return 'http://localhost:8080';
-        }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-    }
-};
+
 
 
 

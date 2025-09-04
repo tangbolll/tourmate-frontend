@@ -2,7 +2,7 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { router } from 'expo-router';
 import Constants from 'expo-constants';
-import { getBaseURL } from './MyTourApi';
+import { getBaseURL } from './apiConfig';
 import { Alert } from 'react-native';
 
 const setupAxiosInterceptor = () => {

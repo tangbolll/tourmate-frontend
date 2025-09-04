@@ -1,25 +1,8 @@
-import { ActivityIndicator , Platform } from 'react-native';
-import Constants from 'expo-constants';
+import { ActivityIndicator } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from "axios";
-
-
-
-// API 기본 URL을 가져오는 헬퍼 함수
-export const getBaseURL = () => {
-    if (__DEV__) {
-        if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080';
-        }
-        if (Platform.OS === 'web') {
-            return 'http://localhost:8080';
-        }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-    }
-};
+import { getBaseURL } from './apiConfig';
 
 const getAuthHeaders = async () => {
     const token = await AsyncStorage.getItem('jwtToken');

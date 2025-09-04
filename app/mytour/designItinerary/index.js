@@ -43,22 +43,7 @@ const useDebounce = (value, delay) => {
     return debouncedValue;
 };
 
-const getBaseURL = () => {
-// 개발 모드일 때
-if (__DEV__) {
-    if (Platform.OS === 'android') {
-    return 'http://10.0.2.2:8080';
-    }
-    if (Platform.OS === 'web') {
-    return 'http://localhost:8080';
-    }
-    return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-} 
-// 배포(프로덕션) 모드일 때
-else {
-    return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-}
-};
+
 
 export default function DesignItinerary() {
     const { selectedRegions, itineraryTitle, periodData, tourId } = useLocalSearchParams();

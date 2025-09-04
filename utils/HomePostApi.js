@@ -1,23 +1,9 @@
-import { Alert, Platform } from 'react-native';
-import Constants from 'expo-constants';
+import { Alert } from 'react-native';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// 기본 API URL을 가져오는 함수
-const getBaseURL = () => {
-    if (__DEV__) {
-        if (Platform.OS === 'android') {
-            return 'http://10.0.2.2:8080';
-        }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
-    } else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL';
-    }
-};
-
-const API_URL = getBaseURL();
+import { API_URL } from './apiConfig';
 
 // 사용자가 좋아요한 엽서 목록 가져오기 API
 export const fetchUserLikedPostcardsApi = async (userId) => {

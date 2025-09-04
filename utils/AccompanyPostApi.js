@@ -1,27 +1,8 @@
-import Constants from 'expo-constants';
-import { Platform } from 'react-native';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-// API 베이스 URL 설정
-    const getBaseURL = () => {
-    // 개발 모드일 때
-    if (__DEV__) {
-        if (Platform.OS === 'android') {
-        return 'http://10.0.2.2:8080';
-        }
-        if (Platform.OS === 'web') {
-        return 'http://localhost:8080';
-        }
-        return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
-    } 
-    // 배포(프로덕션) 모드일 때
-    else {
-        return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
-    }
-    };
+import { API_URL, getBaseURL } from './apiConfig';
 
 const api = axios.create({
     baseURL: getBaseURL(),
@@ -38,8 +19,6 @@ api.interceptors.request.use(
     },
     error => Promise.reject(error)
 );
-
-const API_URL = getBaseURL();
 
 
 // 백엔드 데이터 포맷을 프론트엔드 형식으로 변환

@@ -65,7 +65,8 @@
       "typedRoutes": true
     },
     "extra": {
-      "API_BASE_URL_DEV": "http://192.168.55.105:8080"
+      "API_BASE_URL_DEV": "http://192.168.45.250:8080",
+      "API_BASE_URL_LOCAL": "http://192.168.45.250:8080"
     }
   }
 }
