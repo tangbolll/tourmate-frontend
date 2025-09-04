@@ -796,7 +796,7 @@ const displayParticipants = isHost ? currentParticipants : currentParticipants +
                         />
                         <Intro
                             message={accompanyData?.accompanyInfo?.description}
-                            // photos={accompanyData?.accompanyInfo?.imageUrls || []}
+                            photos={accompanyData?.accompanyInfo?.imageUrls || []}
                         />
 
                         <GatheringPlace
