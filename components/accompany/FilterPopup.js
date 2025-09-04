@@ -27,6 +27,11 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
     const setTravelPeriod = (value) => setFilters({ ...filters, travelPeriod: value });
     const setTravelLocation = (value) => setFilters({ ...filters, travelLocation: value });
 
+    // 날짜 삭제 함수 추가
+    const clearTravelPeriod = () => {
+        setFilters({ ...filters, travelPeriod: null });
+    };
+
     const applyFilters = () => {
         if (onApply) {
             onApply({ ...filters }); // 최신값 복사
@@ -49,7 +54,6 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
         '숙소', '교통', '테마파크', '액티비티', '힐링',
         '역사유적', '박물관/미술관'
     ];
-
 
     const handleCalendarSelect = ({ startDate, endDate }) => {
         if (startDate && endDate) {
@@ -103,7 +107,16 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
                         <Text style={[styles.input, !travelPeriod && styles.placeholder]}>
                             {travelPeriod?.formatted || "여행기간을 선택해주세요."}
                         </Text>
-
+                        {/* X 버튼 추가 */}
+                        {travelPeriod && (
+                            <TouchableOpacity 
+                                onPress={clearTravelPeriod}
+                                hitSlop={{top: 10, bottom: 10, left: 10, right: 10}}
+                                style={styles.clearButton}
+                            >
+                                <Icon name="close" size={16} color="#777" />
+                            </TouchableOpacity>
+                        )}
                     </TouchableOpacity>
 
                     <CalendarPopup
@@ -130,18 +143,22 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
 
                 <View>
                     <Text style={styles.sectionTitle}>동행 조건</Text>
-                    {/* Gender */}
+                    {/* Gender - 성별 값 매핑 수정 */}
                     <View style={styles.conditionRow}>
                         <Text style={styles.conditionLabelInline}>성별</Text>
                         <View style={styles.chipContainer}>
-                        {['여자만', '남자만', '남녀무관'].map((item) => (
+                        {[
+                            { label: '여자만', value: '여성만' },
+                            { label: '남자만', value: '남성만' }, 
+                            { label: '성별무관', value: '성별무관' }
+                        ].map((item) => (
                             <TouchableOpacity
-                            key={item}
-                            style={[styles.chip, gender === item && styles.chipSelected]}
-                            onPress={() => toggleGender(item)}
+                            key={item.value}
+                            style={[styles.chip, gender === item.value && styles.chipSelected]}
+                            onPress={() => toggleGender(item.value)}
                             activeOpacity={0.7}
                             >
-                            <Text style={[styles.chipText, gender === item && styles.chipTextSelected]}>{item}</Text>
+                            <Text style={[styles.chipText, gender === item.value && styles.chipTextSelected]}>{item.label}</Text>
                             </TouchableOpacity>
                         ))}
                         </View>
@@ -259,6 +276,9 @@ const styles = StyleSheet.create({
     },
     placeholder: {
         color: '#777',
+    },
+    clearButton: {
+        padding: 4,
     },
     conditionRow: {
         flexDirection: 'row',

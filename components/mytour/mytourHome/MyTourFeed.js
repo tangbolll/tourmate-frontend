@@ -4,7 +4,6 @@ import { MaterialIcons, Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 
-const defaultImage = require('../../../assets/defaultBackground.png');
 const { width } = Dimensions.get('window');
 
 export default function MyTourFeed({

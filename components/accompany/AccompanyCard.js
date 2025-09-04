@@ -2,7 +2,7 @@ import React from 'react';
 import { View, Text, ImageBackground, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 
-const defaultImage = require('../../assets/defaultBackground.png');
+const defaultImage = require('../../assets/grayicon.png');
 
 export default function AccompanyCard({
     tripStartDate,
