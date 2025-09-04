@@ -7,7 +7,8 @@ import {
     ScrollView, 
     Image,
     SafeAreaView,
-    Alert
+    Alert,
+    Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -28,6 +29,33 @@ import {
 } from '../../utils/AccompanyManagementApi';
 import { useAuth } from '../../context/AuthContext';
 import useAccompanyStore from '../../context/accompanyStore'; // Import the new store
+
+// API 베이스 URL 설정
+const getBaseURL = () => {
+// 개발 모드일 때
+if (__DEV__) {
+    if (Platform.OS === 'android') {
+    return 'http://10.0.2.2:8080';
+    }
+    if (Platform.OS === 'web') {
+    return 'http://localhost:8080';
+    }
+    return Constants.expoConfig?.extra?.API_BASE_URL_DEV;
+} 
+// 배포(프로덕션) 모드일 때
+else {
+    return Constants.expoConfig?.extra?.API_BASE_URL_PROD;
+}
+};
+
+const API_URL = getBaseURL();
+
+const getFullImageUrl = (imagePath) => {
+    if (!imagePath || imagePath.startsWith('http')) {
+        return imagePath;
+    }
+    return `${API_URL}${imagePath}`;
+};
 
 const AccompanyManagement = () => {
     const { currentUserId } = useAuth();
@@ -200,6 +228,10 @@ const AccompanyManagement = () => {
                 applicantsIds: data.applicants?.map(app => ({ id: app.id, type: typeof app.id })),
                 participantsIds: data.participants?.map(part => ({ id: part.id, type: typeof part.id }))
             });
+
+            // Add new console logs here
+            console.log('Raw API data - Applicants profileImage:', data.applicants?.map(app => app.profileImage));
+            console.log('Raw API data - Participants profileImage:', data.participants?.map(part => part.profileImage));
             
             setAccompanyData(data); // Update Zustand store
             
@@ -251,7 +283,7 @@ const AccompanyManagement = () => {
         <View key={applicant.userId} style={styles.memberRow}>
             <View style={styles.profileSection}>
                 <Image 
-                    source={applicant.profileImage ? { uri: applicant.profileImage } : require('../../assets/defaultProfile.png')} 
+                    source={applicant.profileImage ? { uri: getFullImageUrl(applicant.profileImage) } : require('../../assets/defaultProfile.png')} 
                     style={styles.profileImage} 
                     defaultSource={require('../../assets/defaultProfile.png')}
                 />
@@ -290,7 +322,7 @@ const AccompanyManagement = () => {
         <View key={companion.id} style={styles.memberRow}>
             <View style={styles.profileSection}>
                 <Image 
-                    source={companion.profileImage ? { uri: companion.profileImage } : require('../../assets/defaultProfile.png')} 
+                    source={companion.profileImage ? { uri: getFullImageUrl(companion.profileImage) } : require('../../assets/defaultProfile.png')} 
                     style={styles.profileImage} 
                     defaultSource={require('../../assets/defaultProfile.png')}
                 />
@@ -300,8 +332,6 @@ const AccompanyManagement = () => {
                         <Text style={styles.genderAge}> · {companion.gender} · {companion.age}세</Text>
                         {companion.isHost && <Text style={styles.hostTag}>호스트</Text>}
                     </View>
-                    {console.log('Companion hashtags:', companion.hashtags)}
-                    {console.log('Companion tags:', companion.tags)}
                     <Text style={styles.hashtags}>
                         {(companion.hashtags && companion.hashtags.join(' ')) || (companion.tags && companion.tags.join(' ')) || ''}
                     </Text>
@@ -427,6 +457,7 @@ const AccompanyManagement = () => {
                             nestedScrollEnabled={true}
                             contentContainerStyle={styles.scrollContentContainer}
                         >
+                            {console.log('Applicants array before rendering:', applicants)} 
                             {applicants.map(applicant => renderApplicant(applicant))}
                             {applicants.length === 0 && (
                                 <View style={styles.emptyContainer}>

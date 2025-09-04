@@ -6,6 +6,7 @@ import {
     TouchableOpacity,
     StyleSheet,
     Alert,
+    Platform
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import PostExpanded from './PostExpanded';
@@ -13,8 +14,30 @@ import Report from './Report';
 import { toggleLikePostcard, toggleScrapPostcard } from '../../utils/HomePostApi';
 import { formatChatTimestamp, formatPostDate } from '../../utils/timeUtils';
 import { useAuth } from '../../context/AuthContext';
+import Constants from 'expo-constants';
 
 const defaultProfile = require('../../assets/defaultProfile.png');
+
+// API 베이스 URL 설정 (copied from HomePostApi.js)
+const getBaseURL = () => {
+    if (__DEV__) {
+        if (Platform.OS === 'android') {
+            return 'http://10.0.2.2:8080';
+        }
+        return Constants.expoConfig?.extra?.API_BASE_URL_DEV || 'http://localhost:8080';
+    } else {
+        return Constants.expoConfig?.extra?.API_BASE_URL_PROD || 'YOUR_PRODUCTION_API_URL';
+    }
+};
+
+const API_URL = getBaseURL();
+
+const getFullImageUrl = (imagePath) => {
+    if (!imagePath || imagePath.startsWith('http')) {
+        return imagePath;
+    }
+    return `${API_URL}${imagePath}`;
+};
 
 const Post = ({ postData, onDataUpdate }) => {
     const { currentUserId } = useAuth();
@@ -163,7 +186,7 @@ const Post = ({ postData, onDataUpdate }) => {
             <View style={styles.header}>
                 <View style={styles.userInfo}>
                     <Image 
-                        source={defaultProfile}
+                        source={postData.profileImage ? { uri: getFullImageUrl(postData.profileImage) } : defaultProfile}
                         style={styles.profileImage} 
                     />
                     <View style={styles.userDetails}>

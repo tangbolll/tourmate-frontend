@@ -862,14 +862,14 @@ export default function AccompanyPost() {
 
                 {showMemberPopupGuest && (
                     <MemberPopup
-                        members={members}
+                        members={participants}
                         onClose={handleCloseMemberPopup}
                     />
                 )}
 
                 {/* {showMemberPopupHost && (
                     <AccompanyManagement
-                        members={members}
+                        members={participants}
                         onClose={handleCloseMemberPopup}
                         isHost={true}
                     />
