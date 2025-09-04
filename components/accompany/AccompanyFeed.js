@@ -4,7 +4,7 @@ import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import dayjs from 'dayjs';
 import 'dayjs/locale/ko';
 
-const defaultImage = require('../../assets/defaultFeed.png');
+const defaultImage = require('../../assets/grayicon.png');
 
 export default function AccompanyFeed({
     title,

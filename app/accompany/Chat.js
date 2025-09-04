@@ -791,7 +791,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     header: {
-        backgroundColor: '#9CA3AF',
+        backgroundColor: '#00000066',
         paddingTop: 30,
         paddingBottom: 12,
         paddingHorizontal: 16,
