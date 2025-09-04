@@ -13,7 +13,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import Constants from 'expo-constants';
 import imageMap from '../../../utils/imageMap';
 
-const defaultImage = require('../../../assets/defaultBackground.png');
+const defaultImage = require('../../../assets/grayicon.png');
 
 
 export default function AllAreaToggle({ onRegionSelect, selectedRegions = [], searchText }) {

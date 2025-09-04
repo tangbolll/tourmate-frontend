@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 import { handleBookmarkPress } from '../../../utils/MyTourApi';
 import imageMap from '../../../utils/imageMap';
 
-const defaultImage = require('../../../assets/defaultBackground.png');
+const defaultImage = require('../../../assets/grayicon.png');
 
 
 

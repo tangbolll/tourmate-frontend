@@ -308,7 +308,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
         // 여행 제목의 텍스트와 플레이스홀더 수직 중앙 정렬
         textAlignVertical: 'center',
-        lineHeight: 20,
     },
     // 아이콘이 있는 인풋 컴포넌트 스타일
     inputWithIcon: {

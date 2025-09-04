@@ -219,7 +219,7 @@ const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd, tourId }) 
                                 </View>
                                 <View style={styles.tagContainer}>
                                     {Array.isArray(member.tags) && member.tags.map((tag, tagIndex) => (
-                                        <Text key={tagIndex} style={styles.tag}>#{tag}</Text>
+                                        <Text key={tagIndex} style={styles.tag}>{tag}</Text>
                                     ))}
                                 </View>
                             </View>

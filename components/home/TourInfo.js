@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
         color: '#666',
     },
     moreButton: {
-        height: 28,
+        height: 30,
         backgroundColor: '#000',
         paddingHorizontal: 12,
         paddingVertical: 8,

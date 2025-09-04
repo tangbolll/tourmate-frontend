@@ -18,7 +18,7 @@ import isSameOrAfter from 'dayjs/plugin/isSameOrAfter';     // isSameOrAfter 플
 import isSameOrBefore from 'dayjs/plugin/isSameOrBefore';   // isSameOrBefore 플러그인도 필요합니다.
 
 import imageMap from '../../../utils/imageMap';
-const defaultImage = require('../../../assets/defaultBackground.png');
+const defaultImage = require('../../../assets/grayicon.png');
 
 
 dayjs.extend(isSameOrAfter);     // dayjs에 isSameOrAfter 플러그인 기능 추가

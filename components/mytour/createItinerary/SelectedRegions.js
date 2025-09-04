@@ -4,7 +4,7 @@ import AntDesign from 'react-native-vector-icons/AntDesign';
 import imageMap from '../../../utils/imageMap';
 
 
-const defaultImage = require('../../../assets/defaultBackground.png');
+const defaultImage = require('../../../assets/grayicon.png');
 
 const SelectedRegions = ({ selectedRegions, onRemoveRegion }) => {
     if (selectedRegions.length === 0) {

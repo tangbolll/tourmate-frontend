@@ -11,12 +11,12 @@ const HomeHeader = () => {
     return (
         <View style={styles.container}>
         <Image source={require('../../assets/logo.png')} style={styles.logo} />
-        <TouchableOpacity 
+        {/* <TouchableOpacity 
             style={styles.notificationButton}
             onPress={handleNotificationPress}
         >
             <Ionicons name="notifications-outline" size={24} color="#000" />
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         </View>
     );
 };

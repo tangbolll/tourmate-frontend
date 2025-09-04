@@ -17,6 +17,12 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, onReset, filters, s
         if (onApply) onApply(filters);
         onClose();
     };
+    
+    // 필터 초기화 로직
+    const handleReset = () => {
+        if (onReset) onReset();
+        onClose();
+    };
 
     const openCalendar = () => {
         console.log('Opening calendar...'); // 디버깅용
@@ -54,22 +60,32 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, onReset, filters, s
                     {/* Header (이제 제목만 포함) */}
                     <View style={styles.header}>
                         <Text style={styles.headerTitle}>필터</Text>
-                     
+                    
                     </View>
 
                 {/* Travel Period */}
                 <View style={styles.sectionContainer}>
                     <Text style={styles.sectionTitle}>여행기간</Text>
-                    <TouchableOpacity 
-                        onPress={openCalendar} 
-                        activeOpacity={0.7}
-                        style={styles.inputContainer}
-                    >
-                        <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
-                        <Text style={[styles.input, !travelPeriod && styles.placeholder]}>
-                            {travelPeriod || "여행기간을 선택해주세요."}
-                        </Text>
-                    </TouchableOpacity>
+                    <View style={styles.inputContainer}>
+                        <TouchableOpacity
+                            onPress={openCalendar}
+                            activeOpacity={0.7}
+                            style={styles.inputContentContainer}
+                        >
+                            <Icon name="calendar-check" size={18} color="black" style={styles.inputIcon} />
+                            <Text style={[styles.input, !travelPeriod && styles.placeholder]}>
+                                {travelPeriod || "여행기간을 선택해주세요."}
+                            </Text>
+                        </TouchableOpacity>
+                        {travelPeriod ? (
+                            <TouchableOpacity
+                                onPress={() => setTravelPeriod('')}
+                                style={styles.clearButton}
+                            >
+                                <Icon name="close-circle" size={20} color="#777" />
+                            </TouchableOpacity>
+                        ) : null}
+                    </View>
                 </View>
 
                 {/* Location */}
@@ -100,10 +116,10 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, onReset, filters, s
                     <Text style={styles.applyButtonText}>적용하기</Text>
                 </TouchableOpacity>
                 </View>
-            </View>
-            </TouchableWithoutFeedback>
-            </KeyboardAvoidingView>
-        </Modal>
+                </View>
+                </TouchableWithoutFeedback>
+                </KeyboardAvoidingView>
+            </Modal>
     );
 };
 
@@ -125,22 +141,28 @@ const styles = StyleSheet.create({
     },
     closeButton: {
         position: 'absolute', 
-        top: 20,              
-        right: 20,           
-        zIndex: 1,            
+        top: 20,              
+        right: 20,           
+        zIndex: 1,            
+    },
+    resetButton: { // 재설정 버튼 스타일 추가
+        position: 'absolute',
+        top: 20,
+        left: 20,
+        zIndex: 1,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
+        justifyContent: 'center', // 제목 중앙 정렬을 위해 수정
         marginBottom: 20,
     },
     headerTitle: {
         fontSize: 18,
         fontWeight: 'bold',
-        // flex: 1과 textAlign: 'center' 대신, 양쪽 버튼 너비를 맞춰 중앙 정렬 효과
     },
     headerButton: {
-        width: 60, // 양쪽 버튼의 너비를 맞춰주기 위함
+        width: 60, 
         paddingVertical: 5,
         alignItems: 'center',
     },
@@ -159,12 +181,16 @@ const styles = StyleSheet.create({
     inputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between',
         borderWidth: 1,
         borderColor: '#adb5bd',
         borderRadius: 8,
         paddingHorizontal: 12,
         height: 45,
+    },
+    inputContentContainer: { // 새로운 스타일 추가
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
     },
     inputIcon: {
         marginRight: 8,
@@ -176,6 +202,10 @@ const styles = StyleSheet.create({
     },
     placeholder: {
         color: '#777',
+    },
+    clearButton: { // X 버튼 스타일 추가
+        padding: 5,
+        marginLeft: 10,
     },
     applyButton: {
         backgroundColor: 'black',
