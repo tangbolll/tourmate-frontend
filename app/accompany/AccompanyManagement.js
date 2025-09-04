@@ -430,7 +430,7 @@ const AccompanyManagement = () => {
 
     const applicationCnt = applicants.length;
     const currentMember = participants.length;
-    const totalMember = accompanyData?.accompanyInfo?.maxParticipants || 0;
+    const totalMember = accompanyData?.accompanyInfo?.Participants || 0;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -471,7 +471,10 @@ const AccompanyManagement = () => {
 
                 {/* 동행 목록 섹션 */}
                 <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>동행 목록 <Text style={styles.countText}> {currentMember}명 / {totalMember}명</Text></Text>
+                    <Text style={styles.sectionTitle}>동행 목록 
+                        {/* <Text style={styles.countText}> {currentMember}명 / {totalMember}명</Text> */}
+                        <Text style={styles.countText}>  현재 참여자수 {currentMember}명 </Text>
+                    </Text>
                     
                     <View style={styles.scrollContainer}>
                         <ScrollView 

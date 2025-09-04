@@ -675,22 +675,7 @@ const fetchMemberData = async () => {
         setMemberDataLoading(false);
     }
 };
-React.useEffect(() => {
-    if (accompanyData?.accompanyInfo) {
-        console.log('🔍 참가자 수 관련 모든 값 확인:', {
-            'maxParticipants': accompanyData.accompanyInfo.maxParticipants,
-            'currentParticipants': currentParticipants,
-            'maxParticipants_타입': typeof accompanyData.accompanyInfo.maxParticipants,
-            'currentParticipants_타입': typeof currentParticipants,
-            '백엔드_원본데이터': {
-                maxParticipants: accompanyData.accompanyInfo.maxParticipants,
-                currentMember: accompanyData.accompanyInfo.currentMember,
-                memberCount: accompanyData.accompanyInfo.memberCount,
-                participantCount: accompanyData.accompanyInfo.participantCount
-            }
-        });
-    }
-}, [accompanyData, currentParticipants]);
+const displayParticipants = isHost ? currentParticipants : currentParticipants + 1;
 
     // 로딩 상태
     if (loading) {
@@ -755,7 +740,7 @@ React.useEffect(() => {
                         <EventHeader
                             title={accompanyData?.accompanyInfo?.title}
                             location={accompanyData?.accompanyInfo?.location}
-                            participants={currentParticipants} // From Zustand store
+                            participants={displayParticipants}// From Zustand store
                             maxParticipants={maxParticipants} // From Zustand store
                             newApplication={hasNewApplications} 
                             onParticipantsClick={handleParticipantsClick}
@@ -811,7 +796,7 @@ React.useEffect(() => {
                         />
                         <Intro
                             message={accompanyData?.accompanyInfo?.description}
-                            photos={accompanyData?.accompanyInfo?.imageUrls || []}
+                            // photos={accompanyData?.accompanyInfo?.imageUrls || []}
                         />
 
                         <GatheringPlace
@@ -941,7 +926,7 @@ React.useEffect(() => {
                     <MemberPopup
                         members={memberPopupData}
                         // 올바른 최대 참가자 수 전달
-                        maxParticipants={accompanyData?.accompanyInfo?.maxParticipants || 0} // 4가 전달됨
+                        maxParticipants={accompanyData?.accompanyInfo?.maxParticipants || 0}
                         currentCount={memberPopupData.length} // 실제 멤버 수
                         onClose={() => {
                             setShowMemberPopupGuest(false);
