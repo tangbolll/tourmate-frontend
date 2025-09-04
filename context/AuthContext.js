@@ -83,27 +83,47 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const checkAuth = async () => {
-            try {
-                const token = await AsyncStorage.getItem('jwtToken');
-                const userId = await AsyncStorage.getItem('userId');
-                
-                if (token && userId) {
+    const checkAuth = async () => {
+        try {
+            const token = await AsyncStorage.getItem('jwtToken');
+            const userId = await AsyncStorage.getItem('userId');
+            
+            if (token && userId) {
+                // 🔥 토큰 유효성 검증
+                try {
+                    const response = await fetch(`${getBaseURL()}/api/user/profile`, {
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                        },
+                    });
+                    
+                    if (response.status === 403 || response.status === 401) {
+                        throw new Error('토큰 만료');
+                    }
+                    
                     setUser({ authenticated: true });
-                    setCurrentUserId(userId); 
-                } else {
+                    setCurrentUserId(userId);
+                } catch (tokenError) {
+                    console.log('토큰 유효성 검증 실패, 로그아웃');
+                    await AsyncStorage.removeItem('jwtToken');
+                    await AsyncStorage.removeItem('userId');
                     setUser(null);
                     setCurrentUserId(null);
                 }
-            } catch (e) {
-                console.error("Failed to check auth status:", e);
+            } else {
                 setUser(null);
                 setCurrentUserId(null);
-            } finally {
-                setLoading(false);
             }
-        };
-        checkAuth();
+        } catch (e) {
+            console.error("인증 상태 확인 실패:", e);
+            setUser(null);
+            setCurrentUserId(null);
+        } finally {
+            setLoading(false);
+        }
+    };
+    
+    checkAuth();
     }, []);
 
     const signIn = async (token, userId) => {

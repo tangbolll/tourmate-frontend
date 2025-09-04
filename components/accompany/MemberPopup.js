@@ -2,9 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-const MemberPopup = ({ members, onClose }) => {
+const MemberPopup = ({ members, onClose, maxParticipants }) => {
     const participants = members.length;
-    const maxParticipants = 5;
 
     return (
         <View style={styles.overlay}>

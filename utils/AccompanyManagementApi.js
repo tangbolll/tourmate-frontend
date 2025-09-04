@@ -241,7 +241,17 @@ export const getAccompanyManagementDataApi = async (accompanyId, hostId) => {
         }
 
         const data = response.data;
-        console.log(`✅ getAccompanyManagementDataApi 성공:`, data);
+        console.log('🔍 AccompanyManagement 받은 데이터 구조:', {
+    accompanyInfo: data.accompanyInfo,
+    실제동행정보: data.accompanyInfo?.accompanyInfo,
+    maxParticipants: data.accompanyInfo?.accompanyInfo?.maxParticipants,
+    // 다른 가능한 필드명들도 확인
+    maxMember: data.accompanyInfo?.accompanyInfo?.maxMember,
+    recruitNum: data.accompanyInfo?.accompanyInfo?.recruitNum,
+    totalMember: data.accompanyInfo?.accompanyInfo?.totalMember,
+    participants길이: data.participants?.length,
+    applicants길이: data.applicants?.length
+});
         
         // 백엔드 응답을 프론트엔드에서 사용할 형태로 변환
         return {

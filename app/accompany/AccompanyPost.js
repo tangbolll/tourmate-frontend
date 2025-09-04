@@ -34,6 +34,7 @@ import {
     markApplicationsViewedApi,
     getChatAccessApi
 } from '../../utils/AccompanyPostApi';
+import { getAccompanyManagementDataApi } from '../../utils/AccompanyManagementApi';
 
 import { useAuth } from '../../context/AuthContext';
 
@@ -42,6 +43,9 @@ export default function AccompanyPost() {
     const params = useLocalSearchParams();
     const router = useRouter();
     const { postId } = params;
+
+    const [memberPopupData, setMemberPopupData] = useState([]);
+    const [memberDataLoading, setMemberDataLoading] = useState(false);
 
     // Get states and actions from Zustand store
     const { accompanyData, applicants, participants, currentParticipants, maxParticipants, setAccompanyData } = useAccompanyStore();
@@ -152,8 +156,8 @@ export default function AccompanyPost() {
             
             setAccompanyData({ // Use Zustand store action
                 accompanyInfo: transformedData,
-                applicants: backendData.applicants || [], // Assuming backendData contains applicants
-                participants: backendData.participants || [], // Assuming backendData contains participants
+                applicants: backendData.applyMember || [], // Assuming backendData contains applicants
+                participants: backendData.member || [], // Assuming backendData contains participants
             });
             console.log('DEBUG: AccompanyPost - accompanyData.accompanyInfo.imageUrls:', transformedData.imageUrls); // ADD THIS LINE
             setChatAccess(chatAccessData);
@@ -499,21 +503,43 @@ export default function AccompanyPost() {
     };
 
     // 참가자 클릭 핸들러 수정 - 읽음 표시 기능 추가
-    const handleParticipantsClick = () => {
-        if (isHost) {
-            // 팝업 대신 라우팅으로 변경
-            router.push({
-                pathname: '/accompany/AccompanyManagement',
-                params: {
-                    postId: postId,
-                    // 필요한 다른 데이터들도 params로 전달
-                }
-            });
-            markApplicationsAsViewed();
-        } else {
-            setShowMemberPopupGuest(true);
+    const handleParticipantsClick = async () => {
+    if (isHost) {
+        // 호스트는 기존대로 관리 페이지로 이동
+        router.push({
+            pathname: '/accompany/AccompanyManagement',
+            params: {
+                postId: postId,
+            }
+        });
+        markApplicationsAsViewed();
+    } else {
+        // ✅ 게스트의 경우 접근 권한 확인
+        const userStatus = userApplicationStatusLocal || accompanyData?.accompanyInfo?.userApplicationStatus;
+        const hasAccess = userStatus && ['ACCEPTED'].includes(userStatus);
+        
+        console.log('🔍 멤버 팝업 접근 권한 확인:', {
+            userStatus,
+            hasAccess,
+            isHost
+        });
+        
+        if (!hasAccess) {
+            Alert.alert(
+                '접근 제한', 
+                '동행을 신청한 사용자만 멤버 목록을 확인할 수 있습니다.',
+                [{ text: '확인', style: 'default' }]
+            );
+            return;
         }
-    };
+        
+        // 권한이 있는 경우에만 멤버 데이터 로딩
+        console.log('🔍 게스트용 멤버 팝업 열기 시작');
+        const members = await fetchMemberData();
+        setMemberPopupData(members);
+        setShowMemberPopupGuest(true);
+    }
+};
 
     // postId를 사용하여 데이터 로드
     useFocusEffect(
@@ -614,6 +640,57 @@ export default function AccompanyPost() {
             Alert.alert('오류', error.message || '동행 마감 처리 중 오류가 발생했습니다.');
         }
     };
+    
+
+const fetchMemberData = async () => {
+    if (!postId || !currentUserId) return [];
+    
+    try {
+        setMemberDataLoading(true);
+        console.log('🔍 멤버 팝업용 데이터 로딩 시작');
+        
+        const data = await getAccompanyManagementDataApi(postId, currentUserId);
+        console.log('🔍 받은 관리 데이터:', data);
+        
+        // 참가자 데이터를 members 형태로 변환
+        const membersList = (data.participants || []).map(participant => ({
+            id: participant.id || participant.userId,
+            name: participant.nickname || participant.name,
+            gender: participant.gender || '미정',
+            age: participant.age || '미정',
+            isHost: participant.isHost || false,
+            tags: participant.tags || (participant.isHost ? ['호스트'] : ['참가자']),
+            profileImage: participant.profileImage || null,
+            status: 'ACCEPTED'
+        }));
+        
+        console.log('🔍 변환된 멤버 데이터:', membersList);
+        return membersList;
+        
+    } catch (error) {
+        console.error('❌ 멤버 데이터 로딩 실패:', error);
+        Alert.alert('오류', '멤버 정보를 불러오지 못했습니다.');
+        return [];
+    } finally {
+        setMemberDataLoading(false);
+    }
+};
+React.useEffect(() => {
+    if (accompanyData?.accompanyInfo) {
+        console.log('🔍 참가자 수 관련 모든 값 확인:', {
+            'maxParticipants': accompanyData.accompanyInfo.maxParticipants,
+            'currentParticipants': currentParticipants,
+            'maxParticipants_타입': typeof accompanyData.accompanyInfo.maxParticipants,
+            'currentParticipants_타입': typeof currentParticipants,
+            '백엔드_원본데이터': {
+                maxParticipants: accompanyData.accompanyInfo.maxParticipants,
+                currentMember: accompanyData.accompanyInfo.currentMember,
+                memberCount: accompanyData.accompanyInfo.memberCount,
+                participantCount: accompanyData.accompanyInfo.participantCount
+            }
+        });
+    }
+}, [accompanyData, currentParticipants]);
 
     // 로딩 상태
     if (loading) {
@@ -860,10 +937,17 @@ export default function AccompanyPost() {
                     />
                 )}
 
-                {showMemberPopupGuest && (
+               {showMemberPopupGuest && (
                     <MemberPopup
-                        members={participants}
-                        onClose={handleCloseMemberPopup}
+                        members={memberPopupData}
+                        // 올바른 최대 참가자 수 전달
+                        maxParticipants={accompanyData?.accompanyInfo?.maxParticipants || 0} // 4가 전달됨
+                        currentCount={memberPopupData.length} // 실제 멤버 수
+                        onClose={() => {
+                            setShowMemberPopupGuest(false);
+                            setMemberPopupData([]);
+                        }}
+                        loading={memberDataLoading}
                     />
                 )}
 

@@ -214,25 +214,27 @@ const AccompanyManagement = () => {
 
     // 데이터 로드 후 ID 타입 확인을 위한 로깅 추가
     const fetchAccompanyManagementData = async () => {
-        if (!currentUserId) return;
-        try {
-            setLoading(true);
-            setError(null);
-            
-            const data = await getAccompanyManagementDataApi(postId, currentUserId);
-            
-            // ✅ 받은 데이터 구조 확인
-            console.log('🔍 받은 데이터 구조:', {
-                applicants: data.applicants,
-                participants: data.participants,
-                applicantsIds: data.applicants?.map(app => ({ id: app.id, type: typeof app.id })),
-                participantsIds: data.participants?.map(part => ({ id: part.id, type: typeof part.id }))
-            });
-
-            
-            
-            setAccompanyData(data); // Update Zustand store
-            
+    if (!currentUserId) return;
+    try {
+        setLoading(true);
+        setError(null);
+        
+        const data = await getAccompanyManagementDataApi(postId, currentUserId);
+        
+        // ✅ maxParticipants 관련 디버깅 추가
+        console.log('🔍 AccompanyManagement 받은 데이터 구조:', {
+            accompanyInfo: data.accompanyInfo,
+            maxParticipants: data.accompanyInfo?.maxParticipants,
+            // 다른 가능한 필드명들도 확인
+            maxMember: data.accompanyInfo?.maxMember,
+            recruitNum: data.accompanyInfo?.recruitNum,
+            totalMember: data.accompanyInfo?.totalMember,
+            participants길이: data.participants?.length,
+            applicants길이: data.applicants?.length
+        });
+        
+        setAccompanyData(data);
+        
             // 동행 상태 설정
             setAccompanyStatus(data.accompanyInfo.status || 'RECRUITING');
             
@@ -428,7 +430,7 @@ const AccompanyManagement = () => {
 
     const applicationCnt = applicants.length;
     const currentMember = participants.length;
-    const totalMember = accompanyData?.accompanyInfo?.maxParticipants || 5;
+    const totalMember = accompanyData?.accompanyInfo?.maxParticipants || 0;
 
     return (
         <SafeAreaView style={styles.container}>
