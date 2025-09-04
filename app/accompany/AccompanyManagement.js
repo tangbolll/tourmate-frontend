@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton'; 
+import Constants from 'expo-constants';
 import CloseAlarmPopup from '../../components/accompany/CloseAlarmPopup';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
