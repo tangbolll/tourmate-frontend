@@ -145,7 +145,8 @@ export default function ProfileHome() {
         console.log('Navigating to WritePost with params:', params);
         router.push({
             pathname: '/profile/writePost',
-            params: params
+            params: params,
+            newlyCreated: 'true',
         });
     }, [router]);
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, StyleSheet, Alert, Modal, TextInput, TouchableOpacity, Text, Keyboard, TouchableWithoutFeedback } from "react-native";
+import { View, StyleSheet, Alert, Modal, TextInput, TouchableOpacity, Text, Keyboard, TouchableWithoutFeedback, Image } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import PostDirectoryHeader from "../../components/profile/PostDirectoryHeader";
@@ -16,6 +16,7 @@ import {
     getPostcardsByFolderApi,
     deletePostcardApi,
     updatePostcardApi,
+    deleteFolderApi,
 } from "../../utils/PostCardApi";
 
 const postcardTemplates = {
@@ -86,60 +87,82 @@ const WritePost = () => {
                     const formattedPostcards = existingPostcards.map(pc => ({
                         id: pc.postcardId,
                         image: pc.imageUrl,
-                        // ✨ 수정: 필드명을 postcardTypeId로 변경
                         postcardTemplate: pc.postcardTypeId ? { code: pc.postcardTypeId, thumbnail: postcardTemplates[pc.postcardTypeId] || null } : null,
                         content: pc.content || '',
                         isSaved: true,
                         isFavorite: pc.isFavorite || false,
                     }));
 
-                    const newPostcard = { id: null, image: null, postcardTemplate: null, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
-                    const allPostcards = [...formattedPostcards, newPostcard];
-                    setPostcards(allPostcards);
+                    let allPostcards = [...formattedPostcards];
 
-                    if (params.postcardId) {
-                        const selectedIndex = formattedPostcards.findIndex(p => p.id == params.postcardId);
-                        if (selectedIndex !== -1) {
-                            setCurrentIndex(selectedIndex);
-                            setSelectedImage(formattedPostcards[selectedIndex].image);
-                            setSelectedPostcard(formattedPostcards[selectedIndex].postcardTemplate);
-                            setPostcardContent(formattedPostcards[selectedIndex].content || '');
-                            setIsSaved(true);
-                            setIsEditMode(false);
-                        }
-                    } else if (params.newlyCreated === 'true') {
+                    if (params.newlyCreated === 'true') {
+                        const defaultImageUri = Image.resolveAssetSource(require('../../assets/defaultBackground.png')).uri;
+                        const defaultPostcardTemplate = { code: 1, thumbnail: postcardTemplates[1] };
+                        const newPostcard = { id: null, image: defaultImageUri, postcardTemplate: defaultPostcardTemplate, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
+                        allPostcards.push(newPostcard);
+                        setPostcards(allPostcards);
+
                         const newIndex = allPostcards.length - 1;
                         setCurrentIndex(newIndex);
-                        setSelectedImage(null);
-                        setSelectedPostcard(null);
+                        setSelectedImage(defaultImageUri);
+                        setSelectedPostcard(defaultPostcardTemplate);
                         setPostcardContent('');
                         setIsSaved(false);
                         setIsEditMode(true);
-                    } else if (formattedPostcards.length > 0) {
-                        setCurrentIndex(0);
-                        setSelectedImage(formattedPostcards[0].image);
-                        setSelectedPostcard(formattedPostcards[0].postcardTemplate);
-                        setPostcardContent(formattedPostcards[0].content || '');
-                        setIsSaved(true);
-                        setIsEditMode(false);
                     } else {
-                        setCurrentIndex(0);
-                        setSelectedImage(null);
-                        setSelectedPostcard(null);
-                        setPostcardContent('');
-                        setIsSaved(false);
-                        setIsEditMode(true);
+                        setPostcards(allPostcards);
+                        if (params.postcardId) {
+                            const selectedIndex = formattedPostcards.findIndex(p => p.id == params.postcardId);
+                            if (selectedIndex !== -1) {
+                                setCurrentIndex(selectedIndex);
+                                setSelectedImage(formattedPostcards[selectedIndex].image);
+                                setSelectedPostcard(formattedPostcards[selectedIndex].postcardTemplate);
+                                setPostcardContent(formattedPostcards[selectedIndex].content || '');
+                                setIsSaved(true);
+                                setIsEditMode(false);
+                            } else {
+                                // postcardId not found, select first one
+                                if (formattedPostcards.length > 0) {
+                                    setCurrentIndex(0);
+                                    setSelectedImage(formattedPostcards[0].image);
+                                    setSelectedPostcard(formattedPostcards[0].postcardTemplate);
+                                    setPostcardContent(formattedPostcards[0].content || '');
+                                    setIsSaved(true);
+                                    setIsEditMode(false);
+                                }
+                            }
+                        } else if (formattedPostcards.length > 0) {
+                            setCurrentIndex(0);
+                            setSelectedImage(formattedPostcards[0].image);
+                            setSelectedPostcard(formattedPostcards[0].postcardTemplate);
+                            setPostcardContent(formattedPostcards[0].content || '');
+                            setIsSaved(true);
+                            setIsEditMode(false);
+                        } else {
+                            // No postcards and not creating a new one.
+                            const newPostcard = { id: null, image: null, postcardTemplate: null, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
+                            setPostcards([newPostcard]);
+                            setCurrentIndex(0);
+                            setSelectedImage(null);
+                            setSelectedPostcard(null);
+                            setPostcardContent('');
+                            setIsSaved(false);
+                            setIsEditMode(true);
+                        }
                     }
                 } catch (error) {
                     console.error('❌ 기존 엽서 불러오기 오류:', error);
                     handleApiError(error, '기존 엽서 불러오기');
                 }
             } else {
-                const newPostcard = { id: null, image: null, postcardTemplate: null, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
+                // No directoryId, so we are creating a new directory and a new postcard
+                const defaultImageUri = Image.resolveAssetSource(require('../../assets/defaultBackground.png')).uri;
+                const defaultPostcardTemplate = { code: 1, thumbnail: postcardTemplates[1] };
+                const newPostcard = { id: null, image: defaultImageUri, postcardTemplate: defaultPostcardTemplate, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
                 setPostcards([newPostcard]);
                 setCurrentIndex(0);
-                setSelectedImage(null);
-                setSelectedPostcard(null);
+                setSelectedImage(defaultImageUri);
+                setSelectedPostcard(defaultPostcardTemplate);
                 setPostcardContent('');
                 setIsSaved(false);
                 setIsEditMode(true);
@@ -196,26 +219,25 @@ const WritePost = () => {
             return;
         }
         
-        setPostcards(prev => {
-            const newPostcard = {
-                id: null,
-                image: null,
-                postcardTemplate: null,
-                content: '',
-                isSaved: false,
-                isFavorite: false,
-                tempId: Date.now().toString(),
-            };
-            return [...prev, newPostcard];
-        });
-        setCurrentIndex(prev => prev + 1);
+        const newPostcard = {
+            id: null,
+            image: null,
+            postcardTemplate: null,
+            content: '',
+            isSaved: false,
+            isFavorite: false,
+            tempId: Date.now().toString(),
+        };
+
+        setPostcards(prev => [...prev, newPostcard]);
+        setCurrentIndex(postcards.length);
         setSelectedImage(null);
         setSelectedPostcard(null);
         setPostcardContent('');
         setIsSaved(false);
         setIsEditMode(true);
         setIsTextEditing(false); // 새로운 엽서로 전환 시 텍스트 편집 모드 비활성화
-    }, [isSaved]);
+    }, [isSaved, postcards.length]);
 
     // 엽서 선택 변경
     const selectPostcard = useCallback((index) => {
@@ -487,6 +509,57 @@ const WritePost = () => {
     // 저장 버튼 활성화 조건
     const isSaveEnabled = selectedImage && selectedPostcard;
 
+const handleBackPress = () => {
+        // --- 디버깅을 위한 콘솔 로그 ---
+        const defaultImageUri = Image.resolveAssetSource(require('../../assets/defaultBackground.png')).uri;
+        const isDefaultImage = selectedImage === defaultImageUri;
+
+        console.log('================================');
+        console.log('뒤로가기 버튼 눌림 (상태 체크)');
+        console.log(`1. 새로 만든 폴더인가? (params.newlyCreated):`, params.newlyCreated, `(예상값: 'true')`);
+        console.log(`2. 엽서 개수가 1개인가? (postcards.length):`, postcards.length, `(예상값: 1)`);
+        if (postcards[0]) {
+            console.log(`3. 엽서가 저장되지 않은 상태인가? (!postcards[0].isSaved):`, !postcards[0].isSaved, `(예상값: true)`);
+        } else {
+            console.log(`3. 엽서가 없음 (postcards[0] is undefined)`);
+        }
+        console.log(`4. 폴더 ID가 있는가? (directoryInfo.id):`, directoryInfo.id, `(예상값: 숫자 또는 문자열 ID)`);
+        console.log(`5. 이미지가 기본 이미지인가? (isDefaultImage):`, isDefaultImage, `(예상값: true)`);
+        console.log('================================');
+        // --- 디버깅 종료 ---
+
+        if (
+            params.newlyCreated === 'true' &&
+            postcards.length === 1 &&
+            postcards[0] && !postcards[0].isSaved &&
+            directoryInfo.id &&
+            isDefaultImage
+        ) {
+            Alert.alert(
+                "경고",
+                "엽서를 저장하지 않고 나가면 폴더가 삭제됩니다. 정말로 나가시겠습니까?",
+                [
+                    { text: "취소", style: "cancel" },
+                    {
+                        text: "나가기",
+                        style: "destructive",
+                        onPress: async () => {
+                            try {
+                                await deleteFolderApi(directoryInfo.id);
+                                router.back();
+                            } catch (error) {
+                                console.error("Failed to delete folder", error);
+                                handleApiError(error, '폴더 삭제');
+                            }
+                        },
+                    },
+                ]
+            );
+        } else {
+            router.back();
+        }
+    };
+            
     return (
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.container}>
@@ -495,7 +568,7 @@ const WritePost = () => {
                     title={directoryInfo.name}
                     startDate={directoryInfo.startDate}
                     endDate={directoryInfo.endDate}
-                    onBackPress={() => router.back()}
+                    onBackPress={handleBackPress}
                     showActionButton={false}
                 />
 
