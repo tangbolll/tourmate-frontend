@@ -255,7 +255,7 @@ const Step1 = ({
                     <MaterialIcons name="location-pin" size={16} color="#888" style={styles.icon} />
                     <TextInput
                         style={styles.inputWithIcon}
-                        placeholder="모이는 장소를 입력해주세요. (지하철역, 랜드마크 등)"
+                        placeholder="모이는 장소를 입력해주세요."
                         placeholderTextColor="#888"
                         value={meetLocationInput}
                         onChangeText={handleMeetLocationSearch}
