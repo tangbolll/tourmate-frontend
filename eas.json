@@ -1,7 +1,6 @@
 {
   "cli": {
-    "version": ">= 16.18.0",
-    "appVersionSource": "remote"
+    "version": ">= 16.18.0"
   },
   "build": {
     "development": {
@@ -9,21 +8,24 @@
       "distribution": "internal",
       "node": "20.19.4",
       "env": {
-        "REACT_NATIVE_API_URL": "https://my-backend-server.com"
+        "REACT_NATIVE_API_URL": "http://10.0.2.2:8080"
       }
     },
     "preview": {
       "distribution": "internal",
       "node": "20.19.4",
       "env": {
-        "REACT_NATIVE_API_URL": "https://my-backend-server.com"
+        "REACT_NATIVE_API_URL": "https://tourmate-backend-pdmg.onrender.com"
       }
     },
     "production": {
       "autoIncrement": true,
       "node": "20.19.4",
       "env": {
-        "REACT_NATIVE_API_URL": "https://my-backend-server.com"
+        "REACT_NATIVE_API_URL": "https://tourmate-backend-pdmg.onrender.com"
+      },
+      "android": {
+        "buildType": "apk"
       }
     }
   },

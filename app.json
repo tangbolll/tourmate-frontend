@@ -61,12 +61,13 @@
       "typedRoutes": true
     },
     "extra": {
-      "API_BASE_URL_DEV": "http://172.16.160.175:8080",
-      "API_BASE_URL_LOCAL": "http://172.16.160.175:8080",
+      "API_BASE_URL_DEV": "https://tourmate-backend-pdmg.onrender.com",
+      "API_BASE_URL_LOCAL": "https://tourmate-backend-pdmg.onrender.com",
       "router": {},
       "eas": {
-        "projectId": "0e5cb189-6269-49d0-9c44-9237f2e19bfd"
-      }
+        "projectId": "65882642-4e2d-4db1-b1c3-d76c0e697170"
+      },
+      "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com"
     }
   }
 }

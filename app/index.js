@@ -1,3 +1,11 @@
+import { Redirect } from 'expo-router';
+
+// 이 파일은 앱의 루트 경로('/')에 해당합니다.
+// AuthContext의 로직에 따라 사용자를 적절한 페이지로 리디렉션하기 위해
+// '(tabs)' 그룹의 첫 번째 라우트로 리디렉션합니다.
+export default function Index() {
+    return <Redirect href="/(tabs)" />;
+}
 //import TypeTestMain from './typeTest/index';
 //import Home from './(tabs)';
 

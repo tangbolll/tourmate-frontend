@@ -1295,7 +1295,7 @@ const styles = StyleSheet.create({
         borderRadius: 8,
         marginBottom: 20,
         width: '100%',
-        borderLeft: 4,
+        borderLeftWidth: 4,
         borderLeftColor: '#007BFF',
     },
     aiTipLabel: {
