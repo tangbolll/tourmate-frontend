@@ -30,6 +30,7 @@
       [
         "expo-splash-screen",
         {
+          "image": "./assets/icon.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
@@ -64,7 +65,7 @@
       "API_BASE_URL_LOCAL": "http://172.16.160.175:8080",
       "router": {},
       "eas": {
-        "projectId": "2febce94-551e-4e11-a994-fcf972f73929"
+        "projectId": "0e5cb189-6269-49d0-9c44-9237f2e19bfd"
       }
     }
   }
