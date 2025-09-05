@@ -6,7 +6,7 @@ import Constants from 'expo-constants';
 
 // 기본 프로필 이미지들
 const defaultProfiles = [
-  require('../../assets/defaultProfile.png')
+  require('../../assets/defaultprofile.png')
 ];
 
 // API 베이스 URL 설정 (copied from HomePostApi.js)

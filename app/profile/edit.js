@@ -10,7 +10,7 @@ import useUserStore from '../../context/userStore';
 
 import { useAuth } from '../../context/AuthContext';
 
-const defaultProfile = require('../../assets/defaultProfile.png');
+const defaultProfile = require('../../assets/defaultprofile.png');
 
 const InputField = ({ label, value, onChangeText, placeholder, keyboardType, editable = true, feedback, subLabel, labelComponent }) => (
   <View style={styles.inputContainer}>

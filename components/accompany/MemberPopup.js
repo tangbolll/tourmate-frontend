@@ -30,9 +30,9 @@ const MemberPopup = ({ members, onClose, maxParticipants }) => {
                     {members.map((member, index) => (
                         <View key={index} style={styles.memberItem}>
                             <Image 
-                                source={require('../../assets/defaultProfile.png')} 
+                                source={require('../../assets/defaultprofile.png')} 
                                 style={styles.profileImage}
-                                defaultSource={require('../../assets/defaultProfile.png')}
+                                defaultSource={require('../../assets/defaultprofile.png')}
                             />
                             <View style={styles.memberInfoContainer}>
                                 <View style={styles.memberInfo}>

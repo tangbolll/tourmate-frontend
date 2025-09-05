@@ -5,7 +5,7 @@ const Member = ({ profileImage, nickname, gender, age, hashtags, isApplicant = f
     return (
         <View style={styles.container}>
         <Image 
-            source={profileImage || require('../assets/defaultProfile.png')} 
+            source={profileImage || require('../assets/defaultprofile.png')} 
             style={styles.profileImage} 
         />
         

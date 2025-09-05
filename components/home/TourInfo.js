@@ -9,7 +9,7 @@ const TourInfo = ({ tourData }) => {
         if (!members || members.length === 0) {
         return (
             <Image 
-            source={require('../../assets/defaultProfile.png')} 
+            source={require('../../assets/defaultprofile.png')} 
             style={styles.defaultAvatar}
             />
         );

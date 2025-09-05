@@ -11,7 +11,6 @@ import {
 } from 'react-native';
 
 const { width } = Dimensions.get('window');
-const defaultPhoto = require('../../assets/defaultPhoto.jpg');
 
 const Intro = ({ message, photos }) => {
     // 사진 확대 모달 상태 관리

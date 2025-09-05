@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 
-const defaultProfile = require('../../assets/defaultProfile.png');
+const defaultProfile = require('../../assets/defaultprofile.png');
 
 const Comment = ({ profileImage, nickname, time, content, onReplyPress, isHost }) => {
     const profileSrc = profileImage ? { uri: profileImage } : defaultProfile;

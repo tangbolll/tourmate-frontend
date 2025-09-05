@@ -10,7 +10,7 @@ const Alarm = () => {
         {
             id: '1',
             userName: '동행거절',
-            userImage: require('../assets/defaultProfile.png'), // 실제 이미지 경로로 수정
+            userImage: require('../assets/defaultprofile.png'), // 실제 이미지 경로로 수정
             timeAgo: '30분 전',
             message: '아쉽게도, 동행 신청이 거절되었어요.\n다른 동행을 찾아볼까요?',
             actionType: 'reject',
@@ -19,7 +19,7 @@ const Alarm = () => {
         {
             id: '2',
             userName: '동행승인',
-            userImage: require('../assets/defaultProfile.png'),
+            userImage: require('../assets/defaultprofile.png'),
             timeAgo: '1시간 전',
             message: '동행 신청이 수락되었어요!\n그룹채팅에 참여해보세요.',
             actionType: 'accept',
@@ -28,7 +28,7 @@ const Alarm = () => {
         {
             id: '3',
             userName: '동행신청',
-            userImage: require('../assets/defaultProfile.png'),
+            userImage: require('../assets/defaultprofile.png'),
             timeAgo: '1일 전',
             message: '주리를 틀어라 · 여 · 21세\n#맛집조아 #맛집탐방',
             actionType: 'request',
@@ -38,7 +38,7 @@ const Alarm = () => {
         {
             id: '4',
             userName: '리마인드',
-            userImage: require('../assets/defaultProfile.png'),
+            userImage: require('../assets/defaultprofile.png'),
             timeAgo: '12일 전',
             message: '[여라미]님 동행 마감까지 6시간 남았어요.\n동행을 마감하고 여행 준비를 시작해볼까요?',
             actionType: 'reminder',
@@ -46,7 +46,7 @@ const Alarm = () => {
         {
             id: '5',
             userName: '코멘트',
-            userImage: require('../assets/defaultProfile.png'),
+            userImage: require('../assets/defaultprofile.png'),
             timeAgo: '6개월 전',
             message: '[말랑콩떡] 댓글을 남겼습니다.\n궁금한게 있는데요~ 같이 여행가면 밥도 사주시나요?',
             actionType: 'comment',

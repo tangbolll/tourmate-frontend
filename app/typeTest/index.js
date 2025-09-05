@@ -43,21 +43,21 @@ export default function TypeTestMain() {
             <View style={styles.imageContainer}>
                 <View style={[styles.imageWrapper, { zIndex: 3 }]}>
                     <Image 
-                        source={require('../../assets/typeTest/IPER.png')} 
+                        source={require('../../assets/typeTest/iper.png')} 
                         style={styles.image}
                         resizeMode="contain"
                     />
                 </View>
                 <View style={[styles.imageWrapper, { zIndex: 2 }]}>
                     <Image 
-                        source={require('../../assets/typeTest/JPED.png')} 
+                        source={require('../../assets/typeTest/jped.png')} 
                         style={styles.image}
                         resizeMode="contain"
                     />
                 </View>
                 <View style={[styles.imageWrapper, { zIndex: 1 }]}>
                     <Image 
-                        source={require('../../assets/typeTest/JAED.png')} 
+                        source={require('../../assets/typeTest/jaed.png')} 
                         style={styles.image}
                         resizeMode="contain"
                     />

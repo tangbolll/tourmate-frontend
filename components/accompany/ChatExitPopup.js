@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Modal, TouchableOpacity, Image } from 'react-na
 
 // 기본 프로필 이미지들
 const defaultProfiles = [
-  require('../../assets/defaultProfile.png')
+  require('../../assets/defaultprofile.png')
 ];
 
 const ChatExitPopup = ({ isVisible, onClose, onConfirm, chatTitle, participants }) => {

@@ -16,7 +16,7 @@ import { formatChatTimestamp, formatPostDate } from '../../utils/timeUtils';
 import { useAuth } from '../../context/AuthContext';
 import Constants from 'expo-constants';
 
-const defaultProfile = require('../../assets/defaultProfile.png');
+const defaultProfile = require('../../assets/defaultprofile.png');
 
 // API 베이스 URL 설정 (copied from HomePostApi.js)
 

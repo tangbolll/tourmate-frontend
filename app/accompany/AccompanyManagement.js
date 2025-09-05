@@ -266,9 +266,9 @@ const AccompanyManagement = () => {
         <View key={applicant.userId} style={styles.memberRow}>
             <View style={styles.profileSection}>
                 <Image 
-                    source={applicant.profileImage ? { uri: getFullImageUrl(applicant.profileImage) } : require('../../assets/defaultProfile.png')} 
+                    source={applicant.profileImage ? { uri: getFullImageUrl(applicant.profileImage) } : require('../../assets/defaultprofile.png')} 
                     style={styles.profileImage} 
-                    defaultSource={require('../../assets/defaultProfile.png')}
+                    defaultSource={require('../../assets/defaultprofile.png')}
                 />
                 <View style={styles.userInfo}>
                     <View style={styles.nameRow}>
@@ -305,9 +305,9 @@ const AccompanyManagement = () => {
         <View key={companion.id} style={styles.memberRow}>
             <View style={styles.profileSection}>
                 <Image 
-                    source={companion.profileImage ? { uri: getFullImageUrl(companion.profileImage) } : require('../../assets/defaultProfile.png')} 
+                    source={companion.profileImage ? { uri: getFullImageUrl(companion.profileImage) } : require('../../assets/defaultprofile.png')} 
                     style={styles.profileImage} 
-                    defaultSource={require('../../assets/defaultProfile.png')}
+                    defaultSource={require('../../assets/defaultprofile.png')}
                 />
                 <View style={styles.userInfo}>
                     <View style={styles.nameRow}>

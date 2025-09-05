@@ -15,7 +15,7 @@ import AiItineraryDesignPopup from './AiItineraryDesignPopup';
 
 const { height: screenHeight } = Dimensions.get('window');
 
-    import { API_URL } from '../../../utils/apiConfig';
+import { API_URL } from '../../../utils/apiConfig';
 
 const contentTypeMap = {
     '12': '관광지',
@@ -129,6 +129,7 @@ const BottomSheet = ({
 
                 const { regionKey, sigunguKey } = selectedLocation;
                 
+                const url = `${API_URL}/api/myTour/tourInfo/${regionKey}?sigunguCode=${sigunguKey}`;
                 
                 const response = await fetch(url, {
                     headers: { 'Authorization': `Bearer ${token}` }
@@ -201,8 +202,8 @@ const BottomSheet = ({
             const headers = { 'Authorization': `Bearer ${token}` };
 
             const [commonRes, introRes] = await Promise.all([
-                fetch(`${getBaseURL()}/api/myTour/commonInfo/${item.contentid}`, { headers }),
-                fetch(`${getBaseURL()}/api/myTour/introInfo/${item.contentid}/${item.contenttypeid}`, { headers })
+                fetch(`${API_URL}/api/myTour/commonInfo/${item.contentid}`, { headers }),
+                fetch(`${API_URL}/api/myTour/introInfo/${item.contentid}/${item.contenttypeid}`, { headers })
             ]);
             
             // ... (이하 데이터 처리 로직은 동일)
@@ -357,7 +358,7 @@ const BottomSheet = ({
             const token = await AsyncStorage.getItem('jwtToken');
             if (!token) throw new Error('인증 토큰이 없습니다.');
 
-            const url = `${getBaseURL()}/api/ai/generate-suggestions`;
+            const url = `${API_URL}/api/ai/generate-suggestions`;
 
             const response = await fetch(url, {
                 method: 'POST',

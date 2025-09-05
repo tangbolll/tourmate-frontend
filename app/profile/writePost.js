@@ -96,7 +96,7 @@ const WritePost = () => {
                     let allPostcards = [...formattedPostcards];
 
                     if (params.newlyCreated === 'true') {
-                        const defaultImageUri = Image.resolveAssetSource(require('../../assets/defaultBackground.png')).uri;
+                        const defaultImageUri = Image.resolveAssetSource(require('../../assets/grayicon.png')).uri;
                         const defaultPostcardTemplate = { code: 1, thumbnail: postcardTemplates[1] };
                         const newPostcard = { id: null, image: defaultImageUri, postcardTemplate: defaultPostcardTemplate, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
                         allPostcards.push(newPostcard);
@@ -156,7 +156,7 @@ const WritePost = () => {
                 }
             } else {
                 // No directoryId, so we are creating a new directory and a new postcard
-                const defaultImageUri = Image.resolveAssetSource(require('../../assets/defaultBackground.png')).uri;
+                const defaultImageUri = Image.resolveAssetSource(require('../../assets/grayicon.png')).uri;
                 const defaultPostcardTemplate = { code: 1, thumbnail: postcardTemplates[1] };
                 const newPostcard = { id: null, image: defaultImageUri, postcardTemplate: defaultPostcardTemplate, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
                 setPostcards([newPostcard]);
@@ -511,7 +511,7 @@ const WritePost = () => {
 
 const handleBackPress = () => {
         // --- 디버깅을 위한 콘솔 로그 ---
-        const defaultImageUri = Image.resolveAssetSource(require('../../assets/defaultBackground.png')).uri;
+        const defaultImageUri = Image.resolveAssetSource(require('../../assets/grayicon.png')).uri;
         const isDefaultImage = selectedImage === defaultImageUri;
 
         console.log('================================');

@@ -130,22 +130,22 @@ const travelResults = {
 };
 
 const typeImages = {
-    'IPCD': require('../../assets/typeTest/IPCD.png'),
-    'IPCR': require('../../assets/typeTest/IPCR.png'),
-    'IPED': require('../../assets/typeTest/IPED.png'),
-    'IPER': require('../../assets/typeTest/IPER.png'),
-    'IACD': require('../../assets/typeTest/IACD.png'),
-    'IACR': require('../../assets/typeTest/IACR.png'),
-    'IAED': require('../../assets/typeTest/IAED.png'),
-    'IAER': require('../../assets/typeTest/IAER.png'),
-    'JPCD': require('../../assets/typeTest/JPCD.png'),
-    'JPCR': require('../../assets/typeTest/JPCR.png'),
-    'JPED': require('../../assets/typeTest/JPED.png'),
-    'JPER': require('../../assets/typeTest/JPER.png'),
-    'JAED': require('../../assets/typeTest/JAED.png'),
-    'JAER': require('../../assets/typeTest/JAER.png'),
-    'JACD': require('../../assets/typeTest/JACD.png'),
-    'JACR': require('../../assets/typeTest/JACR.png'),
+    'IPCD': require('../../assets/typeTest/ipcd.png'),
+    'IPCR': require('../../assets/typeTest/ipcr.png'),
+    'IPED': require('../../assets/typeTest/iped.png'),
+    'IPER': require('../../assets/typeTest/iper.png'),
+    'IACD': require('../../assets/typeTest/iacd.png'),
+    'IACR': require('../../assets/typeTest/iacr.png'),
+    'IAED': require('../../assets/typeTest/iaed.png'),
+    'IAER': require('../../assets/typeTest/iaer.png'),
+    'JPCD': require('../../assets/typeTest/jpcd.png'),
+    'JPCR': require('../../assets/typeTest/jpcr.png'),
+    'JPED': require('../../assets/typeTest/jped.png'),
+    'JPER': require('../../assets/typeTest/jper.png'),
+    'JAED': require('../../assets/typeTest/jaed.png'),
+    'JAER': require('../../assets/typeTest/jaer.png'),
+    'JACD': require('../../assets/typeTest/jacd.png'),
+    'JACR': require('../../assets/typeTest/jacr.png'),
 };
 
 export default function Result() {

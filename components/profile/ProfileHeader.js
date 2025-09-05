@@ -5,7 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 import { useRouter } from 'expo-router';
 
-const defaultProfile = require('../../assets/defaultProfile.png');
+const defaultProfile = require('../../assets/defaultprofile.png');
 
 export function ProfileHeader() {
     const router = useRouter();
