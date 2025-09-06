@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { toggleLikePostcard, toggleScrapPostcard, fetchPostcardDetailApi} from '../../utils/HomePostApi';
+import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
 
@@ -69,13 +70,10 @@ const formatDate = (dateString) => {
     }
 };
 
-const PostExpanded = ({ 
-    visible, 
-    postData, 
-    onClose, 
-    onDataUpdate, 
-    currentUserId 
-}) => {
+const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId }) => {
+    const router = useRouter(); 
+    const isOwner = postData?.authorId === currentUserId;
+
     // 서버에서 받은 데이터를 기반으로 초기 상태 설정
     const [isLiked, setIsLiked] = useState(postData?.isLiked || false);
     const [isScraped, setIsScraped] = useState(postData?.isScraped || false);
@@ -85,22 +83,23 @@ const PostExpanded = ({
     const [scrapLoading, setScrapLoading] = useState(false);
 
     // 목 데이터 (fallback용)
-    const mockData = {
-        profileImage: 'https://via.placeholder.com/50',
-        postcardName: '부산의 바다 !',
-        userName: '추리를봐야',
-        location: '부산',
-        date: '2021.03.04',
-        postcardImage: 'https://via.placeholder.com/400x300',
-        timeAgo: '5시간 전',
-        likeCount: 23,
-        scrapCount: 46,
-        postcardContent: '부산에다녀왔다\n넘즐거웠다\n엽서디자인 아직 안 넣었습니다 임시입니다\n놀래지마세용',
-        isLiked: false,
-        isScraped: false,
-        typeImageUrl: '../postcardType/1.png', // 기본 템플릿
-        ...postData
-    };
+
+    const mockData = {
+        profileImage: 'https://via.placeholder.com/50',
+        postcardName: '부산의 바다 !',
+        userName: '추리를봐야',
+        location: '부산',
+        date: '2021.03.04',
+        postcardImage: 'https://via.placeholder.com/400x300',
+        timeAgo: '5시간 전',
+        likeCount: 23,
+        scrapCount: 46,
+        postcardContent: '부산에다녀왔다\n넘즐거웠다\n엽서디자인 아직 안 넣었습니다 임시입니다\n놀래지마세용',
+        isLiked: false,
+        isScraped: false,
+        typeImageUrl: '../postcardType/1.png', // 기본 템플릿
+        ...postData
+    };
 
     useEffect(() => {
         if (postData) {
@@ -218,6 +217,53 @@ const PostExpanded = ({
         Alert.alert('알림', '로그인이 필요한 기능입니다.');
     };
 
+    // ⭐ 4. 내 엽서 관리 버튼 핸들러 함수들 추가
+    const handleEdit = () => {
+        if (!postData?.id || !postData?.directoryId) {
+            Alert.alert("오류", "엽서 정보를 찾을 수 없어 수정할 수 없습니다.");
+            return;
+        }
+        // 수정 페이지로 엽서 ID와 디렉토리 ID를 가지고 이동
+        router.push({
+            pathname: '/profile/WritePost',
+            params: { 
+                postcardId: postData.id,
+                directoryId: postData.directoryId,
+                // directoryName 등 필요한 다른 정보도 함께 전달
+            }
+        });
+        onClose(); // 모달 닫기
+    };
+
+    const handleDelete = () => {
+        Alert.alert(
+            "엽서 삭제",
+            "정말로 이 엽서를 삭제하시겠습니까?",
+            [
+                { text: "취소", style: "cancel" },
+                { 
+                    text: "삭제", 
+                    style: "destructive", 
+                    onPress: async () => {
+                        // 여기에 실제 삭제 API를 호출하는 로직을 추가해야 합니다.
+                        // 예: await deletePostcardApi(postData.id);
+                        Alert.alert("삭제 완료", "엽서가 삭제되었습니다.");
+                        onDataUpdate(postData.id, 'delete', null); // 부모 컴포넌트에 삭제 사실 알리기
+                        onClose(); // 모달 닫기
+                    } 
+                }
+            ]
+        );
+    };
+
+    const handleDownload = () => {
+        Alert.alert("준비 중", "다운로드 기능은 준비 중입니다.");
+    };
+
+    const handleShare = () => {
+        Alert.alert("준비 중", "공유 기능은 준비 중입니다.");
+    };
+
     return (
         <Modal
             visible={visible}
@@ -261,10 +307,71 @@ const PostExpanded = ({
                             </View>
                         </ImageBackground>
                     </View>
+                </View>'
+                
+                <View style={styles.actionSection}>
+                    {isOwner ? (
+                        // 내가 주인일 경우: 관리 버튼 4개 표시
+                        <>
+                            <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
+                                <View style={styles.actionIcon}>
+                                    <Ionicons name="create-outline" size={28} color="#fff" />
+                                </View>
+                                <Text style={styles.actionText}>수정</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.actionButton} onPress={handleDownload}>
+                                <View style={styles.actionIcon}>
+                                    <Ionicons name="download-outline" size={28} color="#fff" />
+                                </View>
+                                <Text style={styles.actionText}>저장</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
+                                <View style={styles.actionIcon}>
+                                    <Ionicons name="share-social-outline" size={28} color="#fff" />
+                                </View>
+                                <Text style={styles.actionText}>공유</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
+                                <View style={styles.actionIcon}>
+                                    <Ionicons name="trash-outline" size={28} color="tomato" />
+                                </View>
+                                <Text style={[styles.actionText, { color: 'tomato' }]}>삭제</Text>
+                            </TouchableOpacity>
+                        </>
+                    ) : (
+                        // 내가 주인이 아닐 경우: 기존 좋아요/스크랩 버튼 표시
+                        <>
+                            {/* 좋아요 버튼 */}
+                            <TouchableOpacity
+                                style={[styles.actionButton, likeLoading && styles.actionButtonDisabled]}
+                                onPress={currentUserId ? handleLike : handleLoginRequired}
+                                disabled={likeLoading}
+                            >
+                                <View style={styles.actionIcon}>
+                                    {/* ... (기존 좋아요 아이콘 코드) ... */}
+                                </View>
+                                <Text style={styles.actionCount}>{likeCount}</Text>
+                            </TouchableOpacity>
+
+                            {/* 스크랩 버튼 */}
+                            <TouchableOpacity
+                                style={[styles.actionButton, scrapLoading && styles.actionButtonDisabled]}
+                                onPress={currentUserId ? handleScrap : handleLoginRequired}
+                                disabled={scrapLoading}
+                            >
+                                <View style={styles.actionIcon}>
+                                    {/* ... (기존 스크랩 아이콘 코드) ... */}
+                                </View>
+                                <Text style={styles.actionCount}>{scrapCount}</Text>
+                            </TouchableOpacity>
+                        </>
+                    )}
                 </View>
+
             </View>
         </Modal>
     );
+    
 };
 
 const styles = StyleSheet.create({
@@ -403,6 +510,11 @@ const styles = StyleSheet.create({
         fontSize: 16,
         fontWeight: 'bold',
         color: '#fff',
+    },
+    actionText: {
+        fontSize: 14,
+        color: '#fff',
+        marginTop: 4,
     },
 });
 
