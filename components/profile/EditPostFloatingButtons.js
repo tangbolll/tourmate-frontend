@@ -42,7 +42,7 @@ const EditPostFloatingButtons = ({
             activeOpacity={0.8}
         >
             <Icon 
-                name={isPublic ? "lock" : "lock-open"} // 👈 isFavorite를 isPublic으로 변경!
+                name={isPublic ? "lock" : "lock-open"} 
                 size={24} 
                 color="#000" 
             />

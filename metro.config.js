@@ -1,18 +1,20 @@
 const { getDefaultConfig } = require("expo/metro-config");
-const path = require("path"); // Add this line
+const path = require("path");
 
 const config = getDefaultConfig(__dirname);
 
-// Add this block for web-specific aliasing
+// 웹에서 Jimp / jimp-compact를 빈 모듈로 대체
 config.resolver.resolveRequest = (context, moduleName, platform) => {
-  if (platform === 'web' && moduleName === 'react-native-maps') {
-    // Use path.resolve to get an absolute path
-    return context.resolveRequest(context, path.resolve(__dirname, './web/react-native-maps-mock.js'), platform);
+  if (platform === 'web' && (moduleName === 'jimp' || moduleName === 'jimp-compact')) {
+    return context.resolveRequest(
+      context,
+      path.resolve(__dirname, './emptyModule.js'),
+      platform
+    );
   }
-  // Fallback to the default resolver
   return context.resolveRequest(context, moduleName, platform);
 };
 
-config.resolver.platforms = ['ios', 'android', 'web']; // Ensure web is included
+config.resolver.platforms = ['ios', 'android', 'web'];
 
 module.exports = config;
