@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import TourInfo from './TourInfo';
 import TourItinerary from './TourItinerary'; 
@@ -6,44 +6,49 @@ import FindTour from './FindTour';
 import { getMyToursBriefApi, getCurrentTourStatus } from '../../utils/HomeTourApi';
 import { useAuth } from '../../context/AuthContext';
 
-const TourSection = () => {
+const TourSection = forwardRef((props, ref) => {
     const [tourList, setTourList] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const { currentUserId, loading: authLoading } = useAuth();
 
-    useEffect(() => {
-        const fetchTourData = async () => {
-            try {
-                // AuthContext가 아직 로딩 중이면 대기
-                if (authLoading) {
-                    console.log('🔄 Auth 컨텍스트 로딩 중...');
-                    return;
-                }
-
-                if (!currentUserId) {
-                    console.log('❌ 사용자 ID 없음');
-                    setError('로그인이 필요합니다.');
-                    setLoading(false);
-                    return;
-                }
-
-                setLoading(true);
-                setError(null);
-                
-                console.log('👤 현재 사용자 ID:', currentUserId);
-                const data = await getMyToursBriefApi(currentUserId);
-                console.log('✅ 여행 데이터 로딩 성공:', data);
-                setTourList(data);
-            } catch (error) {
-                console.error('❌ 여행 데이터 로딩 실패:', error);
-                setError('여행 정보를 불러오는데 실패했습니다.');
-                setTourList([]);
-            } finally {
-                setLoading(false);
+    const fetchTourData = async () => {
+        try {
+            // AuthContext가 아직 로딩 중이면 대기
+            if (authLoading) {
+                console.log('🔄 Auth 컨텍스트 로딩 중...');
+                return;
             }
-        };
 
+            if (!currentUserId) {
+                console.log('❌ 사용자 ID 없음');
+                setError('로그인이 필요합니다.');
+                setLoading(false);
+                return;
+            }
+
+            setLoading(true);
+            setError(null);
+            
+            console.log('👤 현재 사용자 ID:', currentUserId);
+            const data = await getMyToursBriefApi(currentUserId);
+            console.log('✅ 여행 데이터 로딩 성공:', data);
+            setTourList(data);
+        } catch (error) {
+            console.error('❌ 여행 데이터 로딩 실패:', error);
+            setError('여행 정보를 불러오는데 실패했습니다.');
+            setTourList([]);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    // 외부에서 호출할 수 있는 새로고침 함수 노출
+    useImperativeHandle(ref, () => ({
+        refresh: fetchTourData
+    }));
+
+    useEffect(() => {
         fetchTourData();
     }, [currentUserId, authLoading]);
 
@@ -144,7 +149,7 @@ const TourSection = () => {
             {renderContent()}
         </View>
     );
-};
+});
 
 // 스타일은 동일...
 const styles = StyleSheet.create({

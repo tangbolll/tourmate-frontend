@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, forwardRef, useImperativeHandle } from 'react';
 import {
     View,
     Text,
@@ -17,7 +17,7 @@ import {
 } from '../../utils/HomePostApi';
 import { useAuth } from '../../context/AuthContext';
 
-const PostSection = () => {
+const PostSection = forwardRef((props, ref) => {
     const { currentUserId } = useAuth(); // 사용자 ID 가져오기
     const [posts, setPosts] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -77,6 +77,11 @@ const PostSection = () => {
             setRefreshing(false);
         }
     };
+
+    // 외부에서 호출할 수 있는 새로고침 함수 노출
+    useImperativeHandle(ref, () => ({
+        refresh: handleRefresh
+    }));
 
     // 더 많은 데이터 로드 (무한 스크롤) - 사용자 상호작용 정보는 추가 로드시에는 제외
     const loadMoreData = async () => {
@@ -234,7 +239,7 @@ const PostSection = () => {
             )}
         </View>
     );
-};
+});
 
 const styles = StyleSheet.create({
     container: {
