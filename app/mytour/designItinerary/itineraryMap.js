@@ -1,179 +1,91 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { View, StyleSheet, SafeAreaView, Text, Platform } from 'react-native';
+import { View, StyleSheet, SafeAreaView, Text } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import BottomSheet from '../../../components/mytour/designItinerary/map/BottomSheet';
 import DesignItineraryMapHeader from '../../../components/mytour/designItinerary/map/designItineraryMapHeader';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseURL } from '../../../utils/apiConfig';
+import { WebView } from 'react-native-webview';
 
-// --- 플랫폼별 지도 컴포넌트 로딩 로직 ---
-let MapView = null;
-let Marker = null;
-
-if (Platform.OS !== 'web') {
-  const RnMaps = require('react-native-maps');
-  MapView = RnMaps.default;
-  Marker = RnMaps.Marker;
-}
-// --- 끝 ---
+// 카카오 JavaScript API 키를 입력하세요.
+const kakaoJavaScriptApiKey = 'db029e231db073bfecc94156e14ecf9c';
 
 export default function ItineraryMap() {
   const router = useRouter();
   const { tourId, itineraryTitle, periodData } = useLocalSearchParams();
 
-  console.log("지도 화면이 받은 raw periodData:", periodData);
-  
   const period = useMemo(() => {
-    const parsed = periodData ? JSON.parse(periodData) : {};
-    // 👇 2. JSON 파싱 후의 객체에 nights와 days가 있는지 확인합니다.
-    console.log("파싱된 period 객체:", parsed);
-    return parsed;
+    return periodData ? JSON.parse(periodData) : {};
   }, [periodData]);
-
 
   // --- 상태 관리 ---
   const [scheduleData, setScheduleData] = useState({});
   const [selectedLocationId, setSelectedLocationId] = useState(null);
-  const mapRef = useRef(null);
   const [selectedDay, setSelectedDay] = useState('all');
+  const [isWebViewReady, setIsWebViewReady] = useState(false);
 
-  // --- API 데이터 로딩 ---
-useEffect(() => {
+  // --- Ref 관리 ---
+  const webViewRef = useRef(null);
+
+  // --- API 데이터 로딩 (기존과 동일) ---
+  useEffect(() => {
     if (!tourId) return;
-
     const fetchTourData = async () => {
-        try {
-            const token = await AsyncStorage.getItem('jwtToken');
-            if (!token) return;
-
-            const response = await axios.get(`${getBaseURL()}/api/travelSchedule/travel/${tourId}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-            
-            const schedules = response.data;
-            if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
-                setScheduleData({});
-                return;
-            }
-
-            // --- 👇👇 여기가 핵심 수정 부분입니다 👇👇 ---
-
-            let groupedByDay = {};
-            const currentPeriodType = period.type; // useMemo로 이미 계산된 period 객체 사용
-
-            if (currentPeriodType === 'date') {
-                // ✅ 'date' 타입 여행 처리 (기존 로직 유지)
-                const validSchedules = schedules.filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
-                
-                if (validSchedules.length > 0) {
-                    const firstDate = new Date(validSchedules[0].date);
-                    groupedByDay = validSchedules.reduce((acc, item) => {
-                        const currentDate = new Date(item.date);
-                        const dayIndex = Math.floor((currentDate - firstDate) / (1000 * 60 * 60 * 24)) + 1;
-    
-                        if (!acc[dayIndex]) acc[dayIndex] = [];
-                        acc[dayIndex].push({
-                            id: item.id, name: item.title, category: item.tag,
-                            order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude
-                        });
-                        return acc;
-                    }, {});
-                }
-
-            } else if (currentPeriodType === 'duration') {
-                // ✅ 'duration' 타입 여행 처리 (새로운 로직 추가)
-                groupedByDay = schedules.reduce((acc, item) => {
-                    if (item.dayDescription) {
-                        const dayMatch = String(item.dayDescription).match(/\d+/);
-                        if (dayMatch && dayMatch[0]) {
-                            const dayIndex = dayMatch[0]; // "1", "2" 등
-                            if (!acc[dayIndex]) acc[dayIndex] = [];
-                            acc[dayIndex].push({
-                                id: item.id, name: item.title, category: item.tag,
-                                order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude
-                            });
-                        }
-                    }
-                    return acc;
-                }, {});
-            }
-            
-            setScheduleData(groupedByDay);
-
-            // --- 👆👆 여기까지가 핵심 수정 부분입니다 👆👆 ---
-
-        } catch (error) {
-            console.error('스케줄 불러오기 실패:', error);
+      // ... (API 호출 로직은 기존과 동일하므로 생략) ...
+      try {
+        const token = await AsyncStorage.getItem('jwtToken');
+        if (!token) return;
+        const response = await axios.get(`${getBaseURL()}/api/travelSchedule/travel/${tourId}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const schedules = response.data;
+        if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
+          setScheduleData({});
+          return;
         }
-    };
-
-    fetchTourData();
-}, [tourId, period.type]); // period.type도 의존성 배열에 추가
-
-
-  // --- BottomSheet 연동 함수 ---
-  const handleDayChange = (dayKey) => {
-    setSelectedDay(dayKey);
-    setSelectedLocationId(null);
-
-    const markersForDay = dayKey === 'all'
-      ? Object.values(scheduleData).flat()
-      : scheduleData[dayKey] || [];
-
-    if (mapRef.current && markersForDay.length > 0) {
-      // ✅ 1. 유효하지 않은 좌표(0, 0 등)를 먼저 걸러냅니다.
-      const validCoordinates = markersForDay
-        .map(marker => ({
-          latitude: marker.lat,
-          longitude: marker.lng,
-        }))
-        .filter(coord => 
-            coord.latitude !== 0 && 
-            coord.longitude !== 0 &&
-            coord.latitude !== null &&
-            coord.longitude !== null
-        );
-
-      // ✅ 2. 유효한 좌표가 남아있는 경우에만 지도를 조작합니다.
-      if (validCoordinates.length > 0) {
-        if (validCoordinates.length === 1) {
-          // 핀이 하나일 때
-          mapRef.current.animateToRegion({
-            latitude: validCoordinates[0].latitude,
-            longitude: validCoordinates[0].longitude,
-            latitudeDelta: 0.01,
-            longitudeDelta: 0.01,
-          }, 1000);
-        } else {
-          // 핀이 여러 개일 때
-          mapRef.current.fitToCoordinates(validCoordinates, {
-            edgePadding: { top: 100, right: 80, bottom: 80, left: 80 },
-            animated: true,
-          });
+        let groupedByDay = {};
+        const currentPeriodType = period.type;
+        if (currentPeriodType === 'date') {
+          const validSchedules = schedules.filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
+          if (validSchedules.length > 0) {
+            const firstDate = new Date(validSchedules[0].date);
+            groupedByDay = validSchedules.reduce((acc, item) => {
+              const currentDate = new Date(item.date);
+              const dayIndex = Math.floor((currentDate - firstDate) / (1000 * 60 * 60 * 24)) + 1;
+              if (!acc[dayIndex]) acc[dayIndex] = [];
+              acc[dayIndex].push({
+                id: item.id, name: item.title, category: item.tag,
+                order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude
+              });
+              return acc;
+            }, {});
+          }
+        } else if (currentPeriodType === 'duration') {
+          groupedByDay = schedules.reduce((acc, item) => {
+            if (item.dayDescription) {
+              const dayMatch = String(item.dayDescription).match(/\d+/);
+              if (dayMatch && dayMatch[0]) {
+                const dayIndex = dayMatch[0];
+                if (!acc[dayIndex]) acc[dayIndex] = [];
+                acc[dayIndex].push({
+                  id: item.id, name: item.title, category: item.tag,
+                  order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude
+                });
+              }
+            }
+            return acc;
+          }, {});
         }
+        setScheduleData(groupedByDay);
+      } catch (error) {
+        console.error('스케줄 불러오기 실패:', error);
       }
-    }
-  };
+    };
+    fetchTourData();
+  }, [tourId, period.type]);
 
-  const handleLocationSelect = (location) => {
-    if (mapRef.current && location.lat && location.lng) {
-      setSelectedLocationId(location.id);
-      mapRef.current.animateToRegion({
-        latitude: location.lat,
-        longitude: location.lng,
-        latitudeDelta: 0.01,
-        longitudeDelta: 0.01,
-      }, 1000);
-    }
-  };
-
-  const title = itineraryTitle || '';
-  console.log(`2. 헤더(자식)에게 'title'이라는 이름으로 전달할 값: "${title}"`);
-
-  //const dateInfo = { displayText: '기간 정보' };
-
-  // ✅ 선택된 날짜에 따라 지도에 표시할 마커들을 결정합니다.
+  // --- 마커 데이터 ---
   const markersToDisplay = useMemo(() => {
     if (selectedDay === 'all') {
       return Object.values(scheduleData).flat();
@@ -181,61 +93,176 @@ useEffect(() => {
     return scheduleData[selectedDay] || [];
   }, [selectedDay, scheduleData]);
   
-  // ✅ 표시될 마커가 변경될 때만 지도의 초기 위치를 다시 계산합니다.
-  const initialRegion = useMemo(() => {
-    if (markersToDisplay.length > 0) {
-      return {
-        latitude: markersToDisplay[0].lat,
-        longitude: markersToDisplay[0].lng,
-        latitudeDelta: 0.15,
-        longitudeDelta: 0.15,
-      };
+  // --- WebView가 준비되고 마커가 변경될 때, 웹뷰로 데이터를 전송 ---
+  useEffect(() => {
+    if (isWebViewReady && webViewRef.current) {
+      const validMarkers = markersToDisplay.filter(m => m.lat && m.lng);
+      const message = JSON.stringify({
+        type: 'UPDATE_MARKERS',
+        payload: validMarkers,
+      });
+      webViewRef.current.postMessage(message);
     }
-    return { // 기본값: 서울 시청
-      latitude: 37.5665,
-      longitude: 126.9780,
-      latitudeDelta: 0.15,
-      longitudeDelta: 0.15,
-    };
-  }, [markersToDisplay]);
+  }, [markersToDisplay, isWebViewReady]);
+
+  // --- BottomSheet 연동 함수 (WebView만 제어하도록 단순화) ---
+  const handleDayChange = (dayKey) => {
+    setSelectedDay(dayKey);
+    setSelectedLocationId(null);
+    
+    const markersForDay = dayKey === 'all'
+      ? Object.values(scheduleData).flat()
+      : scheduleData[dayKey] || [];
+      
+    const validCoordinates = markersForDay
+      .map(marker => ({ latitude: marker.lat, longitude: marker.lng }))
+      .filter(coord => coord.latitude && coord.longitude);
+    
+    if (validCoordinates.length > 0 && isWebViewReady && webViewRef.current) {
+      webViewRef.current.postMessage(JSON.stringify({
+        type: 'FIT_TO_COORDINATES',
+        payload: validCoordinates
+      }));
+    }
+  };
+
+  const handleLocationSelect = (location) => {
+    if (location.lat && location.lng) {
+      setSelectedLocationId(location.id);
+      if (isWebViewReady && webViewRef.current) {
+        webViewRef.current.postMessage(JSON.stringify({
+          type: 'ANIMATE_TO_REGION',
+          payload: { latitude: location.lat, longitude: location.lng }
+        }));
+      }
+    }
+  };
+  
+  // --- 카카오맵 WebView를 위한 HTML 생성 함수 (기존과 동일) ---
+  const createMapHTML = () => {
+     // ... (HTML/JS 코드는 이전 답변과 동일하므로 생략) ...
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+          <meta charset="utf-8">
+          <title>지도</title>
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+          <style> body, html { margin: 0; padding: 0; height: 100%; } #map { width: 100%; height: 100%; } </style>
+      </head>
+      <body>
+          <div id="map"></div>
+          <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJavaScriptApiKey}&autoload=false"></script>
+          <script>
+            kakao.maps.load(function() {
+              const container = document.getElementById('map');
+              const options = {
+                center: new kakao.maps.LatLng(37.5665, 126.9780),
+                level: 7
+              };
+              const map = new kakao.maps.Map(container, options);
+              let markers = [];
+
+              function clearMarkers() {
+                markers.forEach(marker => marker.setMap(null));
+                markers = [];
+              }
+
+              function addMarkers(markerData) {
+                clearMarkers();
+                if (!markerData || markerData.length === 0) return;
+
+                const bounds = new kakao.maps.LatLngBounds();
+
+                markerData.forEach(data => {
+                  const position = new kakao.maps.LatLng(data.lat, data.lng);
+                  // 커스텀 마커 HTML 생성
+                  const content = '<div style="background-color: #0064FF; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">' + data.order + '</div>';
+                  
+                  const customOverlay = new kakao.maps.CustomOverlay({
+                      position: position,
+                      content: content,
+                      yAnchor: 1
+                  });
+
+                  customOverlay.setMap(map);
+                  markers.push(customOverlay);
+                  bounds.extend(position);
+                });
+                
+                if (markerData.length > 0) {
+                  map.setBounds(bounds);
+                }
+              }
+
+              function fitToCoordinates(coords) {
+                if (!coords || coords.length === 0) return;
+                const bounds = new kakao.maps.LatLngBounds();
+                coords.forEach(c => {
+                  bounds.extend(new kakao.maps.LatLng(c.latitude, c.longitude));
+                });
+                map.setBounds(bounds);
+              }
+              
+              function animateToRegion(coord) {
+                  if (!coord) return;
+                  const moveLatLon = new kakao.maps.LatLng(coord.latitude, coord.longitude);
+                  map.setLevel(3, { anchor: moveLatLon });
+                  map.panTo(moveLatLon);
+              }
+
+              // React Native로부터 메시지 수신
+              document.addEventListener('message', function(event) {
+                const { type, payload } = JSON.parse(event.data);
+                switch(type) {
+                  case 'UPDATE_MARKERS':
+                    addMarkers(payload);
+                    break;
+                  case 'FIT_TO_COORDINATES':
+                    fitToCoordinates(payload);
+                    break;
+                  case 'ANIMATE_TO_REGION':
+                    animateToRegion(payload);
+                    break;
+                }
+              });
+
+              // WebView가 준비되었음을 React Native에 알림
+              window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'READY' }));
+            });
+          </script>
+      </body>
+      </html>
+    `;
+  };
 
   return (
     <SafeAreaView style={styles.container}>
       <DesignItineraryMapHeader
-        title={itineraryTitle || ''} 
+        title={itineraryTitle || ''}
         startDate={period.startDate}
         endDate={period.endDate}
         periodType={period.type}
-        nights={period.nights} 
+        nights={period.nights}
         days={period.days}
         onBackPress={() => router.back()}
         onMemberPress={() => console.log('멤버 아이콘 클릭')}
       />
 
-
       <View style={styles.mapContainer}>
-        {Platform.OS !== 'web' && MapView ? (
-          <MapView ref={mapRef} style={{ flex: 1 }} initialRegion={initialRegion}>
-            {markersToDisplay.map((marker) => (
-              <Marker
-                key={marker.id}
-                coordinate={{ latitude: marker.lat, longitude: marker.lng }}
-                title={marker.name}
-              >
-                <View style={[
-                  styles.marker,
-                  selectedLocationId === marker.id && styles.selectedMarker
-                ]}>
-                  <Text style={styles.markerText}>{marker.order}</Text>
-                </View>
-              </Marker>
-            ))}
-          </MapView>
-        ) : (
-          <View style={styles.webMapPlaceholder}>
-            <Text>지도는 웹에서 지원되지 않습니다.</Text>
-          </View>
-        )}
+        <WebView
+          ref={webViewRef}
+          style={{ flex: 1 }}
+          source={{ html: createMapHTML() }}
+          javaScriptEnabled={true}
+          onLoad={() => setIsWebViewReady(true)}
+          onMessage={(event) => {
+            const data = JSON.parse(event.nativeEvent.data);
+            if (data.type === 'READY') {
+              setIsWebViewReady(true);
+            }
+          }}
+        />
       </View>
 
       <View style={styles.bottomSheetContainer}>
@@ -253,26 +280,4 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: 'white' },
   mapContainer: { flex: 1 },
   bottomSheetContainer: { position: 'absolute', bottom: 0, left: 0, right: 0, zIndex: 1000 },
-  webMapPlaceholder: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0' },
-  marker: {
-    backgroundColor: '#0064FF',
-    padding: 5,
-    borderRadius: 20,
-    width: 30,
-    height: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderColor: '#FFFFFF',
-    borderWidth: 2,
-  },
-  selectedMarker: {
-    backgroundColor: '#FF5733',
-    transform: [{ scale: 1.2 }],
-  },
-  markerText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 14,
-  },
 });
-

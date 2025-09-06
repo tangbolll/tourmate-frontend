@@ -18,22 +18,17 @@
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ],
-      "package": "com.anonymous.tourmatefrontend",
-      "config": {
-        "googleMapsApiKey": "AIzaSyDrGxwjhoKQw7-3ds0GvjeCYNdDSguAqWc"
-      }
+      "package": "com.anonymous.tourmatefrontend"
     },
     "web": {
       "bundler": "metro",
-      "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "output": "static"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/icon.png",
           "resizeMode": "contain",
           "backgroundColor": "#ffffff"
         }
@@ -71,6 +66,12 @@
         "projectId": "65882642-4e2d-4db1-b1c3-d76c0e697170"
       },
       "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com"
+    },
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "listUnknownPackages": false,
+        "exclude": ["react-native-keyboard-aware-scroll-view"]
+      }
     }
   }
 }
