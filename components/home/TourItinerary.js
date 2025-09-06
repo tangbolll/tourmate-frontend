@@ -92,81 +92,37 @@ const TourItinerary = ({ travelId }) => {
             };
         });
     };
+    // 1. 오늘 날짜 확인 함수 추가
+    const getTodayDateString = () => {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
 
-    // 목 데이터 (백엔드 연동 실패 시 대체용)
-    const getMockSchedule = () => [
-        { 
-            id: 1, 
-            title: '웨스트민스터 사원에서 구경', 
-            time: '07:00 - 08:00', 
-            category: '관광',
-            startHour: 7,
-            endHour: 8
-        },
-        { 
-            id: 2, 
-            title: '버로우마켓에서 리조또 먹기', 
-            time: '08:00 - 10:00', 
-            category: '식사',
-            startHour: 8,
-            endHour: 10
-        },
-        { 
-            id: 3, 
-            title: '여유시간', 
-            time: '10:00 - 12:00', 
-            category: '휴식',
-            startHour: 10,
-            endHour: 12
-        },
-        { 
-            id: 4, 
-            title: '숙소 체크아웃', 
-            time: '12:00 - 13:00', 
-            category: '숙소',
-            startHour: 12,
-            endHour: 13
-        },
-        { 
-            id: 5, 
-            title: '대영박물관 관람', 
-            time: '13:00 - 15:00', 
-            category: '관광',
-            startHour: 13,
-            endHour: 15
-        },
-        { 
-            id: 6, 
-            title: '런던아이 탑승', 
-            time: '15:00 - 17:00', 
-            category: '관광',
-            startHour: 15,
-            endHour: 17
-        },
-        { 
-            id: 7, 
-            title: '피시앤칩스 저녁식사', 
-            time: '17:00 - 19:00', 
-            category: '식사',
-            startHour: 17,
-            endHour: 19
-        },
-        { 
-            id: 8, 
-            title: '호텔 체크인', 
-            time: '19:00 - 20:00', 
-            category: '숙소',
-            startHour: 19,
-            endHour: 20
-        }
-    ];
+    // 2. 지난 일정 확인 함수 추가
+    const isPastSchedule = (endHour) => {
+        const currentHour = getCurrentHour();
+        return currentHour >= endHour;
+    };
 
+    // 3. 채도 낮춘 색상 정의
     const categoryColors = {
         '숙소': '#FFD965',
         '식사': '#FF9E6D',
         '관광': '#A3C8E9',
         '휴식': '#C6D6C3',
         '기타': '#E0E0E0'
+    };
+
+    // 지난 일정용 채도 낮춘 색상
+    const pastCategoryColors = {
+        '숙소': '#F0E9B8',
+        '식사': '#F0C5A8',
+        '관광': '#D1DCE8',
+        '휴식': '#DDE6DB',
+        '기타': '#EEEEEE'
     };
 
     // 현재 시간 체크
@@ -179,8 +135,17 @@ const TourItinerary = ({ travelId }) => {
         return currentHour >= startHour && currentHour < endHour;
     };
 
+    // 오늘 날짜 필터링 추가
     const getDisplayedSchedule = () => {
-        return isExpanded ? schedule : schedule.slice(0, 4);
+        const todayString = getTodayDateString();
+        
+        // 오늘 날짜의 일정만 필터링
+        const todaySchedule = schedule.filter(item => {
+            // item.date가 "YYYY-MM-DD" 형식이라고 가정
+            return item.date === todayString;
+        });
+        
+        return isExpanded ? todaySchedule : todaySchedule.slice(0, 4);
     };
 
     const getDayOfWeek = () => {
@@ -193,9 +158,14 @@ const TourItinerary = ({ travelId }) => {
         return `${date.getMonth() + 1}월 ${date.getDate()}일`;
     };
 
+
     const renderScheduleItem = (item) => {
         const isActive = isCurrentSchedule(item.startHour, item.endHour);
-        const categoryColor = categoryColors[item.category] || categoryColors['기타'];
+        const isPast = isPastSchedule(item.endHour);
+        
+        // 지난 일정이면 채도 낮춘 색상 사용
+        const colorPalette = isPast ? pastCategoryColors : categoryColors;
+        const categoryColor = colorPalette[item.category] || colorPalette['기타'];
         
         return (
             <View 
@@ -212,8 +182,18 @@ const TourItinerary = ({ travelId }) => {
                     ]} 
                 />
                 <View style={styles.scheduleContent}>
-                    <Text style={styles.scheduleTitle}>{item.title}</Text>
-                    <Text style={styles.scheduleTime}>{item.time}</Text>
+                    <Text style={[
+                        styles.scheduleTitle,
+                        isPast && { color: '#999' } // 지난 일정은 회색 글자
+                    ]}>
+                        {item.title}
+                    </Text>
+                    <Text style={[
+                        styles.scheduleTime,
+                        isPast && { color: '#999' } // 지난 일정은 회색 글자
+                    ]}>
+                        {item.time}
+                    </Text>
                 </View>
             </View>
         );
@@ -270,7 +250,7 @@ const TourItinerary = ({ travelId }) => {
                     {getDisplayedSchedule().map(renderScheduleItem)}
                 </View>
                 
-                {schedule.length > 4 && (
+                {schedule.filter(item => item.date === getTodayDateString()).length > 4 && (
                     <TouchableOpacity 
                         style={styles.expandButton}
                         onPress={() => setIsExpanded(!isExpanded)}
