@@ -234,7 +234,7 @@ const PostExpanded = ({
         timeAgo: '5시간 전',
         likeCount: 23,
         scrapCount: 46,
-        postcardContent: '데이터 못 불러왔습니다\n죄송해요\n오른쪽 위 엑스 눌러서 나갔다 들어와봐유',
+        postcardContent: '',
         isLiked: false,
         isScraped: false,
         typeImageUrl: '../postcardType/1.png', // 기본 템플릿
