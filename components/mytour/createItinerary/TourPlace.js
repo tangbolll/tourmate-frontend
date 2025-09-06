@@ -31,12 +31,7 @@ const TourPlace = ({ selectedRegion = [] }) => {
 
     const handlePress = () => {
         // 지역 선택 페이지로 이동
-        router.push({
-            pathname: '/mytour/createItinerary/AllAreaTogglePage',
-            params: {
-                selectedRegions: JSON.stringify(selectedRegion),
-            },
-        });
+        router.back();
     };
 
     return (

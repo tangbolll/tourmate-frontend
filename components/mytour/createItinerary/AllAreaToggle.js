@@ -23,11 +23,6 @@ export default function AllAreaToggle({ onRegionSelect, selectedRegions = [], se
     const [loading, setLoading] = useState(false);
     const [filteredAreas, setFilteredAreas] = useState([]);
 
-
-    
-
-    
-
     useEffect(() => {
         const fetchAllAreas = async () => {
             setLoading(true);

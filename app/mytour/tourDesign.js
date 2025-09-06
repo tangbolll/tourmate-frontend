@@ -90,11 +90,9 @@ const styles = StyleSheet.create({
     contentContainer: { flex: 1 },
     scrollContent: { flex: 1 },
     floatingButtonContainer: {
-        paddingTop: 12,
-        backgroundColor: '#f9fafb',
-        //paddingBottom: 38,
-        borderTopColor: '#f0f0f0',
-        borderTopWidth: 1,
+        backgroundColor: '#fff', // 회색에서 흰색으로 변경
+        // paddingTop 제거
+        // borderTopColor, borderTopWidth 제거
     },
 });
 
