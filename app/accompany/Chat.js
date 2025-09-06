@@ -132,6 +132,15 @@ const Chat = () => {
         });
     };
 
+    const platformStyles = StyleSheet.create({
+    inputWrapperIOS: {
+        marginBottom: 55,
+    },
+    inputWrapperAndroid: {
+        marginBottom: 20,
+    },
+    });
+
     const formatDateForSeparator = (dateString) => {
         if (!dateString) return '';
         const date = new Date(dateString);
@@ -613,7 +622,10 @@ useEffect(() => {
                 {/* <TouchableOpacity style={styles.addButton} onPress={toggleActions}>
                     <Feather name={showActions ? "x" : "plus"} size={24} color="black" />
                 </TouchableOpacity> */}
-                <View style={styles.inputWrapper}>
+                <View style={[
+                    styles.inputWrapper, 
+                    Platform.OS === 'ios' ? platformStyles.inputWrapperIOS : platformStyles.inputWrapperAndroid
+                ]}>
                     <TextInput
                         style={styles.input}
                         placeholder="메시지를 입력해주세요."
@@ -947,7 +959,10 @@ const styles = StyleSheet.create({
         paddingRight: 4,
         marginRight: 8,
         backgroundColor: 'white',
-        marginBottom: 55,
+    //     marginBottom: Platform.select({
+    //     ios: 55,
+    //     android: 20,
+    // }),
     },
     input: {
         flex: 1,

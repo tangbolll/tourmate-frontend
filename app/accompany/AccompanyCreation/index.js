@@ -17,11 +17,12 @@ import Step2 from './Step2';
 import { useRouter } from 'expo-router';
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-
-    import { API_URL } from '../../../utils/apiConfig';
+import { API_URL } from '../../../utils/apiConfig';
+import { useAuth } from '../../../context/AuthContext'; // 🔥 올바른 경로로 수정
 
 const AccompanyCreation = () => {
-
+    // 🔥 useAuth를 컴포넌트 최상위에 위치
+    const { currentUserId } = useAuth();
     const router = useRouter();
     const [currentStep, setCurrentStep] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
@@ -85,7 +86,6 @@ const AccompanyCreation = () => {
         const today = new Date();
         return today.toISOString().split('T')[0];
     };
-
 
     // Step 1 유효성 검사
     const isStep1Valid =
@@ -156,9 +156,7 @@ const AccompanyCreation = () => {
         showExitConfirmation(() => router.push('/accompany'));
     };
 
-
-
-const handleSubmit = async () => {
+    const handleSubmit = async () => {
         console.log('🚀 동행 생성 시작');
         setIsLoading(true);
 
@@ -176,14 +174,54 @@ const handleSubmit = async () => {
                 setIsLoading(false);
                 return;
             }
+
+            // 🔥 사용자 인증 정보 확인 (AuthContext 사용하되 토큰은 AsyncStorage에서)
+            console.log('🔍 인증 정보 확인 시작');
+            console.log('📋 currentUserId from useAuth:', currentUserId);
             
-            const userId = await AsyncStorage.getItem('userId');
+            // AsyncStorage에서 토큰 가져오기 (AuthContext는 토큰을 제공하지 않음)
+            const [storedUserId, token] = await Promise.all([
+                AsyncStorage.getItem('userId'),
+                AsyncStorage.getItem('jwtToken') // 🔥 'token' 대신 'jwtToken' 사용
+            ]);
+            
+            console.log('📋 저장된 정보:', {
+                storedUserId,
+                currentUserId,
+                tokenExists: !!token,
+                tokenLength: token ? token.length : 0,
+                tokenPrefix: token ? token.substring(0, 20) + '...' : 'none'
+            });
+
+            // 🔥 사용자 ID 확인 (useAuth 우선)
+            const userId = currentUserId || storedUserId;
+            
             if (!userId) {
+                console.error('❌ 사용자 ID 없음');
                 Alert.alert("오류", "로그인 정보가 없습니다. 다시 로그인해주세요.");
                 setIsLoading(false);
                 router.replace('/auth/login');
                 return;
             }
+
+            // 🔥 토큰 확인
+            if (!token) {
+                console.error('❌ 토큰 없음');
+                Alert.alert("오류", "인증 토큰이 없습니다. 다시 로그인해주세요.");
+                setIsLoading(false);
+                router.replace('/auth/login');
+                return;
+            }
+
+            // 🔥 토큰 형식 확인
+            if (!token.startsWith('Bearer ') && !token.includes('.')) {
+                console.warn('⚠️ 토큰 형식이 이상함:', token.substring(0, 20));
+            }
+
+            console.log('✅ 인증 정보 확인 완료:', {
+                userId: userId,
+                tokenValid: !!token
+            });
 
             // 백엔드 DTO에 맞는 데이터 객체 생성
             const accompanyData = {
@@ -201,7 +239,7 @@ const handleSubmit = async () => {
                 ageGroup: [...new Set(selectedAges.includes('누구나') ? ['ALL'] : selectedAges)],
                 category: [...new Set(selectedCategories)],
                 tag: [...new Set(tags)],
-                mainImageIndex: thumbnailIndex // Add this line
+                mainImageIndex: thumbnailIndex
             };
 
             // FormData 생성
@@ -224,19 +262,29 @@ const handleSubmit = async () => {
             console.log('📤 FormData 생성 완료');
             console.log('📝 전송할 데이터:', accompanyData);
 
-            
+            // API_URL 사용하여 엔드포인트 구성
+            const url = `${API_URL}/api/accompany/create`;
             console.log('🌐 API URL:', url);
 
-            const response = await axios.post(url, formData, {
-                headers: {
-                    'Content-Type': 'multipart/form-data', // Add this line
-                    'Accept': 'application/json',
-                },
+            // 🔥 헤더 설정 (토큰 형식 확인)
+            const authToken = token.startsWith('Bearer ') ? token : `Bearer ${token}`;
+            
+            const headers = {
+                'Content-Type': 'multipart/form-data',
+                'Accept': 'application/json',
+                'Authorization': authToken
+            };
+
+            console.log('📋 요청 헤더:', {
+                ...headers,
+                Authorization: authToken.substring(0, 20) + '...' // 토큰 일부만 로깅
             });
+
+            const response = await axios.post(url, formData, { headers });
 
             console.log('📡 응답 받음:', response.status);
 
-            if (response.status === 200) {
+            if (response.status === 200 || response.status === 201) { // 201도 추가
                 const result = response.data;
                 console.log('✅ 성공 응답:', result);
                 Alert.alert(
@@ -246,7 +294,6 @@ const handleSubmit = async () => {
                         {
                             text: "확인",
                             onPress: () => {
-                                // 동행 목록 페이지로 이동
                                 router.push('/accompany');
                             }
                         }
@@ -256,12 +303,40 @@ const handleSubmit = async () => {
             }
         } catch (error) {
             console.error('❌ 네트워크 에러:', error);
+            
             if (error.response) {
+                console.log('❌ 서버 에러 상태:', error.response.status);
                 console.log('❌ 서버 에러 응답:', error.response.data);
-                Alert.alert(
-                    "동행 생성 실패",
-                    `서버 오류 발생 (${error.response.status})\n\n${JSON.stringify(error.response.data, null, 2)}`
-                );
+                console.log('❌ 서버 에러 헤더:', error.response.headers);
+                
+                if (error.response.status === 403) {
+                    Alert.alert(
+                        "권한 오류", 
+                        "접근 권한이 없습니다. 다시 로그인해주세요.",
+                        [
+                            {
+                                text: "로그인하러 가기",
+                                onPress: () => router.replace('/auth/login')
+                            }
+                        ]
+                    );
+                } else if (error.response.status === 401) {
+                    Alert.alert(
+                        "인증 오류",
+                        "로그인이 필요합니다.",
+                        [
+                            {
+                                text: "로그인하러 가기", 
+                                onPress: () => router.replace('/auth/login')
+                            }
+                        ]
+                    );
+                } else {
+                    Alert.alert(
+                        "동행 생성 실패",
+                        `서버 오류 발생 (${error.response.status})\n\n${JSON.stringify(error.response.data, null, 2)}`
+                    );
+                }
             } else {
                 Alert.alert("네트워크 오류", "서버에 연결할 수 없습니다. 와이파이 연결과 서버 실행 상태를 확인해주세요.");
             }
@@ -269,7 +344,6 @@ const handleSubmit = async () => {
             setIsLoading(false);
         }
     };
-
     
     const renderStep = () => {
         if (currentStep === 1) {
@@ -377,6 +451,7 @@ const handleSubmit = async () => {
     );
 };
 
+// 스타일은 동일하므로 생략...
 const styles = StyleSheet.create({
     container: {
         flex: 1,

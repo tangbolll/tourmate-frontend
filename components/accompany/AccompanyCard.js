@@ -68,7 +68,7 @@ export default function AccompanyCard({
                     {/* 타이틀 - 빈 값 체크 추가 */}
                     <Text
                         style={styles.title}
-                        numberOfLines={2}
+                        numberOfLines={1}
                         ellipsizeMode="tail"
                     >
                         {title || '제목 없음'}

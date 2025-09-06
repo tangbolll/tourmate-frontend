@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
   avatarContainer: {
-    marginRight: 15,
+    marginRight: 4,
   },
   singleAvatar: {
     width: 50,
