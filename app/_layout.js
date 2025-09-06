@@ -61,6 +61,7 @@ function RootLayoutNav() {
     }
 
     return (
+        <SafeAreaView style={styles.container}>
         <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="(public)" />
@@ -77,6 +78,7 @@ function RootLayoutNav() {
             <Stack.Screen name="mytour" options={{ headerShown: false }} />
             <Stack.Screen name="profile" options={{ headerShown: false }} />
         </Stack>
+        </SafeAreaView>
     );
 }
 
