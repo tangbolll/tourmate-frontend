@@ -1,6 +1,6 @@
 import React, { useRef } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Platform } from 'react-native';
-import { PanGestureHandler, State } from 'react-native-gesture-handler';
+import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import Constants from 'expo-constants';
 
@@ -8,9 +8,6 @@ import Constants from 'expo-constants';
 const defaultProfiles = [
   require('../../assets/defaultprofile.png')
 ];
-
-// API 베이스 URL 설정 (copied from HomePostApi.js)
-
 
 const getFullImageUrl = (imagePath) => {
     if (!imagePath || imagePath.startsWith('http')) {
@@ -126,6 +123,7 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
   };
 
   return (
+    <GestureHandlerRootView style={{ flex: 1 }}>
     <View style={styles.chatItemContainer}>
       {/* 배경의 휴지통 버튼 */}
       <View style={styles.deleteBackground}>
@@ -168,6 +166,7 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
         </Animated.View>
       </PanGestureHandler>
     </View>
+    </GestureHandlerRootView>
   );
 };
 

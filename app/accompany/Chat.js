@@ -134,7 +134,7 @@ const Chat = () => {
 
     const platformStyles = StyleSheet.create({
     inputWrapperIOS: {
-        marginBottom: 55,
+        marginBottom: 40,
     },
     inputWrapperAndroid: {
         marginBottom: 20,
