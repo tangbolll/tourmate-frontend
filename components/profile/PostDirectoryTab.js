@@ -1,11 +1,18 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Image } from 'react-native';
+import React, { useState } from 'react';
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    ScrollView, 
+    TouchableOpacity, 
+    Image,
+    RefreshControl // 새로고침을 위해 추가
+} from 'react-native';
 import { useRouter } from 'expo-router';
 
-// Dimensions는 더 이상 필요 없으므로 삭제합니다.
-
-export const PostDirectoryTab = ({ folders, onEditFolder }) => {
+export const PostDirectoryTab = ({ folders, onEditFolder, onRefresh }) => {
     const router = useRouter();
+    const [refreshing, setRefreshing] = useState(false); // 새로고침 상태 관리
 
     const handleDirectoryPress = (folder) => {
         router.push({
@@ -17,6 +24,15 @@ export const PostDirectoryTab = ({ folders, onEditFolder }) => {
                 endDate: folder.endDate,
             }
         });
+    };
+
+    // 새로고침 핸들러 추가
+    const handleRefresh = async () => {
+        setRefreshing(true);
+        if (onRefresh) {
+            await onRefresh();
+        }
+        setRefreshing(false);
     };
 
     const formatPeriod = (startDate, endDate) => {
@@ -49,18 +65,32 @@ export const PostDirectoryTab = ({ folders, onEditFolder }) => {
     };
 
     return (
-        <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
+        <ScrollView 
+            style={styles.container} 
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+                <RefreshControl
+                    refreshing={refreshing}
+                    onRefresh={handleRefresh}
+                    colors={['#000']} 
+                    tintColor={'#000'}
+                    // PostBoardTab과 동일하게 더 세게 당겨야 반응하도록 설정
+                    progressViewOffset={400}
+                    refreshThreshold={400}
+                    distanceToRefresh={400}
+                />
+            }
+            scrollEventThrottle={16}
+        >
             <View style={styles.content}>
                 <View style={styles.grid}>
                     {folders.length > 0 ? (
-                        folders.map((folder, index) => { // ✨ 1. map 함수에 index를 추가합니다.
-                            // ✨ 2. 한 줄의 마지막 아이템인지 확인하는 로직을 추가합니다.
+                        folders.map((folder, index) => {
                             const isLastInRow = (index + 1) % 3 === 0;
 
                             return (
                                 <TouchableOpacity
                                     key={folder.folderId ? folder.folderId : `folder-${index}`}
-                                    // ✨ 3. 마지막 아이템일 경우 오른쪽 마진을 제거하는 스타일을 적용합니다.
                                     style={[
                                         styles.directoryCard,
                                         isLastInRow && { marginRight: 0 }
@@ -96,7 +126,6 @@ export const PostDirectoryTab = ({ folders, onEditFolder }) => {
     );
 };
 
-// ✨ 4. 스타일시트를 PostBoardTab과 동일한 방식으로 수정합니다.
 const styles = StyleSheet.create({
     container: {
         flex: 1,
@@ -170,4 +199,3 @@ const styles = StyleSheet.create({
         color: '#999',
     },
 });
-
