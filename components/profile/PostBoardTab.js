@@ -140,13 +140,13 @@ const PostBoardTab = ({
             </ScrollView>
 
             {showDetail && selectedPostcard && (
-                <PostExpanded
-                    visible={showDetail}
-                    postData={selectedPostcard}
-                    onClose={handleCloseDetail}
-                    onDataUpdate={handleLocalDataUpdate} // ⭐ 수정
-                    currentUserId={currentUserId}
-                />
+            <PostExpanded
+                visible={showDetail}
+                postData={selectedPostcard} // 👈 이렇게 다시 간단하게 바꿉니다.
+                onClose={handleCloseDetail}
+                onDataUpdate={handleLocalDataUpdate}
+                currentUserId={currentUserId}
+            />
             )}
         </>
     );

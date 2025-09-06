@@ -74,6 +74,8 @@ const formatDate = (dateString) => {
 
 const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId }) => {
     const router = useRouter(); 
+    console.log('PostExpanded로 전달된 postData:', JSON.stringify(postData, null, 2));
+
 
     // 서버에서 받은 데이터를 기반으로 초기 상태 설정
     const [isLiked, setIsLiked] = useState(postData?.isLiked || false);
@@ -220,24 +222,29 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
 
     // ⭐ 4. 내 엽서 관리 버튼 핸들러 함수들 추가
     const handleEdit = () => {
-        // 수정 페이지로 이동하는 로직
-        if (!postData?.id || !postData?.directoryId) {
-            Alert.alert("오류", "엽서 정보를 찾을 수 없어 수정할 수 없습니다.");
+        // 👇 postData.id -> postData.postcardId 로 수정
+        // 👇 directoryId가 없는 경우에 대한 방어 코드 추가
+        if (!postData?.postcardId || !postData?.directoryId) { 
+            Alert.alert("오류", "엽서 또는 폴더 정보를 찾을 수 없어 수정할 수 없습니다.");
             return;
         }
         router.push({
-            pathname: '/profile/WritePost', // 실제 수정 페이지 경로로 변경해야 할 수 있습니다.
+            pathname: '/profile/writePost',
             params: { 
-                postcardId: postData.id,
+                postcardId: postData.postcardId, 
                 directoryId: postData.directoryId,
+                directoryName: postData.directoryName,
+                startDate: postData.startDate,
+                endDate: postData.endDate,
+                directoryName: postData.directoryName
             }
         });
-        onClose(); // 수정 페이지로 이동 후 모달 닫기
+        onClose();
     };
 
     const handleDelete = () => {
-        // 엽서 삭제 로직
-        if (!postData?.id) {
+        // 👇 postData.id -> postData.postcardId 로 수정
+        if (!postData?.postcardId) {
             Alert.alert("오류", "삭제할 엽서 정보를 찾을 수 없습니다.");
             return;
         }
@@ -252,16 +259,14 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
                     style: "destructive", 
                     onPress: async () => {
                         try {
-                            // 실제 삭제 API를 호출해야 합니다. (API 함수 이름은 실제 이름으로 변경)
-                            // await deletePostcardApi(postData.id);
+                            await deletePostcardApi(postData.postcardId); // 👈 수정
                             
                             Alert.alert("삭제 완료", "엽서가 삭제되었습니다.");
                             
-                            // onDataUpdate prop을 호출하여 부모 컴포넌트에 삭제 사실을 알립니다.
                             if (onDataUpdate) {
-                                onDataUpdate(postData.id, 'delete', null);
+                                onDataUpdate(postData.postcardId, 'delete', null); // 👈 수정
                             }
-                            onClose(); // 모달 닫기
+                            onClose();
                         } catch (error) {
                             console.error("삭제 처리 오류:", error);
                             Alert.alert("오류", "엽서를 삭제하는 중 오류가 발생했습니다.");
@@ -277,16 +282,25 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
     };
 
     const handleShare = () => {
-        // 공유 기능 로직
-        if (!postData?.id) {
-            Alert.alert("오류", "공유할 엽서 정보를 찾을 수 없습니다.");
+        // 👇 postData.id -> postData.postcardId 로 수정
+        if (!postData?.postcardId) {
+            Alert.alert('알림', '공유할 엽서 정보를 찾을 수 없습니다.');
             return;
         }
-        // 공유 기능은 현재 비즈니스 로직에 따라 구현해야 합니다.
-        // 예를 들어, 딥 링크나 특정 공유 페이지로 이동할 수 있습니다.
-        Alert.alert("준비 중", "공유 기능은 준비 중입니다.");
-    };
 
+        const queryParams = {
+            directoryId: postData.directoryId, // 🚨 이 정보가 postData에 포함되어야 함
+            directoryTitle: postData.directoryName, // 🚨 이 정보가 postData에 포함되어야 함
+            startDate: postData.startDate,
+            endDate: postData.endDate, // 🚨 이 정보가 postData에 포함되어야 함
+            selectedPostcardId: postData.postcardId // 👈 수정
+        };
+
+        router.push({
+            pathname: 'profile/sharePost',
+            params: queryParams
+        });
+    };
 
 
     return (

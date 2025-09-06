@@ -118,8 +118,8 @@ const WritePost = () => {
                                 setSelectedImage(formattedPostcards[selectedIndex].image);
                                 setSelectedPostcard(formattedPostcards[selectedIndex].postcardTemplate);
                                 setPostcardContent(formattedPostcards[selectedIndex].content || '');
-                                setIsSaved(true);
-                                setIsEditMode(false);
+                                setIsSaved(false); // 👈 아직 저장 전이므로 '저장되지 않음' 상태로 시작
+                                setIsEditMode(true);  // 👈 '편집 모드'로 시작하도록 변경
                             } else {
                                 // postcardId not found, select first one
                                 if (formattedPostcards.length > 0) {
@@ -157,7 +157,7 @@ const WritePost = () => {
             } else {
                 // No directoryId, so we are creating a new directory and a new postcard
                 const defaultImageUri = null;
-                //const defaultPostcardTemplate = { code: 1, thumbnail: postcardTemplates[1] };
+                const defaultPostcardTemplate = { code: 1, thumbnail: postcardTemplates[1] };
                 const newPostcard = { id: null, image: defaultImageUri, postcardTemplate: defaultPostcardTemplate, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString(), isEditMode: true, };
                 setPostcards([newPostcard]);
                 setCurrentIndex(0);

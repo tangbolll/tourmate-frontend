@@ -45,33 +45,60 @@ export default function ProfileHome() {
             return;
         }
         try {
-            // 폴더 목록 불러오기
+            // 폴더 목록과 그 안의 엽서들까지 모두 불러옵니다.
             console.log("✅ 폴더 목록을 불러오기 시작합니다.");
             const fetchedFolders = await getFoldersByUserApi(email);
-            const foldersWithThumbnails = await Promise.all(
+            const foldersWithPostcards = await Promise.all(
                 fetchedFolders.map(async (folder) => {
                     try {
                         const postcards = await getPostcardsByFolderApi(folder.id);
-                        const firstPostcardImage = postcards.length > 0 ? postcards[0].imageUrl : null;
-                        return {
-                            ...folder,
-                            thumbnailUrl: firstPostcardImage,
-                            postcards: postcards,
-                        };
+                        return { ...folder, postcards: postcards };
                     } catch (error) {
                         console.error(`❌ 폴더 ID ${folder.id}의 엽서 불러오기 실패:`, error);
-                        return { ...folder, thumbnailUrl: null, postcards: [] };
+                        return { ...folder, postcards: [] };
                     }
                 })
             );
+
+            // 썸네일 추가 로직 (기존 로직과 유사)
+            const foldersWithThumbnails = foldersWithPostcards.map(folder => ({
+                ...folder,
+                thumbnailUrl: folder.postcards.length > 0 ? folder.postcards[0].imageUrl : null,
+            }));
+            
             setFolders(foldersWithThumbnails);
             console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", foldersWithThumbnails);
 
             // 즐겨찾기 엽서 목록 불러오기
             console.log("✅ 즐겨찾기 엽서 목록을 불러오기 시작합니다.");
-            const fetchedPostcards = await getFavoritePostcardsApi(email);
-            setFavoritePostcards(fetchedPostcards);
-            console.log("✅ 즐겨찾기 엽서 목록을 성공적으로 불러왔습니다:", fetchedPostcards);
+            const fetchedFavoritePostcards = await getFavoritePostcardsApi(email);
+
+            // --- 👇 여기가 핵심 수정 부분입니다 ---
+            // 즐겨찾기 엽서에 폴더 정보를 추가(보강)합니다.
+            const enrichedFavoritePostcards = fetchedFavoritePostcards.map(favPostcard => {
+                // 이 즐겨찾기 엽서가 속한 폴더를 찾습니다.
+                const parentFolder = foldersWithPostcards.find(folder =>
+                    folder.postcards.some(p => p.postcardId === favPostcard.postcardId)
+                );
+
+                if (parentFolder) {
+                    console.log("폴더 정보: ", parentFolder);
+                    // 폴더 정보를 찾았다면, 기존 엽서 정보에 폴더 정보를 합쳐서 반환합니다.
+                    return {
+                        ...favPostcard, // 기존 즐겨찾기 엽서의 모든 정보
+                        directoryId: parentFolder.id,
+                        directoryName: parentFolder.title,
+                        startDate: parentFolder.startDate,
+                        endDate: parentFolder.endDate,
+                    };
+                }
+                // 폴더를 못 찾으면 기존 정보만 반환 (이런 경우는 거의 없습니다)
+                return favPostcard;
+            });
+
+            setFavoritePostcards(enrichedFavoritePostcards);
+            console.log("✅ 폴더 정보가 추가된 즐겨찾기 엽서 목록:", enrichedFavoritePostcards);
+            // --- 👆 여기까지가 핵심 수정 부분입니다 ---
 
         } catch (error) {
             handleApiError(error, '데이터 조회');
