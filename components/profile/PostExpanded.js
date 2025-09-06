@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     View,
     Text,
@@ -15,6 +15,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { toggleLikePostcard, toggleScrapPostcard, fetchPostcardDetailApi} from '../../utils/HomePostApi';
 import { useRouter } from 'expo-router';
+import EditPostFloatingButtons from '../../components/profile/EditPostFloatingButtons'; // ⭐ 1. 이 줄을 추가하세요.
+import { deletePostcardApi } from '../../utils/PostCardApi';
 
 const { width, height } = Dimensions.get('window');
 
@@ -72,7 +74,6 @@ const formatDate = (dateString) => {
 
 const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId }) => {
     const router = useRouter(); 
-    const isOwner = postData?.authorId === currentUserId;
 
     // 서버에서 받은 데이터를 기반으로 초기 상태 설정
     const [isLiked, setIsLiked] = useState(postData?.isLiked || false);
@@ -219,23 +220,28 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
 
     // ⭐ 4. 내 엽서 관리 버튼 핸들러 함수들 추가
     const handleEdit = () => {
+        // 수정 페이지로 이동하는 로직
         if (!postData?.id || !postData?.directoryId) {
             Alert.alert("오류", "엽서 정보를 찾을 수 없어 수정할 수 없습니다.");
             return;
         }
-        // 수정 페이지로 엽서 ID와 디렉토리 ID를 가지고 이동
         router.push({
-            pathname: '/profile/WritePost',
+            pathname: '/profile/WritePost', // 실제 수정 페이지 경로로 변경해야 할 수 있습니다.
             params: { 
                 postcardId: postData.id,
                 directoryId: postData.directoryId,
-                // directoryName 등 필요한 다른 정보도 함께 전달
             }
         });
-        onClose(); // 모달 닫기
+        onClose(); // 수정 페이지로 이동 후 모달 닫기
     };
 
     const handleDelete = () => {
+        // 엽서 삭제 로직
+        if (!postData?.id) {
+            Alert.alert("오류", "삭제할 엽서 정보를 찾을 수 없습니다.");
+            return;
+        }
+
         Alert.alert(
             "엽서 삭제",
             "정말로 이 엽서를 삭제하시겠습니까?",
@@ -245,11 +251,21 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
                     text: "삭제", 
                     style: "destructive", 
                     onPress: async () => {
-                        // 여기에 실제 삭제 API를 호출하는 로직을 추가해야 합니다.
-                        // 예: await deletePostcardApi(postData.id);
-                        Alert.alert("삭제 완료", "엽서가 삭제되었습니다.");
-                        onDataUpdate(postData.id, 'delete', null); // 부모 컴포넌트에 삭제 사실 알리기
-                        onClose(); // 모달 닫기
+                        try {
+                            // 실제 삭제 API를 호출해야 합니다. (API 함수 이름은 실제 이름으로 변경)
+                            // await deletePostcardApi(postData.id);
+                            
+                            Alert.alert("삭제 완료", "엽서가 삭제되었습니다.");
+                            
+                            // onDataUpdate prop을 호출하여 부모 컴포넌트에 삭제 사실을 알립니다.
+                            if (onDataUpdate) {
+                                onDataUpdate(postData.id, 'delete', null);
+                            }
+                            onClose(); // 모달 닫기
+                        } catch (error) {
+                            console.error("삭제 처리 오류:", error);
+                            Alert.alert("오류", "엽서를 삭제하는 중 오류가 발생했습니다.");
+                        }
                     } 
                 }
             ]
@@ -261,8 +277,17 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
     };
 
     const handleShare = () => {
+        // 공유 기능 로직
+        if (!postData?.id) {
+            Alert.alert("오류", "공유할 엽서 정보를 찾을 수 없습니다.");
+            return;
+        }
+        // 공유 기능은 현재 비즈니스 로직에 따라 구현해야 합니다.
+        // 예를 들어, 딥 링크나 특정 공유 페이지로 이동할 수 있습니다.
         Alert.alert("준비 중", "공유 기능은 준비 중입니다.");
     };
+
+
 
     return (
         <Modal
@@ -286,88 +311,48 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
                     </TouchableOpacity>
                 </View>
 
-                {/* 메인 콘텐츠 - 필요한 요소만 남김 */}
-                <View style={styles.contentContainer}>
-                    {/* 엽서 이미지 */}
-                    <View style={styles.imageSection}>
-                        <Image source={{ uri: displayData.postcardImage }} style={styles.postcardImage} />
-                    </View>
-
-                    {/* 엽서 템플릿 배경에 내용 오버레이 */}
-                    <View style={styles.postcardSection}>
-                        <ImageBackground
-                            source={displayData.templateImage}
-                            style={styles.postcardContainer}
-                            resizeMode="contain"
-                        >
-                            <View style={styles.postcardOverlay}>
-                                <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
-                                    <Text style={styles.contentText}>{String(displayData.postcardContent || '')}</Text>
-                                </ScrollView>
-                            </View>
-                        </ImageBackground>
-                    </View>
-                </View>'
+                {/* 엽서 제목 */}
+                <Text style={styles.postcardTitle}>{displayData.postcardName}</Text>
                 
-                <View style={styles.actionSection}>
-                    {isOwner ? (
-                        // 내가 주인일 경우: 관리 버튼 4개 표시
-                        <>
-                            <TouchableOpacity style={styles.actionButton} onPress={handleEdit}>
-                                <View style={styles.actionIcon}>
-                                    <Ionicons name="create-outline" size={28} color="#fff" />
-                                </View>
-                                <Text style={styles.actionText}>수정</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.actionButton} onPress={handleDownload}>
-                                <View style={styles.actionIcon}>
-                                    <Ionicons name="download-outline" size={28} color="#fff" />
-                                </View>
-                                <Text style={styles.actionText}>저장</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.actionButton} onPress={handleShare}>
-                                <View style={styles.actionIcon}>
-                                    <Ionicons name="share-social-outline" size={28} color="#fff" />
-                                </View>
-                                <Text style={styles.actionText}>공유</Text>
-                            </TouchableOpacity>
-                            <TouchableOpacity style={styles.actionButton} onPress={handleDelete}>
-                                <View style={styles.actionIcon}>
-                                    <Ionicons name="trash-outline" size={28} color="tomato" />
-                                </View>
-                                <Text style={[styles.actionText, { color: 'tomato' }]}>삭제</Text>
-                            </TouchableOpacity>
-                        </>
-                    ) : (
-                        // 내가 주인이 아닐 경우: 기존 좋아요/스크랩 버튼 표시
-                        <>
-                            {/* 좋아요 버튼 */}
-                            <TouchableOpacity
-                                style={[styles.actionButton, likeLoading && styles.actionButtonDisabled]}
-                                onPress={currentUserId ? handleLike : handleLoginRequired}
-                                disabled={likeLoading}
-                            >
-                                <View style={styles.actionIcon}>
-                                    {/* ... (기존 좋아요 아이콘 코드) ... */}
-                                </View>
-                                <Text style={styles.actionCount}>{likeCount}</Text>
-                            </TouchableOpacity>
-
-                            {/* 스크랩 버튼 */}
-                            <TouchableOpacity
-                                style={[styles.actionButton, scrapLoading && styles.actionButtonDisabled]}
-                                onPress={currentUserId ? handleScrap : handleLoginRequired}
-                                disabled={scrapLoading}
-                            >
-                                <View style={styles.actionIcon}>
-                                    {/* ... (기존 스크랩 아이콘 코드) ... */}
-                                </View>
-                                <Text style={styles.actionCount}>{scrapCount}</Text>
-                            </TouchableOpacity>
-                        </>
-                    )}
+                {/* 사용자 정보 */}
+                <View style={styles.userInfo}>
+                    <Image source={{ uri: displayData.profileImage }} style={styles.profileImage} />
+                    <Text style={styles.userText}>
+                        {displayData.userName} · {displayData.location} · {displayData.date}
+                    </Text>
                 </View>
 
+                {/* 엽서 이미지 */}
+                <View style={styles.imageSection}>
+                    <Image source={{ uri: displayData.postcardImage }} style={styles.postcardImage} />
+                </View>
+
+                {/* 엽서 템플릿 배경에 내용 오버레이 */}
+                <View style={styles.postcardSection}>
+                    <ImageBackground
+                        source={displayData.templateImage}
+                        style={styles.postcardContainer}
+                        resizeMode="contain"
+                    >
+                        <View style={styles.postcardOverlay}>
+                            <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
+                                <Text style={styles.contentText}>{String(displayData.postcardContent || '')}</Text>
+                            </ScrollView>
+                        </View>
+                    </ImageBackground>
+                </View>
+                
+                {/* actionSection: EditPostFloatingButtons만 포함 */}
+                <View style={styles.actionSection}>
+                    <EditPostFloatingButtons
+                        onDelete={handleDelete}
+                        onDownload={handleDownload}
+                        onShare={handleShare}
+                        onEdit={handleEdit}
+                        isFavorite={postData?.isFavorite || false}
+                    />
+                </View>
+                
             </View>
         </Modal>
     );
@@ -486,10 +471,9 @@ const styles = StyleSheet.create({
         marginTop: 8,
     },
     actionSection: {
-        flexDirection: 'row',
-        justifyContent: 'center',
+        width: '100%',
         alignItems: 'center',
-        gap: 40,
+        paddingVertical: 20, // 위아래 여백
     },
     actionButton: {
         alignItems: 'center',
