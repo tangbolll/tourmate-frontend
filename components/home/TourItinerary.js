@@ -8,6 +8,7 @@ const TourItinerary = ({ travelId }) => {
     const [schedule, setSchedule] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
+    
 
     // 여행 일정 데이터 가져오기
     useEffect(() => {
@@ -137,15 +138,24 @@ const TourItinerary = ({ travelId }) => {
 
     // 오늘 날짜 필터링 추가
     const getDisplayedSchedule = () => {
-        const todayString = getTodayDateString();
-        
-        // 오늘 날짜의 일정만 필터링
-        const todaySchedule = schedule.filter(item => {
-            // item.date가 "YYYY-MM-DD" 형식이라고 가정
-            return item.date === todayString;
-        });
-        
-        return isExpanded ? todaySchedule : todaySchedule.slice(0, 4);
+    const todayString = getTodayDateString();
+    
+    // 오늘 날짜의 일정만 필터링
+    const todaySchedule = schedule.filter(item => {
+        // item.date가 "YYYY-MM-DD" 형식이라고 가정
+        return item.date === todayString;
+    });
+    
+    // 시간순으로 정렬 (startHour 기준 오름차순)
+    const sortedSchedule = todaySchedule.sort((a, b) => {
+        // startHour가 같으면 endHour로 비교
+        if (a.startHour === b.startHour) {
+            return a.endHour - b.endHour;
+        }
+        return a.startHour - b.startHour;
+    });
+    
+    return isExpanded ? sortedSchedule : sortedSchedule.slice(0, 4);
     };
 
     const getDayOfWeek = () => {
