@@ -289,7 +289,11 @@ const TimeBlock = ({
                 onPress={handlePress}
                 activeOpacity={0.7}
             >
-                
+                <MaterialIcons 
+                    name="add" 
+                    size={20} 
+                    color="#9ca3af" 
+                />
             </TouchableOpacity>
         );
     }
