@@ -273,9 +273,9 @@ export default function DesignItinerary() {
                     endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`,
                     location: activity.location || activity.attractionName || '',
                     memo: activity.tip || '',
-                    tag: activity.scheduleType || 'ATTRACTION',
+                    tag: activity.scheduleType || '관광',
                     isAiSuggestion: true,
-                    categoryColor: scheduleUtils.getCategoryStyle(activity.scheduleType || 'ATTRACTION').borderColor,
+                    categoryColor: scheduleUtils.getCategoryStyle(activity.scheduleType || '관광').borderColor,
                 };
 
                 if (period.type === 'date') schedule.date = dateKey;
