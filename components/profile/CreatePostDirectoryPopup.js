@@ -57,16 +57,27 @@ const CreatePostDirectoryPopup = ({
     };
 
     const formatDateForDisplay = (date) => {
-        if (!date) return '날짜를 선택하세요';
+        if (!date || !(date instanceof Date) || isNaN(date.getTime())) {
+            return '날짜를 선택하세요';
+        }
+        
         const month = date.getMonth() + 1;
         const day = date.getDate();
         const weekdays = ['일', '월', '화', '수', '목', '금', '토'];
         const weekday = weekdays[date.getDay()];
+        
         return `${month}월 ${day}일 (${weekday})`;
     };
 
-    const handleDateSelect = (day) => {
-        const selectedDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const handleDateSelect = (selectedDate) => {
+        console.log('Parent - Received date:', selectedDate);
+        console.log('Parent - Date type:', typeof selectedDate);
+        console.log('Parent - Is Date:', selectedDate instanceof Date);
+        
+        if (!selectedDate || !(selectedDate instanceof Date)) {
+            console.error('Invalid date received:', selectedDate);
+            return;
+        }
         
         if (selectingDateType === 'start') {
             setStartDate(selectedDate);

@@ -138,9 +138,18 @@ const DayPicker = ({
     const handleDateSelect = (day) => {
         if (!day || isDisabled(day)) return;
         
-        // 부모 컴포넌트에서 기대하는 형식으로 날짜 전달
-        // CreatePostDirectoryPopup에서는 day(숫자)를 받아서 Date 객체를 생성함
-        onDateSelect(day);
+        // DayPicker 내부의 currentMonth를 사용하여 완전한 Date 객체 생성
+        const selectedDate = new Date(
+            currentMonth.getFullYear(),
+            currentMonth.getMonth(),
+            day
+        );
+        
+        console.log('DayPicker - Selected date:', selectedDate);
+        console.log('DayPicker - Current month:', currentMonth);
+        
+        // 완전한 Date 객체를 부모에게 전달
+        onDateSelect(selectedDate);
     };
 
     const getDayStyle = (day, index) => {
