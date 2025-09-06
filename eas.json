@@ -1,6 +1,7 @@
 {
   "cli": {
-    "version": ">= 16.18.0"
+    "version": ">= 16.18.0",
+    "appVersionSource": "remote"
   },
   "build": {
     "development": {
@@ -22,7 +23,8 @@
       "autoIncrement": true,
       "node": "20.19.4",
       "env": {
-        "REACT_NATIVE_API_URL": "https://tourmate-backend-pdmg.onrender.com"
+        "REACT_NATIVE_API_URL": "https://tourmate-backend-pdmg.onrender.com",
+        "GOOGLE_MAPS_API_KEY": "AIzaSyDrGxwjhoKQw7-3ds0GvjeCYNdDSguAqWc"
       },
       "android": {
         "buildType": "apk"
