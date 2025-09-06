@@ -142,7 +142,7 @@ const styles = StyleSheet.create({
     // 엽서 위에 글을 쓰는 TextInput 스타일 추가
     postcardTextInput: {
         position: 'absolute',
-        top: 0,
+        top: 40,
         left: 0,
         right: 0,
         bottom: 0,
