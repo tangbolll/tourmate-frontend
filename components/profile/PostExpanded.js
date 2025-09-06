@@ -99,7 +99,7 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
         timeAgo: '5시간 전',
         likeCount: 23,
         scrapCount: 46,
-        postcardContent: '부산에다녀왔다\n넘즐거웠다\n엽서디자인 아직 안 넣었습니다 임시입니다\n놀래지마세용',
+        postcardContent: '',
         isLiked: false,
         isScraped: false,
         typeImageUrl: '../postcardType/1.png', // 기본 템플릿

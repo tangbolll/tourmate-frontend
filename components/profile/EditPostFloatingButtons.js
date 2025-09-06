@@ -13,6 +13,7 @@ const EditPostFloatingButtons = ({
     onEdit,
     isFavorite,
     style,
+    isPublic,
     }) => {
     return (
         <View style={[styles.container, style]}>
@@ -41,7 +42,7 @@ const EditPostFloatingButtons = ({
             activeOpacity={0.8}
         >
             <Icon 
-            name={isFavorite ? "lock" : "lock-open"} 
+            name={isPublic ? "lock" : "lock-open"} 
             size={24} 
             color="#000" 
             />

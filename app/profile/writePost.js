@@ -90,6 +90,7 @@ const WritePost = () => {
                         postcardTemplate: pc.postcardTypeId ? { code: pc.postcardTypeId, thumbnail: postcardTemplates[pc.postcardTypeId] || null } : null,
                         content: pc.content || '',
                         isSaved: true,
+                        publicScope: pc.publicScope, 
                         isFavorite: pc.isFavorite || false,
                     }));
 
@@ -559,6 +560,8 @@ const handleBackPress = () => {
             router.back();
         }
     };
+
+    const currentPostcard = postcards[currentIndex];
             
     return (
     <KeyboardAvoidingView 
@@ -632,6 +635,8 @@ const handleBackPress = () => {
                             onEdit={handleEdit}
                             isFavorite={postcards[currentIndex]?.isFavorite || false}
                             style={styles.floatingButtons}
+                            isPublic={currentPostcard?.publicScope === 1}
+
                         />
                     )}
                 </View>
