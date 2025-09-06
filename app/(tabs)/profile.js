@@ -264,6 +264,7 @@ export default function ProfileHome() {
                 return <PostDirectoryTab
                     onEditFolder={handleEditFolder}
                     folders={folders}
+                    onRefresh={() => fetchData(userEmail)} // ⭐ 추가
                 />;
             default:
                 return <PostBoardTab

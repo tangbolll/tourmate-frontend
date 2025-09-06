@@ -52,7 +52,7 @@ const TourInfo = ({ tourData }) => {
             </View>
             
             <View style={styles.textContainer}>
-            <Text style={styles.title}>{title}</Text>
+            <Text style={styles.title} numberOfLines={1}>{title} </Text>
             <Text style={styles.date}>{date}</Text>
             </View>
             

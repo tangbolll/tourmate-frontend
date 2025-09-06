@@ -6,7 +6,7 @@ import {
     TouchableOpacity, 
     Image, 
     Text,
-    RefreshControl // 새로고침 기능을 위해 추가합니다.
+    RefreshControl
 } from 'react-native';
 import PostExpanded from './PostExpanded';
 
@@ -14,12 +14,12 @@ const PostBoardTab = ({
     userEmail, 
     favoritePostcards, 
     currentUserId,
-    onDataUpdate, // 부모 컴포넌트의 데이터 업데이트 함수를 prop으로 받습니다.
-    onRefresh // 새로고침 기능을 위한 prop을 추가합니다.
+    onDataUpdate,
+    onRefresh
 }) => {
     const [selectedPostcard, setSelectedPostcard] = useState(null);
     const [showDetail, setShowDetail] = useState(false);
-    const [refreshing, setRefreshing] = useState(false); // 새로고침 상태를 관리합니다.
+    const [refreshing, setRefreshing] = useState(false);
 
     // 엽서 클릭 시 상세 보기
     const handlePostcardPress = (postcard) => {
@@ -33,7 +33,7 @@ const PostBoardTab = ({
         setSelectedPostcard(null);
     };
 
-    // 당겨서 새로고침 핸들러
+    // 당겨서 새로고침 핸들러 - 더 세게 당겨야 반응하도록 수정
     const handleRefresh = async () => {
         setRefreshing(true);
         if (onRefresh) {
@@ -44,12 +44,10 @@ const PostBoardTab = ({
 
     // PostExpanded에서 스크랩/좋아요 상태가 변경될 때 호출
     const handleLocalDataUpdate = (postcardId, actionType, wasActive) => {
-        // 상위 컴포넌트에 전달 (스크랩 목록에서 제거 등을 위해)
         if (onDataUpdate) {
             onDataUpdate(postcardId, actionType, wasActive);
         }
 
-        // 로컬 상태 업데이트 (선택된 엽서 데이터)
         if (selectedPostcard && (selectedPostcard.postcardId === postcardId || selectedPostcard.id === postcardId)) {
             setSelectedPostcard(prevData => {
                 if (!prevData) return null;
@@ -131,10 +129,15 @@ const PostBoardTab = ({
                         onRefresh={handleRefresh}
                         colors={['#000']} 
                         tintColor={'#000'}
+                        // 더 세게 당겨야 새로고침되도록 설정
+                        progressViewOffset={400} // iOS: 150px 더 당겨야 새로고침 시작 (기본 60->150)
+                        refreshThreshold={400} // Android: 새로고침 임계값을 150으로 증가 (기본 80->150)
+                        distanceToRefresh={400} // Android: 새로고침까지 필요한 거리 증가 (기본 80->150)
                     />
                 }
                 contentContainerStyle={styles.scrollViewContent}
                 showsVerticalScrollIndicator={false}
+                scrollEventThrottle={16}
             >
                 {renderPostcardItems()}
             </ScrollView>
@@ -142,7 +145,7 @@ const PostBoardTab = ({
             {showDetail && selectedPostcard && (
             <PostExpanded
                 visible={showDetail}
-                postData={selectedPostcard} // 👈 이렇게 다시 간단하게 바꿉니다.
+                postData={selectedPostcard}
                 onClose={handleCloseDetail}
                 onDataUpdate={handleLocalDataUpdate}
                 currentUserId={currentUserId}

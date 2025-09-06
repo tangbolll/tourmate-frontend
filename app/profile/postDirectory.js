@@ -1,5 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, StyleSheet, ScrollView, TouchableOpacity, Image, Text, Alert, ActivityIndicator } from 'react-native';
+import { 
+    View, 
+    StyleSheet, 
+    ScrollView, 
+    TouchableOpacity, 
+    Image, 
+    Text, 
+    Alert, 
+    ActivityIndicator,
+    RefreshControl 
+} from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import PostDirectoryHeader from '../../components/profile/PostDirectoryHeader';
@@ -30,61 +40,67 @@ export default function PostDirectory() {
     const [selectedPostcards, setSelectedPostcards] = useState(new Set());
     // 로딩 상태 관리
     const [isLoading, setIsLoading] = useState(true);
-    // 확장된 엽서 상태 관리 (추가된 부분)
+    // 새로고침 상태 관리 (추가)
+    const [refreshing, setRefreshing] = useState(false);
+    // 확장된 엽서 상태 관리
     const [expandedPostcard, setExpandedPostcard] = useState(null);
 
-    
+    // 엽서 데이터를 불러오는 함수 - useEffect에서 분리
+    const fetchPostcards = useCallback(async (showLoading = true) => {
+        if (!directoryId) {
+            console.log('디렉토리 ID가 없어 엽서 데이터를 불러오지 않습니다.');
+            if (showLoading) setIsLoading(false);
+            return;
+        }
+
+        try {
+            if (showLoading) setIsLoading(true);
+            console.log(`✅ 디렉토리 ID ${directoryId}의 엽서 데이터 불러오기 시도`);
+            const data = await getPostcardsByFolderApi(directoryId);
+            console.log('✅ 엽서 데이터 불러오기 성공:', data);
+
+            const formattedPostcards = data.map(pc => ({
+                id: pc.postcardId,
+                image: pc.imageUrl,
+                title: pc.content || '제목 없음',
+                date: pc.dateCreated ? pc.dateCreated.split('T')[0] : '날짜 없음',
+                // PostExpanded에 필요한 필드를 여기에서 미리 정의
+                content: pc.content || '내용 없음',
+                dateCreated: pc.dateCreated || '날짜 없음',
+                folderName: directoryTitle,
+                currentUserId: 'mockUserId', // 테스트용 mock user ID
+                likeCount: pc.likeCount || 0,
+                scrapCount: pc.scrapCount || 0,
+                isPublic: pc.publicScope === 1,
+                // 추가: PostExpanded가 참조할 필드 추가
+                postcardId: pc.postcardId,
+                imageUrl: pc.imageUrl,
+                typeImageUrl: pc.typeImageUrl,
+                postcardTypeId: pc.postcardTypeId,
+            }));
+            
+            console.log('📌 formattedPostcards:', formattedPostcards);
+            setPostcards(formattedPostcards);
+        } catch (error) {
+            console.error('❌ 엽서 데이터 불러오기 실패:', error);
+            handleApiError(error, '엽서 데이터 불러오기');
+            Alert.alert('오류', '엽서 데이터를 불러오는 데 실패했습니다.');
+        } finally {
+            if (showLoading) setIsLoading(false);
+        }
+    }, [directoryId, directoryTitle]);
+
+    // 새로고침 핸들러
+    const handleRefresh = useCallback(async () => {
+        setRefreshing(true);
+        await fetchPostcards(false); // showLoading = false로 설정
+        setRefreshing(false);
+    }, [fetchPostcards]);
 
     // 디렉토리 ID가 변경될 때마다 엽서 데이터를 불러오는 useEffect
     useEffect(() => {
-        const fetchPostcards = async () => {
-            if (!directoryId) {
-                console.log('디렉토리 ID가 없어 엽서 데이터를 불러오지 않습니다.');
-                setIsLoading(false);
-                return;
-            }
-
-            try {
-                setIsLoading(true);
-                console.log(`✅ 디렉토리 ID ${directoryId}의 엽서 데이터 불러오기 시도`);
-                const data = await getPostcardsByFolderApi(directoryId);
-                console.log('✅ 엽서 데이터 불러오기 성공:', data);
-
-                const formattedPostcards = data.map(pc => ({
-                    id: pc.postcardId,
-                    image: pc.imageUrl,
-                    title: pc.content || '제목 없음',
-                    date: pc.dateCreated ? pc.dateCreated.split('T')[0] : '날짜 없음',
-                    // PostExpanded에 필요한 필드를 여기에서 미리 정의
-                    content: pc.content || '내용 없음',
-                    dateCreated: pc.dateCreated || '날짜 없음',
-                    folderName: directoryTitle,
-                    currentUserId: 'mockUserId', // 테스트용 mock user ID
-                    likeCount: pc.likeCount || 0,
-                    scrapCount: pc.scrapCount || 0,
-                    isPublic: pc.publicScope === 1,
-                    // 추가: PostExpanded가 참조할 필드 추가
-                    postcardId: pc.postcardId,
-                    imageUrl: pc.imageUrl,
-                    typeImageUrl: pc.typeImageUrl,
-                    postcardTypeId: pc.postcardTypeId, // ✅ 이 부분 추가
-                }));
-                
-                console.log('📌 formattedPostcards:', formattedPostcards);
-
-                setPostcards(formattedPostcards);
-            } catch (error) {
-                console.error('❌ 엽서 데이터 불러오기 실패:', error);
-                handleApiError(error, '엽서 데이터 불러오기');
-                Alert.alert('오류', '엽서 데이터를 불러오는 데 실패했습니다.');
-            } finally {
-                setIsLoading(false);
-            }
-        };
-
-        fetchPostcards();
-    }, [directoryId, directoryTitle]);
-
+        fetchPostcards(true); // 초기 로딩은 showLoading = true
+    }, [fetchPostcards]);
 
     // 뒤로가기 처리
     const handleBackPress = useCallback(() => {
@@ -102,8 +118,6 @@ export default function PostDirectory() {
         if (!isSelectMode) {
             // 선택 모드가 아니면 엽서 상세 페이지로 이동
             console.log('엽서 상세 페이지로 이동:', postcard.id);
-            // PostExpanded에 필요한 모든 데이터를 명시적으로 전달
-            // PostExpanded 내부에서 상세 API를 호출하는 로직을 제거하고 이미 받은 데이터로 표시하도록 변경
             router.push({
                 pathname: 'profile/writePost',
                 params: {
@@ -111,7 +125,7 @@ export default function PostDirectory() {
                     directoryName: directoryTitle,
                     startDate: params.startDate,
                     endDate: params.endDate,
-                    postcardId: postcard.id, // Pass the ID of the clicked postcard
+                    postcardId: postcard.id,
                 }
             });
             return;
@@ -127,7 +141,7 @@ export default function PostDirectory() {
             }
             return newSet;
         });
-    }, [isSelectMode]);
+    }, [isSelectMode, router, directoryId, directoryTitle, params.startDate, params.endDate]);
 
     // 엽서 추가 버튼 클릭 처리
     const handleAddPostcardPress = useCallback(() => {
@@ -191,70 +205,69 @@ export default function PostDirectory() {
     }, [selectedPostcards]);
 
     const handleShare = useCallback(() => {
-    // 1. 선택된 엽서 데이터 필터링
-    const selectedPostcardsData = postcards.filter(postcard =>
-        selectedPostcards.has(postcard.id)
-    );
+        // 1. 선택된 엽서 데이터 필터링
+        const selectedPostcardsData = postcards.filter(postcard =>
+            selectedPostcards.has(postcard.id)
+        );
 
-    if (selectedPostcardsData.length === 0) {
-        Alert.alert('알림', '공유할 엽서를 선택해주세요.');
-        return;
-    }
-
-    const total = selectedPostcardsData.length;
-    const alreadyShared = selectedPostcardsData.filter(pc => pc.isPublic).length;
-    const notSharedPostcards = selectedPostcardsData.filter(pc => !pc.isPublic);
-
-    if (notSharedPostcards.length === 0) {
-        Alert.alert('알림', '이미 공유된 엽서만 선택되어 있습니다. \n다른 엽서를 선택하세요.');
-        return;
-    }
-
-    if (alreadyShared > 0) {
-        if (alreadyShared === total) {
-            // ✅ 모두 이미 공유된 경우
-            Alert.alert('알림', '선택한 모든 엽서는 이미 공개된 엽서입니다.');
-        } else {
-            // 일부만 공개된 경우
-            Alert.alert(
-                '안내',
-                `${total}개 중 ${alreadyShared}개는 이미 공개된 엽서입니다.\n나머지 ${notSharedPostcards.length}개만 공개로 설정됩니다.`,
-                [
-                    { text: '취소', style: 'cancel' },
-                    { text: '확인', onPress: () => proceedShare(notSharedPostcards) },
-                ]
-            );
+        if (selectedPostcardsData.length === 0) {
+            Alert.alert('알림', '공유할 엽서를 선택해주세요.');
+            return;
         }
-    } else {
-        // 전부 공개 안 된 경우 → 바로 공유 처리
-        proceedShare(notSharedPostcards);
-    }
 
-    }, [selectedPostcards, postcards, router, directoryTitle, params.startDate, params.endDate]);
+        const total = selectedPostcardsData.length;
+        const alreadyShared = selectedPostcardsData.filter(pc => pc.isPublic).length;
+        const notSharedPostcards = selectedPostcardsData.filter(pc => !pc.isPublic);
+
+        if (notSharedPostcards.length === 0) {
+            Alert.alert('알림', '이미 공유된 엽서만 선택되어 있습니다. \n다른 엽서를 선택하세요.');
+            return;
+        }
+
+        if (alreadyShared > 0) {
+            if (alreadyShared === total) {
+                // 모두 이미 공유된 경우
+                Alert.alert('알림', '선택한 모든 엽서는 이미 공개된 엽서입니다.');
+            } else {
+                // 일부만 공개된 경우
+                Alert.alert(
+                    '안내',
+                    `${total}개 중 ${alreadyShared}개는 이미 공개된 엽서입니다.\n나머지 ${notSharedPostcards.length}개만 공개로 설정됩니다.`,
+                    [
+                        { text: '취소', style: 'cancel' },
+                        { text: '확인', onPress: () => proceedShare(notSharedPostcards) },
+                    ]
+                );
+            }
+        } else {
+            // 전부 공개 안 된 경우 → 바로 공유 처리
+            proceedShare(notSharedPostcards);
+        }
+    }, [selectedPostcards, postcards]);
 
     // 공유 처리 로직 따로 함수로 분리
-    const proceedShare = (postcardsToShare) => {
-    const simplifiedPostcards = postcardsToShare.map(pc => ({
-        postcardId: pc.postcardId,
-        imageUrl: pc.imageUrl,
-        content: pc.content,
-        dateCreated: pc.dateCreated,
-        typeImageUrl: pc.typeImageUrl,
-        postcardTypeId: pc.postcardTypeId,
-    }));
+    const proceedShare = useCallback((postcardsToShare) => {
+        const simplifiedPostcards = postcardsToShare.map(pc => ({
+            postcardId: pc.postcardId,
+            imageUrl: pc.imageUrl,
+            content: pc.content,
+            dateCreated: pc.dateCreated,
+            typeImageUrl: pc.typeImageUrl,
+            postcardTypeId: pc.postcardTypeId,
+        }));
 
-    console.log('선택된 엽서 공유:', simplifiedPostcards);
+        console.log('선택된 엽서 공유:', simplifiedPostcards);
 
-    router.push({
-        pathname: 'profile/sharePost',
-        params: {
-        selectedPostcards: JSON.stringify(simplifiedPostcards),
-        directoryTitle: directoryTitle,
-        startDate: params.startDate || '날짜 미상',
-        endDate: params.endDate || '날짜 미상',
-        },
-    });
-    };
+        router.push({
+            pathname: 'profile/sharePost',
+            params: {
+                selectedPostcards: JSON.stringify(simplifiedPostcards),
+                directoryTitle: directoryTitle,
+                startDate: params.startDate || '날짜 미상',
+                endDate: params.endDate || '날짜 미상',
+            },
+        });
+    }, [router, directoryTitle, params.startDate, params.endDate]);
 
     // 확장된 엽서 닫기 함수
     const handleCloseExpanded = useCallback(() => {
@@ -288,7 +301,7 @@ export default function PostDirectory() {
                     <View style={style}>
                         <Image
                             source={{ uri: fallbackImageUri }}
-                            style={styles.fullImage} // 이미지 스타일을 별도로 관리하여 뷰에 꽉 차게
+                            style={styles.fullImage}
                             resizeMode="cover"
                         />
                        <Text style={styles.errorText}>이미지를 불러오지 못했습니다.</Text>
@@ -354,6 +367,18 @@ export default function PostDirectory() {
                 style={styles.scrollView}
                 showsVerticalScrollIndicator={false}
                 contentContainerStyle={styles.scrollContent}
+                refreshControl={
+                    <RefreshControl
+                        refreshing={refreshing}
+                        onRefresh={handleRefresh}
+                        colors={['#000']} 
+                        tintColor={'#000'}
+                        progressViewOffset={60}
+                        refreshThreshold={80}
+                        distanceToRefresh={80}
+                    />
+                }
+                scrollEventThrottle={16}
             >
                 <View style={styles.grid}>
                     {postcards.map((postcard, index) => (
