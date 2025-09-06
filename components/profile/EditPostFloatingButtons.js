@@ -9,7 +9,7 @@ import Icon from 'react-native-vector-icons/MaterialIcons';
 const EditPostFloatingButtons = ({
     onDelete,
     onDownload,
-    onFavorite,
+    onShare,
     onEdit,
     isFavorite,
     style,
@@ -37,7 +37,7 @@ const EditPostFloatingButtons = ({
         {/* 잠금/잠금해제 버튼 */}
         <TouchableOpacity
             style={styles.button}
-            onPress={onFavorite}
+            onPress={onShare}
             activeOpacity={0.8}
         >
             <Icon 

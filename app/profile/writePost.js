@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import { View, StyleSheet, Alert, Modal, TextInput, TouchableOpacity, Text, Keyboard, TouchableWithoutFeedback, Image } from "react-native";
+import { View, StyleSheet, Alert, Modal, TextInput, TouchableOpacity, Text, Keyboard, TouchableWithoutFeedback, Image, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import PostDirectoryHeader from "../../components/profile/PostDirectoryHeader";
@@ -561,6 +561,11 @@ const handleBackPress = () => {
     };
             
     return (
+    <KeyboardAvoidingView 
+        style={styles.container}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
         <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
             <View style={styles.container}>
                 {/* 헤더 */}
@@ -583,7 +588,7 @@ const handleBackPress = () => {
                 />
 
                 {/* 메인 컨텐츠 영역 */}
-                <View style={styles.contentContainer}>
+                <ScrollView style={styles.contentContainer}>
                     {/* 사진 업로드 영역 */}
                     <PhotoUploadArea
                         selectedImage={selectedImage}
@@ -608,7 +613,7 @@ const handleBackPress = () => {
                         onTextEditEnd={() => setIsTextEditing(false)} // 편집 종료 핸들러
                         textInputRef={textInputRef} // TextInput에 대한 참조 전달
                     />
-                </View>
+                </ScrollView>
 
                 {/* 저장 버튼 또는 EditPostFloatingButtons */}
                 <View style={styles.saveButtonContainer}>
@@ -644,10 +649,14 @@ const handleBackPress = () => {
                 </Modal>
             </View>
         </TouchableWithoutFeedback>
+    </KeyboardAvoidingView>
     );
 };
 
 const styles = StyleSheet.create({
+    flex: {  // 새로 추가
+        flex: 1,
+    },
     container: {
         flex: 1,
         backgroundColor: '#fff',
