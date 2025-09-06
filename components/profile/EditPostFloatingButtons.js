@@ -13,6 +13,7 @@ const EditPostFloatingButtons = ({
     onEdit,
     isFavorite,
     style,
+    isPublic,
     }) => {
     return (
         <View style={[styles.container, style]}>
@@ -41,11 +42,15 @@ const EditPostFloatingButtons = ({
             activeOpacity={0.8}
         >
             <Icon 
-            name={isFavorite ? "lock" : "lock-open"} 
-            size={24} 
-            color="#000" 
+                name={isPublic ? "lock" : "lock-open"} // 👈 isFavorite를 isPublic으로 변경!
+                size={24} 
+                color="#000" 
             />
+            
+            {/* (추천) 텍스트도 isPublic에 따라 바꿔주면 좋습니다. */}
+            <Text style={styles.text}>{isPublic ? "공유 취소" : "공유하기"}</Text>
         </TouchableOpacity>
+
 
         {/* 편집 버튼 */}
         <TouchableOpacity

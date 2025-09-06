@@ -588,9 +588,10 @@ const handleBackPress = () => {
                 />
 
                 {/* 메인 컨텐츠 영역 */}
-                <ScrollView style={styles.contentContainer}>
+                <ScrollView contentContainerStyle={styles.contentContainer}>
                     {/* 사진 업로드 영역 */}
                     <PhotoUploadArea
+                        style={{ marginBottom: 20 }}
                         selectedImage={selectedImage}
                         onPickImage={pickImage}
                         isEditMode={isEditMode}
@@ -662,9 +663,9 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     contentContainer: {
-        flex: 1,
+        //flex: 1,
         padding: 16,
-        gap: 16,
+        gap: 20,
     },
     saveButtonContainer: {
         padding: 16,

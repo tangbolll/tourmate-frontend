@@ -17,6 +17,8 @@ import { toggleLikePostcard, toggleScrapPostcard, fetchPostcardDetailApi} from '
 import { useRouter } from 'expo-router';
 import EditPostFloatingButtons from '../../components/profile/EditPostFloatingButtons'; // ⭐ 1. 이 줄을 추가하세요.
 import { deletePostcardApi } from '../../utils/PostCardApi';
+import { togglePostcardPublicScopeApi } from '../../utils/PostCardApi'; // 예시 경로
+
 
 const { width, height } = Dimensions.get('window');
 
@@ -243,7 +245,6 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
     };
 
     const handleDelete = () => {
-        // 👇 postData.id -> postData.postcardId 로 수정
         if (!postData?.postcardId) {
             Alert.alert("오류", "삭제할 엽서 정보를 찾을 수 없습니다.");
             return;
@@ -282,26 +283,61 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
     };
 
     const handleShare = () => {
-        // 👇 postData.id -> postData.postcardId 로 수정
-        if (!postData?.postcardId) {
-            Alert.alert('알림', '공유할 엽서 정보를 찾을 수 없습니다.');
-            return;
+        // 1. 엽서의 현재 공유 상태를 확인합니다. (publicScope가 1이면 공유된 상태라고 가정)
+        const isCurrentlyPublic = postData?.publicScope === 1;
+
+        // 2. 만약 이미 공유된 상태라면, '공유 취소' 로직을 실행합니다.
+        if (isCurrentlyPublic) {
+            Alert.alert(
+                "공유 취소",
+                "이 엽서의 공유를 취소하시겠습니까?\n더 이상 다른 사람들에게 보이지 않습니다.",
+                [
+                    { text: "유지", style: "cancel" },
+                    {
+                        text: "공유 취소",
+                        style: "destructive",
+                        onPress: async () => {
+                            try {
+                                // 엽서의 공개 상태를 토글하는 API를 호출합니다.
+                                await togglePostcardPublicScopeApi(postData.postcardId);
+                                
+                                Alert.alert("성공", "엽서 공유가 취소되었습니다.");
+
+                                // 부모 컴포넌트에 변경 사항을 알려 화면을 업데이트합니다.
+                                if (onDataUpdate) {
+                                    onDataUpdate(postData.postcardId, 'unshare', null);
+                                }
+                                onClose(); // 모달 닫기
+                            } catch (error) {
+                                console.error("공유 취소 오류:", error);
+                                Alert.alert("오류", "공유를 취소하는 중 문제가 발생했습니다.");
+                            }
+                        }
+                    }
+                ]
+            );
+        } 
+        // 3. 만약 공유되지 않은 상태라면, 기존처럼 '공유하기' 페이지로 이동합니다.
+        else {
+            if (!postData?.postcardId) {
+                Alert.alert('알림', '공유할 엽서 정보를 찾을 수 없습니다.');
+                return;
+            }
+
+            const queryParams = {
+                directoryId: postData.directoryId,
+                directoryName: postData.directoryName,
+                startDate: postData.startDate,
+                endDate: postData.endDate,
+                selectedPostcardId: postData.postcardId
+            };
+
+            router.push({
+                pathname: 'profile/sharePost',
+                params: queryParams
+            });
         }
-
-        const queryParams = {
-            directoryId: postData.directoryId, // 🚨 이 정보가 postData에 포함되어야 함
-            directoryTitle: postData.directoryName, // 🚨 이 정보가 postData에 포함되어야 함
-            startDate: postData.startDate,
-            endDate: postData.endDate, // 🚨 이 정보가 postData에 포함되어야 함
-            selectedPostcardId: postData.postcardId // 👈 수정
-        };
-
-        router.push({
-            pathname: 'profile/sharePost',
-            params: queryParams
-        });
     };
-
 
     return (
         <Modal
@@ -364,6 +400,7 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
                         onShare={handleShare}
                         onEdit={handleEdit}
                         isFavorite={postData?.isFavorite || false}
+                        isPublic={postData?.publicScope === 1}
                     />
                 </View>
                 
