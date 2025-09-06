@@ -142,6 +142,7 @@ const styles = StyleSheet.create({
         paddingVertical: 8,
         borderRadius: 8,
         justifyContent: 'center',
+         alignItems: 'center',
     },
     moreButtonText: {
         color: '#fff',

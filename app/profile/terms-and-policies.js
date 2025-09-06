@@ -31,12 +31,13 @@ const TermsAndPoliciesScreen = () => {
                     <Ionicons name="chevron-forward" size={20} color="#9E9E9E" />
                 </TouchableOpacity>
                 <View style={styles.divider} />
-
+                {/*
                 <TouchableOpacity style={styles.itemContainer} onPress={() => navigateToDetail('/terms-and-policies/location-terms')}>
                     <Text style={styles.itemText}>위치기반서비스 이용약관</Text>
                     <Ionicons name="chevron-forward" size={20} color="#9E9E9E" />
                 </TouchableOpacity>
                 <View style={styles.divider} />
+                */}
             </ScrollView>
         </SafeAreaView>
     );

@@ -542,7 +542,7 @@ const styles = StyleSheet.create({
     addPostcardContent: {
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 8,
+        gap: 4,
     },
     addPostcardText: {
         fontSize: 12,
