@@ -9,6 +9,7 @@ import SelectPostDesign from "../../components/profile/selectPostDesign";
 import PostcardSlider from "../../components/profile/PostcardSlider";
 import PhotoUploadArea from "../../components/profile/PhotoUploadArea";
 import PostcardSelectionArea from "../../components/profile/PostcardSelectionArea";
+import TextWritingModal from "../../components/profile/TextWritingModal"; // 새로 추가된 import
 
 import {
     handleApiError,
@@ -59,6 +60,7 @@ const WritePost = () => {
     // UI 상태
     const [isPostcardModalVisible, setIsPostcardModalVisible] = useState(false);
     const [isPostcardOverlayVisible, setIsPostcardOverlayVisible] = useState(false);
+    const [isTextWritingModalVisible, setIsTextWritingModalVisible] = useState(false); // 새로 추가된 상태
     const [isSaved, setIsSaved] = useState(false);
     const [isEditMode, setIsEditMode] = useState(true);
     const [isTextEditing, setIsTextEditing] = useState(false); // 텍스트 편집 중인지 확인하는 상태 추가
@@ -119,10 +121,9 @@ const WritePost = () => {
                                 setSelectedImage(formattedPostcards[selectedIndex].image);
                                 setSelectedPostcard(formattedPostcards[selectedIndex].postcardTemplate);
                                 setPostcardContent(formattedPostcards[selectedIndex].content || '');
-                                setIsSaved(true); // 👈 아직 저장 전이므로 '저장되지 않음' 상태로 시작
-                                setIsEditMode(false);  // 👈 '편집 모드'로 시작하도록 변경
+                                setIsSaved(true);
+                                setIsEditMode(false);
                             } else {
-                                // postcardId not found, select first one
                                 if (formattedPostcards.length > 0) {
                                     setCurrentIndex(0);
                                     setSelectedImage(formattedPostcards[0].image);
@@ -140,7 +141,6 @@ const WritePost = () => {
                             setIsSaved(true);
                             setIsEditMode(false);
                         } else {
-                            // No postcards and not creating a new one.
                             const newPostcard = { id: null, image: null, postcardTemplate: null, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString() };
                             setPostcards([newPostcard]);
                             setCurrentIndex(0);
@@ -156,7 +156,6 @@ const WritePost = () => {
                     handleApiError(error, '기존 엽서 불러오기');
                 }
             } else {
-                // No directoryId, so we are creating a new directory and a new postcard
                 const defaultImageUri = null;
                 const defaultPostcardTemplate = { code: 1, thumbnail: postcardTemplates[1] };
                 const newPostcard = { id: null, image: defaultImageUri, postcardTemplate: defaultPostcardTemplate, content: '', isSaved: false, isFavorite: false, tempId: Date.now().toString(), isEditMode: true, };
@@ -237,12 +236,11 @@ const WritePost = () => {
         setPostcardContent('');
         setIsSaved(false);
         setIsEditMode(true);
-        setIsTextEditing(false); // 새로운 엽서로 전환 시 텍스트 편집 모드 비활성화
+        setIsTextEditing(false);
     }, [isSaved, postcards.length]);
 
     // 엽서 선택 변경
     const selectPostcard = useCallback((index) => {
-        // 현재 편집 중이라면 저장 경고
         if (isTextEditing && !isSaved) {
             Alert.alert(
                 '변경사항 저장',
@@ -251,15 +249,12 @@ const WritePost = () => {
                     {
                         text: '취소',
                         style: 'cancel',
-                        onPress: () => {
-                            // 아무것도 하지 않음
-                        }
+                        onPress: () => {}
                     },
                     {
                         text: '계속',
                         style: 'destructive',
                         onPress: () => {
-                            // 엽서 변경
                             setCurrentIndex(index);
                             const selected = postcards[index];
                             setSelectedImage(selected.image);
@@ -268,7 +263,7 @@ const WritePost = () => {
                             setIsSaved(selected.isSaved || false);
                             setIsEditMode(!selected.isSaved);
                             setIsTextEditing(false);
-                            Keyboard.dismiss(); // 키보드 닫기
+                            Keyboard.dismiss();
                         }
                     },
                 ],
@@ -295,11 +290,9 @@ const WritePost = () => {
             return;
         }
         
-        // 엽서 디자인이 선택되지 않았다면 디자인 선택 모달 열기
         if (!selectedPostcard) {
             setIsPostcardModalVisible(true);
         } else {
-            // 엽서 디자인이 선택되었다면 오버레이 표시
             setIsPostcardOverlayVisible(true);
         }
     }, [selectedPostcard, isEditMode]);
@@ -314,7 +307,7 @@ const WritePost = () => {
     const handlePostcardDesignSelect = useCallback((selectedDesignCode) => {
         const postcardDesignObject = {
             code: selectedDesignCode,
-            thumbnail: postcardTemplates[selectedDesignCode] || null, // 로컬 이미지 경로를 썸네일로 사용
+            thumbnail: postcardTemplates[selectedDesignCode] || null,
         };
 
         setSelectedPostcard(postcardDesignObject);
@@ -341,21 +334,37 @@ const WritePost = () => {
         setIsPostcardOverlayVisible(false);
     }, []);
 
-    // 글쓰기 기능 (텍스트 입력 필드 포커스)
+    // 글쓰기 기능 - 수정된 부분
     const handleWritePress = useCallback(() => {
         if (!isEditMode) {
             Alert.alert('알림', '편집 모드가 아닙니다. 편집 버튼을 눌러 편집 모드로 전환해주세요.');
             return;
         }
         if (selectedPostcard) {
-            setIsTextEditing(true); // 텍스트 편집 모드 활성화
-            setTimeout(() => {
-                textInputRef.current?.focus();
-            }, 100);
+            setIsTextWritingModalVisible(true); // 텍스트 쓰기 모달 열기
         } else {
             Alert.alert('알림', '엽서 디자인을 먼저 선택해주세요.');
         }
     }, [isEditMode, selectedPostcard]);
+
+    // 텍스트 쓰기 모달 닫기
+    const handleTextWritingModalClose = useCallback(() => {
+        setIsTextWritingModalVisible(false);
+    }, []);
+
+    // 텍스트 쓰기 모달에서 저장
+    const handleTextWritingModalSave = useCallback(() => {
+        // 현재 엽서의 content 업데이트
+        setPostcards(prev => {
+            const updated = [...prev];
+            updated[currentIndex] = {
+                ...updated[currentIndex],
+                content: postcardContent
+            };
+            return updated;
+        });
+        setIsSaved(false); // 변경사항이 있으므로 저장되지 않은 상태로 변경
+    }, [postcardContent, currentIndex]);
 
     // 그리기 기능
     const handleDrawPress = useCallback(() => {
@@ -374,7 +383,6 @@ const WritePost = () => {
             return;
         }
 
-        // 텍스트 편집 모드 중이면 저장하기 전에 포커스 해제
         if (isTextEditing) {
             Keyboard.dismiss();
             setIsTextEditing(false);
@@ -464,7 +472,7 @@ const WritePost = () => {
                             setPostcardContent(newSelectedPostcard?.content || '');
                             setIsSaved(newSelectedPostcard?.isSaved || false);
                             setIsEditMode(!newSelectedPostcard?.isSaved);
-                            setIsTextEditing(false); // 삭제 후 텍스트 편집 모드 비활성화
+                            setIsTextEditing(false);
 
                         } catch (error) {
                             console.error('❌ 엽서 삭제 오류:', error);
@@ -510,8 +518,7 @@ const WritePost = () => {
     // 저장 버튼 활성화 조건
     const isSaveEnabled = selectedImage && selectedPostcard;
 
-const handleBackPress = () => {
-        // --- 디버깅을 위한 콘솔 로그 ---
+    const handleBackPress = () => {
         const defaultImageUri = null;
         const isDefaultImage = selectedImage === defaultImageUri;
 
@@ -527,7 +534,6 @@ const handleBackPress = () => {
         console.log(`4. 폴더 ID가 있는가? (directoryInfo.id):`, directoryInfo.id, `(예상값: 숫자 또는 문자열 ID)`);
         console.log(`5. 이미지가 기본 이미지인가? (isDefaultImage):`, isDefaultImage, `(예상값: true)`);
         console.log('================================');
-        // --- 디버깅 종료 ---
 
         if (
             params.newlyCreated === 'true' &&
@@ -600,7 +606,7 @@ const handleBackPress = () => {
                         isEditMode={isEditMode}
                     />
 
-                    {/* 엽서 선택/표시 영역 - 직접 텍스트 입력 가능하도록 변경 */}
+                    {/* 엽서 선택/표시 영역 */}
                     <PostcardSelectionArea
                         selectedPostcard={selectedPostcard}
                         onAreaPress={handlePostcardAreaPress}
@@ -608,14 +614,14 @@ const handleBackPress = () => {
                         isEditMode={isEditMode}
                         isOverlayVisible={isPostcardOverlayVisible}
                         onOverlayClose={handleOverlayClose}
-                        onWritePress={handleWritePress} // 이 함수가 이제 텍스트 필드 포커스를 담당합니다.
+                        onWritePress={handleWritePress}
                         onDrawPress={handleDrawPress}
-                        postcardContent={postcardContent} // 텍스트 내용 전달
-                        onContentChange={setPostcardContent} // 텍스트 변경 핸들러 전달
-                        isTextEditing={isTextEditing} // 텍스트 편집 상태 전달
-                        onTextEditStart={() => setIsTextEditing(true)} // 편집 시작 핸들러
-                        onTextEditEnd={() => setIsTextEditing(false)} // 편집 종료 핸들러
-                        textInputRef={textInputRef} // TextInput에 대한 참조 전달
+                        postcardContent={postcardContent}
+                        onContentChange={setPostcardContent}
+                        isTextEditing={isTextEditing}
+                        onTextEditStart={() => setIsTextEditing(true)}
+                        onTextEditEnd={() => setIsTextEditing(false)}
+                        textInputRef={textInputRef}
                     />
                 </ScrollView>
 
@@ -636,7 +642,6 @@ const handleBackPress = () => {
                             isFavorite={postcards[currentIndex]?.isFavorite || false}
                             style={styles.floatingButtons}
                             isPublic={currentPostcard?.publicScope === 1}
-
                         />
                     )}
                 </View>
@@ -653,6 +658,15 @@ const handleBackPress = () => {
                         onClose={handlePostcardModalClose}
                     />
                 </Modal>
+
+                {/* 텍스트 쓰기 모달 - 새로 추가된 부분 */}
+                <TextWritingModal
+                    visible={isTextWritingModalVisible}
+                    onClose={handleTextWritingModalClose}
+                    content={postcardContent}
+                    onContentChange={setPostcardContent}
+                    onSave={handleTextWritingModalSave}
+                />
             </View>
         </TouchableWithoutFeedback>
     </KeyboardAvoidingView>
@@ -660,7 +674,7 @@ const handleBackPress = () => {
 };
 
 const styles = StyleSheet.create({
-    flex: {  // 새로 추가
+    flex: {
         flex: 1,
     },
     container: {
@@ -668,7 +682,6 @@ const styles = StyleSheet.create({
         backgroundColor: '#fff',
     },
     contentContainer: {
-        //flex: 1,
         padding: 16,
         gap: 20,
     },
