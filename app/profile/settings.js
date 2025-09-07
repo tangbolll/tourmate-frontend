@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Switch, StyleSheet, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -7,7 +7,7 @@ import { useAuth } from '@/context/AuthContext';
 
 const SettingsScreen = () => {
   const router = useRouter();
-  const { signOut } = useAuth(); // useAuth 훅으로 signOut 함수를 가져옵니다.
+  const { performLogout } = useAuth(); // performLogout 함수 사용
 
   const [pushEnabled, setPushEnabled] = useState(true);
   const [accompanyEnabled, setAccompanyEnabled] = useState(true);
@@ -16,9 +16,43 @@ const SettingsScreen = () => {
 
   // 로그아웃 처리 함수
   const handleLogout = () => {
-    signOut();
-    // 로그아웃 후 로그인 화면으로 이동하거나 앱의 초기 화면으로 리디렉션 할 수 있습니다.
-    // 예: router.replace('/login');
+    if (Platform.OS === 'web') {
+      const confirmLogout = confirm('현재 계정에서 로그아웃하시겠습니까?');
+      if (confirmLogout) {
+        performActualLogout();
+      }
+    } else {
+      Alert.alert(
+        '로그아웃',
+        '현재 계정에서 로그아웃하시겠습니까?',
+        [
+          {
+            text: '아니오',
+            style: 'cancel',
+          },
+          {
+            text: '네',
+            onPress: performActualLogout,
+          },
+        ]
+      );
+    }
+  };
+
+  // 확인 후 실제 로그아웃 실행
+  const performActualLogout = async () => {
+    try {
+      await performLogout();
+      router.dismissAll();
+      router.replace('/auth/login');
+    } catch (error) {
+      console.error('로그아웃 실패:', error);
+      if (Platform.OS === 'web') {
+        alert('로그아웃에 실패했습니다.');
+      } else {
+        Alert.alert('오류', '로그아웃에 실패했습니다.');
+      }
+    }
   };
 
   const Section = ({ title, children }) => (
@@ -76,45 +110,9 @@ const SettingsScreen = () => {
           <SettingItem label="비밀번호 변경" isNav onPress={() => router.push('/profile/change-password')} />
         </Section>
 
-        {/*
-        <Section title="알림설정">
-          <ToggleItem
-            label="앱 푸쉬알림"
-            description="앱의 모든 알람을 푸쉬알림으로 받을 수 있어요"
-            value={pushEnabled}
-            onValueChange={setPushEnabled}
-          />
-          <ToggleItem
-            label="동행 소식 알림"
-            description="동행 신청 및 신청 결과에 대한 알림을 받을 수 있어요"
-            value={accompanyEnabled}
-            onValueChange={setAccompanyEnabled}
-          />
-          <ToggleItem
-            label="내여행 소식 알림"
-            description="내여행 동반자 초대에 대한 알림을 받을 수 있어요"
-            value={myTourEnabled}
-            onValueChange={setMyTourEnabled}
-          />
-          <ToggleItem
-            label="여행 엽서 소식 알림"
-            description="여행 엽서 좋아요 및 저장에 대한 알림을 받을 수 있어요"
-            value={postcardEnabled}
-            onValueChange={setPostcardEnabled}
-          />
-        </Section>
-        */}
-
-        {/*
-        <Section title="서비스 설정">
-            <ServiceItem label="위치 서비스" value="앱 사용 중 허용" onPress={() => {}} />
-        </Section>
-        */}
-
         <Section title="고객센터">
           <SettingItem label="공지사항" isNav onPress={() => router.push('/profile/notice')} />
           <SettingItem label="FAQ" isNav onPress={() => router.push('/profile/faq')} />
-          {/* 여기를 수정했습니다. */}
           <SettingItem label="고객센터 문의" isNav onPress={() => router.push('/profile/inquiry')} />
         </Section>
         
