@@ -132,7 +132,7 @@ const styles = StyleSheet.create({
         top: 8,
         right: 0,
         fontSize: 10,
-        color: '#999',
+        color: '#0091ea',
         fontWeight: '500',
     },
     header: {
