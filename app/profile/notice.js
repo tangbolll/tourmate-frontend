@@ -6,6 +6,11 @@ import { useRouter } from 'expo-router';
 
 // 공지사항 데이터
 const noticesData = [
+  {
+    id: '0',
+    category: '업데이트',
+    title: 'TOURMATE가 출시되었습니다🥳',
+  },
   // {
   //   id: '1',
   //   category: '가이드',

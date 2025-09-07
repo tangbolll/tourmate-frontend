@@ -7,6 +7,12 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 // 공지사항 데이터를 상세 화면에도 복사해서 사용합니다.
 const noticesData = [
   {
+    id: '0',
+    category: '업데이트',
+    title: 'TOURMATE 정식 출시🥳',
+    content: '드디어 TOURMATE가 세상에 나왔습니다! ✨\n\n이제 여행 동반자를 손쉽게 찾고, 여행 일정을 공유하며, 특별한 순간을 기록할 수 있어요. 혼자 여행하든, 친구와 함께하든, TOURMATE와 함께라면 더 즐겁고 의미 있는 여행이 될 거예요.\n\n많은 분들의 의견과 아이디어를 반영해 조금씩 다듬어왔고, 앞으로도 꾸준히 발전해 나가겠습니다. 여러분의 피드백은 저희에게 큰 힘이 됩니다. 💪\n\n\n🔑 TOURMATE는 여행과 개발을 사랑하는 다섯 명이 함께 머리를 맞대어 만든 결과물이에요. \n만든 사람: 김민수, 김서연, 김윤서, 김태연, 서휘경\n\nTOURMATE와 함께 새로운 여행을 떠나보세요! 🚀'
+  },
+  {
     id: '1',
     category: '가이드',
     title: '여행 후 엽서를 만드는 방법을 알아보세요',
