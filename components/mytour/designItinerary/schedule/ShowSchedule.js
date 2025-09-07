@@ -50,10 +50,9 @@ const ShowSchedule = ({
     };
 
     return (
-        // --- 💡 2. View를 TouchableOpacity로 변경하고, 조건부 스타일과 onPress 이벤트 추가 ---
         <TouchableOpacity 
-            style={[styles.container, isAiSuggestion && styles.aiCard]} // AI 제안일 경우 aiCard 스타일 적용
-            onPress={() => onSelect && onSelect(safeSchedule)} // 클릭 시 onSelect 호출
+            style={styles.container}
+            onPress={() => onSelect && onSelect(safeSchedule)}
             activeOpacity={0.8}
         >
             {/* 왼쪽 삭제 버튼 */}
@@ -68,29 +67,37 @@ const ShowSchedule = ({
             {/* 둥근 컬러바 */}
             <View style={[styles.colorBar, { backgroundColor: categoryColor }]} />
             
-            {/* 일정 내용 (기존과 동일) */}
+            {/* 일정 내용 */}
             <View style={styles.content}>
+                {/* AI 제안 텍스트 */}
+                {isAiSuggestion && (
+                    <Text style={styles.aiLabel}>AI 제안</Text>
+                )}
+                
                 <View style={styles.header}>
                     <View style={styles.timeContainer}>
-                        <Text style={styles.timeText}>
+                        <Text style={[styles.timeText, isAiSuggestion && styles.grayText]}>
                             {safeSchedule.startTime} - {safeSchedule.endTime}
                         </Text>
                     </View>
                 </View>
                 
-                <Text style={styles.title}>{safeSchedule.title}</Text>
+                <Text style={[styles.title, isAiSuggestion && styles.grayText]}>
+                    {safeSchedule.title}
+                </Text>
                 
                 {safeSchedule.location && (
                     <View style={styles.locationContainer}>
-                        <Ionicons name="location-outline" size={12} color="#666" />
-                        <Text style={styles.locationText}>{safeSchedule.location}</Text>
+                        <Ionicons 
+                            name="location-outline" 
+                            size={12} 
+                            color={isAiSuggestion ? "#999" : "#666"} 
+                        />
+                        <Text style={[styles.locationText, isAiSuggestion && styles.grayText]}>
+                            {safeSchedule.location}
+                        </Text>
                     </View>
                 )}
-                
-                {/* 💡 참고: 팁(memo) 표시는 여기서 하지 않습니다.
-                  부모 컴포넌트(ItineraryScreen)의 모달에서 
-                  isAiSuggestion이 true일 때만 이 memo 값을 보여주게 됩니다.
-                */}
             </View>
         </TouchableOpacity>
     );
@@ -102,11 +109,6 @@ const styles = StyleSheet.create({
         marginVertical: 4,
         alignItems: 'stretch',
         minHeight: 80,
-    },
-    aiCard: {
-    borderWidth: 2,
-    borderColor: '#007BFF',
-    borderStyle: 'dashed',
     },
     deleteButton: {
         width: 24,
@@ -123,6 +125,15 @@ const styles = StyleSheet.create({
     content: {
         flex: 1,
         paddingVertical: 8,
+        position: 'relative',
+    },
+    aiLabel: {
+        position: 'absolute',
+        top: 8,
+        right: 0,
+        fontSize: 10,
+        color: '#999',
+        fontWeight: '500',
     },
     header: {
         marginBottom: 4,
@@ -150,6 +161,9 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#666',
         marginLeft: 4,
+    },
+    grayText: {
+        color: '#999',
     },
     memoText: {
         fontSize: 12,

@@ -193,14 +193,19 @@ export default function DesignItinerary() {
         </View>
     );
 
+    
     const handleCreateScheduleFromAI = async (selectedAttractions, aiOptions, aiResponseData) => {
         console.log('AI 응답 데이터 받음:', aiResponseData);
         
         try {
             setIsAiLoading(true);
             
-            // ✅ await 추가
-            const transformedSchedules = await transformAIResponseToSchedules(aiResponseData, currentTourId);
+            // ✅ 핵심 수정: period 정보를 함께 전달
+            const transformedSchedules = await transformAIResponseToSchedules(
+                aiResponseData, 
+                currentTourId, 
+                period  
+            );
             
             setAiSchedules({ ...transformedSchedules });
             setIsAiBottomSheetVisible(true);
@@ -217,79 +222,98 @@ export default function DesignItinerary() {
 
     // AI 응답을 스케줄 형식으로 변환하는 함수
     const transformAIResponseToSchedules = async (aiData, travelId, period = { type: 'date' }) => {
-        const schedules = {};
-        if (!aiData || typeof aiData !== 'object') return schedules;
+    const schedules = {};
+    if (!aiData || typeof aiData !== 'object') return schedules;
 
-        const parseTime = (timeStr) => {
-            const [h, m] = timeStr.split(':').map(Number);
-            return h * 60 + m;
-        };
-
-        const isOverlapping = (existingSchedules, newSchedule) => {
-            return existingSchedules.some(s => {
-                const sStart = parseTime(s.startTime);
-                const sEnd = parseTime(s.endTime);
-                const nStart = parseTime(newSchedule.startTime);
-                const nEnd = parseTime(newSchedule.endTime);
-                return nStart < sEnd && nEnd > sStart;
-            });
-        };
-
-        let dayIndex = 1;
-        Object.keys(aiData).forEach(dateKey => {
-            const dayKey = `day${dayIndex}`;
-            const dayActivities = Array.isArray(aiData[dateKey]) ? aiData[dateKey] : [];
-            schedules[dayKey] = [];
-
-            const existingDaySchedules = combinedScheduleData[dayKey] || [];
-
-            dayActivities.forEach((activity, activityIndex) => {
-                // 1️⃣ 기존 일정 끝나는 시간 기준
-                let startTimeMinutes = 9 * 60; // 기본 9:00
-                if (existingDaySchedules.length > 0) {
-                    const latestEnd = existingDaySchedules
-                        .map(s => parseTime(s.endTime))
-                        .sort((a, b) => b - a)[0];
-                    startTimeMinutes = Math.max(startTimeMinutes, latestEnd);
-                }
-
-                // 2️⃣ AI 일정 길이
-                const duration = (activity.stayDuration || 2) * 60;
-                let endTimeMinutes = startTimeMinutes + duration;
-
-                // 3️⃣ 겹치면 30분씩 밀기
-                while (isOverlapping(existingDaySchedules, {
-                    startTime: `${Math.floor(startTimeMinutes/60).toString().padStart(2,'0')}:${(startTimeMinutes%60).toString().padStart(2,'0')}`,
-                    endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`
-                })) {
-                    startTimeMinutes += 30;
-                    endTimeMinutes = startTimeMinutes + duration;
-                }
-
-                const schedule = {
-                    id: `ai_${Date.now()}_${Math.random()}_${activityIndex}`,
-                    title: activity.scheduleTitle || activity.attractionName || '일정',
-                    startTime: `${Math.floor(startTimeMinutes/60).toString().padStart(2,'0')}:${(startTimeMinutes%60).toString().padStart(2,'0')}`,
-                    endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`,
-                    location: activity.location || activity.attractionName || '',
-                    memo: activity.tip || '',
-                    tag: activity.scheduleType || '관광',
-                    isAiSuggestion: true,
-                    categoryColor: scheduleUtils.getCategoryStyle(activity.scheduleType || '관광').borderColor,
-                };
-
-                if (period.type === 'date') schedule.date = dateKey;
-                else schedule.dayDescription = `Day ${dayIndex}`;
-
-                existingDaySchedules.push(schedule);
-                schedules[dayKey].push(schedule);
-            });
-
-            dayIndex++;
-        });
-
-        return schedules;
+    const parseTime = (timeStr) => {
+        const [h, m] = timeStr.split(':').map(Number);
+        return h * 60 + m;
     };
+
+    const isOverlapping = (existingSchedules, newSchedule) => {
+        return existingSchedules.some(s => {
+            const sStart = parseTime(s.startTime);
+            const sEnd = parseTime(s.endTime);
+            const nStart = parseTime(newSchedule.startTime);
+            const nEnd = parseTime(newSchedule.endTime);
+            return nStart < sEnd && nEnd > sStart;
+        });
+    };
+
+    // 🔥 핵심 수정: 실제 날짜를 기반으로 day 번호 계산
+    Object.keys(aiData).forEach(dateKey => {
+        let dayKey;
+        
+        if (period.type === 'date' && period.startDate) {
+            // 날짜 기반: 실제 날짜와 시작일의 차이로 day 번호 계산
+            const tripStartDate = new Date(period.startDate);
+            const currentDate = new Date(dateKey);
+            const dayDiff = Math.floor((currentDate - tripStartDate) / (1000 * 60 * 60 * 24));
+            const dayNumber = dayDiff + 1;
+            dayKey = `day${dayNumber}`;
+            
+            console.log(`🔄 날짜 매핑: ${dateKey} -> ${dayKey} (시작일: ${period.startDate})`);
+        } else {
+            // 기간 기반: 기존 로직 유지 (순차적 배정)
+            const dateIndex = Object.keys(aiData).indexOf(dateKey);
+            dayKey = `day${dateIndex + 1}`;
+        }
+        
+        const dayActivities = Array.isArray(aiData[dateKey]) ? aiData[dateKey] : [];
+        schedules[dayKey] = [];
+
+        const existingDaySchedules = combinedScheduleData[dayKey] || [];
+
+        dayActivities.forEach((activity, activityIndex) => {
+            // 1️⃣ 기존 일정 끝나는 시간 기준
+            let startTimeMinutes = 9 * 60; // 기본 9:00
+            if (existingDaySchedules.length > 0) {
+                const latestEnd = existingDaySchedules
+                    .map(s => parseTime(s.endTime))
+                    .sort((a, b) => b - a)[0];
+                startTimeMinutes = Math.max(startTimeMinutes, latestEnd);
+            }
+
+            // 2️⃣ AI 일정 길이
+            const duration = (activity.stayDuration || 2) * 60;
+            let endTimeMinutes = startTimeMinutes + duration;
+
+            // 3️⃣ 겹치면 30분씩 밀기
+            while (isOverlapping(existingDaySchedules, {
+                startTime: `${Math.floor(startTimeMinutes/60).toString().padStart(2,'0')}:${(startTimeMinutes%60).toString().padStart(2,'0')}`,
+                endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`
+            })) {
+                startTimeMinutes += 30;
+                endTimeMinutes = startTimeMinutes + duration;
+            }
+
+            const schedule = {
+                id: `ai_${Date.now()}_${Math.random()}_${activityIndex}`,
+                title: activity.scheduleTitle || activity.attractionName || '일정',
+                startTime: `${Math.floor(startTimeMinutes/60).toString().padStart(2,'0')}:${(startTimeMinutes%60).toString().padStart(2,'0')}`,
+                endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`,
+                location: activity.location || activity.attractionName || '',
+                memo: activity.tip || '',
+                tag: activity.scheduleType || '관광',
+                isAiSuggestion: true,
+                categoryColor: scheduleUtils.getCategoryStyle(activity.scheduleType || '관광').borderColor,
+            };
+
+            // 🔥 수정: 실제 날짜 정보도 포함
+            if (period.type === 'date') {
+                schedule.date = dateKey;
+            } else {
+                schedule.dayDescription = dayKey.replace('day', 'Day ');
+            }
+
+            existingDaySchedules.push(schedule);
+            schedules[dayKey].push(schedule);
+        });
+    });
+
+    console.log('🔄 최종 AI 스케줄 매핑:', schedules);
+    return schedules;
+};
 
 
 
