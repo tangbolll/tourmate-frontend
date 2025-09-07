@@ -59,7 +59,7 @@ const transformAccompanyDetail = (backendData) => {
         applymember: backendData.applyMember ? Array.from(backendData.applyMember).map(a => a.userId?.toString()) : [],
         
         gender: backendData.gender === 'ALL' ? '남녀무관' : (backendData.gender || '미정'),
-        ageRange: backendData.ageGroup ? Array.from(backendData.ageGroup).map(age => age === "ALL" ? "누구나" : age) : [],
+        ageRange: backendData.ageGroup ? Array.from(backendData.ageGroup).map(age => age === "ALL" ? "나이무관" : age) : [],
         category: backendData.category ? Array.from(backendData.category) : [],
         tags: backendData.tag ? Array.from(backendData.tag) : [],
         

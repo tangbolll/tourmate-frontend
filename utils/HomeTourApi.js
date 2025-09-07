@@ -240,3 +240,12 @@ export const getCurrentTourStatus = (tourList) => {
 
     return { status: 'none', currentTour: null, daysLeft: 0 };
 };
+
+// hometourapi.js에 추가
+export const convertUTCToLocal = (utcDateString) => {
+    if (!utcDateString) return null;
+    
+    // UTC 문자열을 로컬 시간대로 강제 변환
+    const cleanedDateString = utcDateString.replace('Z', '').replace(/\+\d{2}:\d{2}$/, '');
+    return new Date(cleanedDateString);
+};

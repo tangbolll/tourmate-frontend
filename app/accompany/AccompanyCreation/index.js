@@ -48,7 +48,7 @@ const AccompanyCreation = () => {
         endDay: ''
     });
     const [selectedGenders, setSelectedGenders] = useState(['남녀무관']);
-    const [selectedAges, setSelectedAges] = useState(['누구나']);
+    const [selectedAges, setSelectedAges] = useState(['나이무관']);
     const [selectedCategories, setSelectedCategories] = useState([]);
     const [tagInput, setTagInput] = useState('');
     const [tags, setTags] = useState([]);
@@ -236,7 +236,7 @@ const AccompanyCreation = () => {
                 recStartDate: formatDateForBackend(recruitDateRange.startDate),
                 recEndDate: formatDateForBackend(recruitDateRange.endDate),
                 gender: selectedGenders.includes('남녀무관') ? 'ALL' : (selectedGenders[0] || 'ALL'),
-                ageGroup: [...new Set(selectedAges.includes('누구나') ? ['ALL'] : selectedAges)],
+                ageGroup: [...new Set(selectedAges.includes('나이무관') ? ['ALL'] : selectedAges)],
                 category: [...new Set(selectedCategories)],
                 tag: [...new Set(tags)],
                 mainImageIndex: thumbnailIndex

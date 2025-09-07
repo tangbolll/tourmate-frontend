@@ -15,11 +15,20 @@ import { toggleLikePostcard, toggleScrapPostcard } from '../../utils/HomePostApi
 import { formatChatTimestamp, formatPostDate } from '../../utils/timeUtils';
 import { useAuth } from '../../context/AuthContext';
 import Constants from 'expo-constants';
+// dayjs 한국 시간대 설정 추가
+import dayjs from 'dayjs';
+import 'dayjs/locale/ko';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+
+// dayjs 플러그인 설정
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.locale('ko');
 
 const defaultProfile = require('../../assets/defaultprofile.png');
 
-// API 베이스 URL 설정 (copied from HomePostApi.js)
-
+// API 베이스 URL 설정
 
 const getFullImageUrl = (imagePath) => {
     if (!imagePath || imagePath.startsWith('http')) {
@@ -59,9 +68,11 @@ const Post = ({ postData, onDataUpdate }) => {
         author: postData?.author || '알 수 없음',
         likeCount: currentLikeCount,
         scrapCount: currentScrapCount,
-        timeAgo: postData?.createdAt ? formatChatTimestamp(new Date(postData.createdAt)) : '알 수 없음',
+        // UTC 시간을 한국 시간으로 변환
+        timeAgo: postData?.createdAt ? formatChatTimestamp(dayjs.utc(postData.createdAt).tz('Asia/Seoul').toDate()) : '알 수 없음',
         location: postData?.location,
-        date: formatPostDate(postData?.createdAt),
+        // UTC 시간을 한국 시간으로 변환
+        date: formatPostDate(dayjs.utc(postData?.createdAt).tz('Asia/Seoul').toDate()),
         isLiked: isLiked,
         isScraped: isBookmarked,
     };
