@@ -84,10 +84,10 @@ const Step2 = ({
     const genderOptions = ['여자만', '남자만', '남녀무관'];
     
     // 연령대 옵션
-    const ageOptions = ['20대', '30대', '40대', '50대 이상', '누구나'];
+    const ageOptions = ['20대', '30대', '40대', '50대 이상', '나이무관'];
     
     // 카테고리 옵션
-    const categoryOptions = ['투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '액티비티', '힐링', '역사유적', '박물관/미술관'];
+    const categoryOptions = ['투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '스포츠 관람', '액티비티', '힐링', '역사유적', '박물관/미술관'];
     
     const handleAddTag = () => {
         if (tagInput.trim()) {
@@ -119,12 +119,12 @@ const Step2 = ({
     };
     
     const handleAgeSelect = (age) => {
-        if (age === '누구나') {
-            // '누구나' 선택 시 다른 모든 연령대 해제
-            setSelectedAges(['누구나']);
+        if (age === '나이무관') {
+            // '나이무관' 선택 시 다른 모든 연령대 해제
+            setSelectedAges(['나이무관']);
         } else {
-            // 이미 '누구나'가 선택되어 있으면 해제
-            const newSelectedAges = selectedAges.filter(a => a !== '누구나');
+            // 이미 '나이무관'가 선택되어 있으면 해제
+            const newSelectedAges = selectedAges.filter(a => a !== '나이무관');
             
             // 선택한 연령대 토글
             if (newSelectedAges.includes(age)) {

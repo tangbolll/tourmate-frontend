@@ -137,7 +137,7 @@ const Chat = () => {
         marginBottom: 40,
     },
     inputWrapperAndroid: {
-        marginBottom: 20,
+        marginBottom: 10,
     },
     });
 

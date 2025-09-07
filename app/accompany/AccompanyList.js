@@ -256,9 +256,6 @@ const AccompanyList = () => {
                 const postTags = post.tags || [];
                 return postTags.includes(filters.age);
                 
-                // 또는 별도의 ageRange 필드가 있다면 기존 코드 유지
-                // const ageRange = post.ageRange || [];
-                // return ageRange.includes(filters.age) || ageRange.includes('누구나');
             });
         }
         

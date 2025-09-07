@@ -50,9 +50,7 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
     };
 
     const categoryList = [
-        '투어', '식사', '야경', '사진', '쇼핑',
-        '숙소', '교통', '테마파크', '액티비티', '힐링',
-        '역사유적', '박물관/미술관'
+        '투어', '식사', '야경', '사진', '쇼핑', '숙소', '교통', '테마파크', '스포츠 관람', '액티비티', '힐링', '역사유적', '박물관/미술관'
     ];
 
     const handleCalendarSelect = ({ startDate, endDate }) => {
@@ -169,7 +167,7 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
                 <View style={styles.conditionRow}>
                     <Text style={styles.conditionLabelInline}>연령</Text>
                     <View style={styles.chipContainer}>
-                    {['20대', '30대', '40대', '50대 이상', '누구나'].map((item) => (
+                    {['20대', '30대', '40대', '50대 이상', '나이무관'].map((item) => (
                         <TouchableOpacity
                         key={item}
                         style={[styles.chip, age === item && styles.chipSelected]}
