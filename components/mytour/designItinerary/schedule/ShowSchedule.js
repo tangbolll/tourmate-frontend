@@ -108,6 +108,12 @@ const ShowSchedule = ({
                         </Text>
                     </View>
                 )}
+                
+                {/* 위치와 메모 사이 구분선 */}
+                {safeSchedule.location && safeSchedule.memo && (
+                    <View style={styles.divider} />
+                )}
+                
                 {safeSchedule.memo && (
                     <View style={styles.memoContainer}>
                         <Ionicons
@@ -116,25 +122,38 @@ const ShowSchedule = ({
                             color={isAiSuggestion ? "#999" : "#666"}
                             style={styles.memoIcon}
                         />
-                        <TouchableOpacity 
-                            style={styles.memoTextWrapper}
-                            onPress={() => isTruncated ? setIsExpanded(!isExpanded) : null}
-                            disabled={!isTruncated}
-                            activeOpacity={isTruncated ? 0.7 : 1}
-                        >
-                            <Text
-                                style={[styles.memoText, isAiSuggestion && styles.grayText]}
-                                onTextLayout={handleTextLayout}
-                                numberOfLines={isExpanded ? undefined : 2}
+                        <View style={styles.memoTextWrapper}>
+                            <TouchableOpacity
+                                onPress={() => isTruncated ? setIsExpanded(!isExpanded) : null}
+                                disabled={!isTruncated}
+                                activeOpacity={isTruncated ? 0.7 : 1}
                             >
-                                {safeSchedule.memo}
-                                {isTruncated && (
-                                    <Text style={styles.inlineArrow}>
-                                        {isExpanded ? ' ▲' : ' ▼'}
-                                    </Text>
-                                )}
-                            </Text>
-                        </TouchableOpacity>
+                                <Text
+                                    style={[styles.memoText, isAiSuggestion && styles.grayText]}
+                                    onTextLayout={handleTextLayout}
+                                    numberOfLines={isExpanded ? undefined : 2}
+                                >
+                                    {safeSchedule.memo}
+                                    {isTruncated && !isExpanded && (
+                                        <Text style={styles.inlineMore}> 더보기</Text>
+                                    )}
+                                </Text>
+                            </TouchableOpacity>
+                            
+                            {isTruncated && isExpanded && (
+                                <TouchableOpacity
+                                    onPress={() => setIsExpanded(!isExpanded)}
+                                    style={styles.seeMoreButton}
+                                    hitSlop={{ top: 5, bottom: 5, left: 5, right: 5 }}
+                                >
+                                    <Ionicons
+                                        name="chevron-up"
+                                        size={14}
+                                        color="#888"
+                                    />
+                                </TouchableOpacity>
+                            )}
+                        </View>
                     </View>
                 )}
             </View>
@@ -200,6 +219,11 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#666',
         marginLeft: 4,
+    },
+    divider: {
+        height: 1,
+        backgroundColor: '#eee',
+        marginVertical: 8,
     },
     memoContainer: {
         flexDirection: 'row',
