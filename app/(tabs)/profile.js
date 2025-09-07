@@ -175,11 +175,12 @@ export default function ProfileHome() {
         if (folderData.endDate) {
             params.endDate = folderData.endDate;
         }
+        params.newlyCreated = 'true';
+
         console.log('Navigating to WritePost with params:', params);
         router.push({
             pathname: '/profile/writePost',
             params: params,
-            newlyCreated: 'true',
         });
     }, [router]);
 
@@ -282,7 +283,14 @@ export default function ProfileHome() {
                 console.log('⭐ 새 폴더 생성 API 응답:', response);
                 Alert.alert('성공', '새 폴더가 생성되었습니다.');
                 await fetchData(userEmail);
-                navigateToWritePost(response);
+
+                // API 응답(ID)과 요청 시 사용한 데이터(제목, 날짜)를 합쳐서 전달
+                const fullFolderData = {
+                    ...requestBody.folder, // title, startDate, endDate
+                    id: response.folderId || response.id,
+                    postcardId: response.postcardId
+                };
+                navigateToWritePost(fullFolderData);
             } else {
                 // 폴더 수정 로직
                 console.log('=== 폴더 수정 시작 ===');

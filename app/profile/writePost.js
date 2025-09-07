@@ -18,6 +18,7 @@ import {
     deletePostcardApi,
     updatePostcardApi,
     deleteFolderApi,
+    togglePostcardPublicScopeApi,
 } from "../../utils/PostCardApi";
 
 const postcardTemplates = {
@@ -494,46 +495,86 @@ const WritePost = () => {
         Alert.alert('준비중', '다운로드 기능은 아직 준비 중입니다. 곧 만나보실 수 있도록 최선을 다하겠습니다!');
     }, []);
 
-    const handleShare = useCallback(async () => {
-        const currentPostcard = postcards[currentIndex];
-        if (!currentPostcard.id) {
-            Alert.alert('알림', '아직 저장되지 않은 엽서입니다. 먼저 엽서를 저장해 주세요.');
+    const handleShare = useCallback(() => {
+        // 1. 엽서의 현재 공유 상태를 확인합니다. (publicScope가 1이면 공유된 상태)
+        const isCurrentlyPublic = Number(currentPostcard?.publicScope) === 1;
+
+        // 2. 만약 이미 공유된 상태라면, '공유 취소' 로직
+        if (isCurrentlyPublic) {
+            Alert.alert(
+                "공유 취소",
+                "이 엽서의 공유를 취소하시겠습니까?\n더 이상 다른 사람들에게 보이지 않습니다.",
+                [
+                    { text: "유지", style: "cancel" },
+                    {
+                        text: "공유 취소",
+                        style: "destructive",
+                        onPress: async () => {
+                            try {
+                                if (!currentPostcard?.id) {
+                                    Alert.alert('오류', '엽서 ID를 찾을 수 없습니다.');
+                                    return;
+                                }
+                                console.log('📌 공유 취소 API 호출, id:', currentPostcard.id);
+                                await togglePostcardPublicScopeApi(currentPostcard.id);
+
+                                Alert.alert("성공", "엽서 공유가 취소되었습니다.");
+
+                                // 로컬 상태 업데이트
+                                setPostcards(prev => {
+                                    const updated = [...prev];
+                                    const postcardToUpdate = updated.find(p => p.id === currentPostcard.id);
+                                    if (postcardToUpdate) {
+                                        postcardToUpdate.publicScope = 0; // 공유 취소 상태로 변경
+                                    }
+                                    return updated;
+                                });
+                            } catch (error) {
+                                console.error("공유 취소 오류:", error);
+                                Alert.alert("오류", "공유를 취소하는 중 문제가 발생했습니다.");
+                            }
+                        }
+                    }
+                ]
+            );
             return;
         }
 
-        console.log('=== handleShare 실행 ===');
-        console.log('directoryInfo:', directoryInfo);
-        console.log('currentPostcard:', currentPostcard);
-
-        try {
-            // sharePost가 기대하는 형식으로 엽서 데이터 구성
-            const selectedPostcardsData = [{
-                postcardId: currentPostcard.id,
-                imageUrl: currentPostcard.image,
-                postcardTypeId: currentPostcard.postcardTemplate?.code,
-                content: currentPostcard.content || ''
-            }];
-
-            const queryParams = {
-                directoryId: directoryInfo.id,
-                directoryTitle: directoryInfo.name, // sharePost에서 directoryTitle로 받고 있음
-                startDate: directoryInfo.startDate,
-                endDate: directoryInfo.endDate,
-                selectedPostcards: JSON.stringify(selectedPostcardsData) // JSON 문자열로 변환
-            };
-
-            console.log('전달할 queryParams:', queryParams);
-
-            router.push({
-                pathname: '/profile/sharePost',
-                params: queryParams
-            });
-
-        } catch (error) {
-            console.error('handleShare 에러:', error);
-            Alert.alert('오류', '공유 페이지로 이동하는 중 오류가 발생했습니다.');
+        // 3. 공유되지 않은 상태라면 공유 페이지로 이동
+        if (!currentPostcard?.id) {
+            Alert.alert('알림', '공유할 엽서 정보를 찾을 수 없습니다.');
+            return;
         }
-    }, [currentIndex, postcards, directoryInfo, router]);
+
+        if (!directoryInfo || !directoryInfo.id) {
+            Alert.alert('오류', '폴더 정보가 올바르지 않아 공유할 수 없습니다.');
+            return;
+        }
+
+        // sharePost.js가 기대하는 형식에 맞게 엽서 객체를 생성합니다.
+        const postcardToShare = {
+            postcardId: currentPostcard.id,
+            imageUrl: currentPostcard.image,
+            postcardTypeId: currentPostcard.postcardTemplate?.code,
+            content: currentPostcard.content
+        };
+
+        // sharePost.js는 엽서 배열의 JSON 문자열을 기대합니다.
+        const selectedPostcardsJSON = JSON.stringify([postcardToShare]);
+
+        const queryParams = {
+            directoryId: directoryInfo.id,
+            directoryTitle: directoryInfo.name, // 'directoryName' -> 'directoryTitle'
+            startDate: directoryInfo.startDate,
+            endDate: directoryInfo.endDate,
+            selectedPostcards: selectedPostcardsJSON // 'selectedPostcardId' -> 'selectedPostcards'
+        };
+
+        router.push({
+            pathname: 'profile/sharePost',
+            params: queryParams
+        });
+    }, [directoryInfo, postcards, currentIndex, router]);
 
     const handleEdit = useCallback(() => {
         setIsEditMode(true);
@@ -660,15 +701,20 @@ const WritePost = () => {
                             disabled={!isSaveEnabled}
                         />
                     ) : (
-                        <EditPostFloatingButtons
-                            onDelete={handleDelete}
-                            onDownload={handleDownload}
-                            onShare={handleShare}
-                            onEdit={handleEdit}
-                            isFavorite={postcards[currentIndex]?.isFavorite || false}
-                            style={styles.floatingButtons}
-                            isPublic={currentPostcard?.publicScope === 1}
-                        />
+                        <>
+                            <Text style={styles.noticeText}>
+                                자물쇠 버튼을 클릭하면 다른 사람들과 엽서를 공유할 수 있습니다.
+                            </Text>
+                            <EditPostFloatingButtons
+                                onDelete={handleDelete}
+                                onDownload={handleDownload}
+                                onShare={handleShare}
+                                onEdit={handleEdit}
+                                isFavorite={postcards[currentIndex]?.isFavorite || false}
+                                style={styles.floatingButtons}
+                                isPublic={currentPostcard?.publicScope === 1}
+                            />
+                        </>
                     )}
                 </View>
 
@@ -720,6 +766,12 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         paddingBottom: 20,
+    },
+    noticeText: {
+        textAlign: 'center',
+        color: '#888',
+        fontSize: 12,
+        marginBottom: 10,
     },
 });
 
