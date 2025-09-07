@@ -81,8 +81,8 @@ const PostBoardTab = ({
             return (
                 <View style={styles.emptyState}>
                     <Text style={styles.emptyStateText}>
-                        아직 즐겨찾기한 엽서가 없습니다.{'\n'}
-                        여행 중에 엽서를 만들어보세요!
+                        아직 공유한 엽서가 없습니다.{'\n'}
+                        여행 중에 엽서를 만들고 다른 사람들과 공유해보세요!
                     </Text>
                 </View>
             );

@@ -40,8 +40,7 @@ const FAQScreen = () => {
 
   const filteredFaqs = faqsData.filter(faq => {
     const matchesCategory = activeCategory === '전체' || faq.category === activeCategory;
-    const matchesSearch = faq.question.toLowerCase().includes(searchText.toLowerCase()) ||
-                          faq.answer.toLowerCase().includes(searchText.toLowerCase());
+    const matchesSearch = faq.question.toLowerCase().includes(searchText.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
