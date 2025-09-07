@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { 
     View, 
     Text, 
@@ -10,8 +10,6 @@ import {
     Platform, 
     Keyboard 
 } from 'react-native';
-
-
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,20 +21,17 @@ import {
 import { useAuth } from '../../context/AuthContext';
 
 const getDaysInMonth = (year, month) => {
-    if (!year || !month) return 31; // Default to 31 if year or month not selected
+    if (!year || !month) return 31;
     return new Date(year, month, 0).getDate();
 };
 
 const RegisterDetailsScreen = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
-    const [isKeyboardVisible, setKeyboardVisible] = useState(false);
     const { signIn } = useAuth();
-
-    // Data from first registration page
+    
+    // 이 부분은 기존과 동일
     const { password, email, phoneNumber, firstname, lastname, marketingConsent } = params;
-
-    // States for second registration page
     const [nickname, setNickname] = useState('');
     const [nicknameChecked, setNicknameChecked] = useState(false);
     const [nicknameAvailable, setNicknameAvailable] = useState(false);
@@ -45,19 +40,50 @@ const RegisterDetailsScreen = () => {
     const [year, setYear] = useState('');
     const [month, setMonth] = useState('');
     const [day, setDay] = useState('');
-
-    const [isYearDropdownOpen, setIsYearDropdownOpen] = useState(false);
-    const [isMonthDropdownOpen, setIsMonthDropdownOpen] = useState(false);
-    const [isDayDropdownOpen, setIsDayDropdownOpen] = useState(false);
-
-    // Generate years for dropdown
+    
     const currentYear = new Date().getFullYear();
-    const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString()); // Last 100 years
-
-    // Generate months for dropdown
+    const years = Array.from({ length: 100 }, (_, i) => (currentYear - i).toString());
     const months = Array.from({ length: 12 }, (_, i) => (i + 1).toString().padStart(2, '0'));
+    const [dynamicDays, setDynamicDays] = useState([]);
 
-    const [dynamicDays, setDynamicDays] = useState([]); // New state for dynamic days
+    // useRef를 사용하여 각 드롭다운 버튼의 위치를 추적합니다.
+    const yearButtonRef = useRef(null);
+    const monthButtonRef = useRef(null);
+    const dayButtonRef = useRef(null);
+    
+    // 드롭다운 상태를 관리하는 객체
+    const [dropdownState, setDropdownState] = useState({
+      year: { isOpen: false, position: null },
+      month: { isOpen: false, position: null },
+      day: { isOpen: false, position: null },
+    });
+
+    const toggleDropdown = useCallback((name) => {
+      // 다른 드롭다운이 열려있으면 닫습니다.
+      setDropdownState(prevState => {
+        const newState = { ...prevState };
+        for (const key in newState) {
+          if (key === name) {
+            newState[key].isOpen = !newState[key].isOpen;
+          } else {
+            newState[key].isOpen = false;
+          }
+        }
+        return newState;
+      });
+    }, []);
+
+    // 각 드롭다운 버튼의 위치를 측정하는 함수
+    const measureLayout = useCallback((ref, name) => {
+      if (ref.current) {
+        ref.current.measure((x, y, width, height, pageX, pageY) => {
+          setDropdownState(prevState => ({
+            ...prevState,
+            [name]: { ...prevState[name], position: { pageX, pageY: pageY + height } }
+          }));
+        });
+      }
+    }, []);
 
     useEffect(() => {
         if (year && month) {
@@ -65,31 +91,13 @@ const RegisterDetailsScreen = () => {
             const newDays = Array.from({ length: daysCount }, (_, i) => (i + 1).toString().padStart(2, '0'));
             setDynamicDays(newDays);
 
-            // If the current day is greater than the new max days, reset day
             if (day && parseInt(day) > daysCount) {
-                setDay(''); // Reset day if it's out of range for the new month/year
+                setDay('');
             }
         } else {
-            setDynamicDays(Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0'))); // Default to 31
+            setDynamicDays(Array.from({ length: 31 }, (_, i) => (i + 1).toString().padStart(2, '0')));
         }
-    }, [year, month, day]); // Include day in dependency to re-evaluate if day needs reset
-
-    // Keyboard visibility listener
-    useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener(
-            'keyboardDidShow',
-            () => setKeyboardVisible(true)
-        );
-        const keyboardDidHideListener = Keyboard.addListener(
-            'keyboardDidHide',
-            () => setKeyboardVisible(false)
-        );
-
-        return () => {
-            keyboardDidShowListener?.remove();
-            keyboardDidHideListener?.remove();
-        };
-    }, []);
+    }, [year, month, day]);
 
     const handleRegister = async () => {
         // Validate Year, Month, Day
@@ -140,8 +148,6 @@ const RegisterDetailsScreen = () => {
             } else {
                 Alert.alert('로그인 실패', loginResult.message);
             }
-            
-
         } catch (error) {
             console.error("Registration Failed:", error);
             Alert.alert("회원가입 실패", `오류 발생: ${error.message || '알 수 없는 오류'}`);
@@ -167,7 +173,6 @@ const RegisterDetailsScreen = () => {
         }
     }, [nickname]);
 
-    // Determine if the Register button should be disabled
     const isRegisterButtonDisabled = (
         !nickname ||
         !gender ||
@@ -177,176 +182,38 @@ const RegisterDetailsScreen = () => {
         !nicknameChecked ||
         !nicknameAvailable
     );
-
-    const renderContent = () => (
-        <View style={styles.form}>
-            {/* Gender Selection */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>성별</Text>
-                <View style={styles.genderSelectionContainer}>
-                    <TouchableOpacity
-                        style={[styles.genderButton, gender === 'FEMALE' && styles.genderButtonSelected]}
-                        onPress={() => setGender('FEMALE')}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={[styles.genderButtonText, gender === 'FEMALE' && styles.genderButtonTextSelected]}>여자</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[styles.genderButton, gender === 'MALE' && styles.genderButtonSelected]}
-                        onPress={() => setGender('MALE')}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={[styles.genderButtonText, gender === 'MALE' && styles.genderButtonTextSelected]}>남자</Text>
-                    </TouchableOpacity>
-                </View>
-            </View>
-
-            {/* Date of Birth Input */}
-            <View style={styles.dobInputGroup}>
-                <Text style={styles.label}>생년월일</Text>
-                <Text style={styles.subLabel}>개인정보는 안전하게 보호됩니다</Text>
-                <View style={styles.dobInputContainer}>
-                    {/* Year Dropdown */}
-                    <View style={styles.dropdownContainer}>
+    
+    // 드롭다운 메뉴 컴포넌트
+    const DropdownMenu = ({ items, onSelect, position, onDismiss }) => {
+        if (!position) return null;
+        return (
+            <TouchableOpacity
+                style={styles.dropdownOverlay}
+                activeOpacity={1}
+                onPress={onDismiss}
+            >
+                <ScrollView
+                    style={[styles.dropdownMenu, { top: position.pageY - 20, left: position.pageX }]}
+                    nestedScrollEnabled={true}
+                    onScrollBeginDrag={() => Keyboard.dismiss()}
+                >
+                    {items.map((item) => (
                         <TouchableOpacity
-                            style={styles.dropdownButton}
-                            onPress={() => setIsYearDropdownOpen(!isYearDropdownOpen)}
+                            key={item}
+                            style={styles.dropdownItem}
+                            onPress={() => onSelect(item)}
                         >
-                            <Text style={[styles.dropdownText, !year && styles.placeholderText]}>
-                                {year || '년'}
-                            </Text>
-                            <Ionicons
-                                name={isYearDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
-                                size={20}
-                                color="#9E9E9E"
-                            />
+                            <Text style={styles.dropdownItemText}>{item}</Text>
                         </TouchableOpacity>
-                        {isYearDropdownOpen && (
-                            <ScrollView style={styles.dropdownMenu} nestedScrollEnabled={true}>
-                                {years.map((y) => (
-                                    <TouchableOpacity
-                                        key={y}
-                                        style={styles.dropdownItem}
-                                        onPress={() => {
-                                            setYear(y);
-                                            setIsYearDropdownOpen(false);
-                                        }}
-                                    >
-                                        <Text style={styles.dropdownItemText}>{y}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        )}
-                    </View>
-                    <Text style={styles.dateUnit}>년</Text>
-
-                    {/* Month Dropdown */}
-                    <View style={styles.dropdownContainer}>
-                        <TouchableOpacity
-                            style={styles.dropdownButton}
-                            onPress={() => setIsMonthDropdownOpen(!isMonthDropdownOpen)}
-                        >
-                            <Text style={[styles.dropdownText, !month && styles.placeholderText]}>
-                                {month || '월'}
-                            </Text>
-                            <Ionicons
-                                name={isMonthDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
-                                size={20}
-                                color="#9E9E9E"
-                            />
-                        </TouchableOpacity>
-                        {isMonthDropdownOpen && (
-                            <ScrollView style={styles.dropdownMenu} nestedScrollEnabled={true}>
-                                {months.map((m) => (
-                                    <TouchableOpacity
-                                        key={m}
-                                        style={styles.dropdownItem}
-                                        onPress={() => {
-                                            setMonth(m);
-                                            setIsMonthDropdownOpen(false);
-                                        }}
-                                    >
-                                        <Text style={styles.dropdownItemText}>{m}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        )}
-                    </View>
-                    <Text style={styles.dateUnit}>월</Text>
-
-                    {/* Day Dropdown */}
-                    <View style={styles.dropdownContainer}>
-                        <TouchableOpacity
-                            style={styles.dropdownButton}
-                            onPress={() => setIsDayDropdownOpen(!isDayDropdownOpen)}
-                        >
-                            <Text style={[styles.dropdownText, !day && styles.placeholderText]}>
-                                {day || '일'}
-                            </Text>
-                            <Ionicons
-                                name={isDayDropdownOpen ? 'chevron-up-outline' : 'chevron-down-outline'}
-                                size={20}
-                                color="#9E9E9E"
-                            />
-                        </TouchableOpacity>
-                        {isDayDropdownOpen && (
-                            <ScrollView style={styles.dropdownMenu} nestedScrollEnabled={true}>
-                                {dynamicDays.map((d) => (
-                                    <TouchableOpacity
-                                        key={d}
-                                        style={styles.dropdownItem}
-                                        onPress={() => {
-                                            setDay(d);
-                                            setIsDayDropdownOpen(false);
-                                        }}
-                                    >
-                                        <Text style={styles.dropdownItemText}>{d}</Text>
-                                    </TouchableOpacity>
-                                ))}
-                            </ScrollView>
-                        )}
-                    </View>
-                    <Text style={styles.dateUnit}>일</Text>
-                </View>
-            </View>
-
-            {/* Nickname input */}
-            <View style={styles.inputGroup}>
-                <Text style={styles.label}>별명</Text>
-                <View style={styles.nicknameInputContainer}>
-                    <TextInput
-                        style={styles.nicknameInput}
-                        placeholder="별명을 입력하세요"
-                        placeholderTextColor="#999"
-                        value={nickname}
-                        onChangeText={(text) => {
-                            setNickname(text);
-                            setNicknameChecked(false);
-                            setNicknameAvailable(false);
-                            setNicknameCheckMessage('');
-                        }}
-                    />
-                    <TouchableOpacity
-                        style={styles.checkButtonInside}
-                        onPress={handleNicknameCheck}
-                        disabled={!nickname}
-                        activeOpacity={0.7}
-                    >
-                        <Text style={styles.checkButtonInsideText}>중복 확인</Text>
-                    </TouchableOpacity>
-                </View>
-                {nicknameCheckMessage ? (
-                    <Text style={[styles.emailMessage, nicknameAvailable ? styles.emailAvailable : styles.emailTaken]}>
-                        {nicknameCheckMessage}
-                    </Text>
-                ) : null}
-            </View>
-
-        </View>
-    );
+                    ))}
+                </ScrollView>
+            </TouchableOpacity>
+        );
+    };
 
     return (
         <SafeAreaView style={styles.container}>
+            {/* Header ... */}
             <View style={styles.headerContainer}>
                 <View style={styles.header}>
                     <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
@@ -366,12 +233,153 @@ const RegisterDetailsScreen = () => {
                 style={styles.scrollView}
                 contentContainerStyle={styles.scrollContainer}
                 showsVerticalScrollIndicator={false}
-                scrollEnabled={true}
                 nestedScrollEnabled={true}
             >
-                {renderContent()}
+                {/* 나머지 폼 요소들... */}
+                <View style={styles.form}>
+                    {/* Gender Selection */}
+                    <View style={styles.inputGroup}>
+                         <Text style={styles.label}>성별</Text>
+                         <View style={styles.genderSelectionContainer}>
+                             <TouchableOpacity
+                                 style={[styles.genderButton, gender === 'FEMALE' && styles.genderButtonSelected]}
+                                 onPress={() => setGender('FEMALE')}
+                                 activeOpacity={0.7}
+                             >
+                                 <Text style={[styles.genderButtonText, gender === 'FEMALE' && styles.genderButtonTextSelected]}>여자</Text>
+                             </TouchableOpacity>
+                             <TouchableOpacity
+                                 style={[styles.genderButton, gender === 'MALE' && styles.genderButtonSelected]}
+                                 onPress={() => setGender('MALE')}
+                                 activeOpacity={0.7}
+                             >
+                                 <Text style={[styles.genderButtonText, gender === 'MALE' && styles.genderButtonTextSelected]}>남자</Text>
+                             </TouchableOpacity>
+                         </View>
+                     </View>
+                    
+                    {/* Date of Birth Input (드롭다운 버튼) */}
+                    <View style={styles.dobInputGroup}>
+                        <Text style={styles.label}>생년월일</Text>
+                        <Text style={styles.subLabel}>개인정보는 안전하게 보호됩니다</Text>
+                        <View style={styles.dobInputContainer}>
+                            {/* Year Dropdown Button */}
+                            <View style={styles.dropdownContainer}>
+                                <TouchableOpacity
+                                    ref={yearButtonRef}
+                                    style={styles.dropdownButton}
+                                    onPress={() => {
+                                        toggleDropdown('year');
+                                        measureLayout(yearButtonRef, 'year');
+                                    }}
+                                >
+                                    <Text style={[styles.dropdownText, !year && styles.placeholderText]}>
+                                        {year || '년'}
+                                    </Text>
+                                    <Ionicons name={dropdownState.year.isOpen ? 'chevron-up-outline' : 'chevron-down-outline'} size={20} color="#9E9E9E" />
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={styles.dateUnit}>년</Text>
+
+                            {/* Month Dropdown Button */}
+                            <View style={styles.dropdownContainer}>
+                                <TouchableOpacity
+                                    ref={monthButtonRef}
+                                    style={styles.dropdownButton}
+                                    onPress={() => {
+                                        toggleDropdown('month');
+                                        measureLayout(monthButtonRef, 'month');
+                                    }}
+                                >
+                                    <Text style={[styles.dropdownText, !month && styles.placeholderText]}>
+                                        {month || '월'}
+                                    </Text>
+                                    <Ionicons name={dropdownState.month.isOpen ? 'chevron-up-outline' : 'chevron-down-outline'} size={20} color="#9E9E9E" />
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={styles.dateUnit}>월</Text>
+
+                            {/* Day Dropdown Button */}
+                            <View style={styles.dropdownContainer}>
+                                <TouchableOpacity
+                                    ref={dayButtonRef}
+                                    style={styles.dropdownButton}
+                                    onPress={() => {
+                                        toggleDropdown('day');
+                                        measureLayout(dayButtonRef, 'day');
+                                    }}
+                                >
+                                    <Text style={[styles.dropdownText, !day && styles.placeholderText]}>
+                                        {day || '일'}
+                                    </Text>
+                                    <Ionicons name={dropdownState.day.isOpen ? 'chevron-up-outline' : 'chevron-down-outline'} size={20} color="#9E9E9E" />
+                                </TouchableOpacity>
+                            </View>
+                            <Text style={styles.dateUnit}>일</Text>
+                        </View>
+                    </View>
+
+                    {/* Nickname input */}
+                    <View style={styles.inputGroup}>
+                        <Text style={styles.label}>별명</Text>
+                        <View style={styles.nicknameInputContainer}>
+                            <TextInput
+                                style={styles.nicknameInput}
+                                placeholder="별명을 입력하세요"
+                                placeholderTextColor="#999"
+                                value={nickname}
+                                onChangeText={(text) => {
+                                    setNickname(text);
+                                    setNicknameChecked(false);
+                                    setNicknameAvailable(false);
+                                    setNicknameCheckMessage('');
+                                }}
+                            />
+                            <TouchableOpacity
+                                style={styles.checkButtonInside}
+                                onPress={handleNicknameCheck}
+                                disabled={!nickname}
+                                activeOpacity={0.7}
+                            >
+                                <Text style={styles.checkButtonInsideText}>중복 확인</Text>
+                            </TouchableOpacity>
+                        </View>
+                        {nicknameCheckMessage ? (
+                            <Text style={[styles.emailMessage, nicknameAvailable ? styles.emailAvailable : styles.emailTaken]}>
+                                {nicknameCheckMessage}
+                            </Text>
+                        ) : null}
+                    </View>
+                </View>
             </ScrollView>
 
+            {/* 드롭다운 메뉴를 화면 최상위에 렌더링 */}
+            {dropdownState.year.isOpen && (
+                <DropdownMenu
+                    items={years}
+                    onSelect={(y) => { setYear(y); toggleDropdown('year'); }}
+                    position={dropdownState.year.position}
+                    onDismiss={() => toggleDropdown('year')}
+                />
+            )}
+            {dropdownState.month.isOpen && (
+                <DropdownMenu
+                    items={months}
+                    onSelect={(m) => { setMonth(m); toggleDropdown('month'); }}
+                    position={dropdownState.month.position}
+                    onDismiss={() => toggleDropdown('month')}
+                />
+            )}
+            {dropdownState.day.isOpen && (
+                <DropdownMenu
+                    items={dynamicDays}
+                    onSelect={(d) => { setDay(d); toggleDropdown('day'); }}
+                    position={dropdownState.day.position}
+                    onDismiss={() => toggleDropdown('day')}
+                />
+            )}
+
+            {/* 고정된 하단 버튼 */}
             <View style={styles.fixedBottomButton}>
                 <TouchableOpacity
                     onPress={handleRegister}
@@ -435,7 +443,7 @@ const styles = StyleSheet.create({
         flexGrow: 1,
         padding: 20,
         paddingBottom: 100,
-        overflow: 'visible', // Ensure content can overflow
+        overflow: 'visible',
     },
     form: {
         width: '100%',
@@ -451,7 +459,7 @@ const styles = StyleSheet.create({
     },
     dobInputGroup: {
         marginBottom: 15,
-        zIndex: 10, // A high z-index to ensure it's above other input groups
+        zIndex: 10,
     },
     label: {
         fontSize: 16,
@@ -483,11 +491,10 @@ const styles = StyleSheet.create({
         flex: 1,
         marginRight: 10,
     },
-    // New styles for nickname input with button inside
     nicknameInputContainer: {
         position: 'relative',
         marginBottom: 15,
-        zIndex: 1, // Set a lower z-index than the dropdowns
+        zIndex: 1,
     },
     nicknameInput: {
         height: 50,
@@ -495,7 +502,7 @@ const styles = StyleSheet.create({
         borderColor: '#ccc',
         borderRadius: 8,
         paddingHorizontal: 15,
-        paddingRight: 100, // Space for the button
+        paddingRight: 100,
         fontSize: 16,
         backgroundColor: 'white',
         color: '#000',
@@ -504,7 +511,7 @@ const styles = StyleSheet.create({
         position: 'absolute',
         right: 8,
         top: '50%',
-        transform: [{ translateY: -15 }], // Half of button height
+        transform: [{ translateY: -15 }],
         backgroundColor: 'gray',
         paddingHorizontal: 12,
         paddingVertical: 8,
@@ -572,20 +579,19 @@ const styles = StyleSheet.create({
     dobInputContainer: {
         flexDirection: 'row',
         alignItems: 'center',
-        justifyContent: 'space-between', // Distribute space evenly
-        overflow: 'visible', // Allow content to overflow
+        justifyContent: 'space-between',
+        overflow: 'visible',
     },
     dateUnit: {
         fontSize: 14,
         color: '#666',
-        // minWidth: 8,
         marginRight: 8,
     },
     dropdownContainer: {
         flex: 1,
         position: 'relative',
-        zIndex: 998, // Significantly higher z-index
-        marginRight: 8, // Add margin to separate dropdowns
+        zIndex: 998,
+        marginRight: 8,
     },
     dropdownButton: {
         flexDirection: 'row',
@@ -594,7 +600,7 @@ const styles = StyleSheet.create({
         padding: 12,
         backgroundColor: '#F5F5F5',
         borderRadius: 8,
-        height: 50, // Match input height
+        height: 50,
         borderWidth: 1,
         borderColor: '#ccc',
     },
@@ -605,18 +611,23 @@ const styles = StyleSheet.create({
     placeholderText: {
         color: '#9E9E9E',
     },
+    dropdownOverlay: {
+        ...StyleSheet.absoluteFillObject,
+        zIndex: 9999,
+    },
     dropdownMenu: {
+        position: 'absolute',
         backgroundColor: 'white',
         borderRadius: 8,
-        marginTop: 8,
-        position: 'absolute',
-        top: '100%',
-        left: 0,
-        right: 0,
-        zIndex: 999, // Significantly higher z-index
         borderWidth: 1,
         borderColor: '#E0E0E0',
-        maxHeight: 200, // Limit height for scrollability
+        maxHeight: 200,
+        width: '75', // 동적으로 너비 설정
+        elevation: 5, // 안드로이드 그림자 효과
+        shadowColor: '#000', // iOS 그림자
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
     dropdownItem: {
         padding: 12,
