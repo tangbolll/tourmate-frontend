@@ -10,6 +10,7 @@ const noticesData = [
     id: '0',
     category: '업데이트',
     title: 'TOURMATE가 출시되었습니다🥳',
+    date: '2025.09.07',
   },
   // {
   //   id: '1',
