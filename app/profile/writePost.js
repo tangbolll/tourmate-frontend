@@ -121,8 +121,14 @@ const WritePost = () => {
                                 setSelectedImage(formattedPostcards[selectedIndex].image);
                                 setSelectedPostcard(formattedPostcards[selectedIndex].postcardTemplate);
                                 setPostcardContent(formattedPostcards[selectedIndex].content || '');
-                                setIsSaved(true);
-                                setIsEditMode(false);
+                                
+                                // ✅ 새로 생성된 엽서인지 확인 (이미지나 템플릿이 없으면 새 엽서)
+                                const isNewPostcard = !formattedPostcards[selectedIndex].image || 
+                                                    !formattedPostcards[selectedIndex].postcardTemplate;
+                                
+                                setIsSaved(!isNewPostcard); // 새 엽서면 저장되지 않은 상태
+                                setIsEditMode(isNewPostcard); // 새 엽서면 편집 모드
+                                
                             } else {
                                 if (formattedPostcards.length > 0) {
                                     setCurrentIndex(0);
@@ -488,25 +494,45 @@ const WritePost = () => {
         Alert.alert('준비중', '다운로드 기능은 아직 준비 중입니다. 곧 만나보실 수 있도록 최선을 다하겠습니다!');
     }, []);
 
-    const handleShare = useCallback(() => {
+    const handleShare = useCallback(async () => {
         const currentPostcard = postcards[currentIndex];
         if (!currentPostcard.id) {
             Alert.alert('알림', '아직 저장되지 않은 엽서입니다. 먼저 엽서를 저장해 주세요.');
             return;
         }
 
-        const queryParams = {
-            directoryId: directoryInfo.id,
-            directoryTitle: directoryInfo.name,
-            startDate: directoryInfo.startDate,
-            endDate: directoryInfo.endDate,
-            selectedPostcardId: currentPostcard.id
-        };
+        console.log('=== handleShare 실행 ===');
+        console.log('directoryInfo:', directoryInfo);
+        console.log('currentPostcard:', currentPostcard);
 
-        router.push({
-            pathname: 'profile/sharePost',
-            params: queryParams
-        });
+        try {
+            // sharePost가 기대하는 형식으로 엽서 데이터 구성
+            const selectedPostcardsData = [{
+                postcardId: currentPostcard.id,
+                imageUrl: currentPostcard.image,
+                postcardTypeId: currentPostcard.postcardTemplate?.code,
+                content: currentPostcard.content || ''
+            }];
+
+            const queryParams = {
+                directoryId: directoryInfo.id,
+                directoryTitle: directoryInfo.name, // sharePost에서 directoryTitle로 받고 있음
+                startDate: directoryInfo.startDate,
+                endDate: directoryInfo.endDate,
+                selectedPostcards: JSON.stringify(selectedPostcardsData) // JSON 문자열로 변환
+            };
+
+            console.log('전달할 queryParams:', queryParams);
+
+            router.push({
+                pathname: '/profile/sharePost',
+                params: queryParams
+            });
+
+        } catch (error) {
+            console.error('handleShare 에러:', error);
+            Alert.alert('오류', '공유 페이지로 이동하는 중 오류가 발생했습니다.');
+        }
     }, [currentIndex, postcards, directoryInfo, router]);
 
     const handleEdit = useCallback(() => {
@@ -693,6 +719,7 @@ const styles = StyleSheet.create({
     floatingButtons: {
         justifyContent: 'center',
         alignItems: 'center',
+        paddingBottom: 20,
     },
 });
 

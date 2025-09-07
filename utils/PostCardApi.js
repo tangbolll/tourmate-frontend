@@ -399,13 +399,9 @@ export const createPostcardInExistingFolderApi = async (folderId, postcardData, 
         if (imageFile) {
             const fileName = imageFile.uri.split('/').pop();
             const fileType = imageFile.type || 'image/jpeg';
-            const response = await fetch(imageFile.uri);
-            const blob = await response.blob();
             
-            // ⭐ 이 부분을 수정합니다.
-            // FormData.append()에 파일 이름과 타입 객체만 전달
             formData.append('image', {
-                uri: imageFile.uri, // URI는 필요하지 않을 수 있지만, 안전을 위해 포함
+                uri: imageFile.uri,
                 name: fileName,
                 type: fileType,
             });
@@ -416,12 +412,16 @@ export const createPostcardInExistingFolderApi = async (folderId, postcardData, 
             body: formData,
         });
         const result = await response.json();
+        
+        // API 응답 로그 확인
+        console.log('✅ createPostcardInExistingFolderApi 응답:', result);
+        console.log('새로 생성된 엽서 ID:', result.postcardId);
+        
         return result;
     } catch (error) {
         throw error;
     }
 };
-
 
 // 6. 폴더별 엽서 목록 조회
 export const getPostcardsByFolderApi = async (folderId) => {

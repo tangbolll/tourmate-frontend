@@ -15,6 +15,7 @@ import { fetchUserProfileApi } from '../../utils/ProfileApi';
 
 import {
     createPostcardWithNewFolderApi,
+    createPostcardInExistingFolderApi,
     updateFolderApi,
     deleteFolderApi,
     getFoldersByUserApi,
@@ -147,6 +148,11 @@ export default function ProfileHome() {
 
     // 폴더 수정 팝업 열기
     const handleEditFolder = useCallback((folderData) => {
+        console.log('=== handleEditFolder 호출됨 ===');
+        console.log('전달받은 folderData:', folderData);
+        console.log('folderData.folderId:', folderData.folderId);
+        console.log('folderData 타입:', typeof folderData.folderId);
+        
         setPopupMode('edit');
         setEditingFolder(folderData);
         setCreatePopupVisible(true);
@@ -177,12 +183,85 @@ export default function ProfileHome() {
         });
     }, [router]);
 
-    const handleSave = useCallback(async (folderData) => {
-        setCreatePopupVisible(false);
+    //기존 폴더에 엽서 추가 
+    const handleAddPostcardToExistingFolder = useCallback(async (selectedFolder) => {
+        console.log('=== 기존 폴더에 엽서 추가 시작 ===');
+        console.log('선택된 폴더:', selectedFolder);
+        
+        setSelectPopupVisible(false); // 선택 팝업 닫기
+        
         if (!userEmail) {
             Alert.alert('오류', '사용자 정보를 불러올 수 없습니다. 다시 로그인 해주세요.');
             return;
         }
+        
+        try {
+            // 기본 엽서 데이터 생성
+            const postcardData = {
+                content: '',
+                postcardType: 1, // 기본 엽서 템플릿
+            };
+            
+            console.log('기존 폴더에 엽서 생성:', {
+                folderId: selectedFolder.id,
+                postcardData
+            });
+            
+            // API 호출
+            const response = await createPostcardInExistingFolderApi(
+                selectedFolder.id, 
+                postcardData
+            );
+            
+            console.log('✅ 엽서 생성 응답:', response);
+            
+            if (response && response.postcardId) {
+                Alert.alert('성공', '새 엽서가 생성되었습니다.', [
+                    {
+                        text: '확인',
+                        onPress: () => {
+                            // WritePost 페이지로 이동하면서 새로 생성된 엽서 ID 전달
+                            const params = {
+                                directoryId: selectedFolder.id.toString(),
+                                directoryName: selectedFolder.title,
+                                startDate: selectedFolder.startDate,
+                                endDate: selectedFolder.endDate,
+                                postcardId: response.postcardId.toString(), // 새로 생성된 엽서 ID
+                                newlyCreated: 'false' // 기존 폴더
+                            };
+                            
+                            console.log('WritePost로 이동할 params:', params);
+                            
+                            router.push({
+                                pathname: '/profile/writePost',
+                                params: params
+                            });
+                        }
+                    }
+                ]);
+            } else {
+                throw new Error('엽서 생성 응답에 postcardId가 없습니다.');
+            }
+            
+        } catch (error) {
+            console.error('❌ 기존 폴더에 엽서 추가 오류:', error);
+            handleApiError(error, '엽서 추가');
+        }
+    }, [router, userEmail]);
+
+    const handleSave = useCallback(async (folderData) => {
+        console.log('=== handleSave 호출됨 ===');
+        console.log('현재 popupMode:', popupMode);
+        console.log('전달받은 folderData:', folderData);
+        console.log('현재 editingFolder:', editingFolder);
+        
+        setCreatePopupVisible(false);
+        
+        if (!userEmail) {
+            Alert.alert('오류', '사용자 정보를 불러올 수 없습니다. 다시 로그인 해주세요.');
+            return;
+        }
+        
         try {
             if (popupMode === 'create') {
                 const requestBody = {
@@ -205,17 +284,48 @@ export default function ProfileHome() {
                 await fetchData(userEmail);
                 navigateToWritePost(response);
             } else {
+                // 폴더 수정 로직
+                console.log('=== 폴더 수정 시작 ===');
+                
+                // ✅ 수정: folderId -> id로 변경
+                const folderId = editingFolder.id; // editingFolder.folderId 대신 editingFolder.id 사용
+                console.log('editingFolder.id:', folderId);
+                console.log('editingFolder.id 타입:', typeof folderId);
+                
+                // editingFolder가 제대로 설정되어 있는지 확인
+                if (!editingFolder || !folderId) {
+                    console.error('❌ editingFolder 또는 id가 없습니다!');
+                    console.log('현재 editingFolder 전체:', editingFolder);
+                    Alert.alert('오류', 'editingFolder 정보가 없습니다.');
+                    return;
+                }
+                
                 const updateData = {
                     title: folderData.title,
                     startDate: folderData.startDate,
                     endDate: folderData.endDate,
                 };
-                console.log('폴더 수정 API 호출 준비:', editingFolder.folderId, updateData);
-                await updateFolderApi(editingFolder.folderId, updateData);
+                
+                console.log('폴더 수정 API 호출 준비:');
+                console.log('- folderId:', folderId);
+                console.log('- updateData:', updateData);
+                
+                // API 호출 직전 로그
+                console.log('updateFolderApi 호출 직전');
+                await updateFolderApi(folderId, updateData); // editingFolder.folderId 대신 folderId 사용
+                console.log('✅ updateFolderApi 호출 완료');
+                
                 Alert.alert('성공', '폴더가 수정되었습니다.');
                 await fetchData(userEmail);
             }
         } catch (error) {
+            console.error('❌ handleSave 에러:', error);
+            console.log('에러 상세:', {
+                message: error.message,
+                stack: error.stack,
+                editingFolder: editingFolder,
+                popupMode: popupMode
+            });
             handleApiError(error, `폴더 ${popupMode === 'create' ? '생성' : '수정'}`);
         }
     }, [popupMode, editingFolder, navigateToWritePost, userEmail, fetchData]);
@@ -232,11 +342,64 @@ export default function ProfileHome() {
         }
     }, [fetchData, userEmail]);
 
-    const handleFolderSelect = useCallback((selectedFolder) => {
+    const handleFolderSelect = useCallback(async (selectedFolder) => {
+        console.log('=== 폴더 선택됨 ===');
         console.log('선택된 폴더:', selectedFolder);
-        setSelectPopupVisible(false);
-        navigateToWritePost(selectedFolder);
-    }, [navigateToWritePost]);
+        
+        setSelectPopupVisible(false); // 선택 팝업 닫기
+        
+        if (!userEmail) {
+            Alert.alert('오류', '사용자 정보를 불러올 수 없습니다. 다시 로그인 해주세요.');
+            return;
+        }
+        
+        try {
+            // 기본 엽서 데이터 생성
+            const postcardData = {
+                content: '',
+                postcardType: 1, // 기본 엽서 템플릿
+            };
+            
+            console.log('기존 폴더에 엽서 생성:', {
+                folderId: selectedFolder.id,
+                postcardData
+            });
+            
+            // API 호출로 새 엽서 생성
+            const response = await createPostcardInExistingFolderApi(
+                selectedFolder.id, 
+                postcardData
+            );
+            
+            console.log('✅ 엽서 생성 응답:', response);
+            
+            if (response && response.postcardId) {
+                // WritePost 페이지로 바로 이동
+                const params = {
+                    directoryId: selectedFolder.id.toString(),
+                    directoryName: selectedFolder.title,
+                    startDate: selectedFolder.startDate,
+                    endDate: selectedFolder.endDate,
+                    postcardId: response.postcardId.toString(), // 새로 생성된 엽서 ID
+                    newlyCreated: 'false' // 기존 폴더이므로 false
+                };
+                
+                console.log('WritePost로 이동할 params:', params);
+                
+                router.push({
+                    pathname: '/profile/writePost',
+                    params: params
+                });
+            } else {
+                throw new Error('엽서 생성 응답에 postcardId가 없습니다.');
+            }
+
+            
+        } catch (error) {
+            console.error('❌ 기존 폴더에 엽서 추가 오류:', error);
+            handleApiError(error, '엽서 추가');
+        }
+    }, [router, userEmail]);
 
     const handleTabPress = useCallback((tab) => {
         setActiveTab(tab);
