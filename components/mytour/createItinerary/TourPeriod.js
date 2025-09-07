@@ -4,14 +4,26 @@ import { FontAwesome6 } from '@expo/vector-icons';
 import CalendarPopup from '../../accompany/CalendarPopup';
 import dayjs from 'dayjs';
 
-const TourPeriod = ({ onPeriodChange }) => {
-    const [selectedType, setSelectedType] = useState('date');
-    const [startDate, setStartDate] = useState('');
-    const [endDate, setEndDate] = useState('');
-    const [nights, setNights] = useState('');
-    const [days, setDays] = useState('');
+const TourPeriod = ({ onPeriodChange, initialPeriod }) => {
+    // initialPeriod가 있으면 해당 값으로 초기화, 없으면 기본값 사용
+    const [selectedType, setSelectedType] = useState(initialPeriod?.type || 'date');
+    const [startDate, setStartDate] = useState(initialPeriod?.startDate || '');
+    const [endDate, setEndDate] = useState(initialPeriod?.endDate || '');
+    const [nights, setNights] = useState(initialPeriod?.nights || '');
+    const [days, setDays] = useState(initialPeriod?.days || '');
     
     const [calendarVisible, setCalendarVisible] = useState(false);
+
+    // initialPeriod가 변경될 때 state 업데이트
+    useEffect(() => {
+        if (initialPeriod) {
+            setSelectedType(initialPeriod.type || 'date');
+            setStartDate(initialPeriod.startDate || '');
+            setEndDate(initialPeriod.endDate || '');
+            setNights(initialPeriod.nights || '');
+            setDays(initialPeriod.days || '');
+        }
+    }, [initialPeriod]);
 
     const formatDate = (date) => {
         if (!date) return '';
@@ -69,38 +81,38 @@ const TourPeriod = ({ onPeriodChange }) => {
     };
 
     const renderDateInputs = () => (
-        <View style={styles.dateInputsContainer}>
-            <TouchableOpacity 
-                style={styles.dateInputWrapper}
-                onPress={handleDateInputPress}
-            >
-                <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
-                <TextInput
-                    placeholder="여행 시작일"
-                    style={styles.dateInput}
-                    placeholderTextColor="#9ca3af"
-                    value={startDate}
-                    editable={false}
-                    pointerEvents="none"
-                />
-            </TouchableOpacity>
-            <Text style={styles.separator}>-</Text>
-            <TouchableOpacity 
-                style={styles.dateInputWrapper}
-                onPress={handleDateInputPress}
-            >
-                <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
-                <TextInput
-                    placeholder="여행 종료일"
-                    style={styles.dateInput}
-                    placeholderTextColor="#9ca3af"
-                    value={endDate}
-                    editable={false}
-                    pointerEvents="none"
-                />
-            </TouchableOpacity>
-        </View>
-    );
+    <View style={styles.dateInputsContainer}>
+        <TouchableOpacity 
+            style={styles.dateInputWrapper}
+            onPress={handleDateInputPress}
+            activeOpacity={0.7}
+        >
+            <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
+            {/* TextInput 대신 Text 컴포넌트 사용 */}
+            <Text style={[
+                styles.dateInput, 
+                !startDate && styles.placeholderText
+            ]}>
+                {startDate || "여행 시작일"}
+            </Text>
+        </TouchableOpacity>
+        <Text style={styles.separator}>-</Text>
+        <TouchableOpacity 
+            style={styles.dateInputWrapper}
+            onPress={handleDateInputPress}
+            activeOpacity={0.7}
+        >
+            <FontAwesome6 name="calendar-check" size={14} color="black" style={styles.icon} />
+            {/* TextInput 대신 Text 컴포넌트 사용 */}
+            <Text style={[
+                styles.dateInput, 
+                !endDate && styles.placeholderText
+            ]}>
+                {endDate || "여행 종료일"}
+            </Text>
+        </TouchableOpacity>
+    </View>
+);
 
     const renderDurationInputs = () => (
         <View style={styles.durationInputsContainer}>
@@ -253,5 +265,27 @@ const styles = StyleSheet.create({
     durationText: {
         color: 'black',
         fontSize: 16,
+    },
+    dateInput: {
+        flex: 1,
+        color: 'black',  // 명확한 텍스트 색상
+        fontSize: 16,
+        fontWeight: '400',  // 폰트 weight 명시
+    },
+    placeholderText: {
+        color: '#9ca3af',  // placeholder 색상
+    },
+    dateInputWrapper: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        padding: 12,
+        paddingHorizontal: 16,
+        borderWidth: 1,
+        borderColor: '#d1d5db',
+        borderRadius: 8,
+        backgroundColor: 'white',
+        flex: 1,
+        height: 44,
+        zIndex: 1,  // zIndex 추가
     },
 });

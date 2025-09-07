@@ -141,7 +141,10 @@ export default function CreateItinerary() {
             <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
                 <ItineraryTitleInput placeholder={getTitle()} onTitleChange={handleTitleChange} />
                 <TourPlace selectedRegion={regions} />
-                <TourPeriod onPeriodChange={handlePeriodChange} />
+                <TourPeriod 
+                onPeriodChange={handlePeriodChange} 
+                initialPeriod={periodData}
+                />
             </ScrollView>
 
             <CompleteButton title="작성 완료" onPress={handleCompletePress} closed={false} />
