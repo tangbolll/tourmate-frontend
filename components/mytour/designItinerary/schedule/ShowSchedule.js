@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Alert, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -9,6 +9,9 @@ const ShowSchedule = ({
     isAiSuggestion = false, // AI 제안 여부
     onSelect,               // 카드 클릭 시 호출될 함수
 }) => {
+    const [isExpanded, setIsExpanded] = useState(false); // 메모 확장 여부
+    const [isTruncated, setIsTruncated] = useState(false); // 텍스트가 2줄을 넘어가는지 여부
+
     // 더 강력한 방어 코드
     if (!schedule || typeof schedule !== 'object') {
         console.warn('ShowSchedule: schedule prop is missing or invalid:', schedule);
@@ -23,6 +26,13 @@ const ShowSchedule = ({
         endTime: schedule.endTime || '00:00',
         location: schedule.location || '',
         memo: schedule.memo || ''
+    };
+
+    const handleTextLayout = (event) => {
+        // 텍스트의 실제 줄 수가 2줄을 초과하면 isTruncated 상태를 true로 설정합니다.
+        if (event.nativeEvent.lines.length > 2 && !isTruncated) {
+            setIsTruncated(true);
+        }
     };
 
     const handleDelete = () => {
@@ -50,7 +60,7 @@ const ShowSchedule = ({
     };
 
     return (
-        <TouchableOpacity 
+        <View 
             style={styles.container}
             onPress={() => onSelect && onSelect(safeSchedule)}
             activeOpacity={0.8}
@@ -98,8 +108,37 @@ const ShowSchedule = ({
                         </Text>
                     </View>
                 )}
+                {safeSchedule.memo && (
+                    <View style={styles.memoContainer}>
+                        <Ionicons
+                            name="document-text-outline"
+                            size={12}
+                            color={isAiSuggestion ? "#999" : "#666"}
+                            style={styles.memoIcon}
+                        />
+                        <TouchableOpacity 
+                            style={styles.memoTextWrapper}
+                            onPress={() => isTruncated ? setIsExpanded(!isExpanded) : null}
+                            disabled={!isTruncated}
+                            activeOpacity={isTruncated ? 0.7 : 1}
+                        >
+                            <Text
+                                style={[styles.memoText, isAiSuggestion && styles.grayText]}
+                                onTextLayout={handleTextLayout}
+                                numberOfLines={isExpanded ? undefined : 2}
+                            >
+                                {safeSchedule.memo}
+                                {isTruncated && (
+                                    <Text style={styles.inlineArrow}>
+                                        {isExpanded ? ' ▲' : ' ▼'}
+                                    </Text>
+                                )}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
             </View>
-        </TouchableOpacity>
+        </View>
     );
 };
 
@@ -162,14 +201,34 @@ const styles = StyleSheet.create({
         color: '#666',
         marginLeft: 4,
     },
-    grayText: {
-        color: '#999',
+    memoContainer: {
+        flexDirection: 'row',
+        alignItems: 'flex-start',
+    },
+    memoIcon: {
+        marginTop: 2,
+        marginRight: 4,
+    },
+    memoTextWrapper: {
+        flex: 1,
     },
     memoText: {
         fontSize: 12,
         color: '#888',
         fontStyle: 'italic',
-        marginBottom: 4,
+        lineHeight: 16,
+    },
+    inlineMore: {
+        color: '#0091ea',
+        fontWeight: '500',
+    },
+    seeMoreButton: {
+        marginLeft: 4,
+        paddingHorizontal: 2,
+        marginTop: 4,
+    },
+    grayText: {
+        color: '#999',
     },
 });
 

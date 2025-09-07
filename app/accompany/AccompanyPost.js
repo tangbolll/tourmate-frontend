@@ -609,35 +609,28 @@ export default function AccompanyPost() {
     };
 
     const handleConfirmClose = async () => {
-        // 1. 즉시 UI 업데이트 (낙관적 업데이트)
-        setAccompanyData(prev => ({ // Use Zustand store action
-            ...prev,
-            accompanyInfo: {
-                ...prev.accompanyInfo,
-                status: 'COMPLETED'  // 동행 상태를 COMPLETED로 변경
-            }
-        }));
-        setClosed(true);  // closed 상태도 즉시 변경
-        setShowAlarmPopupHost(false);  // 팝업 닫기
+        setShowAlarmPopupHost(false);
         
-        // 2. 백엔드 API 호출
         try {
+            // 1. 서버에 먼저 마감 요청을 보냅니다. (UI는 아직 바꾸지 않음)
             await closeAccompanyPostApi(postId);
+
+            // 2. ✨ 핵심 ✨
+            // 마감에 성공했으므로, 서버로부터 '마감된 상태'가 완벽히 반영된 최신 데이터를 통째로 다시 가져옵니다.
+            const updatedAccompanyData = await fetchAccompanyDetailApi(postId);
+
+            // 3. 가져온 '완벽한 최신 데이터'로 화면 상태를 업데이트합니다.
+            // 이렇게 하면 데이터가 꼬일 일이 절대로 없습니다.
+            setAccompanyData(updatedAccompanyData);
+            setClosed(updatedAccompanyData.accompanyInfo.status === 'COMPLETED');
+
+            // 4. 모든 작업이 끝난 후, 사용자에게 성공을 알립니다.
             Alert.alert("성공", "동행 모집이 마감되었습니다.");
+
         } catch (error) {
-            console.error('❌ 동행 모집 마감 오류:', error);
-            
-            // 3. API 실패 시 UI 롤백
-            setAccompanyData(prev => ({
-                ...prev,
-                accompanyInfo: {
-                    ...prev.accompanyInfo,
-                    status: 'RECRUITING'  // 원래 상태로 되돌리기
-                }
-            }));
-            setClosed(false);
-            
-            Alert.alert('오류', error.message || '동행 마감 처리 중 오류가 발생했습니다.');
+            // 이 과정에서 발생하는 모든 오류(마감 실패, 재조회 실패 등)는 여기서 잡힙니다.
+            console.error('❌ 동행 마감 처리 중 오류:', error);
+            Alert.alert('오류', error.message || '처리 중 오류가 발생했습니다.');
         }
     };
     

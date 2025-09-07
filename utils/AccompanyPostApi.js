@@ -455,14 +455,30 @@ export const closeAccompanyPostApi = async (postId) => {
     const url = `${API_URL}/api/accompany/${postId}/close`;
     console.log('🌐 동행 모집 마감 API 호출:', url);
 
-    const response = await fetch(url, { method: 'PATCH' });
-    if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || 'Failed to close the post');
+    try {
+        const response = await fetch(url, { method: 'PATCH' });
+
+        // HTTP 상태가 200번대가 아니면 에러를 발생시킴
+        if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(errorText || 'Failed to close the post');
+        }
+        
+        // ✨ 핵심: 응답을 .json()이 아닌 .text()로 읽습니다.
+        // 백엔드가 보내주는 String 데이터를 그대로 받습니다.
+        const responseText = await response.text();
+        console.log('📬 서버로부터 받은 응답 메시지:', responseText);
+
+        return responseText; // 성공 시 받은 텍스트를 반환
+
+    } catch (error) {
+        console.error('❌ closeAccompanyPostApi 함수 에러:', error);
+        // 받은 에러를 그대로 다시 던져서 컴포넌트의 catch 블록에서 처리하도록 함
+        throw error;
     }
-    
-    return await response.text();
 };
+
+
 
 // 동행 삭제 코드
 export const deleteAccompanyPostApi = async (postId) => {
