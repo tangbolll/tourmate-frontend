@@ -2,6 +2,7 @@
   "expo": {
     "name": "tourmate-frontend",
     "slug": "tourmate-frontend",
+    "icon": "./assets/icon.png",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "myapp",
@@ -64,7 +65,7 @@
       "API_BASE_URL_LOCAL": "https://tourmate-backend-pdmg.onrender.com",
       "router": {},
       "eas": {
-        "projectId": "65882642-4e2d-4db1-b1c3-d76c0e697170"
+        "projectId": "0e5cb189-6269-49d0-9c44-9237f2e19bfd"
       },
       "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com"
     },
