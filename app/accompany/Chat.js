@@ -29,6 +29,7 @@ import {
     getWebSocketURL,
     getAccompanyPostInfo 
 } from '../../utils/ChatApi';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 
 const { width: screenWidth } = Dimensions.get('window');
@@ -101,6 +102,7 @@ const MessageBubble = ({ message, showSenderName, showTime, isFirstInGroup, isLa
 };
 
 const Chat = () => {
+    const insets = useSafeAreaInsets();
     const params = useLocalSearchParams();
     const router = useRouter();
     const postId = params.postId;
@@ -132,14 +134,14 @@ const Chat = () => {
         });
     };
 
-    const platformStyles = StyleSheet.create({
-    inputWrapperIOS: {
-        marginBottom: 40,
-    },
-    inputWrapperAndroid: {
-        marginBottom: 10,
-    },
-    });
+    // const platformStyles = StyleSheet.create({
+    // inputWrapperIOS: {
+    //     marginBottom: 40,
+    // },
+    // inputWrapperAndroid: {
+    //     marginBottom: 10,
+    // },
+    // });
 
     const formatDateForSeparator = (dateString) => {
         if (!dateString) return '';
@@ -615,43 +617,44 @@ useEffect(() => {
 
             {/* 메시지 입력 영역 */}
             <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={10}
-                style={styles.inputContainer}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={Platform.OS === "ios" ? 30 : 30} // offset 제거
+        style={styles.inputContainer}
+    >
+        <View style={[
+            styles.inputWrapper, 
+            {
+                marginBottom: Platform.OS === 'ios' 
+                    ? Math.max(insets.bottom, 10) // 안전 영역 또는 최소 10
+                    : 0
+            }
+        ]}>
+            <TextInput
+                style={styles.input}
+                placeholder="메시지를 입력해주세요."
+                placeholderTextColor="#9CA3AF"
+                value={inputText}
+                onChangeText={setInputText}
+                multiline
+                editable={!sendingMessage && isConnected}
+            />
+            <TouchableOpacity 
+                style={styles.sendButton} 
+                onPress={handleSend} 
+                disabled={!inputText.trim() || sendingMessage || !isConnected}
             >
-                {/* <TouchableOpacity style={styles.addButton} onPress={toggleActions}>
-                    <Feather name={showActions ? "x" : "plus"} size={24} color="black" />
-                </TouchableOpacity> */}
-                <View style={[
-                    styles.inputWrapper, 
-                    Platform.OS === 'ios' ? platformStyles.inputWrapperIOS : platformStyles.inputWrapperAndroid
-                ]}>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="메시지를 입력해주세요."
-                        placeholderTextColor="#9CA3AF"
-                        value={inputText}
-                        onChangeText={setInputText}
-                        multiline
-                        editable={!sendingMessage && isConnected}
+                {sendingMessage ? (
+                    <ActivityIndicator size="small" color="#9CA3AF" />
+                ) : (
+                    <Feather 
+                        name="send" 
+                        size={20} 
+                        color={inputText.trim() && isConnected ? "#3B82F6" : "#9CA3AF"} 
                     />
-                    <TouchableOpacity 
-                        style={styles.sendButton} 
-                        onPress={handleSend} 
-                        disabled={!inputText.trim() || sendingMessage || !isConnected}
-                    >
-                        {sendingMessage ? (
-                            <ActivityIndicator size="small" color="#9CA3AF" />
-                        ) : (
-                            <Feather 
-                                name="send" 
-                                size={20} 
-                                color={inputText.trim() && isConnected ? "#3B82F6" : "#9CA3AF"} 
-                            />
-                        )}
-                    </TouchableOpacity>
-                </View>
-            </KeyboardAvoidingView>
+                )}
+            </TouchableOpacity>
+        </View>
+    </KeyboardAvoidingView>
         </SafeAreaView>
     );
 };
@@ -934,19 +937,14 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: '500',
     },
-    inputContainer: {
+     inputContainer: {
         flexDirection: 'row',
         padding: 8,
-        alignItems: 'center',
+        alignItems: 'flex-end', // 'center'에서 'flex-end'로 변경
         borderTopWidth: 1,
         borderTopColor: '#E5E7EB',
         backgroundColor: 'white',
-        marginBottom: Platform.OS === 'ios' ? -40 : 0,
-    },
-    addButton: {
-        padding: 6,
-        marginRight: 4,
-        marginBottom: 30,
+        // marginBottom 제거
     },
     inputWrapper: {
         flex: 1,
@@ -959,10 +957,12 @@ const styles = StyleSheet.create({
         paddingRight: 4,
         marginRight: 8,
         backgroundColor: 'white',
-    //     marginBottom: Platform.select({
-    //     ios: 55,
-    //     android: 20,
-    // }),
+        // marginBottom은 인라인으로 동적 설정
+    },
+    addButton: {
+        padding: 6,
+        marginRight: 4,
+        marginBottom: 30,
     },
     input: {
         flex: 1,

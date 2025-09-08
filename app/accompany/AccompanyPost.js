@@ -609,30 +609,35 @@ export default function AccompanyPost() {
     };
 
     const handleConfirmClose = async () => {
-        setShowAlarmPopupHost(false);
+    setShowAlarmPopupHost(false);
+    
+    try {
+        // 1. 서버에 마감 요청
+        await closeAccompanyPostApi(postId);
+
+        // 2. 🎯 핵심: 서버 재조회 대신 로컬 상태만 업데이트 (더 안전하고 빠름)
+        setClosed(true);
         
-        try {
-            // 1. 서버에 먼저 마감 요청을 보냅니다. (UI는 아직 바꾸지 않음)
-            await closeAccompanyPostApi(postId);
-
-            // 2. ✨ 핵심 ✨
-            // 마감에 성공했으므로, 서버로부터 '마감된 상태'가 완벽히 반영된 최신 데이터를 통째로 다시 가져옵니다.
-            const updatedAccompanyData = await fetchAccompanyDetailApi(postId);
-
-            // 3. 가져온 '완벽한 최신 데이터'로 화면 상태를 업데이트합니다.
-            // 이렇게 하면 데이터가 꼬일 일이 절대로 없습니다.
-            setAccompanyData(updatedAccompanyData);
-            setClosed(updatedAccompanyData.accompanyInfo.status === 'COMPLETED');
-
-            // 4. 모든 작업이 끝난 후, 사용자에게 성공을 알립니다.
-            Alert.alert("성공", "동행 모집이 마감되었습니다.");
-
-        } catch (error) {
-            // 이 과정에서 발생하는 모든 오류(마감 실패, 재조회 실패 등)는 여기서 잡힙니다.
-            console.error('❌ 동행 마감 처리 중 오류:', error);
-            Alert.alert('오류', error.message || '처리 중 오류가 발생했습니다.');
+        // accompanyData 상태도 함께 업데이트
+        if (accompanyData?.accompanyInfo) {
+            setAccompanyData({
+                ...accompanyData,
+                accompanyInfo: {
+                    ...accompanyData.accompanyInfo,
+                    status: 'COMPLETED'
+                }
+            });
         }
-    };
+
+        // 3. 성공 메시지 표시
+        Alert.alert("성공", "동행 모집이 마감되었습니다.");
+        console.log('✅ 동행 마감 완료 - 로컬 상태 업데이트');
+
+    } catch (error) {
+        console.error('❌ 동행 마감 처리 중 오류:', error);
+        Alert.alert('오류', error.message || '마감 처리 중 오류가 발생했습니다.');
+    }
+};
     
 
 const fetchMemberData = async () => {
@@ -668,18 +673,6 @@ const fetchMemberData = async () => {
         setMemberDataLoading(false);
     }
 };
-const displayParticipants = isHost ? currentParticipants : currentParticipants + 1;
-
-    // 로딩 상태
-    if (loading) {
-        return (
-            <SafeAreaView style={styles.safeArea}>
-                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-                    <Text style={{ fontSize: 16, color: '#666' }}>동행 정보를 불러오는 중...</Text>
-                </View>
-            </SafeAreaView>
-        );
-    }
 
     // 에러 상태
     if (error || !accompanyData?.accompanyInfo) {
@@ -733,7 +726,7 @@ const displayParticipants = isHost ? currentParticipants : currentParticipants +
                         <EventHeader
                             title={accompanyData?.accompanyInfo?.title}
                             location={accompanyData?.accompanyInfo?.location}
-                            participants={displayParticipants}// From Zustand store
+                            participants={currentParticipants} // From Zustand store
                             maxParticipants={maxParticipants} // From Zustand store
                             newApplication={hasNewApplications} 
                             onParticipantsClick={handleParticipantsClick}
