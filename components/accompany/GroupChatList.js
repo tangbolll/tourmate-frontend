@@ -18,6 +18,8 @@ const getFullImageUrl = (imagePath) => {
 
 const GroupChatList = ({ photo, title, message, participants, timestamp, unreadCount, onPress, onSwipeLeft }) => {
   const translateX = useRef(new Animated.Value(0)).current;
+  console.log('GroupChatList - unreadCount:', unreadCount, 'type:', typeof unreadCount);
+
 
   // 겹쳐진 프로필 렌더링 함수
   const renderProfileImages = () => {
@@ -136,7 +138,7 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
       <PanGestureHandler
         onGestureEvent={onGestureEvent}
         onHandlerStateChange={onHandlerStateChange}
-        activeOffsetX={[-10, 0]} // 왼쪽으로만 스와이프 가능하도록 설정
+        activeOffsetX={[-10, 0]}
       >
         <Animated.View style={[styles.chatItem, { transform: [{ translateX }] }]}>
           <TouchableOpacity style={styles.chatContent} onPress={onPress}>
@@ -155,11 +157,17 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
                 <Text style={styles.chatMessage} numberOfLines={1}>
                   {message}
                 </Text>
+                {/* 디버깅: 조건 확인 */}
+                {console.log('Rendering unread badge:', unreadCount > 0, unreadCount)}
                 {unreadCount > 0 && (
                   <View style={styles.unreadBadge}>
                     <Text style={styles.unreadText}>{unreadCount}</Text>
                   </View>
                 )}
+                {/* 임시 테스트: 항상 보이게 하기 */}
+                <View style={styles.unreadBadge}>
+                  <Text style={styles.unreadText}>테스트</Text>
+                </View>
               </View>
             </View>
           </TouchableOpacity>
@@ -285,6 +293,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginLeft: 8,
+    zIndex: 10,
   },
   unreadText: {
     color: 'white',
