@@ -74,7 +74,6 @@ export const PostDirectoryTab = ({ folders, onEditFolder, onRefresh }) => {
                     onRefresh={handleRefresh}
                     colors={['#000']} 
                     tintColor={'#000'}
-                    // PostBoardTab과 동일하게 더 세게 당겨야 반응하도록 설정
                     progressViewOffset={400}
                     refreshThreshold={400}
                     distanceToRefresh={400}
@@ -89,30 +88,34 @@ export const PostDirectoryTab = ({ folders, onEditFolder, onRefresh }) => {
                             const isLastInRow = (index + 1) % 3 === 0;
 
                             return (
-                                <TouchableOpacity
+                                <View 
                                     key={folder.folderId ? folder.folderId : `folder-${index}`}
                                     style={[
-                                        styles.directoryCard,
+                                        styles.directoryCardShadow,
                                         isLastInRow && { marginRight: 0 }
                                     ]}
-                                    onPress={() => handleDirectoryPress(folder)}
-                                    onLongPress={() => onEditFolder(folder)}
-                                    activeOpacity={0.8}
                                 >
-                                    <View style={styles.imageContainer}>
-                                        <Image
-                                            source={{ uri: folder.thumbnailUrl || 'https://via.placeholder.com/400x300.png?text=No+Image' }}
-                                            style={styles.directoryImage}
-                                            resizeMode="cover"
-                                        />
-                                    </View>
-                                    <View style={styles.textContainer}>
-                                        <Text style={styles.period}>
-                                            {formatPeriod(folder.startDate, folder.endDate)}
-                                        </Text>
-                                        <Text style={styles.title}>{folder.title}</Text>
-                                    </View>
-                                </TouchableOpacity>
+                                    <TouchableOpacity
+                                        style={styles.directoryCard}
+                                        onPress={() => handleDirectoryPress(folder)}
+                                        onLongPress={() => onEditFolder(folder)}
+                                        activeOpacity={0.8}
+                                    >
+                                        <View style={styles.imageContainer}>
+                                            <Image
+                                                source={{ uri: folder.thumbnailUrl || 'https://via.placeholder.com/400x300.png?text=No+Image' }}
+                                                style={styles.directoryImage}
+                                                resizeMode="cover"
+                                            />
+                                        </View>
+                                        <View style={styles.textContainer}>
+                                            <Text style={styles.period}>
+                                                {formatPeriod(folder.startDate, folder.endDate)}
+                                            </Text>
+                                            <Text style={styles.title}>{folder.title}</Text>
+                                        </View>
+                                    </TouchableOpacity>
+                                </View>
                             );
                         })
                     ) : (
@@ -140,12 +143,12 @@ const styles = StyleSheet.create({
         flexWrap: 'wrap',
         paddingHorizontal: 16,
     },
-    directoryCard: {
+    // 그림자 효과를 위한 외부 뷰 스타일
+    directoryCardShadow: {
         width: '30%',
         marginRight: '5%',
         marginBottom: 16,
-        backgroundColor: '#fff',
-        overflow: 'hidden',
+        // iOS 전용 그림자 속성
         shadowColor: '#000',
         shadowOffset: {
             width: 2,
@@ -153,7 +156,13 @@ const styles = StyleSheet.create({
         },
         shadowOpacity: 0.25,
         shadowRadius: 4,
+        // Android 전용 그림자 속성
         elevation: 5,
+    },
+    // 실제 콘텐츠를 담는 내부 뷰 스타일
+    directoryCard: {
+        backgroundColor: '#fff',
+        overflow: 'hidden',
         borderRadius: 8,
     },
     imageContainer: {
