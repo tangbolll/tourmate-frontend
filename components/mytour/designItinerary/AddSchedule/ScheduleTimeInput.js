@@ -107,14 +107,23 @@ const ScheduleTimeInput = ({ startTime, setStartTime, endTime, setEndTime }) => 
             </View>
 
             {showPicker && (
-                <DateTimePicker
-                    testID="dateTimePicker"
-                    value={initialDate}
-                    mode="time"
-                    display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-                    onChange={onTimeChange}
-                    minuteInterval={30}
-                />
+                <View style={commonStyles.datePickerWrapper}>
+                    <DateTimePicker
+                        testID="dateTimePicker"
+                        value={initialDate}
+                        mode="time"
+                        display="spinner"
+                        onChange={onTimeChange}
+                        minuteInterval={30}
+                        textColor="#000000"
+                        accentColor="#007AFF"
+                        themeVariant="light"
+                        style={[
+                            commonStyles.dateTimePicker,
+                            Platform.OS === 'ios' && commonStyles.iosDateTimePicker
+                        ]}
+                    />
+                </View>
             )}
         </View>
     );
@@ -124,6 +133,7 @@ const commonStyles = StyleSheet.create({
     section: {
         marginBottom: 16,
         position: 'relative',
+        backgroundColor: '#ffffff', // 배경색 명시
     },
     inputRow: {
         flexDirection: 'row',
@@ -163,6 +173,41 @@ const commonStyles = StyleSheet.create({
         fontSize: 14,
         color: '#666',
         marginHorizontal: 16,
+    },
+    datePickerWrapper: {
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        marginTop: 10,
+        alignItems: 'center',
+        justifyContent: 'center',
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: {
+                    width: 0,
+                    height: 2,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 3,
+                elevation: 3,
+                paddingVertical: 10,
+            },
+            android: {
+                paddingVertical: 5,
+            },
+        }),
+    },
+    dateTimePicker: {
+        backgroundColor: '#ffffff',
+        ...Platform.select({
+            android: {
+                color: '#000000',
+            },
+        }),
+    },
+    iosDateTimePicker: {
+        height: 200, // iOS에서 충분한 높이 확보
+        width: '100%',
     },
 });
 

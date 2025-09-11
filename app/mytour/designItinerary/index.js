@@ -128,7 +128,7 @@ export default function DesignItinerary() {
                     travelId: currentTourId,
                     timeSlot: `${aiSchedule.startTime} ~ ${aiSchedule.endTime}`,
                     title: aiSchedule.title,
-                    tag: aiSchedule.tag || 'ATTRACTION',
+                    tag: aiSchedule.tag || '관광',
                     location: aiSchedule.location || '',
                     latitude: aiSchedule.latitude || 0.0,
                     longitude: aiSchedule.longitude || 0.0,
@@ -294,9 +294,9 @@ export default function DesignItinerary() {
                 endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`,
                 location: activity.location || activity.attractionName || '',
                 memo: activity.tip || '',
-                tag: activity.scheduleType || '관광',
+                tag: '관광',
                 isAiSuggestion: true,
-                categoryColor: scheduleUtils.getCategoryStyle(activity.scheduleType || '관광').borderColor,
+                categoryColor: scheduleUtils.getCategoryStyle('관광').borderColor,
             };
 
             // 🔥 수정: 실제 날짜 정보도 포함

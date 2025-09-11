@@ -22,17 +22,28 @@ export default function ItineraryMap() {
   // --- 상태 관리 ---
   const [scheduleData, setScheduleData] = useState({});
   const [selectedLocationId, setSelectedLocationId] = useState(null);
-  const [selectedDay, setSelectedDay] = useState('all');
+  const [selectedDay, setSelectedDay] = useState(1); // 'all' 대신 1로 초기화
   const [isWebViewReady, setIsWebViewReady] = useState(false);
 
   // --- Ref 관리 ---
   const webViewRef = useRef(null);
 
-  // --- API 데이터 로딩 (기존과 동일) ---
+  // --- 총 여행 일수 계산 ---
+  const totalDays = useMemo(() => {
+    // period.days가 있으면 그것을 사용, 없으면 scheduleData에서 최대 일차 계산
+    if (period.days) {
+      return parseInt(period.days, 10);
+    }
+    
+    // scheduleData에서 가장 큰 일차 번호 찾기
+    const dayKeys = Object.keys(scheduleData).map(key => parseInt(key, 10)).filter(num => !isNaN(num));
+    return dayKeys.length > 0 ? Math.max(...dayKeys) : 5; // 기본값 5일
+  }, [period.days, scheduleData]);
+
+  // --- API 데이터 로딩 ---
   useEffect(() => {
     if (!tourId) return;
     const fetchTourData = async () => {
-      // ... (API 호출 로직은 기존과 동일하므로 생략) ...
       try {
         const token = await AsyncStorage.getItem('jwtToken');
         if (!token) return;
@@ -66,7 +77,7 @@ export default function ItineraryMap() {
             if (item.dayDescription) {
               const dayMatch = String(item.dayDescription).match(/\d+/);
               if (dayMatch && dayMatch[0]) {
-                const dayIndex = dayMatch[0];
+                const dayIndex = parseInt(dayMatch[0], 10);
                 if (!acc[dayIndex]) acc[dayIndex] = [];
                 acc[dayIndex].push({
                   id: item.id, name: item.title, category: item.tag,
@@ -87,9 +98,6 @@ export default function ItineraryMap() {
 
   // --- 마커 데이터 ---
   const markersToDisplay = useMemo(() => {
-    if (selectedDay === 'all') {
-      return Object.values(scheduleData).flat();
-    }
     return scheduleData[selectedDay] || [];
   }, [selectedDay, scheduleData]);
   
@@ -105,14 +113,12 @@ export default function ItineraryMap() {
     }
   }, [markersToDisplay, isWebViewReady]);
 
-  // --- BottomSheet 연동 함수 (WebView만 제어하도록 단순화) ---
+  // --- BottomSheet 연동 함수 ---
   const handleDayChange = (dayKey) => {
     setSelectedDay(dayKey);
     setSelectedLocationId(null);
     
-    const markersForDay = dayKey === 'all'
-      ? Object.values(scheduleData).flat()
-      : scheduleData[dayKey] || [];
+    const markersForDay = scheduleData[dayKey] || [];
       
     const validCoordinates = markersForDay
       .map(marker => ({ latitude: marker.lat, longitude: marker.lng }))
@@ -138,9 +144,8 @@ export default function ItineraryMap() {
     }
   };
   
-  // --- 카카오맵 WebView를 위한 HTML 생성 함수 (기존과 동일) ---
+  // --- 카카오맵 WebView를 위한 HTML 생성 함수 ---
   const createMapHTML = () => {
-     // ... (HTML/JS 코드는 이전 답변과 동일하므로 생략) ...
     return `
       <!DOCTYPE html>
       <html>
@@ -268,6 +273,7 @@ export default function ItineraryMap() {
       <View style={styles.bottomSheetContainer}>
         <BottomSheet
           itineraryData={scheduleData}
+          totalDays={totalDays}
           onLocationSelect={handleLocationSelect}
           onDayChange={handleDayChange}
         />
