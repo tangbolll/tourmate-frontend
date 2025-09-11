@@ -5,13 +5,25 @@ import { API_URL } from './apiConfig';
 
 const formatTime = (dateString) => {
     if (!dateString) return '';
-    const date = new Date(dateString);
-    return date.toLocaleTimeString('ko-KR', { 
+
+    // 서버에서 보내는 시간이 UTC라고 가정
+    // 시간대 정보가 없으면 UTC(Z)를 붙임
+    let utcDateString = dateString;
+    if (!dateString.includes('Z') && !dateString.includes('+')) {
+        utcDateString = dateString + 'Z'; // UTC 표시
+    }
+
+    const date = new Date(utcDateString);
+    
+    const result = date.toLocaleTimeString('ko-KR', { 
         hour: '2-digit', 
         minute: '2-digit',
-        hour12: true 
+        hour12: true,
+        timeZone: 'Asia/Seoul' // UTC를 한국 시간으로 변환
     });
+    return result;
 };
+
 
 // 내가 속한 채팅방 목록 가져오기
 export const getMyChatRooms = async (userId) => {
