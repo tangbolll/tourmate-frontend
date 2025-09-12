@@ -8,10 +8,13 @@ import {
     fetchAccompanyFeedRawWithCacheApi, 
     toggleLikeApi,
     clearFeedCache,
-    handleApiError
+    handleApiError,
 } from '../../utils/AccompanyListApi';
 import {
-    getScrappedPostcardsApi // 추가: 엽서 API 파일에서 함수 임포트
+    getScrappedPostcardsApi,
+    likePostcardApi,
+    unlikePostcardApi, 
+    getUserLikedPostcardsApi,
 } from '../../utils/PostCardApi';
 import { useAuth } from '../../context/AuthContext';
 
@@ -278,94 +281,59 @@ if (__DEV__ && likedAccompanyPosts.length > 0) {
 
     // 🚀 스크랩 데이터 로딩 - `getScrappedPostcardsApi` 사용
     const fetchScrapDataOptimized = useCallback(async (sortKey = scrapSortKey) => {
-    if (loadingRef.current || (scrapLoaded && scrapList.length > 0 && sortKey === scrapSortKey)) return;
-    
-    try {
-        loadingRef.current = true;
+        if (loadingRef.current) return;
         setLoading(true);
-        
-        console.log('스크랩 데이터 로딩 시작...', { sortKey });
-        
-        const scrappedPostcards = await getScrappedPostcardsApi(currentUserId, sortKey);
-        
-        // 원본 데이터 구조 확인
-        console.log('원본 스크랩 데이터 첫 번째 항목:', scrappedPostcards[0]);
-        console.log('사용 가능한 ID 필드들:', {
-            id: scrappedPostcards[0]?.id,
-            postcardId: scrappedPostcards[0]?.postcardId,
-            postcard_id: scrappedPostcards[0]?.postcard_id,
-            _id: scrappedPostcards[0]?._id,
-            uid: scrappedPostcards[0]?.uid,
-        });
-        console.log('첫 번째 항목의 모든 키들:', Object.keys(scrappedPostcards[0] || {}));
+        loadingRef.current = true;
+    
+        try {
+            console.log('🔄 스크랩 데이터 로딩 시작...', { sortKey });
 
-        if (scrappedPostcards) {
-            // ID 필드 찾기 및 안전한 변환
-            const formattedScrapData = scrappedPostcards.map((postcard, index) => {
-                // 여러 가능한 ID 필드 중에서 값이 있는 것 찾기
-                const postcardId = postcard.id || 
-                                  postcard.postcardId || 
-                                  postcard.postcard_id || 
-                                  postcard._id || 
-                                  postcard.uid ||
-                                  `temp_id_${index}`; // 최후의 수단
+            // ❗ 중요: 여기서 실제 좋아요 목록 API를 호출합니다.
+            const [scrappedPostcards, likedPostcardsResult] = await Promise.all([
+                getScrappedPostcardsApi(currentUserId, sortKey), 
+                getUserLikedPostcardsApi(currentUserId)
+            ]);
 
-                console.log(`${index}번째 엽서 ID: ${postcardId} (원본: ${postcard.id})`);
+            if (!scrappedPostcards) {
+                throw new Error('스크랩 목록을 가져오지 못했습니다.');
+            }
 
+            const likedPostcardIds = new Set();
+            // API 응답이 객체 형태({success, data})일 수 있으므로 안전하게 접근
+            if (likedPostcardsResult && likedPostcardsResult.success && Array.isArray(likedPostcardsResult.data)) {
+                likedPostcardsResult.data.forEach(p => likedPostcardIds.add(p.postcardId || p.id));
+            } else if (Array.isArray(likedPostcardsResult)) { // 배열을 직접 반환하는 경우도 대비
+                likedPostcardsResult.forEach(p => likedPostcardIds.add(p.postcardId || p.id));
+            }
+
+            const formattedScrapData = scrappedPostcards.map(postcard => {
+                const postcardId = postcard.id || postcard.postcardId;
                 return {
-                    postcardId: postcardId,
-                    id: postcardId, // 호환성을 위해
-                    image: postcard.imageUrl || postcard.image,
-                    title: postcard.title,
-                    location: postcard.location,
-                    date: postcard.createdAt ? new Date(postcard.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음',
-                    author: postcard.author,
-                    authorDate: `${postcard.author} · ${postcard.location} · ${postcard.createdAt ? new Date(postcard.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음'}`,
-                    imageUrl: postcard.imageUrl || postcard.image,
-                    likeCount: postcard.likeCount || 0,
-                    scrapCount: postcard.scrapCount || 0,
-                    isLiked: postcard.isLiked || false,
+                    ...postcard,
+                    id: postcardId,
+                    isLiked: likedPostcardIds.has(postcardId), // ✅ 진짜 '좋아요' 상태 반영
                     isScrapped: true,
-                    isScraped: true, // PostExpanded에서 사용
-                    scrappedAt: postcard.scrappedAt,
-                    postcardName: postcard.title,
-                    userName: postcard.author,
-                    createdAt: postcard.createdAt,
-                    content: postcard.content,
-                    typeImageUrl: postcard.typeImageUrl,
-                    startDate: postcard.startDate
+                    isScraped: true,
+                    image: postcard.imageUrl || postcard.image,
+                    date: postcard.createdAt ? new Date(postcard.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음',
+                    authorDate: `${postcard.author} · ${postcard.location} · ${postcard.createdAt ? new Date(postcard.createdAt).toISOString().slice(0, 10).replace(/-/g, '.') : '알 수 없음'}`,
                 };
             });
             
-            console.log('변환된 데이터 첫 번째 항목 ID 확인:', formattedScrapData[0]?.postcardId);
-            
             setScrapList(formattedScrapData);
-            setScrapLoaded(true);
-            setScrapSortKey(sortKey);
-            
-            console.log('스크랩 데이터 로드 완료:', formattedScrapData.length, '개');
-            
-        } else {
-            console.error('스크랩 데이터 로드 실패: API 호출 결과가 null입니다.');
-            setScrapList([]);
-            Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
-            setScrapLoaded(true);
-            setScrapSortKey(sortKey);
-        }
-        
-    } catch (error) {
-        console.error('스크랩 데이터 로드 실패:', error);
-        setScrapList([]);
-        Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
-        setScrapLoaded(true);
-        setScrapSortKey(sortKey);
-    } finally {
-        loadingRef.current = false;
-        setLoading(false);
-    }
-}, [currentUserId, scrapLoaded, scrapList.length, scrapSortKey]);
+            console.log('✅ 스크랩 데이터 로드 완료');
 
-    // 🔥 초기 로딩 최적화
+        } catch (error) {
+            console.error('❌ 스크랩 데이터 로드 실패:', error);
+            Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
+            setScrapList([]);
+        } finally {
+            setLoading(false);
+            setScrapLoaded(true);
+            loadingRef.current = false;
+        }
+    }, [currentUserId, scrapSortKey]);
+    
     useEffect(() => {
         if (!currentUserId) return;
         
@@ -374,7 +342,7 @@ if (__DEV__ && likedAccompanyPosts.length > 0) {
         } else if (selectedTab === '스크랩' && !scrapLoaded) {
             fetchScrapDataOptimized();
         }
-    }, [selectedTab, currentUserId]); // 의존성 배열 단순화
+    }, [selectedTab, currentUserId, dibsLoaded, scrapLoaded]);
 
     // 정렬 변경 핸들러
     const handleSortChange = useCallback((sortKey) => {
@@ -415,7 +383,8 @@ if (__DEV__ && likedAccompanyPosts.length > 0) {
     // 🚀 좋아요 핸들러 최적화 - 디바운싱 추가
     const likeTimeoutRef = useRef({});
     
-    const handlePressLike = useCallback(async (postId) => {
+    // 🚀 동행 좋아요
+    const handlePressAccompanyLike = useCallback(async (postId) => {
         if (!currentUserId) return;
 
         // 이전 타이머 클리어
@@ -435,6 +404,7 @@ if (__DEV__ && likedAccompanyPosts.length > 0) {
         likeTimeoutRef.current[postId] = setTimeout(async () => {
             try {
                 const result = await toggleLikeApi(postId, currentUserId);
+                
                 
                 // API 응답으로 상태 동기화
                 setLikedPosts(prev => ({
@@ -460,6 +430,50 @@ if (__DEV__ && likedAccompanyPosts.length > 0) {
         }, 500);
         
     }, [likedPosts, currentUserId, selectedTab]);
+
+    // 엽서 좋아요
+    const handlePressPostcardLike = useCallback(async (postcardId) => {
+    if (!currentUserId) return;
+
+    const currentItem = scrapList.find(item => item.id === postcardId);
+    if (!currentItem) return;
+
+    const isCurrentlyLiked = currentItem.isLiked;
+
+    // 1. 낙관적 UI 업데이트 (UI를 먼저 변경)
+    setScrapList(prevList =>
+        prevList.map(item =>
+            item.id === postcardId
+                ? {
+                    ...item,
+                    isLiked: !isCurrentlyLiked,
+                    likeCount: isCurrentlyLiked
+                        ? Math.max(0, (item.likeCount || 1) - 1)
+                        : (item.likeCount || 0) + 1,
+                    }
+                : item
+        )
+    );
+
+    try {
+        // 2. 현재 상태에 따라 올바른 엽서 API 호출
+        if (isCurrentlyLiked) {
+            await unlikePostcardApi(postcardId, currentUserId);
+        } else {
+            await likePostcardApi(postcardId, currentUserId);
+        }
+        console.log(`✅ 엽서(${postcardId}) 좋아요 처리 성공!`);
+    } catch (error) {
+        console.error('❌ 엽서 좋아요 처리 실패:', error);
+        // 3. API 실패 시, UI를 원래 상태로 복원 (롤백)
+        setScrapList(prevList =>
+            prevList.map(item => (item.id === postcardId ? currentItem : item))
+        );
+        Alert.alert('오류', error.message || '좋아요 처리에 실패했습니다.');
+    }
+}, [currentUserId, scrapList]);
+
+
 
     // 컴포넌트 언마운트 시 정리
     useEffect(() => {
@@ -547,7 +561,8 @@ if (__DEV__ && likedAccompanyPosts.length > 0) {
                 dibsList={dibsList}
                 scrapList={scrapList}
                 likedPosts={likedPosts}
-                handlePressLike={handlePressLike}
+                handlePressAccompanyLike={handlePressAccompanyLike}
+                handlePressPostcardLike={handlePressPostcardLike}
                 navigateToPost={navigateToPost}
                 currentUserId={currentUserId}
                 onScrapDataUpdate={handleScrapDataUpdate}

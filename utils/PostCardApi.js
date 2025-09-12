@@ -579,6 +579,20 @@ export const unlikePostcardApi = async (postcardId, userId) => {
     }
 };
 
+// 좋아요한 엽서 목록
+export const getUserLikedPostcardsApi = async (userId) => {
+    const url = `${API_URL}/api/postcards/users/${userId}/liked`;
+    console.log('🌐 사용자가 좋아요한 엽서 목록 조회 API 호출:', url);
+    try {
+        const response = await fetchWithRetry(url);
+        const data = await response.json();
+        return { success: true, data: data };
+    } catch (error) {
+        console.error('사용자가 좋아요한 엽서 목록 조회 실패:', error);
+        return { success: false, error: error.message, data: [] };
+    }
+};
+
 // ⭐ 수정: 함수 이름과 엔드포인트가 백엔드와 일치하도록 변경
 // 엽서 공개범위 토글
 export const togglePostcardPublicScopeApi = async (postcardId) => {

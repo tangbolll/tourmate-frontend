@@ -212,6 +212,7 @@ const sharePost = () => {
                                     location: details.location,
                                     startDate: details.date.toISOString().split('T')[0],
                                     endDate: details.date.toISOString().split('T')[0],
+                                    visitDate: details.date.toISOString().split('T')[0],
                                 };
                                 
                                 await updatePostcardPublicDetailsApi(postcardId, publicDetails);
@@ -302,6 +303,7 @@ const sharePost = () => {
                                         location: details.location,
                                         startDate: details.date.toISOString().split('T')[0],
                                         endDate: details.date.toISOString().split('T')[0],
+                                        visitDate: details.date.toISOString().split('T')[0],
                                     };
                                     
                                     await updatePostcardPublicDetailsApi(postcard.id, publicDetails);

@@ -25,7 +25,7 @@ const LikeOrScrap = ({
             >
                 <View style={styles.iconContainer}>
                     <MaterialIcons 
-                        name={isLiked ? "favorite" : "favorite"} 
+                        name={isLiked ? "favorite" : "favorite-border"} 
                         size={iconSize} 
                         color={"black"} // 항상 검은색
                     />

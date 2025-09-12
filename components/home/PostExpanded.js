@@ -287,9 +287,9 @@ const PostExpanded = ({
         postcardName: detailData?.title || postData?.title || postData?.postcardName || mockData.postcardName,
         userName: detailData?.author || postData?.author || postData?.userName || mockData.userName,
         location: detailData?.location || postData?.location || mockData.location,
-        date: detailData?.createdAt 
-            ? formatDate(detailData.createdAt) 
-            : (postData?.createdAt ? formatDate(postData.createdAt) : (postData?.date || mockData.date)),
+        date: detailData?.visitDate 
+            ? formatDate(detailData.visitDate) 
+            : (postData?.visitDate ? formatDate(postData.visitDate) : (postData?.date || mockData.date)),
         postcardImage: detailData?.imageUrl || postData?.imageUrl || postData?.postcardImage || mockData.postcardImage,
         postcardContent: detailData?.content || postData?.content || postData?.postcardContent || mockData.postcardContent,
         templateImage: getPostcardTemplate(detailData?.typeImageUrl || postData?.typeImageUrl || mockData.typeImageUrl),

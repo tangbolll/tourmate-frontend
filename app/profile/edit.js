@@ -42,10 +42,12 @@ const ProfileEditScreen = () => {
   const [email, setEmail] = useState('');
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
-  const [nicknameChecked, setNicknameChecked] = useState(false); // New state
+  const [nicknameChecked, setNicknameChecked] = useState(true); // New state
   const [nicknameAvailable, setNicknameAvailable] = useState(false); // New state
   const [nicknameCheckMessage, setNicknameCheckMessage] = useState(''); // New state
-  const [tags, setTags] = useState([]);
+
+    const [tagInput, setTagInput] = useState('');
+
   const [phoneNumber, setPhoneNumber] = useState('');
   const [dob, setDob] = useState('');
   const [gender, setGender] = useState('');
@@ -55,6 +57,8 @@ const ProfileEditScreen = () => {
   const [nicknameFeedback, setNicknameFeedback] = useState('');
   const [tagsFeedback, setTagsFeedback] = useState(''); // New state for tags feedback
   const [formFeedback, setFormFeedback] = useState({ message: '', type: '' });
+
+  const [isTagInputFocused, setIsTagInputFocused] = useState(false);
 
   useEffect(() => {
     const fetchUserData = async () => {
@@ -69,7 +73,9 @@ const ProfileEditScreen = () => {
           const fullName = `${data.lastname || ''}${data.firstname || ''}`;
           setName(fullName);
           setNickname(data.nickname || '');
-          setTags(data.tags || []);
+
+          setTagInput((data.tags || []).join(' '));
+
           setPhoneNumber(data.phoneNumber || '');
           setDob(data.dob || '');
           setGender(data.gender || '');
@@ -101,10 +107,11 @@ const ProfileEditScreen = () => {
       }
 
       // Validate tags
-      const actualTags = tags.filter(tag => tag.trim() !== ''); // Filter non-empty tags for validation
-      if (actualTags.length > 4) {
-        setTagsFeedback('태그는 최대 4개까지 설정 가능합니다.');
-        return;
+      const finalTags = tagInput.split(/\s+/).map(tag => tag.trim()).filter(Boolean);
+
+      if (finalTags.length > 4) {
+          setTagsFeedback('태그는 최대 4개까지 설정 가능합니다.');
+          return;
       }
 
       const userId = await AsyncStorage.getItem('userId');
@@ -127,7 +134,7 @@ const ProfileEditScreen = () => {
       }
 
 
-      const updatedData = { nickname, tags: actualTags, profileImage: updatedProfileImageUrl }; // Use the S3 URL or null
+      const updatedData = { nickname, tags: finalTags, profileImage: updatedProfileImageUrl };
       await updateUserProfileApi(userId, updatedData);
       // After successful update, fetch the latest user data and update the store
       const updatedUserData = await fetchUserProfileApi(userId);
@@ -217,40 +224,41 @@ const ProfileEditScreen = () => {
 
   // Check if there are any changes
   const canSave = useMemo(() => {
-    if (!originalUserData) return false; // No original data yet
+      if (!originalUserData) return false;
 
-    const originalNickname = originalUserData.nickname || '';
-    const originalTags = originalUserData.tags ? JSON.stringify(originalUserData.tags) : '[]';
-    const currentTags = JSON.stringify(tags.filter(tag => tag.trim() !== ''));
-    const originalImg = originalProfileImage || null; // Get original image
-    const currentImg = profileImage || null; // Get current image
+      // 1. 원본 태그 데이터를 띄어쓰기로 구분된 문자열로 만듭니다.
+      const originalTagsString = (originalUserData.tags || []).join(' ');
 
-    const nicknameHasChanged = originalNickname !== nickname;
-    const tagsHaveChanged = originalTags !== currentTags;
-    const profileImageHasChanged = originalImg !== currentImg; // Check image change
+      // 2. 현재 입력된 태그 문자열을 앞뒤 공백 제거하여 비교 준비를 합니다.
+      const currentTagsString = tagInput.trim();
 
-    // If nickname changed, it must be checked and available
-    if (nicknameHasChanged && (!nicknameChecked || !nicknameAvailable)) {
-      return false;
-    }
+      const nicknameHasChanged = (originalUserData.nickname || '') !== nickname;
+      // 3. 문자열 대 문자열로 직접 비교합니다.
+      const tagsHaveChanged = originalTagsString !== currentTagsString;
+      const profileImageHasChanged = (originalProfileImage || null) !== (profileImage || null);
 
-    // If nickname hasn't changed, but tags or profile image have, it's savable
-    if (!nicknameHasChanged && (tagsHaveChanged || profileImageHasChanged)) {
+      // 변경 사항이 하나도 없으면 저장 불가
+      if (!nicknameHasChanged && !tagsHaveChanged && !profileImageHasChanged) {
+          return false;
+      }
+
+      // 닉네임이 변경되었다면, 반드시 중복 확인을 통과해야 함
+      if (nicknameHasChanged && (!nicknameChecked || !nicknameAvailable)) {
+          return false;
+      }
+      
+      // 태그 개수 제한을 초과하면 저장 불가
+      const currentTagsArray = currentTagsString.split(/\s+/).filter(Boolean);
+      if (currentTagsArray.length > 4) {
+          return false;
+      }
+
+      // 위의 모든 조건을 통과하면 저장 가능
       return true;
-    }
+      // 4. 의존성 배열에 'tags' 대신 'tagInput'을 넣습니다.
+  }, [nickname, tagInput, profileImage, originalUserData, nicknameChecked, nicknameAvailable, originalProfileImage]);
 
-    // If nickname has changed and is valid, and tags or profile image may or may not have changed, it's savable
-    if (nicknameHasChanged && nicknameChecked && nicknameAvailable) {
-      return true;
-    }
-
-    // If only profile image has changed, it's savable
-    if (!nicknameHasChanged && !tagsHaveChanged && profileImageHasChanged) {
-        return true;
-    }
-
-    return false; // No changes or invalid state
-  }, [nickname, tags, originalUserData, nicknameChecked, nicknameAvailable, profileImage, originalProfileImage]);
+  const displayTags = useMemo(() => tagInput.split(/\s+/).filter(Boolean), [tagInput]);
 
   return (
     <View style={styles.container}>
@@ -308,26 +316,55 @@ const ProfileEditScreen = () => {
           ) : null}
           {nicknameFeedback ? <Text style={styles.errorText}>{nicknameFeedback}</Text> : null}
         </View>
-        <InputField
-          label="태그"
-          labelComponent={<Text style={styles.tagLimitText}>최대 4개까지 설정 가능</Text>} // New label component
-          value={tags.join(' ')}
-          onChangeText={(text) => {
-            const newTags = text.split(' '); // Keep empty strings for now
-            setTags(newTags); // Update the state with all parts, including empty ones
-
-            // Validation for max 4 tags should be based on non-empty tags
-            const actualTags = newTags.filter(tag => tag.trim() !== '');
-            if (actualTags.length > 4) {
-              setTagsFeedback('태그는 최대 4개까지 설정 가능합니다.');
-            } else {
-              setTagsFeedback('');
-            }
-          }}
-          placeholder="#무계획형 #모험형 #지식추구형 #활동형" // Updated placeholder
-          subLabel="태그할 키워드를 띄어쓰기로 구분해주세요." // New subLabel
-          feedback={tagsFeedback}
-        />
+          <View style={styles.inputContainer}>
+              <View style={styles.labelRow}>
+                  <Text style={styles.label}>태그</Text>
+                  <Text style={styles.tagLimitText}>최대 4개까지 설정 가능</Text>
+              </View>
+              
+              {/* isTagInputFocused 상태에 따라 UI를 다르게 보여줍니다. */}
+              {isTagInputFocused ? (
+                  // 1. 입력 모드 (포커스 되었을 때)
+                  <TextInput
+                      style={styles.input}
+                      value={tagInput}
+                      placeholder="#무계획형 #모험형 #지식추구형 #활동형"
+                      placeholderTextColor={'gray'}
+                      autoFocus={true} // 이 컴포넌트가 나타날 때 자동으로 키보드를 엽니다.
+                      onChangeText={(text) => {
+                          setTagInput(text);
+                          const currentTags = text.split(/\s+/).filter(Boolean);
+                          if (currentTags.length > 4) {
+                              setTagsFeedback('태그는 최대 4개까지 설정 가능합니다.');
+                          } else {
+                              setTagsFeedback('');
+                          }
+                      }}
+                      // 포커스를 잃으면 '보기 모드'로 전환합니다.
+                      onBlur={() => setIsTagInputFocused(false)} 
+                  />
+              ) : (
+                  // 2. 보기 모드 (포커스가 없을 때)
+                  <TouchableOpacity 
+                      style={[styles.input, styles.tagDisplayContainer]}
+                      onPress={() => setIsTagInputFocused(true)} // 이 영역을 누르면 '입력 모드'로 전환합니다.
+                  >
+                      {displayTags.length > 0 ? (
+                          // 태그가 있으면 칩으로 만들어서 보여줍니다.
+                          displayTags.map((tag, index) => (
+                              <View key={index} style={styles.tagChip}>
+                                  <Text style={styles.tagChipText}>#{tag}</Text>
+                              </View>
+                          ))
+                      ) : (
+                          // 태그가 없으면 플레이스홀더를 보여줍니다.
+                          <Text style={styles.tagPlaceholder}>#무계획형 #모험형 #지식추구형 #활동형</Text>
+                      )}
+                  </TouchableOpacity>
+              )}
+              <Text style={styles.inputSubLabel}>태그할 키워드를 띄어쓰기로 구분해주세요.</Text>
+              {tagsFeedback ? <Text style={styles.errorText}>{tagsFeedback}</Text> : null}
+        </View>
         <InputField label="휴대폰번호" value={phoneNumber} editable={false} />
         <InputField label="생년월일" value={dob} editable={false} />
         <InputField label="성별" value={gender} editable={false} />
@@ -346,154 +383,177 @@ const ProfileEditScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E0E0E0',
-  },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  saveText: {
-    fontSize: 16,
-    color: '#42A5F5',
-    fontWeight: 'bold',
-  },
-  content: {
-    padding: 20,
-    flexGrow: 1, // Ensures the container can grow to allow footer positioning
-  },
-  profileImageContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  profileImage: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-  },
-  cameraIconContainer: {
-    position: 'absolute',
-    bottom: 0,
-    right: 110,
-    backgroundColor: '#42A5F5',
-    borderRadius: 15,
-    padding: 5,
-  },
-  inputContainer: {
-    width: '100%',
-    marginBottom: 20,
-  },
-  label: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
-    borderRadius: 8,
-    padding: 12,
-    fontSize: 16,
-  },
-  inputDisabled: {
-    backgroundColor: '#F5F5F5',
-    color: '#A0A0A0',
-  },
-  formFeedbackText: {
-    marginTop: 20,
-    fontSize: 16,
-    textAlign: 'center'
-  },
-  successText: {
-    color: '#42A5F5',
-  },
-  errorText: {
-    color: 'red',
-    fontSize: 12,
-    marginTop: 4,
-  },
-  deleteAccountContainer: {
-    flex: 1,
-    justifyContent: 'flex-end',
-    alignItems: 'flex-end',
-    paddingBottom: 10,
-  },
-  deleteAccountText: {
-    fontSize: 12,
-    color: '#9E9E9E',
-    textDecorationLine: 'underline',
-  },
-  labelRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  tagLimitText: {
-    fontSize: 12,
-    color: '#333',
-    marginLeft: 8,
-  },
-  inputSubLabel: {
-    fontSize: 12,
-    color: '#333',
-    marginTop: 4,
-    paddingLeft: 4,
-  },
-  saveButtonPlaceholder: {
-    width: 40, // Approximate width of the "저장" text
-  },
-  // New styles for nickname input with button inside
-  nicknameInputContainer: {
-    flexDirection: 'row', // To place button next to input
-    alignItems: 'center',
-    position: 'relative', // For absolute positioning of button
-  },
-  nicknameInput: {
-    flex: 1, // Take up available space
-    paddingRight: 100, // Space for the button
-  },
-  checkButtonInside: {
-    position: 'absolute',
-    right: 8,
-    backgroundColor: 'black', // Changed to black
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  checkButtonInsideText: {
-    color: 'white',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  disabledCheckButton: {
-    backgroundColor: '#B1B1B1', // Gray for disabled
-  },
-  emailMessage: {
-    marginTop: 4,
-    fontSize: 12,
-    paddingLeft: 4,
-  },
-  emailAvailable: {
-    color: 'green',
-  },
-  emailTaken: {
-    color: 'red',
-  },
-  inputError: { // Style for input when there's an error feedback
-    borderColor: 'red',
-  },
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E0E0E0',
+  },
+  headerTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  saveText: {
+    fontSize: 16,
+    color: '#42A5F5',
+    fontWeight: 'bold',
+  },
+  content: {
+    padding: 20,
+    flexGrow: 1,
+  },
+  profileImageContainer: {
+    alignItems: 'center',
+    marginBottom: 24,
+  },
+  profileImage: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 110,
+    backgroundColor: '#42A5F5',
+    borderRadius: 15,
+    padding: 5,
+  },
+  inputContainer: {
+    width: '100%',
+    marginBottom: 24,
+  },
+  label: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+  },
+  inputDisabled: {
+    backgroundColor: '#F5F5F5',
+    color: '#A0A0A0',
+  },
+  formFeedbackText: {
+    marginTop: 20,
+    fontSize: 16,
+    textAlign: 'center'
+  },
+  successText: {
+    color: '#42A5F5',
+  },
+  errorText: {
+    color: 'red',
+    fontSize: 12,
+    marginTop: 4,
+  },
+  tagDisplayContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    alignItems: 'center',
+    paddingVertical: 8,
+  },
+  tagChip: {
+      backgroundColor: '#F0F0F0',
+      borderRadius: 16,
+      paddingVertical: 6,
+      paddingHorizontal: 12,
+      marginRight: 6,
+      marginBottom: 6,
+  },
+  tagChipText: {
+      color: '#333',
+      fontSize: 14,
+  },
+  tagPlaceholder: {
+      color: 'gray',
+      fontSize: 16,
+  },
+  deleteAccountContainer: {
+    flex: 1,
+    justifyContent: 'flex-end',
+    alignItems: 'flex-end',
+    paddingBottom: 10,
+  },
+  deleteAccountText: {
+    fontSize: 12,
+    color: '#9E9E9E',
+    textDecorationLine: 'underline',
+  },
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    // ✅ 수정된 부분: 이중 간격을 유발하던 marginBottom을 삭제
+  },
+  tagLimitText: {
+    fontSize: 12,
+    color: '#333',
+    marginLeft: 8,
+    transform: [{ translateY: -2 }], 
+  },
+  inputSubLabel: {
+    fontSize: 12,
+    color: '#333',
+    marginTop: 4,
+    paddingLeft: 4,
+  },
+  saveButtonPlaceholder: {
+    width: 40,
+  },
+  nicknameInputContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  nicknameInput: {
+    flex: 1,
+    paddingRight: 100,
+  },
+  checkButtonInside: {
+    position: 'absolute',
+    right: 8,
+    backgroundColor: 'black',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 6,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  checkButtonInsideText: {
+    color: 'white',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  disabledCheckButton: {
+    backgroundColor: '#B1B1B1',
+  },
+  emailMessage: {
+    marginTop: 4,
+    fontSize: 12,
+    paddingLeft: 4,
+  },
+  emailAvailable: {
+    color: 'green',
+  },
+  emailTaken: {
+    color: 'red',
+  },
+  inputError: {
+    borderColor: 'red',
+  },
 });
+
 
 export default ProfileEditScreen;
