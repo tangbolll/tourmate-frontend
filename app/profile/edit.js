@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Image, ScrollView, Platform, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as ImagePicker from 'expo-image-picker';
 import { fetchUserProfileApi, updateUserProfileApi, checkNicknameApi, uploadProfileImageApi } from '../../utils/ProfileApi';
@@ -34,6 +34,8 @@ const InputField = ({ label, value, onChangeText, placeholder, keyboardType, edi
 
 const ProfileEditScreen = () => {
   const router = useRouter();
+  const params = useLocalSearchParams(); 
+
   const { userData, setUserData } = useUserStore(); // Use Zustand store
   const [originalUserData, setOriginalUserData] = useState(null); // New state to store original data
   const [originalProfileImage, setOriginalProfileImage] = useState(null); // Add this line
@@ -43,10 +45,10 @@ const ProfileEditScreen = () => {
   const [name, setName] = useState('');
   const [nickname, setNickname] = useState('');
   const [nicknameChecked, setNicknameChecked] = useState(true); // New state
-  const [nicknameAvailable, setNicknameAvailable] = useState(false); // New state
+  const [nicknameAvailable, setNicknameAvailable] = useState(true); // New state
   const [nicknameCheckMessage, setNicknameCheckMessage] = useState(''); // New state
 
-    const [tagInput, setTagInput] = useState('');
+  const [tagInput, setTagInput] = useState('');
 
   const [phoneNumber, setPhoneNumber] = useState('');
   const [dob, setDob] = useState('');
@@ -74,7 +76,16 @@ const ProfileEditScreen = () => {
           setName(fullName);
           setNickname(data.nickname || '');
 
-          setTagInput((data.tags || []).join(' '));
+          if (params.initialTags) {
+              // 전달받은 JSON 문자열을 다시 배열로 변환합니다.
+              const parsedTags = JSON.parse(params.initialTags); 
+              // 배열을 띄어쓰기로 구분된 문자열로 만들어 state에 설정합니다.
+              setTagInput(parsedTags.join(' ')); 
+              console.log("✅ 테스트 결과 태그를 적용했습니다:", parsedTags);
+          } else {
+              // 파라미터가 없으면, 기존 프로필의 태그를 설정합니다.
+              setTagInput((data.tags || []).join(' '));
+          }
 
           setPhoneNumber(data.phoneNumber || '');
           setDob(data.dob || '');

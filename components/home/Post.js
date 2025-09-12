@@ -73,7 +73,7 @@ const Post = ({ postData, onDataUpdate }) => {
         // UTC 시간을 한국 시간으로 변환
         timeAgo: postData?.uploadedAt ? formatChatTimestamp(dayjs.utc(postData.uploadedAt).tz('Asia/Seoul').toDate()) : '알 수 없음',
         location: postData?.location,
-        date: postData?.visitDate || '날짜 없음',
+        date: postData?.visitDate ? formatPostDate(postData.visitDate) : '날짜 없음',
         isLiked: isLiked,
         isScraped: isBookmarked,
     };
