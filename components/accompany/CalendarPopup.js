@@ -21,6 +21,7 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
     const [selectedDates, setSelectedDates] = useState([]);
     const [currentMonth, setCurrentMonth] = useState(new Date());
     const [displayedMonthYear, setDisplayedMonthYear] = useState('');
+    const [selectionMode, setSelectionMode] = useState('single'); // 'single' or 'range'
 
     useEffect(() => {
         setDisplayedMonthYear(`${currentMonth.getFullYear()}년 ${currentMonth.getMonth() + 1}월`);
@@ -30,17 +31,26 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
         if (visible) {
             setCurrentMonth(new Date());
             setSelectedDates([]);
+            setSelectionMode('single'); // 기본값을 단일 선택으로
         }
     }, [visible]);
 
     const applyFilters = () => {
         if (selectedDates.length === 0) {
-            onSelectDates({ startDate: null, endDate: null });
-        } else if (selectedDates.length === 1) {
-            onSelectDates({ startDate: selectedDates[0], endDate: selectedDates[0] });
+            onSelectDates({ startDate: null, endDate: null, mode: selectionMode });
+        } else if (selectionMode === 'single' || selectedDates.length === 1) {
+            onSelectDates({ 
+                startDate: selectedDates[0], 
+                endDate: selectedDates[0], 
+                mode: selectionMode 
+            });
         } else {
             const sortedDates = [...selectedDates].sort((a, b) => a.getTime() - b.getTime());
-            onSelectDates({ startDate: sortedDates[0], endDate: sortedDates[1] });
+            onSelectDates({ 
+                startDate: sortedDates[0], 
+                endDate: sortedDates[1], 
+                mode: selectionMode 
+            });
         }
         closeModal();
     };
@@ -57,20 +67,31 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
         setSelectedDates([]);
     };
 
+    const handleModeChange = (mode) => {
+        setSelectionMode(mode);
+        setSelectedDates([]); // 모드 변경 시 선택 초기화
+    };
+
     const handleDateChange = (date) => {
         if (!date) return;
 
         const dateTime = date.getTime();
 
-        const alreadySelected = selectedDates.find(d => d.getTime() === dateTime);
-
-        if (alreadySelected) {
-            setSelectedDates(prev => prev.filter(d => d.getTime() !== dateTime));
+        if (selectionMode === 'single') {
+            // 단일 모드: 하나만 선택
+            setSelectedDates([date]);
         } else {
-            if (selectedDates.length >= 2) {
-                setSelectedDates([date]);
+            // 범위 모드: 기존 로직 유지
+            const alreadySelected = selectedDates.find(d => d.getTime() === dateTime);
+
+            if (alreadySelected) {
+                setSelectedDates(prev => prev.filter(d => d.getTime() !== dateTime));
             } else {
-                setSelectedDates(prev => [...prev, date]);
+                if (selectedDates.length >= 2) {
+                    setSelectedDates([date]);
+                } else {
+                    setSelectedDates(prev => [...prev, date]);
+                }
             }
         }
     };
@@ -126,6 +147,34 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                 </TouchableOpacity>
                 </View>
 
+                {/* Mode Selection */}
+                <View style={styles.modeSelector}>
+                    <TouchableOpacity
+                        style={[
+                            styles.modeButton,
+                            selectionMode === 'single' && styles.activeModeButton
+                        ]}
+                        onPress={() => handleModeChange('single')}
+                    >
+                        <Text style={[
+                            styles.modeButtonText,
+                            selectionMode === 'single' && styles.activeModeButtonText
+                        ]}>단일 선택</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[
+                            styles.modeButton,
+                            selectionMode === 'range' && styles.activeModeButton
+                        ]}
+                        onPress={() => handleModeChange('range')}
+                    >
+                        <Text style={[
+                            styles.modeButtonText,
+                            selectionMode === 'range' && styles.activeModeButtonText
+                        ]}>범위 선택</Text>
+                    </TouchableOpacity>
+                </View>
+
                 {/* Navigation Buttons */}
                 <View key={currentMonth.toISOString()} style={styles.monthNav}>
                     <TouchableOpacity
@@ -149,30 +198,18 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
                     </TouchableOpacity>
                 </View>
 
-                {/* 👇 선택 상태 표시를 이 위치로 옮겼습니다 */}
-                {selectedDates.length > 0 && (
-                    <View style={styles.selectionInfo}>
-                        <Text style={styles.selectionText}>
-                            {selectedDates.length === 1
-                                ? `선택: ${sortedDates[0].getMonth() + 1}/${sortedDates[0].getDate()}`
-                                : `범위: ${sortedDates[0].getMonth() + 1}/${sortedDates[0].getDate()} - ${sortedDates[1].getMonth() + 1}/${sortedDates[1].getDate()}`
-                            }
-                        </Text>
-                    </View>
-                )}
-
                 {/* Calendar */}
                 <CalendarPicker
-                    key={currentMonth.toString()}
+                    key={`${currentMonth.toString()}-${selectionMode}`}
                     onMonthChange={(date) => setCurrentMonth(date)}
                     customDatesStyles={null}
                     monthYearHeaderWrapperStyle={{ display: 'none' }}
-                    allowRangeSelection={false}
+                    allowRangeSelection={selectionMode === 'range'}
                     minDate={new Date()}
                     disabledBeforeToday={true}
                     disabledDatesTextStyle={{ color: '#ccc' }}
                     selectedStartDate={displayStartDate}
-                    selectedEndDate={displayEndDate}
+                    selectedEndDate={selectionMode === 'range' ? displayEndDate : displayStartDate}
                     onDateChange={handleDateChange}
                     previousTitle=""
                     nextTitle=""
@@ -191,9 +228,12 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
 
                 {/* Apply Button */}
                 <TouchableOpacity
-                    style={styles.applyButton}
+                    style={[
+                        styles.applyButton,
+                        selectedDates.length === 0 && styles.disabledButton
+                    ]}
                     onPress={applyFilters}
-                    disabled={false}
+                    disabled={selectedDates.length === 0}
                     activeOpacity={0.7}
                 >
                 <Text style={styles.applyButtonText}>적용하기</Text>
@@ -227,7 +267,7 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
-        marginBottom: 25,
+        marginBottom: 20,
         paddingHorizontal: 5,
     },
     resetText: {
@@ -243,12 +283,46 @@ const styles = StyleSheet.create({
         right: 0,
         textAlign: 'center',
     },
+    modeSelector: {
+        flexDirection: 'row',
+        backgroundColor: '#f0f0f0',
+        borderRadius: 8,
+        padding: 4,
+        marginBottom: 20,
+    },
+    modeButton: {
+        flex: 1,
+        paddingVertical: 10,
+        paddingHorizontal: 15,
+        borderRadius: 6,
+        alignItems: 'center',
+    },
+    activeModeButton: {
+        backgroundColor: '#fff',
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+        elevation: 2,
+    },
+    modeButtonText: {
+        fontSize: 14,
+        color: '#666',
+        fontWeight: '500',
+    },
+    activeModeButtonText: {
+        color: '#000',
+        fontWeight: '600',
+    },
     monthNav: {
         flexDirection: 'row',
         justifyContent: 'space-between',
         alignItems: 'center',
         paddingHorizontal: 24,
-        marginBottom: 10, // 텍스트 위로 올리기 위해 간격 조정
+        marginBottom: 10,
     },
     monthTitle: {
         fontSize: 16,
@@ -262,7 +336,7 @@ const styles = StyleSheet.create({
         fontWeight: 'bold',
     },
     calendarContainer: {
-        marginTop: 10, // 텍스트와 캘린더 사이 간격 조정
+        marginTop: 10,
     },
     applyButton: {
         backgroundColor: 'black',
@@ -287,5 +361,6 @@ const styles = StyleSheet.create({
     selectionText: {
         fontSize: 16,
         color: '#333',
+        fontWeight: '500',
     }
 });
