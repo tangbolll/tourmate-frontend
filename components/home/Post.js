@@ -60,7 +60,7 @@ const Post = ({ postData, onDataUpdate }) => {
         }
     }, [postData?.postcardId, postData?.isLiked, postData?.isScraped, postData?.likeCount, postData?.scrapCount]);
 
-    console.log("원본 데이터: ", postData);
+    // console.log("원본 데이터: ", postData);
 
     // 실제 데이터가 없으면 기본값 사용
     const data = {
@@ -78,7 +78,7 @@ const Post = ({ postData, onDataUpdate }) => {
         isScraped: isBookmarked,
     };
 
-    console.log("가공 데이터: ", data);
+    // console.log("가공 데이터: ", data);
 
     const handleLike = async () => {
         if (!data.postcardId || likeLoading) return;

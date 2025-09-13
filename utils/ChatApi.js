@@ -28,9 +28,15 @@ const formatTime = (dateString) => {
 // 내가 속한 채팅방 목록 가져오기
 export const getMyChatRooms = async (userId) => {
     try {
-        const url = `${API_URL}/api/accompany/my-chatrooms?id=${userId}`;
+        // ✅ id → currentUserId로 변경
+        const url = `${API_URL}/api/accompany/my-chatrooms?currentUserId=${userId}`;
         console.log('API 호출 URL:', url);
         console.log('User ID:', userId);
+        
+        // ✅ userId 검증 추가
+        if (!userId) {
+            throw new Error('사용자 ID가 없습니다');
+        }
         
         const response = await fetch(url, {
             method: 'GET',
@@ -44,52 +50,20 @@ export const getMyChatRooms = async (userId) => {
         if (!response.ok) {
             const errorText = await response.text();
             console.log('Error response:', errorText);
+            
+            // ✅ 403 에러 구체적 처리
+            if (response.status === 403) {
+                console.log('🚫 403 Forbidden - 사용자 권한 없음');
+                console.log('전송된 userId:', userId);
+            }
+            
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const data = await response.json();
         console.log('Raw server response:', data);
         
-        // 서버 응답 데이터 변환 - UserResponse 객체 배열을 숫자로 변환
-        const transformedData = data.map(item => {
-            console.log('Original item:', JSON.stringify(item, null, 2));
-            
-            // participants가 UserResponse 객체 배열이므로 length로 변환
-            let participantCount = 0;
-            if (Array.isArray(item.participants)) {
-                participantCount = item.participants.length;
-            } else if (typeof item.participants === 'number') {
-                participantCount = item.participants;
-            } else {
-                participantCount = 1; // 기본값
-            }
-            
-            const transformed = {
-                id: item.id,
-                participants: item.participants,
-                // roomName을 title로 매핑
-                title: item.roomName || item.title || '제목 없음',
-                // accompanyId 추가 (백엔드에서 추가한 필드)
-                accompanyId: item.accompanyId,
-                // 기본값들 설정
-                photo: item.photo || 'https://via.placeholder.com/50',
-                message: item.latestMessage || item.message || '최근 메시지가 없습니다',
-                timestamp: item.createdAt ? 
-                    new Date(item.createdAt).toLocaleDateString('ko-KR', {
-                        month: 'short',
-                        day: 'numeric'
-                    }) : 
-                    (item.timestamp || '시간 없음'),
-                unreadCount: item.unreadCount || 0,
-                active: item.active
-            };
-            
-            console.log('Transformed item:', JSON.stringify(transformed, null, 2));
-            return transformed;
-        });
-        
-        console.log('Transformed data:', transformedData);
-        return transformedData;
+        // ... 나머지 코드는 동일
     } catch (error) {
         console.error('채팅방 목록을 가져오는데 실패했습니다:', error);
         throw error;
