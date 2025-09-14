@@ -2,6 +2,7 @@
   "expo": {
     "name": "tourmate-frontend",
     "slug": "tourmate-frontend",
+    "owner": "seoyeon88",
     "icon": "./assets/icon.png",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -63,16 +64,12 @@
     "extra": {
       "API_BASE_URL_DEV": "https://tourmate-backend-pdmg.onrender.com",
       "API_BASE_URL_LOCAL": "https://tourmate-backend-pdmg.onrender.com",
-      "router": {},
-      "eas": {
-        "projectId": "0e5cb189-6269-49d0-9c44-9237f2e19bfd"
+      "router": {
+        "origin": false
       },
-      "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com"
-    },
-    "doctor": {
-      "reactNativeDirectoryCheck": {
-        "listUnknownPackages": false,
-        "exclude": ["react-native-keyboard-aware-scroll-view"]
+      "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com",
+      "eas": {
+        "projectId": "2febce94-551e-4e11-a994-fcf972f73929"
       }
     }
   }
