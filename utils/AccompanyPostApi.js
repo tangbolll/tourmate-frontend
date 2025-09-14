@@ -451,8 +451,9 @@ export const toggleApplicationApi = async (postId, userId, currentUserApplicatio
 };
 
 // 동행 모집 마감 API 함수
-export const closeAccompanyPostApi = async (postId) => {
-    const url = `${API_URL}/api/accompany/${postId}/close`;
+export const closeAccompanyPostApi = async (postId, currentUserId) => {
+    // currentUserId 파라미터를 URL에 포함
+    const url = `${API_URL}/api/accompany/${postId}/close?currentUserId=${currentUserId}`;
     console.log('🌐 동행 모집 마감 API 호출:', url);
 
     try {
@@ -464,7 +465,6 @@ export const closeAccompanyPostApi = async (postId) => {
             throw new Error(errorText || 'Failed to close the post');
         }
         
-        // ✨ 핵심: 응답을 .json()이 아닌 .text()로 읽습니다.
         // 백엔드가 보내주는 String 데이터를 그대로 받습니다.
         const responseText = await response.text();
         console.log('📬 서버로부터 받은 응답 메시지:', responseText);
@@ -472,6 +472,7 @@ export const closeAccompanyPostApi = async (postId) => {
         return responseText; // 성공 시 받은 텍스트를 반환
 
     } catch (error) {
+        console.error("❌ API Error details:", error.response?.data || error.message);
         console.error('❌ closeAccompanyPostApi 함수 에러:', error);
         // 받은 에러를 그대로 다시 던져서 컴포넌트의 catch 블록에서 처리하도록 함
         throw error;

@@ -609,35 +609,35 @@ export default function AccompanyPost() {
     };
 
     const handleConfirmClose = async () => {
-    setShowAlarmPopupHost(false);
-    
-    try {
-        // 1. 서버에 마감 요청
-        await closeAccompanyPostApi(postId);
-
-        // 2. 🎯 핵심: 서버 재조회 대신 로컬 상태만 업데이트 (더 안전하고 빠름)
-        setClosed(true);
+        setShowAlarmPopupHost(false);
         
-        // accompanyData 상태도 함께 업데이트
-        if (accompanyData?.accompanyInfo) {
-            setAccompanyData({
-                ...accompanyData,
-                accompanyInfo: {
-                    ...accompanyData.accompanyInfo,
-                    status: 'COMPLETED'
-                }
-            });
+        try {
+            // 1. 서버에 마감 요청 - currentUserId 사용
+            await closeAccompanyPostApi(postId, currentUserId); // ✅ 수정됨
+
+            // 2. 로컬 상태 업데이트
+            setClosed(true);
+            
+            // accompanyData 상태도 함께 업데이트
+            if (accompanyData?.accompanyInfo) {
+                setAccompanyData({
+                    ...accompanyData,
+                    accompanyInfo: {
+                        ...accompanyData.accompanyInfo,
+                        status: 'COMPLETED'
+                    }
+                });
+            }
+
+            // 3. 성공 메시지 표시
+            Alert.alert("성공", "동행 모집이 마감되었습니다.");
+            console.log('✅ 동행 마감 완료 - 로컬 상태 업데이트');
+
+        } catch (error) {
+            console.error('❌ 동행 마감 처리 중 오류:', error);
+            Alert.alert('오류', error.message || '마감 처리 중 오류가 발생했습니다.');
         }
-
-        // 3. 성공 메시지 표시
-        Alert.alert("성공", "동행 모집이 마감되었습니다.");
-        console.log('✅ 동행 마감 완료 - 로컬 상태 업데이트');
-
-    } catch (error) {
-        console.error('❌ 동행 마감 처리 중 오류:', error);
-        Alert.alert('오류', error.message || '마감 처리 중 오류가 발생했습니다.');
-    }
-};
+    };
     
 
 const fetchMemberData = async () => {

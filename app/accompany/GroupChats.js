@@ -66,7 +66,7 @@ const GroupChats = () => {
             setLoading(true);
             const data = await ChatApi.getMyChatRooms(currentUserId);
             console.log('📱✅ 채팅방 데이터 로드 성공:', data);
-            setChatRooms(data);
+            setChatRooms(data || []);
         } catch (error) {
             console.error('📱❌ loadChatRooms 에러:', error);
             
