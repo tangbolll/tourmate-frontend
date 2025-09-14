@@ -62,12 +62,12 @@
       "typedRoutes": true
     },
     "extra": {
-      "API_BASE_URL_DEV": "https://tourmate-backend-pdmg.onrender.com",
-      "API_BASE_URL_LOCAL": "https://tourmate-backend-pdmg.onrender.com",
+      "API_BASE_URL_DEV": "http://192.168.0.47:8080",
+      "API_BASE_URL_LOCAL": "http://192.168.0.47:8080",
       "router": {
         "origin": false
       },
-      "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com",
+      "API_BASE_URL_PROD": "http://192.168.0.47:8080",
       "eas": {
         "projectId": "2febce94-551e-4e11-a994-fcf972f73929"
       }

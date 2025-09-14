@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import GroupChatList from '../../components/accompany/GroupChatList';
@@ -240,9 +240,9 @@ const GroupChats = () => {
                 renderItem={({ item }) => {
                     return (
                         <GroupChatList
-                            item={item} // 👈 이렇게 item 객체 하나만 전달합니다.
-                            onPress={handleChatPress}
-                            onSwipeLeft={handleChatSwipeLeft}
+                        item={item} // 👈 이렇게 item 객체 하나만 전달합니다.
+                        onPress={handleChatPress}
+                        onSwipeLeft={handleChatSwipeLeft}
                         />
                     );
                 }}

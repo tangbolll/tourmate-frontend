@@ -27,7 +27,8 @@ import {
     fetchOrCreateChatRoom,
     fetchMessages,
     getWebSocketURL,
-    getAccompanyPostInfo 
+    getAccompanyPostInfo,
+    markMessagesAsRead
 } from '../../utils/ChatApi';
 
 
@@ -225,11 +226,13 @@ const Chat = () => {
     };
 
     useEffect(() => {
-    if (!chatRoom?.id || !currentUserId) {
-        console.log('웹소켓 연결 조건 미충족:', { chatRoomId: chatRoom?.id, currentUserId });
-        return;
-    }
-
+        if (!chatRoom?.id || !currentUserId) {
+            console.log('웹소켓 연결 조건 미충족:', { 
+                chatRoomId: chatRoom?.id, 
+                currentUserId 
+            });
+            return;
+        }
     console.log('🔌 웹소켓 연결 시작...');
 
     const socket = new SockJS(getWebSocketURL());
@@ -415,15 +418,14 @@ const handleSendStomp = async (text = '') => {
 // 초기 데이터 로드
 useEffect(() => {
     const loadChatData = async () => {
+        if (!currentUserId) {
+            console.log('⏳ currentUserId 로딩 대기 중...');
+            return;
+        }
+        
         if (!chatRoomId && !postId) {
             setError('잘못된 접근입니다.');
             setLoading(false);
-            return;
-        }
-
-        // 🔧 currentUserId가 없으면 로딩을 기다림
-        if (!currentUserId) {
-            console.log('⏳ currentUserId 로딩 대기 중...');
             return;
         }
 
@@ -438,11 +440,10 @@ useEffect(() => {
             
             // 1. 채팅방 정보 가져오기
             if (chatRoomId) {
-                roomData = await fetchOrCreateChatRoom(chatRoomId, true);
+                roomData = await fetchOrCreateChatRoom(chatRoomId, currentUserId, true);
             } else if (postId) {
-                roomData = await fetchOrCreateChatRoom(postId, false);
+                roomData = await fetchOrCreateChatRoom(postId, currentUserId, false);
             }
-            
             if (!roomData) {
                 setError('채팅방을 불러올 수 없습니다.');
                 return;
@@ -471,6 +472,11 @@ useEffect(() => {
             const messages = await fetchMessages(roomData.id, currentUserId);
             console.log('💬 메시지 개수:', messages.length);
             setMessages(messages);
+
+            // 4. 메시지 읽음 처리
+            if (roomData && roomData.id && currentUserId) {
+                await markMessagesAsRead(roomData.id, currentUserId);
+            }
             
             console.log('✅ 채팅방 초기화 완료');
             

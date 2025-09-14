@@ -6,7 +6,6 @@ module.exports = function (api) {
       "nativewind/babel",
     ],
     plugins: [
-      // ❌ 'react-native-reanimated/plugin'이 여기에 있으면 안 됩니다.
       [
         'module-resolver',
         {

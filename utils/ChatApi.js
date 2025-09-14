@@ -26,6 +26,91 @@ const formatTime = (dateString) => {
     return result;
 };
 
+// 참가자 데이터 변환 함수
+const transformParticipants = (room) => {
+    console.log('참가자 데이터 변환 시작:', room);
+    
+    // 다양한 백엔드 응답 형태에 대응
+    let participants = [];
+    
+    if (room.participants) {
+        // participants 배열이 있는 경우
+        participants = Array.isArray(room.participants) ? room.participants : [];
+    } else if (room.members) {
+        // members 배열이 있는 경우
+        participants = Array.isArray(room.members) ? room.members : [];
+    } else if (room.member) {
+        // member Set이나 배열이 있는 경우
+        participants = Array.isArray(room.member) 
+            ? room.member 
+            : Array.from(room.member || []);
+    } else if (room.participantList) {
+        // participantList가 있는 경우
+        participants = Array.isArray(room.participantList) ? room.participantList : [];
+    } else if (room.userList) {
+        // userList가 있는 경우
+        participants = Array.isArray(room.userList) ? room.userList : [];
+    }
+    
+    console.log('추출된 참가자 원본:', participants);
+    
+    // 각 참가자 데이터 정규화
+    const transformedParticipants = participants.map((participant, index) => {
+        if (typeof participant === 'string') {
+            // 참가자가 문자열(ID)인 경우
+            return {
+                userId: participant,
+                nickname: `사용자${participant}`,
+                profileImage: null
+            };
+        } else if (typeof participant === 'object' && participant !== null) {
+            // 참가자가 객체인 경우
+            return {
+                userId: participant.userId || participant.id || participant.user_id || `user${index}`,
+                nickname: participant.nickname || participant.name || participant.userName || participant.username || `사용자${participant.userId || participant.id || index}`,
+                profileImage: participant.profileImage || participant.profile_image || participant.avatar || participant.image
+            };
+        }
+        return {
+            userId: `unknown${index}`,
+            nickname: '알 수 없음',
+            profileImage: null
+        };
+    });
+    
+    console.log('변환된 참가자:', transformedParticipants);
+    return transformedParticipants;
+};
+
+// 리스트용 시간 포맷팅
+const formatTimeForList = (dateString) => {
+    if (!dateString) return '';
+    
+    const now = new Date();
+    const messageDate = new Date(dateString);
+    const diffInMs = now - messageDate;
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
+    
+    if (diffInHours < 1) {
+        // 1시간 이내
+        const minutes = Math.floor(diffInMs / (1000 * 60));
+        return minutes <= 0 ? '방금' : `${minutes}분 전`;
+    } else if (diffInHours < 24) {
+        // 24시간 이내
+        return `${Math.floor(diffInHours)}시간 전`;
+    } else if (diffInDays < 7) {
+        // 일주일 이내
+        return `${Math.floor(diffInDays)}일 전`;
+    } else {
+        // 그 이상
+        return messageDate.toLocaleDateString('ko-KR', {
+            month: 'short',
+            day: 'numeric'
+        });
+    }
+};
+
 // 내가 속한 채팅방 목록 가져오기
 export const getMyChatRooms = async (userId) => {
     try {
@@ -51,7 +136,7 @@ export const getMyChatRooms = async (userId) => {
             console.log('Error response:', errorText);
             
             if (response.status === 403) {
-                console.log('🚫 403 Forbidden - 사용자 권한 없음');
+                console.log('403 Forbidden - 사용자 권한 없음');
                 console.log('전송된 userId:', userId);
             }
             
@@ -60,7 +145,50 @@ export const getMyChatRooms = async (userId) => {
 
         const data = await response.json();
         console.log('Raw server response:', data);
-        return data;
+        
+        // 백엔드 응답을 프론트엔드 형식으로 변환
+        const transformedData = data.map((room, index) => {
+            console.log(`원본 채팅방 데이터 ${index + 1}:`, room);
+            
+            const transformed = {
+                id: room.id || room.chatRoomId || room.roomId || `room_${index}`,
+                
+                // 제목 처리 - 다양한 필드명 대응
+                title: room.title || room.accompanyTitle || room.roomName || room.name || '제목 없음',
+                
+                // 최근 메시지 처리 - 다양한 필드명 대응
+                latestMessage: room.latestMessage || room.lastMessage || room.recentMessage || room.message || '메시지가 없습니다',
+                
+                // 참가자 정보 처리
+                participants: transformParticipants(room),
+                
+                // 시간 처리 - 다양한 필드명 대응
+                createdAt: formatTimeForList(
+                    room.lastMessageTime || 
+                    room.updatedAt || 
+                    room.lastUpdated || 
+                    room.createdAt || 
+                    room.timestamp ||
+                    new Date().toISOString()
+                ),
+                
+                // 읽지 않은 메시지 수
+                unreadCount: room.unreadCount || room.unread || room.newMessageCount || 0,
+                
+                // 추가 정보
+                location: room.location || room.place || '위치 미정',
+                maxParticipants: room.maxParticipants || room.maxRecruit || room.maxMembers || 0,
+                
+                // 원본 데이터도 보존 (디버깅용)
+                _originalData: room
+            };
+            
+            console.log(`변환된 채팅방 데이터 ${index + 1}:`, transformed);
+            return transformed;
+        });
+        
+        console.log('전체 변환된 데이터:', transformedData);
+        return transformedData;
         
     } catch (error) {
         console.error('채팅방 목록을 가져오는데 실패했습니다:', error);
@@ -165,7 +293,7 @@ export const getOrCreateChatRoomByAccompanyId = async (accompanyId, currentUserI
 export const getChatMessages = async (roomId) => {
     try {
         const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
-        console.log('🌐 메시지 조회 API 호출:', url);
+        console.log('메시지 조회 API 호출:', url);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -176,7 +304,7 @@ export const getChatMessages = async (roomId) => {
         
         if (response.ok) {
             const messagesData = await response.json();
-            console.log('✅ 메시지 데이터:', messagesData);
+            console.log('메시지 데이터:', messagesData);
             return messagesData;
         } else {
             const errorText = await response.text();
@@ -184,7 +312,7 @@ export const getChatMessages = async (roomId) => {
             throw new Error(`메시지 조회 실패: ${response.status} - ${errorText}`);
         }
     } catch (error) {
-        console.error('❌ 메시지 조회 오류:', error);
+        console.error('메시지 조회 오류:', error);
         throw error;
     }
 };
@@ -209,7 +337,7 @@ export const sendMessage = async (chatRoomId, userId, message) => {
 
         if (response.ok) {
             const result = await response.json();
-            console.log('✅ 메시지 전송 성공:', result);
+            console.log('메시지 전송 성공:', result);
             return result;
         } else {
             const errorText = await response.text();
@@ -217,7 +345,7 @@ export const sendMessage = async (chatRoomId, userId, message) => {
             throw new Error(`메시지 전송 실패: ${response.status} - ${errorText}`);
         }
     } catch (error) {
-        console.error('❌ 메시지 전송 오류:', error);
+        console.error('메시지 전송 오류:', error);
         throw error;
     }
 };
@@ -278,7 +406,7 @@ export const fetchOrCreateChatRoom = async (accompanyIdOrChatRoomId, currentUser
 export const fetchMessages = async (roomId, currentUserId) => {
     try {
         const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
-        console.log('🌐 메시지 조회 API 호출:', url);
+        console.log('메시지 조회 API 호출:', url);
 
         const response = await fetch(url, {
             method: 'GET',
@@ -289,7 +417,7 @@ export const fetchMessages = async (roomId, currentUserId) => {
         
         if (response.ok) {
             const messagesData = await response.json();
-            console.log('✅ 메시지 데이터:', messagesData);
+            console.log('메시지 데이터:', messagesData);
             
             // 백엔드 응답을 프론트엔드 형식으로 변환
             const transformedMessages = messagesData.map(msg => ({
@@ -313,7 +441,7 @@ export const fetchMessages = async (roomId, currentUserId) => {
             throw new Error(`메시지 조회 실패: ${response.status} - ${errorText}`);
         }
     } catch (error) {
-        console.error('❌ 메시지 조회 오류:', error);
+        console.error('메시지 조회 오류:', error);
         throw error;
     }
 };
@@ -322,7 +450,7 @@ export const fetchMessages = async (roomId, currentUserId) => {
 export const getAccompanyPostInfo = async (accompanyId, currentUserId) => {
     try {
         const url = `${API_URL}/api/accompany/AccompanyPost?postId=${accompanyId}&userId=${currentUserId}`;
-        console.log('🌐 동행 게시물 API 호출:', url);
+        console.log('동행 게시물 API 호출:', url);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -331,24 +459,24 @@ export const getAccompanyPostInfo = async (accompanyId, currentUserId) => {
             },
         });
 
-        console.log('📡 응답 상태:', response.status, response.statusText);
+        console.log('응답 상태:', response.status, response.statusText);
 
         if (response.ok) {
             const backendData = await response.json();
-            console.log('📋 백엔드 원본 데이터:', backendData);
+            console.log('백엔드 원본 데이터:', backendData);
             
             const transformedData = transformAccompanyDetailForChat(backendData);
             
-            console.log('✅ 변환된 데이터:', transformedData);
+            console.log('변환된 데이터:', transformedData);
             return transformedData;
             
         } else {
             const errorText = await response.text();
-            console.error('❌ API 오류 응답:', errorText);
+            console.error('API 오류 응답:', errorText);
             throw new Error(`동행 정보 조회 실패: ${response.status} - ${errorText}`);
         }
     } catch (error) {
-        console.error('❌ 동행 정보 조회 오류:', error);
+        console.error('동행 정보 조회 오류:', error);
         throw error;
     }
 };
@@ -357,7 +485,7 @@ export const getAccompanyPostInfo = async (accompanyId, currentUserId) => {
 const transformAccompanyDetailForChat = (backendData) => {
     if (!backendData) return null;
 
-    console.log('🔄 데이터 변환 시작:', backendData);
+    console.log('데이터 변환 시작:', backendData);
 
     const transformed = {
         id: backendData.id?.toString() || '1',
@@ -373,7 +501,7 @@ const transformAccompanyDetailForChat = (backendData) => {
         createdByName: backendData.nickname || '알 수 없음',
     };
 
-    console.log('✅ 변환 완료:', transformed);
+    console.log('변환 완료:', transformed);
     return transformed;
 };
 
@@ -385,4 +513,41 @@ export const getWebSocketURL = () => {
 // API 베이스 URL 내보내기 (다른 컴포넌트에서 필요한 경우)
 export const getAPIBaseURL = () => {
     return API_URL;
+};
+
+// 디버깅용 로그 추가 함수
+export const debugChatRoomData = (data) => {
+    console.log('=== 채팅방 데이터 디버깅 ===');
+    console.log('전체 데이터:', data);
+    
+    if (Array.isArray(data)) {
+        data.forEach((room, index) => {
+            console.log(`채팅방 ${index + 1}:`, {
+                id: room.id,
+                title: room.title,
+                participantCount: room.participants?.length || 0,
+                participants: room.participants,
+                latestMessage: room.latestMessage,
+                createdAt: room.createdAt,
+                rawData: room._originalData
+            });
+        });
+    }
+    console.log('=== 디버깅 끝 ===');
+};
+
+// 메시지 읽음 처리 API 호출 함수
+export const markMessagesAsRead = async (roomId, userId) => {
+    try {
+        const url = `${API_URL}/api/accompany/chatroom/${roomId}/read?userId=${userId}`;
+        const response = await fetch(url, {
+            method: 'POST',
+        });
+        if (!response.ok) {
+            throw new Error('Failed to mark messages as read');
+        }
+        console.log(`Chatroom ${roomId} marked as read for user ${userId}`);
+    } catch (error) {
+        console.error('Error marking messages as read:', error);
+    }
 };
