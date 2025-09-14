@@ -240,14 +240,9 @@ const GroupChats = () => {
                 renderItem={({ item }) => {
                     return (
                         <GroupChatList
-                            photo={item.photo}
-                            title={item.title}
-                            message={item.message}
-                            participants={item.participants}
-                            timestamp={item.timestamp}
-                            unreadCount={item.unreadCount}
-                            onPress={() => handleChatPress(item)}
-                            onSwipeLeft={() => handleChatSwipeLeft(item)}
+                            item={item} // 👈 이렇게 item 객체 하나만 전달합니다.
+                            onPress={handleChatPress}
+                            onSwipeLeft={handleChatSwipeLeft}
                         />
                     );
                 }}

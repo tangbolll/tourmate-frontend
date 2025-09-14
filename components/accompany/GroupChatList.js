@@ -1,8 +1,15 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Platform } from 'react-native';
-import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
+import React from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import { PanGestureHandler } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
+// 1. 필요한 모든 함수를 'react-native-reanimated'에서 import 합니다.
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedGestureHandler,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
 
 // 기본 프로필 이미지들
 const defaultProfiles = [
@@ -16,9 +23,44 @@ const getFullImageUrl = (imagePath) => {
     return `${API_URL}${imagePath}`;
 };
 
-const GroupChatList = ({ photo, title, message, participants, timestamp, unreadCount, onPress, onSwipeLeft }) => {
-  const translateX = useRef(new Animated.Value(0)).current;
-  console.log('GroupChatList - unreadCount:', unreadCount, 'type:', typeof unreadCount);
+const GroupChatList = ({ item, onPress, onSwipeLeft }) => {
+  // 2. 애니메이션 값을 저장하는 방식을 useSharedValue로 변경합니다.
+  const translateX = useSharedValue(0);
+  // item 객체에서 필요한 값들을 비구조화 할당으로 추출합니다.
+  const { title, latestMessage: message, participants, createdAt: timestamp, unreadCount, id } = item;
+
+  // 3. 제스처 이벤트 처리 로직을 useAnimatedGestureHandler로 통합합니다.
+  const gestureHandler = useAnimatedGestureHandler({
+    onActive: (event) => {
+      // 오른쪽 스와이프 방지
+      if (event.translationX < 0) {
+        translateX.value = event.translationX;
+      }
+    },
+    onEnd: (event) => {
+      if (event.translationX < -70) {
+        translateX.value = withTiming(-80);
+      } else {
+        translateX.value = withTiming(0);
+      }
+    },
+  });
+
+  // 4. 애니메이션 스타일을 정의합니다.
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: translateX.value }],
+    };
+  });
+
+  const handleDeletePress = () => {
+    if (onSwipeLeft) {
+      // 애니메이션 스레드에서 UI 스레드로 함수 호출을 넘겨줍니다.
+      runOnJS(onSwipeLeft)(id);
+    }
+    // 원래 위치로 복귀
+    translateX.value = withTiming(0);
+  };
 
 
   // 겹쳐진 프로필 렌더링 함수
@@ -78,103 +120,39 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
     );
   };
 
-  const onGestureEvent = Animated.event(
-    [{ nativeEvent: { translationX: translateX } }],
-    { 
-      useNativeDriver: true,
-      listener: (event) => {
-        // 오른쪽으로 스와이프하는 것을 방지
-        const { translationX } = event.nativeEvent;
-        if (translationX > 0) {
-          translateX.setValue(0);
-        }
-      }
-    }
-  );
-
-  const onHandlerStateChange = (event) => {
-    if (event.nativeEvent.oldState === State.ACTIVE) {
-      const { translationX } = event.nativeEvent;
-      
-      // 왼쪽으로 70픽셀 이상 스와이프했을 때 휴지통 버튼을 보여줍니다
-      if (translationX < -70) {
-        Animated.timing(translateX, {
-          toValue: -80,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-      } else {
-        // 70픽셀 미만으로 스와이프했을 때는 원래 위치로 돌아갑니다
-        Animated.timing(translateX, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-      }
-    }
-  };
-
-  const handleDeletePress = () => {
-    onSwipeLeft();
-    // 휴지통 버튼을 누른 후 원래 위치로 돌아갑니다
-    Animated.timing(translateX, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  };
-
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    // 5. 아이템 내부에 있던 GestureHandlerRootView를 삭제합니다.
     <View style={styles.chatItemContainer}>
-      {/* 배경의 휴지통 버튼 */}
-      <View style={styles.deleteBackground}>
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
-          <Ionicons name="trash" size={24} color="white" />
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
+        <Ionicons name="trash" size={24} color="white" />
+      </TouchableOpacity>
       
-      {/* 스와이프 가능한 채팅 아이템 */}
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-        activeOffsetX={[-10, 0]}
-      >
-        <Animated.View style={[styles.chatItem, { transform: [{ translateX }] }]}>
-          <TouchableOpacity style={styles.chatContent} onPress={onPress}>
+      <PanGestureHandler onGestureEvent={gestureHandler} activeOffsetX={[-10, 10]}>
+        <Animated.View style={[styles.chatItem, animatedStyle]}>
+          <TouchableOpacity style={styles.chatContent} onPress={() => onPress(item)}>
             {renderProfileImages()}
             <View style={styles.textContent}>
               <View style={styles.header}>
                 <View style={styles.leftSection}>
-                  <Text style={styles.chatTitle} numberOfLines={1} ellipsizeMode="clip">
-                    {title}
-                  </Text>
-                  <Text style={styles.participants} numberOfLines={1}> · {participants.length}명</Text>
+                  <Text style={styles.chatTitle} numberOfLines={1}>{title}</Text>
+                  <Text style={styles.participants}> · {participants?.length || 0}명</Text>
                 </View>
                 <Text style={styles.timestamp}>{timestamp}</Text>
               </View>
               <View style={styles.chatDetails}>
-                <Text style={styles.chatMessage} numberOfLines={1}>
-                  {message}
-                </Text>
-                {/* 디버깅: 조건 확인 */}
-                {console.log('Rendering unread badge:', unreadCount > 0, unreadCount)}
+                <Text style={styles.chatMessage} numberOfLines={1}>{message}</Text>
+                
                 {unreadCount > 0 && (
                   <View style={styles.unreadBadge}>
                     <Text style={styles.unreadText}>{unreadCount}</Text>
                   </View>
                 )}
-                {/* 임시 테스트: 항상 보이게 하기 */}
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>테스트</Text>
-                </View>
               </View>
             </View>
           </TouchableOpacity>
         </Animated.View>
       </PanGestureHandler>
     </View>
-    </GestureHandlerRootView>
   );
 };
 
