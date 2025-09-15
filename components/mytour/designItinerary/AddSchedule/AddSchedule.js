@@ -87,14 +87,6 @@ const AddSchedule = (props) => {
     const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
     const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 
-    useEffect(() => {
-    if (location !== undefined) {
-        setLocation(location);
-        console.log('AddSchedule 내부 useEffect - location 상태 초기화:', location);
-    }
-    }, [location]);
-
-
     // ... (키보드 및 날짜 관련 useEffect 로직은 변경 없음) ...
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
@@ -137,28 +129,79 @@ const AddSchedule = (props) => {
             }
         }
         return dateList;
-        // 👇 로직에 필요한 periodType, startDate, endDate, days 만 남깁니다.
-    }, [periodType, startDate, endDate, days]); 
+    }, [periodType, startDate, endDate, days]);
 
     useEffect(() => {
+        const performInitialSearch = async (query) => {
+            console.log(`[Search] Starting search for query: "${query}"`);
+            setLocation(query); // Show original string first
+            try {
+                const response = await fetch(`${KAKAO_API_URL}?query=${encodeURIComponent(query)}&size=1`, {
+                    headers: { 'Authorization': `KakaoAK ${kakaoRestApiKey}` }
+                });
+                if (!response.ok) {
+                    throw new Error(`Kakao API search failed with status: ${response.status}`);
+                }
+                const data = await response.json();
+                console.log('[Search] Kakao API response:', data);
+                if (data.documents && data.documents.length > 0) {
+                    const firstResult = data.documents[0];
+                    console.log('[Search] Success! Found location:', firstResult.place_name);
+                    setLocation(firstResult.place_name);
+                    setSelectedLocationObject(firstResult);
+                } else {
+                    console.log('[Search] No results found.');
+                }
+            } catch (error) {
+                console.error("[Search] An error occurred during search:", error);
+            }
+        };
+
         if (visible) {
+            console.log("[Effect] AddSchedule modal is visible. Checking for existing schedule...");
             if (existingSchedule) {
-                // --- 수정 모드 ---
+                console.log("[Effect] EDIT MODE DETECTED. existingSchedule:", existingSchedule);
+                console.log("[Effect] Location data:", existingSchedule.location);
+                console.log("[Effect] Type of location data:", typeof existingSchedule.location);
+
+                // --- Edit Mode ---
                 setCategory(existingSchedule.tag || '숙소');
                 setTitle(existingSchedule.title || '');
                 setStartTime(existingSchedule.startTime || '07:00');
                 setEndTime(existingSchedule.endTime || '08:00');
-                setLocation(existingSchedule.location || '');
                 setMemo(existingSchedule.memo || '');
                 setCurrentSelectedDate(existingSchedule.date || existingSchedule.dayDescription || '');
+
+                const locationData = existingSchedule.location;
+                if (typeof locationData === 'object' && locationData !== null && locationData.place_name) {
+                    console.log("[Effect] Location is already a Kakao object.");
+                    setLocation(locationData.place_name);
+                    setSelectedLocationObject(locationData);
+                } else if (typeof locationData === 'string' && locationData) {
+                    console.log("[Effect] Location is a string. Performing auto-search...");
+                    performInitialSearch(locationData);
+                } else {
+                    console.log("[Effect] Location is empty or in an invalid format.");
+                    setLocation('');
+                    setSelectedLocationObject(null);
+                }
+
             } else {
-                // --- 추가 모드 ---
+                console.log("[Effect] ADD MODE DETECTED.");
+                // --- Add Mode ---
                 setCategory('숙소');
-                setTitle(initialTitle);      // initialTitle 사용
-                setLocation(initialLocation);  // initialLocation 사용
+                setTitle(initialTitle);
                 setMemo('');
-                
-                // 날짜 초기화
+
+                if (initialLocation) {
+                    console.log("[Effect] Add mode has initialLocation. Performing auto-search...");
+                    performInitialSearch(initialLocation);
+                } else {
+                    setLocation('');
+                    setSelectedLocationObject(null);
+                }
+
+                // Date initialization
                 if (selectedDate) {
                     setCurrentSelectedDate(selectedDate);
                 } else if (selectedDay && availableDates.length > 0) {
@@ -171,26 +214,23 @@ const AddSchedule = (props) => {
                     }
                 }
 
-                // 시간 초기화 (핵심!)
+                // Time initialization
                 if (propStartTime && propEndTime) {
-                    // 1순위: 여유시간 추가 시 받은 시간
                     setStartTime(propStartTime);
                     setEndTime(propEndTime);
                 } else if (hour !== undefined && minute !== undefined) {
-                    // 2순위: 타임 블록 클릭 시 받은 시간
                     const initialHour = String(hour).padStart(2, '0');
                     const initialMinute = String(minute).padStart(2, '0');
                     const endHour = (hour + 1) % 24;
                     setStartTime(`${initialHour}:${initialMinute}`);
                     setEndTime(`${String(endHour).padStart(2, '0')}:${initialMinute}`);
                 } else {
-                    // 3순위: 기본값
                     setStartTime('07:00');
                     setEndTime('08:00');
                 }
             }
         }
-    }, [visible, existingSchedule, props]); // props 전체를 의존성으로 두어 모든 변경에 반응
+    }, [visible, existingSchedule, initialTitle, initialLocation]);
 
     useEffect(() => {
         if (!visible) {
