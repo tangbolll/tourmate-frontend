@@ -221,7 +221,7 @@ export default function DesignItinerary() {
     };
 
     // AI 응답을 스케줄 형식으로 변환하는 함수
-    const transformAIResponseToSchedules = async (aiData, travelId, period = { type: 'date' }) => {
+const transformAIResponseToSchedules = async (aiData, travelId, period = { type: 'date' }) => {
     const schedules = {};
     if (!aiData || typeof aiData !== 'object') return schedules;
 
@@ -240,65 +240,62 @@ export default function DesignItinerary() {
         });
     };
 
-    // 🔥 핵심 수정: 실제 날짜를 기반으로 day 번호 계산
-    Object.keys(aiData).forEach(dateKey => {
+    Object.keys(aiData).forEach((dateKey, index) => {
         let dayKey;
 
-        // "2일차", "Day 2", "day2" 등에서 숫자만 추출
-        const match = dateKey.match(/\d+/); 
-
-        if (match) {
-            // 숫자를 성공적으로 찾았으면 해당 숫자로 dayKey 생성
-            const dayNumber = match[0];
-            dayKey = `day${dayNumber}`;
-            console.log(`🔄 문자열 키 매핑: "${dateKey}" -> ${dayKey}`);
-
-        } else if (period.type === 'date' && period.startDate) {
-            // 날짜 기반: 실제 날짜와 시작일의 차이로 day 번호 계산 (기존 로직 유지)
-            const tripStartDate = new Date(period.startDate);
-            const currentDate = new Date(dateKey);
-
-            // currentDate가 유효한 날짜인지 확인
-            if (!isNaN(currentDate.getTime())) { 
-                const dayDiff = Math.floor((currentDate - tripStartDate) / (1000 * 60 * 60 * 24));
-                const dayNumber = dayDiff + 1;
+        // 1. 날짜 형식 (YYYY-MM-DD)인지 먼저 확인
+        if (period.type === 'date' && period.startDate && dayjs(dateKey, 'YYYY-MM-DD', true).isValid()) {
+            const tripStartDate = dayjs(period.startDate).startOf('day');
+            const currentDate = dayjs(dateKey).startOf('day');
+            const dayNumber = currentDate.diff(tripStartDate, 'day') + 1;
+            
+            if (dayNumber > 0) {
                 dayKey = `day${dayNumber}`;
-                console.log(`🔄 날짜 매핑: ${dateKey} -> ${dayKey} (시작일: ${period.startDate})`);
-            } else {
-                // 유효하지 않은 날짜 형식일 경우 순서 기반으로 대체 처리
-                const dateIndex = Object.keys(aiData).indexOf(dateKey);
-                dayKey = `day${dateIndex + 1}`;
-                console.warn(`⚠️ 유효하지 않은 날짜 형식 "${dateKey}". 순서 기반으로 매핑합니다: ${dayKey}`);
+                console.log(`🔄 [AI] 날짜 키 매핑: "${dateKey}" -> ${dayKey}`);
             }
+        }
 
-        } else {
-            // 위 조건에 모두 해당하지 않을 경우, 최후의 수단으로 순서 기반 매핑
-            const dateIndex = Object.keys(aiData).indexOf(dateKey);
-            dayKey = `day${dateIndex + 1}`;
-            console.log(`🔄 순서 기반 매핑: ${dateKey} -> ${dayKey}`);
+        // 2. 날짜 형식이 아니면 "1일차", "Day 2" 같은 문자열에서 숫자 추출 시도
+        if (!dayKey) {
+            const dayMatch = dateKey.match(/(?:day|일차)\s*(\d+)|(\d+)\s*(?:day|일차)/i);
+            const digitMatch = dateKey.match(/^\d+$/);
+
+            if (dayMatch && (dayMatch[1] || dayMatch[2])) {
+                const dayNumber = dayMatch[1] || dayMatch[2];
+                dayKey = `day${dayNumber}`;
+                console.log(`🔄 [AI] 문자열 키 매핑: "${dateKey}" -> ${dayKey}`);
+            } else if (digitMatch) {
+                dayKey = `day${digitMatch[0]}`;
+                console.log(`🔄 [AI] 숫자 키 매핑: "${dateKey}" -> ${dayKey}`);
+            }
+        }
+
+        // 3. 위 방법으로도 dayKey를 찾지 못하면 순서(index) 기반으로 대체
+        if (!dayKey) {
+            dayKey = `day${index + 1}`;
+            console.warn(`⚠️ [AI] "${dateKey}"에 대한 매핑 규칙을 찾지 못해 순서 기반으로 매핑: ${dayKey}`);
         }
         
         const dayActivities = Array.isArray(aiData[dateKey]) ? aiData[dateKey] : [];
-        schedules[dayKey] = [];
+        schedules[dayKey] = schedules[dayKey] || [];
 
         const existingDaySchedules = combinedScheduleData[dayKey] || [];
 
         dayActivities.forEach((activity, activityIndex) => {
-            // 1️⃣ 기존 일정 끝나는 시간 기준
             let startTimeMinutes = 9 * 60; // 기본 9:00
-            if (existingDaySchedules.length > 0) {
-                const latestEnd = existingDaySchedules
+            const allSchedulesForDay = [...existingDaySchedules, ...schedules[dayKey]];
+
+            if (allSchedulesForDay.length > 0) {
+                const latestEnd = allSchedulesForDay
                     .map(s => parseTime(s.endTime))
                     .sort((a, b) => b - a)[0];
                 startTimeMinutes = Math.max(startTimeMinutes, latestEnd);
             }
 
-            // 2️⃣ AI 일정 길이
             const duration = (activity.stayDuration || 2) * 60;
             let endTimeMinutes = startTimeMinutes + duration;
 
-            // 3️⃣ 겹치면 30분씩 밀기
-            while (isOverlapping(existingDaySchedules, {
+            while (isOverlapping(allSchedulesForDay, {
                 startTime: `${Math.floor(startTimeMinutes/60).toString().padStart(2,'0')}:${(startTimeMinutes%60).toString().padStart(2,'0')}`,
                 endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`
             })) {
@@ -318,14 +315,12 @@ export default function DesignItinerary() {
                 categoryColor: scheduleUtils.getCategoryStyle('관광').borderColor,
             };
 
-            // 🔥 수정: 실제 날짜 정보도 포함
             if (period.type === 'date') {
                 schedule.date = dateKey;
             } else {
                 schedule.dayDescription = dayKey.replace('day', 'Day ');
             }
 
-            existingDaySchedules.push(schedule);
             schedules[dayKey].push(schedule);
         });
     });
@@ -333,7 +328,6 @@ export default function DesignItinerary() {
     console.log('🔄 최종 AI 스케줄 매핑:', schedules);
     return schedules;
 };
-
 
 
     // 나머지 기존 함수들은 동일하게 유지...

@@ -6,6 +6,7 @@ import DesignItineraryMapHeader from '../../../components/mytour/designItinerary
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseURL } from '../../../utils/apiConfig';
+import { searchLocation } from '../../../utils/locationUtils';
 import { WebView } from 'react-native-webview';
 
 // 카카오 JavaScript API 키를 입력하세요.
@@ -50,15 +51,32 @@ export default function ItineraryMap() {
         const response = await axios.get(`${getBaseURL()}/api/travelSchedule/travel/${tourId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const schedules = response.data;
+        let schedules = response.data;
         if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
           setScheduleData({});
           return;
         }
+
+        // Process schedules to include coordinates for string locations
+        const processedSchedules = await Promise.all(schedules.map(async (item) => {
+          if ((!item.latitude || !item.longitude) && typeof item.location === 'string') {
+            const locationData = await searchLocation(item.location);
+            if (locationData) {
+              return {
+                ...item,
+                latitude: parseFloat(locationData.y),
+                longitude: parseFloat(locationData.x),
+                name: locationData.place_name, // Update name from search result
+              };
+            }
+          }
+          return item;
+        }));
+
         let groupedByDay = {};
         const currentPeriodType = period.type;
         if (currentPeriodType === 'date') {
-          const validSchedules = schedules.filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
+          const validSchedules = processedSchedules.filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
           if (validSchedules.length > 0) {
             const firstDate = new Date(validSchedules[0].date);
             groupedByDay = validSchedules.reduce((acc, item) => {
@@ -75,7 +93,7 @@ export default function ItineraryMap() {
             }, {});
           }
         } else if (currentPeriodType === 'duration') {
-          groupedByDay = schedules.reduce((acc, item) => {
+          groupedByDay = processedSchedules.reduce((acc, item) => {
             if (item.dayDescription) {
               const dayMatch = String(item.dayDescription).match(/\d+/);
               if (dayMatch && dayMatch[0]) {
