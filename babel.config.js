@@ -16,7 +16,7 @@ module.exports = function (api) {
         },
       ],
       // ✅ 반드시 가장 마지막 줄에 위치해야 합니다.
-      'react-native-reanimated/plugin', 
+      //'react-native-worklets/plugin', 
     ],
   };
 };

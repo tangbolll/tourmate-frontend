@@ -36,25 +36,10 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-web-browser",
       [
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to let you share them with your friends."
-        }
-      ],
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "usesCleartextTraffic": true,
-            "extraMavenRepos": [
-              "https://devrepo.kakao.com/nexus/content/groups/public/"
-            ],
-            "manifestApplicationAttributes": {
-              "com.kakao.sdk.AppKey": "bf2ed7b5e3276022c9ad3ce91414cdb8"
-            }
-          }
         }
       ]
     ],
