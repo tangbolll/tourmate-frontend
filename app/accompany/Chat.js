@@ -133,13 +133,14 @@ const Chat = () => {
         });
     };
 
+    // 🔧 키보드 간격 조정을 위한 플랫폼별 스타일
     const platformStyles = StyleSheet.create({
-    inputWrapperIOS: {
-        marginBottom: 40,
-    },
-    inputWrapperAndroid: {
-        marginBottom: 10,
-    },
+        inputWrapperIOS: {
+            marginBottom: 20, // iOS에서 키보드와의 간격
+        },
+        inputWrapperAndroid: {
+            marginBottom: 15, // Android에서 키보드와의 간격
+        },
     });
 
     const formatDateForSeparator = (dateString) => {
@@ -635,10 +636,10 @@ useEffect(() => {
                 </View>
             )} */}
 
-            {/* 메시지 입력 영역 */}
+            {/* 메시지 입력 영역 - 키보드 간격 조정 */}
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={10}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 30}
                 style={styles.inputContainer}
             >
                 {/* <TouchableOpacity style={styles.addButton} onPress={toggleActions}>
@@ -956,6 +957,7 @@ const styles = StyleSheet.create({
         color: 'white',
         fontWeight: '500',
     },
+    // 🔧 키보드 간격을 위한 inputContainer 수정
     inputContainer: {
         flexDirection: 'row',
         padding: 8,
@@ -963,7 +965,6 @@ const styles = StyleSheet.create({
         borderTopWidth: 1,
         borderTopColor: '#E5E7EB',
         backgroundColor: 'white',
-        marginBottom: Platform.OS === 'ios' ? -40 : 0,
     },
     addButton: {
         padding: 6,
@@ -981,10 +982,6 @@ const styles = StyleSheet.create({
         paddingRight: 4,
         marginRight: 8,
         backgroundColor: 'white',
-    //     marginBottom: Platform.select({
-    //     ios: 55,
-    //     android: 20,
-    // }),
     },
     input: {
         flex: 1,

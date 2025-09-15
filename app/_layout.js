@@ -8,9 +8,11 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
     return (
-        <AuthProvider>
-            <RootLayoutNav />
-        </AuthProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}> 
+            <AuthProvider>
+                <RootLayoutNav />
+            </AuthProvider>
+        </GestureHandlerRootView>
     );
 }
 
