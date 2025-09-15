@@ -243,20 +243,39 @@ export default function DesignItinerary() {
     // 🔥 핵심 수정: 실제 날짜를 기반으로 day 번호 계산
     Object.keys(aiData).forEach(dateKey => {
         let dayKey;
-        
-        if (period.type === 'date' && period.startDate) {
-            // 날짜 기반: 실제 날짜와 시작일의 차이로 day 번호 계산
+
+        // "2일차", "Day 2", "day2" 등에서 숫자만 추출
+        const match = dateKey.match(/\d+/); 
+
+        if (match) {
+            // 숫자를 성공적으로 찾았으면 해당 숫자로 dayKey 생성
+            const dayNumber = match[0];
+            dayKey = `day${dayNumber}`;
+            console.log(`🔄 문자열 키 매핑: "${dateKey}" -> ${dayKey}`);
+
+        } else if (period.type === 'date' && period.startDate) {
+            // 날짜 기반: 실제 날짜와 시작일의 차이로 day 번호 계산 (기존 로직 유지)
             const tripStartDate = new Date(period.startDate);
             const currentDate = new Date(dateKey);
-            const dayDiff = Math.floor((currentDate - tripStartDate) / (1000 * 60 * 60 * 24));
-            const dayNumber = dayDiff + 1;
-            dayKey = `day${dayNumber}`;
-            
-            console.log(`🔄 날짜 매핑: ${dateKey} -> ${dayKey} (시작일: ${period.startDate})`);
+
+            // currentDate가 유효한 날짜인지 확인
+            if (!isNaN(currentDate.getTime())) { 
+                const dayDiff = Math.floor((currentDate - tripStartDate) / (1000 * 60 * 60 * 24));
+                const dayNumber = dayDiff + 1;
+                dayKey = `day${dayNumber}`;
+                console.log(`🔄 날짜 매핑: ${dateKey} -> ${dayKey} (시작일: ${period.startDate})`);
+            } else {
+                // 유효하지 않은 날짜 형식일 경우 순서 기반으로 대체 처리
+                const dateIndex = Object.keys(aiData).indexOf(dateKey);
+                dayKey = `day${dateIndex + 1}`;
+                console.warn(`⚠️ 유효하지 않은 날짜 형식 "${dateKey}". 순서 기반으로 매핑합니다: ${dayKey}`);
+            }
+
         } else {
-            // 기간 기반: 기존 로직 유지 (순차적 배정)
+            // 위 조건에 모두 해당하지 않을 경우, 최후의 수단으로 순서 기반 매핑
             const dateIndex = Object.keys(aiData).indexOf(dateKey);
             dayKey = `day${dateIndex + 1}`;
+            console.log(`🔄 순서 기반 매핑: ${dateKey} -> ${dayKey}`);
         }
         
         const dayActivities = Array.isArray(aiData[dateKey]) ? aiData[dateKey] : [];
