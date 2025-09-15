@@ -14,12 +14,9 @@ import Categories from '../../components/accompany/Categories';
 import WriteComment from '../../components/accompany/WriteComment';
 import AlarmPopup from '../../components/accompany/AlarmPopup';
 import MemberPopup from '../../components/accompany/MemberPopup';
-import AccompanyManagement from './AccompanyManagement';
 import EventHeader from '../../components/accompany/EventHeader';
 import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 
-// 분리된 API 함수 임포트
 import {
     fetchAccompanyDetailApi,
     fetchCommentsApi,
@@ -29,7 +26,6 @@ import {
     toggleApplicationApi,
     closeAccompanyPostApi,
     deleteAccompanyPostApi,
-    // 새로운 API 함수들 추가
     getUnreadApplicationsApi,
     markApplicationsViewedApi,
     getChatAccessApi
@@ -47,7 +43,6 @@ export default function AccompanyPost() {
     const [memberPopupData, setMemberPopupData] = useState([]);
     const [memberDataLoading, setMemberDataLoading] = useState(false);
 
-    // Get states and actions from Zustand store
     const { accompanyData, applicants, participants, currentParticipants, maxParticipants, setAccompanyData } = useAccompanyStore();
 
     const [loading, setLoading] = useState(true);
@@ -223,59 +218,28 @@ export default function AccompanyPost() {
         const isReply = !!replyingTo;
         const parentCommentId = isReply ? replyingTo : null;
 
-        const tempItem = {
-            id: `temp_${Date.now()}`,
-            nickname: "내닉네임",
-            time: "방금 전",
-            content: content.trim(),
-            profileImage: null,
-            isHost: currentUserId === accompanyData?.accompanyInfo?.createdBy,
-            isTemporary: true
-        };
-
-        if (isReply) {
-            setComments(prev =>
-                prev.map(comment =>
-                    comment.id === replyingTo
-                        ? { ...comment, replies: [...comment.replies, tempItem] }
-                        : comment
-                )
-            );
-            setReplyingTo(null);
-        } else {
-            setComments(prev => [...prev, { ...tempItem, replies: [] }]);
-        }
-
-        setTimeout(() => {
-            scrollViewRef.current?.scrollToEnd({ animated: true });
-        }, 100);
-
         try {
+            // 1. API 호출: 댓글/답글을 서버에 저장
             const savedItem = await saveCommentApi(postId, content, currentUserId, parentCommentId);
-            setComments(prev =>
-                prev.map(comment =>
-                    comment.id === (isReply ? replyingTo : tempItem.id)
-                        ? {
-                            ...comment,
-                            replies: isReply
-                                ? comment.replies.map(reply =>
-                                    reply.id === tempItem.id ? { ...savedItem, isTemporary: false } : reply
-                                )
-                                : [],
-                            ...(isReply ? {} : { ...savedItem, replies: [], isTemporary: false })
-                        }
-                        : comment
-                ).filter(c => !c.isTemporary)
-            );
+
+            // 2. API 호출 성공 시 댓글 목록 상태 업데이트
+            // 댓글을 추가한 후, 최신 댓글 목록을 다시 불러옵니다.
+            // 이렇게 하면 새로 추가된 댓글의 정확한 정보(id, 시간, 프로필 이미지 등)를
+            // 서버에서 받아와서 렌더링할 수 있습니다.
+            await fetchComments(postId);
+
+            // 3. UI 정리
+            if (isReply) {
+                setReplyingTo(null);
+            }
+
+            // 4. 스크롤을 맨 아래로 이동
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 100);
+
         } catch (error) {
-            setComments(prev =>
-                prev.map(comment => ({
-                    ...comment,
-                    replies: isReply
-                        ? comment.replies.filter(reply => reply.id !== tempItem.id)
-                        : comment.replies
-                })).filter(comment => comment.id !== tempItem.id)
-            );
+            console.error('❌ 댓글 등록 오류:', error);
             Alert.alert("댓글 등록 실패", "댓글 등록에 실패했습니다. 다시 시도해주세요.");
         }
     };
