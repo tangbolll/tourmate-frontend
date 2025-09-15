@@ -122,9 +122,9 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
         postcardName: postData?.title || postData?.postcardName || mockData.postcardName,
         userName: postData?.author || postData?.userName || mockData.userName,
         location: postData?.location || mockData.location,
-        date: postData?.dateCreated 
-            ? formatDate(postData.dateCreated) 
-            : (postData?.date || mockData.date),
+        date: postData?.visitDate 
+            ? formatDate(postData.visitDate) 
+            : (postData?.visitDate || mockData.date),
         postcardImage: postData?.image || postData?.imageUrl || postData?.postcardImage || mockData.postcardImage,
         postcardContent: postData?.content || postData?.postcardContent || mockData.postcardContent,
         templateImage: getPostcardTemplate(postData?.typeImageUrl || mockData.typeImageUrl),
