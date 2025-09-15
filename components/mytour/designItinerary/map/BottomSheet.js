@@ -47,7 +47,23 @@ const BottomSheet = ({
     const daysList = Array.from({ length: totalDays }, (_, i) => i + 1);
     
     // 현재 선택된 날짜의 일정 (없으면 빈 배열)
-    const currentDayItinerary = itineraryData[selectedDay] || [];
+    const unsortedItinerary = itineraryData[selectedDay] || [];
+    console.log("Unsorted Itinerary for day " + selectedDay, JSON.stringify(unsortedItinerary, null, 2));
+
+    // 시간순으로 정렬하고, 새로운 order 번호를 부여
+    const currentDayItinerary = [...unsortedItinerary] // Create a shallow copy to avoid mutating prop
+        .sort((a, b) => {
+            if (a.startTime && b.startTime) {
+                return a.startTime.localeCompare(b.startTime);
+            }
+            return 0;
+        })
+        .map((item, index) => ({
+            ...item,
+            order: index + 1 // Re-assign the order number
+        }));
+    
+    console.log("Sorted and Re-ordered Itinerary:", JSON.stringify(currentDayItinerary, null, 2));
 
     // 현재 선택된 날짜의 일정을 왼쪽과 오른쪽 열로 나눕니다.
     const leftColumnItems = currentDayItinerary.filter((_, idx) => idx % 2 === 0);

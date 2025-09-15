@@ -67,7 +67,9 @@ export default function ItineraryMap() {
               if (!acc[dayIndex]) acc[dayIndex] = [];
               acc[dayIndex].push({
                 id: item.id, name: item.title, category: item.tag,
-                order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude
+                order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude,
+                startTime: item.startTime, 
+                endTime: item.endTime
               });
               return acc;
             }, {});

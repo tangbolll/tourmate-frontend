@@ -334,6 +334,8 @@ export default function DesignItinerary() {
     return schedules;
 };
 
+
+
     // 나머지 기존 함수들은 동일하게 유지...
     const fetchTourData = useCallback(async () => {
         if (!currentTourId) {
