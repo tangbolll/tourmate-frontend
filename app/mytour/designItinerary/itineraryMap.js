@@ -31,15 +31,18 @@ export default function ItineraryMap() {
 
   // --- 총 여행 일수 계산 ---
   const totalDays = useMemo(() => {
-    // period.days가 있으면 그것을 사용, 없으면 scheduleData에서 최대 일차 계산
-    if (period.days) {
+    if (period && period.days) {
       return parseInt(period.days, 10);
     }
-    
-    // scheduleData에서 가장 큰 일차 번호 찾기
-    const dayKeys = Object.keys(scheduleData).map(key => parseInt(key, 10)).filter(num => !isNaN(num));
-    return dayKeys.length > 0 ? Math.max(...dayKeys) : 5; // 기본값 5일
-  }, [period.days, scheduleData]);
+    if (period && period.startDate && period.endDate) {
+        const start = new Date(period.startDate);
+        const end = new Date(period.endDate);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays + 1;
+    }
+    return 1; // Default to 1 if no period info is available
+  }, [period]);
 
   // --- API 데이터 로딩 ---
   useEffect(() => {
