@@ -20,7 +20,7 @@ const DibsScrapListView = ({
     dibsList, 
     scrapList,
     likedPosts,
-    handlePressLike,
+    handlePressAccompanyLike,
     navigateToPost,
     onPostcardPress,
     currentUserId, // currentUserId 추가
@@ -92,7 +92,7 @@ const renderFeedItems = () => {
             maxParticipants={post.maxParticipants}
             imageUrl={post.imageUrl}
             liked={!!likedPosts[post.id]}
-            onPressLike={() => handlePressLike(post.id)}
+            onPressLike={() => handlePressAccompanyLike(post.id)}
             onPress={() => navigateToPost(post.id)}
         />
     );
