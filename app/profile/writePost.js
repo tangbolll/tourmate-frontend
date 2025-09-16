@@ -74,6 +74,8 @@ const WritePost = () => {
             const newDirectoryName = params.directoryName || '';
             const newStartDate = params.startDate || null;
             const newEndDate = params.endDate || null;
+            const specificPostcardId = params.postcardId; // 새로 생성된 엽서 ID
+            const shouldSelectLast = params.shouldSelectLast === 'true'; // ProfileHome에서 전달된 플래그
 
             setDirectoryInfo({
                 id: newDirectoryId,
@@ -93,34 +95,97 @@ const WritePost = () => {
             if (newDirectoryId) {
                 try {
                     const existingPostcards = await getPostcardsByFolderApi(newDirectoryId);
-                    console.log('✅ 기존 엽서 불러오기 성공:', existingPostcards);
+                    console.log('기존 엽서 불러오기 성공:', existingPostcards);
 
                     if (existingPostcards.length > 0) {
                         const formattedPostcards = existingPostcards.map(pc => ({
                             id: pc.postcardId,
                             image: pc.imageUrl,
-                            postcardTemplate: pc.postcardTypeId ? { code: pc.postcardTypeId, thumbnail: postcardTemplates[pc.postcardTypeId] || null } : null,
+                            postcardTemplate: pc.postcardTypeId ? { 
+                                code: pc.postcardTypeId, 
+                                thumbnail: postcardTemplates[pc.postcardTypeId] || null 
+                            } : null,
                             content: pc.content || '',
                             isSaved: true,
                             publicScope: pc.publicScope,
                             isFavorite: pc.isFavorite || false,
                         }));
-                        initialPostcards = formattedPostcards;
+
+                        // 생성 시간 또는 ID로 정렬하여 새 엽서가 마지막에 오도록
+                        initialPostcards = formattedPostcards.sort((a, b) => {
+                            // ID가 숫자라면 숫자 정렬, 아니면 문자열 정렬
+                            if (typeof a.id === 'number' && typeof b.id === 'number') {
+                                return a.id - b.id;
+                            }
+                            return String(a.id).localeCompare(String(b.id));
+                        });
+
+                        // 특정 엽서 ID가 있다면 해당 엽서의 인덱스 찾기
+                        if (specificPostcardId) {
+                            const targetIndex = initialPostcards.findIndex(
+                                pc => pc.id.toString() === specificPostcardId.toString()
+                            );
+                            if (targetIndex !== -1) {
+                                initialIndex = targetIndex;
+                                console.log(`새로 생성된 엽서(ID: ${specificPostcardId})를 인덱스 ${targetIndex}에서 선택`);
+                            } else {
+                                console.warn(`엽서 ID ${specificPostcardId}를 찾을 수 없음. 마지막 엽서 선택`);
+                                initialIndex = initialPostcards.length - 1;
+                            }
+                        } else if (shouldSelectLast) {
+                            // shouldSelectLast 플래그가 있으면 마지막 엽서 선택
+                            initialIndex = initialPostcards.length - 1;
+                            console.log(`마지막 엽서를 인덱스 ${initialIndex}에서 선택`);
+                        } else {
+                            // 기본적으로 첫 번째 엽서 선택
+                            initialIndex = 0;
+                        }
+
                         initialIsSaved = true;
                         initialIsEditMode = false;
-                    }
 
-                    if (initialPostcards.length > 0) {
-                        const firstPostcard = initialPostcards[0];
-                        initialIndex = 0;
-                        initialImage = firstPostcard.image;
-                        initialTemplate = firstPostcard.postcardTemplate;
-                        initialContent = firstPostcard.content;
+                        // 선택된 엽서의 정보로 초기화
+                        const selectedPostcard = initialPostcards[initialIndex];
+                        if (selectedPostcard) {
+                            initialImage = selectedPostcard.image;
+                            initialTemplate = selectedPostcard.postcardTemplate;
+                            initialContent = selectedPostcard.content;
+                        }
                     }
                 } catch (error) {
-                    console.error('❌ 기존 엽서 불러오기 오류:', error);
+                    console.error('기존 엽서 불러오기 오류:', error);
                     handleApiError(error, '기존 엽서 불러오기');
                 }
+            }
+
+            // createNew 파라미터가 true일 경우, 새 엽서를 추가합니다.
+            if (params.createNew === 'true') {
+                const newPostcard = {
+                    id: null,
+                    image: null,
+                    postcardTemplate: null,
+                    content: '',
+                    isSaved: false,
+                    isFavorite: false,
+                    tempId: Date.now().toString(),
+                };
+                initialPostcards.push(newPostcard);
+                initialIndex = initialPostcards.length - 1;
+                
+                // 새 엽서이므로 이미지, 템플릿, 내용을 초기화합니다.
+                initialImage = null;
+                initialTemplate = null;
+                initialContent = '';
+
+                // 편집 모드로 설정합니다.
+                initialIsSaved = false;
+                initialIsEditMode = true;
+            }
+
+            // startInEditMode 파라미터가 true일 경우, 편집 모드에서 시작하도록 강제합니다.
+            if (params.startInEditMode === 'true') {
+                initialIsSaved = false;
+                initialIsEditMode = true;
             }
 
             setPostcards(initialPostcards);
@@ -131,10 +196,12 @@ const WritePost = () => {
             setIsSaved(initialIsSaved);
             setIsEditMode(initialIsEditMode);
             setIsLoading(false);
+
+            console.log(`최종 설정: 총 ${initialPostcards.length}개 엽서, 선택된 인덱스: ${initialIndex}`);
         };
 
         fetchPostcards();
-    }, [params.directoryId, params.directoryName, params.startDate, params.endDate]);
+    }, [params.directoryId, params.directoryName, params.startDate, params.endDate, params.postcardId, params.shouldSelectLast, params.createNew, params.startInEditMode]);
 
     // 갤러리에서 이미지 선택
     const pickImage = useCallback(async () => {
@@ -213,15 +280,18 @@ const WritePost = () => {
         };
 
         setPostcards(prev => [...prev, newPostcard]);
-        setCurrentIndex(postcards.length);
+        const newIndex = postcards.length; // 새 엽서는 항상 마지막 인덱스
+        setCurrentIndex(newIndex);
         setSelectedImage(null);
         setSelectedPostcard(null);
         setPostcardContent('');
         setIsSaved(false);
         setIsEditMode(true);
         setIsTextEditing(false);
+        
+        console.log(`새 엽서 추가: 인덱스 ${newIndex}에서 선택됨`);
     }, [isSaved, postcards.length]);
-
+    
     // 엽서 선택 변경
     const selectPostcard = useCallback((index) => {
         if (isTextEditing && !isSaved) {
@@ -564,10 +634,12 @@ const WritePost = () => {
     const isSaveEnabled = selectedImage && selectedPostcard;
 
     const handleBackPress = () => {
+        const currentPostcard = postcards[currentIndex];
+
         if (
             params.newlyCreated === 'true' &&
             postcards.length === 0 &&
-            !isLoading // 로딩이 끝난 후 엽서가 없으면 폴더 삭제 유도
+            !isLoading
         ) {
             Alert.alert(
                 "경고",
@@ -592,14 +664,59 @@ const WritePost = () => {
                 ]
             );
         } else if (isEditMode && !isSaved) {
-            Alert.alert(
-                "변경사항 저장",
-                "현재 편집 중인 내용이 있습니다. 저장하지 않고 나가시겠습니까?",
-                [
-                    { text: "취소", style: "cancel" },
-                    { text: "나가기", style: "destructive", onPress: () => router.back() },
-                ]
-            );
+            // 시나리오 1: 폴더에서 '+' 버튼으로 추가된 새 엽서 (id가 없음)
+            if (currentPostcard && currentPostcard.id === null) {
+                Alert.alert(
+                    "저장 취소",
+                    "엽서가 저장되지 않았습니다. 정말로 나가시겠습니까?",
+                    [
+                        { text: "취소", style: "cancel" },
+                        {
+                            text: "나가기",
+                            style: "destructive",
+                            onPress: () => router.back(), // 그냥 뒤로가기
+                        },
+                    ]
+                );
+            } 
+            // 시나리오 2: 기존 폴더에 엽서 추가로 들어왔는데, 이미지 저장을 안 한 경우
+            else if (params.startInEditMode === 'true' && selectedImage === null) {
+                Alert.alert(
+                    "엽서 삭제",
+                    "이미지를 추가하지 않으면 엽서가 삭제됩니다. 정말로 나가시겠습니까?",
+                    [
+                        { text: "취소", style: "cancel" },
+                        {
+                            text: "나가기",
+                            style: "destructive",
+                            onPress: async () => {
+                                try {
+                                    if (currentPostcard && currentPostcard.id) {
+                                        await deletePostcardApi(currentPostcard.id);
+                                    }
+                                    router.back();
+                                } catch (error) {
+                                    console.error("Failed to delete postcard", error);
+                                    handleApiError(error, '엽서 삭제');
+                                    // 에러가 나도 일단 뒤로가기
+                                    router.back();
+                                }
+                            },
+                        },
+                    ]
+                );
+            }
+            // 시나리오 3: 그 외 모든 편집 중인 경우
+            else {
+                Alert.alert(
+                    "변경사항 저장",
+                    "현재 편집 중인 내용이 있습니다. 저장하지 않고 나가시겠습니까?",
+                    [
+                        { text: "취소", style: "cancel" },
+                        { text: "나가기", style: "destructive", onPress: () => router.back() },
+                    ]
+                );
+            }
         } else {
             router.back();
         }

@@ -79,6 +79,9 @@ export default function PostDirectory() {
                 postcardTypeId: pc.postcardTypeId,
             }));
             
+            // 엽서를 ID 오름차순으로 정렬 (오래된 것이 먼저)
+            formattedPostcards.sort((a, b) => a.id - b.id);
+
             console.log('📌 formattedPostcards:', formattedPostcards);
             setPostcards(formattedPostcards);
         } catch (error) {

@@ -29,13 +29,7 @@ const PostcardSlider = React.forwardRef(({
 
     useEffect(() => {
         if (scrollViewRef.current && currentIndex !== null) {
-            // 새 엽서가 맨 앞에 오도록 렌더링 순서를 뒤집었으므로,
-            // 실제 스크롤할 인덱스를 다시 계산해야 합니다.
-            // 예를 들어, postcards 배열의 마지막 요소(최신 엽서)가 visualIndex 0이 됩니다.
-            const visualIndex = postcards.length - 1 - currentIndex;
-
-            // 스크롤 위치 계산: [추가버튼] [최신엽서] [이전엽서] ...
-            const xOffset = CONTAINER_PADDING_LEFT + ADD_BUTTON_WIDTH + GAP + (ITEM_WIDTH + GAP) * visualIndex;
+            const xOffset = CONTAINER_PADDING_LEFT + ADD_BUTTON_WIDTH + GAP + (ITEM_WIDTH + GAP) * currentIndex;
             
             scrollViewRef.current.scrollTo({ x: xOffset, animated: true });
         }
@@ -62,23 +56,20 @@ const PostcardSlider = React.forwardRef(({
                 </TouchableOpacity>
 
                 {/* 엽서들을 뒤집어 렌더링하여 최신 엽서가 바로 옆에 오도록 합니다. */}
-                {postcards.slice().reverse().map((postcard, index) => {
-                    // 뒤집힌 배열의 인덱스를 원래 배열의 인덱스로 변환
-                    const originalIndex = postcards.length - 1 - index;
-                    
+                {postcards.map((postcard, index) => {
                     return (
                         <TouchableOpacity
                             key={postcard.id || postcard.tempId}
                             style={[
                                 styles.slideItem,
-                                currentIndex === originalIndex && styles.slideItemActive
+                                currentIndex === index && styles.slideItemActive
                             ]}
-                            onPress={() => onSelectPostcard(originalIndex)}
+                            onPress={() => onSelectPostcard(index)}
                         >
                             {postcard.image ? (
                                 <View style={styles.slideImageContainer}>
                                     <Image source={{ uri: postcard.image }} style={styles.slideImage} />
-                                    {currentIndex === originalIndex && (
+                                    {currentIndex === index && (
                                         <View style={styles.checkmark}>
                                             <Feather name="check" size={16} color="#fff" />
                                         </View>
@@ -86,7 +77,7 @@ const PostcardSlider = React.forwardRef(({
                                 </View>
                             ) : (
                                 <View style={styles.slideEmpty}>
-                                    {currentIndex === originalIndex && (
+                                    {currentIndex === index && (
                                         <View style={styles.checkmark}>
                                             <Feather name="check" size={16} color="#fff" />
                                         </View>

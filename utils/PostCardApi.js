@@ -393,6 +393,11 @@ export const createPostcardInExistingFolderApi = async (folderId, postcardData, 
     const url = `${API_URL}/api/postcards/folders/${folderId}`;
 
     try {
+        const token = await AsyncStorage.getItem('jwtToken');
+        if (!token) {
+            throw new Error('JWT 토큰이 없습니다.');
+        }
+
         const formData = new FormData();
         formData.append('postcardData', JSON.stringify(postcardData));
         
@@ -406,22 +411,46 @@ export const createPostcardInExistingFolderApi = async (folderId, postcardData, 
                 type: fileType,
             });
         }
+
+        // ❌ 이 부분을 제거 - React Native에서는 formData.entries() 지원하지 않음
+        // console.log('FormData 내용:');
+        // for (let [key, value] of formData.entries()) {
+        //     console.log(`${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`);
+        // }
+
+        console.log(`API 호출: ${url}`);
+        console.log('전송할 데이터:', JSON.stringify(postcardData));
+        if (imageFile) {
+            console.log('이미지 파일:', imageFile.uri);
+        }
         
-        const response = await fetchWithRetryMultipart(url, {
+        const response = await fetch(url, {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                // Content-Type을 명시하지 않음 (자동으로 multipart/form-data 설정됨)
+            },
             body: formData,
         });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`HTTP 에러 ${response.status}: ${errorText}`);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
         const result = await response.json();
         
-        // API 응답 로그 확인
-        console.log('✅ createPostcardInExistingFolderApi 응답:', result);
+        console.log('createPostcardInExistingFolderApi 응답:', result);
         console.log('새로 생성된 엽서 ID:', result.postcardId);
         
         return result;
     } catch (error) {
+        console.error('createPostcardInExistingFolderApi 에러:', error);
         throw error;
     }
 };
+
 
 // 6. 폴더별 엽서 목록 조회
 export const getPostcardsByFolderApi = async (folderId) => {
