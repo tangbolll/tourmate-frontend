@@ -147,23 +147,25 @@ const styles = StyleSheet.create({
     directoryCardShadow: {
         width: '30%',
         marginRight: '5%',
-        marginBottom: 16,
+        marginBottom: 20, // 간격 조정
+        backgroundColor: '#fff', // Android 그림자 렌더링을 돕기 위해 추가
+        borderRadius: 8, // 그림자 모양을 둥글게 하기 위해 추가
         // iOS 전용 그림자 속성
         shadowColor: '#000',
         shadowOffset: {
-            width: 2,
-            height: 2,
+            width: 0,
+            height: 4, // 수직 그림자 강조
         },
-        shadowOpacity: 0.25,
-        shadowRadius: 4,
+        shadowOpacity: 0.30, // 불투명도 증가
+        shadowRadius: 4.65, // 퍼짐 효과 조정
         // Android 전용 그림자 속성
-        elevation: 5,
+        elevation: 8, // 입체감 증가
     },
     // 실제 콘텐츠를 담는 내부 뷰 스타일
     directoryCard: {
         backgroundColor: '#fff',
         overflow: 'hidden',
-        borderRadius: 8,
+        borderRadius: 8, // 콘텐츠를 둥글게 자르기 위해 유지
     },
     imageContainer: {
         width: '100%',

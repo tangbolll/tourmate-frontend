@@ -176,6 +176,7 @@ export default function ProfileHome() {
             params.endDate = folderData.endDate;
         }
         params.newlyCreated = 'true';
+        params.startInEditMode = 'true'; // 편집 모드에서 시작하도록 추가
 
         console.log('Navigating to WritePost with params:', params);
         router.push({
@@ -275,7 +276,7 @@ export default function ProfileHome() {
                     postcard: {
                         content: '',
                         imageUrl: '',
-                        postcardType: 1,
+                        postcardType: null,
                     },
                 };
                 console.log('새 폴더 및 엽서 생성 API 호출 준비:', requestBody);

@@ -681,30 +681,57 @@ const WritePost = () => {
             } 
             // 시나리오 2: 기존 폴더에 엽서 추가로 들어왔는데, 이미지 저장을 안 한 경우
             else if (params.startInEditMode === 'true' && selectedImage === null) {
-                Alert.alert(
-                    "엽서 삭제",
-                    "이미지를 추가하지 않으면 엽서가 삭제됩니다. 정말로 나가시겠습니까?",
-                    [
-                        { text: "취소", style: "cancel" },
-                        {
-                            text: "나가기",
-                            style: "destructive",
-                            onPress: async () => {
-                                try {
-                                    if (currentPostcard && currentPostcard.id) {
-                                        await deletePostcardApi(currentPostcard.id);
+                // 이 때, 새로 생성된 폴더에 있는 첫 엽서라면 폴더 자체를 삭제
+                if (params.newlyCreated === 'true' && postcards.length === 1) {
+                    Alert.alert(
+                        "폴더 삭제",
+                        "엽서를 저장하지 않고 나가면 폴더가 삭제됩니다. 정말로 나가시겠습니까?",
+                        [
+                            { text: "취소", style: "cancel" },
+                            {
+                                text: "나가기",
+                                style: "destructive",
+                                onPress: async () => {
+                                    try {
+                                        if (directoryInfo && directoryInfo.id) {
+                                            await deleteFolderApi(directoryInfo.id);
+                                        }
+                                        router.back();
+                                    } catch (error) {
+                                        console.error("Failed to delete folder", error);
+                                        handleApiError(error, '폴더 삭제');
+                                        router.back(); // 에러가 나도 일단 뒤로가기
                                     }
-                                    router.back();
-                                } catch (error) {
-                                    console.error("Failed to delete postcard", error);
-                                    handleApiError(error, '엽서 삭제');
-                                    // 에러가 나도 일단 뒤로가기
-                                    router.back();
-                                }
+                                },
                             },
-                        },
-                    ]
-                );
+                        ]
+                    );
+                } else {
+                    // 기존 폴더에 추가된 엽서만 삭제
+                    Alert.alert(
+                        "엽서 삭제",
+                        "이미지를 추가하지 않으면 엽서가 삭제됩니다. 정말로 나가시겠습니까?",
+                        [
+                            { text: "취소", style: "cancel" },
+                            {
+                                text: "나가기",
+                                style: "destructive",
+                                onPress: async () => {
+                                    try {
+                                        if (currentPostcard && currentPostcard.id) {
+                                            await deletePostcardApi(currentPostcard.id);
+                                        }
+                                        router.back();
+                                    } catch (error) {
+                                        console.error("Failed to delete postcard", error);
+                                        handleApiError(error, '엽서 삭제');
+                                        router.back(); // 에러가 나도 일단 뒤로가기
+                                    }
+                                },
+                            },
+                        ]
+                    );
+                }
             }
             // 시나리오 3: 그 외 모든 편집 중인 경우
             else {

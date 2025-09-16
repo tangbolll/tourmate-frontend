@@ -122,7 +122,8 @@ const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 150
             
             const response = await fetch(url, {
                 ...mergedOptions,
-                signal: controller.signal
+                signal: controller.signal,
+                cache: 'no-cache', // 캐시 사용 안 함
             });
             
             clearTimeout(timeoutId);
@@ -184,17 +185,18 @@ const fetchWithRetryMultipart = async (url, options = {}, maxRetries = 2, timeou
         try {
             console.log(`🔄 Multipart API 호출 시도 ${attempt}/${maxRetries}: ${url}`);
             
-            // ⭐⭐⭐ 디버깅을 위해 FormData 내용을 로깅합니다. ⭐⭐⭐
-            if (mergedOptions.body instanceof FormData) {
-                console.log('📦 전송될 FormData 내용:');
-                for (let pair of mergedOptions.body.entries()) {
-                    console.log(` -> ${pair[0]}:`, typeof pair[1] === 'string' ? pair[1].substring(0, 50) + '...' : 'File Object');
-                }
-            }
+            // ⭐⭐⭐ FormData 로깅은 React Native에서 .entries()를 지원하지 않으므로 주석 처리합니다. ⭐⭐⭐
+            // if (mergedOptions.body instanceof FormData) {
+            //     console.log('📦 전송될 FormData 내용:');
+            //     for (let pair of mergedOptions.body.entries()) {
+            //         console.log(` -> ${pair[0]}:`, typeof pair[1] === 'string' ? pair[1].substring(0, 50) + '...' : 'File Object');
+            //     }
+            // }
 
             const response = await fetch(url, {
                 ...mergedOptions,
-                signal: controller.signal
+                signal: controller.signal,
+                cache: 'no-cache', // 캐시 사용 안 함
             });
             
             clearTimeout(timeoutId);
