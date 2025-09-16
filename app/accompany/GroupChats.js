@@ -6,6 +6,7 @@ import GroupChatList from '../../components/accompany/GroupChatList';
 import ChatExitPopup from '../../components/accompany/ChatExitPopup';
 import * as ChatApi from '../../utils/ChatApi';
 import { useAuth } from '../../context/AuthContext';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 const GroupChats = () => {
     const router = useRouter();
@@ -160,6 +161,7 @@ const GroupChats = () => {
     // ✅ 인증 로딩 중일 때 표시할 컴포넌트
     if (authLoading) {
         return (
+            <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
                     <TouchableOpacity 
@@ -175,12 +177,14 @@ const GroupChats = () => {
                     <Text>인증 확인 중...</Text>
                 </View>
             </SafeAreaView>
+            </GestureHandlerRootView>
         );
     }
 
     // ✅ 인증되지 않은 사용자
     if (!currentUserId) {
         return (
+            <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
                     <TouchableOpacity 
@@ -196,12 +200,14 @@ const GroupChats = () => {
                     <Text>로그인이 필요합니다.</Text>
                 </View>
             </SafeAreaView>
+            </GestureHandlerRootView>
         );
     }
 
     // 로딩 중일 때 표시할 컴포넌트
     if (loading) {
         return (
+            <GestureHandlerRootView style={{ flex: 1 }}>
             <SafeAreaView style={styles.container}>
                 <View style={styles.header}>
                     <TouchableOpacity 
@@ -217,10 +223,12 @@ const GroupChats = () => {
                     <Text>채팅방 목록을 불러오는 중...</Text>
                 </View>
             </SafeAreaView>
+            </GestureHandlerRootView>
         );
     }
 
     return (
+        <GestureHandlerRootView style={{ flex: 1 }}>
         <SafeAreaView style={styles.container}>
             {/* 헤더 */}
             <View style={styles.header}>
@@ -269,6 +277,7 @@ const GroupChats = () => {
                 chatTitle={selectedChat?.title || ''}
             />
         </SafeAreaView>
+        </GestureHandlerRootView>
     );
 };
 

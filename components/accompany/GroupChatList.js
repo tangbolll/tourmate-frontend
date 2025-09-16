@@ -1,12 +1,13 @@
-import React, { useState, useCallback } from 'react';
-import { useFocusEffect } from 'expo-router';
+import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  runOnJS,
 } from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 // 기본 프로필 이미지들
 const defaultProfiles = [
@@ -21,34 +22,72 @@ const getFullImageUrl = (imagePath) => {
 };
 
 const GroupChatList = ({ item, onPress, onSwipeLeft }) => {
-  const [isSwipeMenuVisible, setIsSwipeMenuVisible] = useState(false);
+  const [isSwipeOpen, setIsSwipeOpen] = useState(false);
   const translateX = useSharedValue(0);
   const { title, latestMessage: message, participants, createdAt: timestamp, unreadCount, id } = item;
 
+  // 스와이프 애니메이션 스타일
   const animatedStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: translateX.value }],
     };
   });
 
-  const handleSwipeToggle = () => {
-    const newVisibility = !isSwipeMenuVisible;
-    setIsSwipeMenuVisible(newVisibility);
-    
-    if (newVisibility) {
-      translateX.value = withTiming(-80);
-    } else {
-      translateX.value = withTiming(0);
-    }
-  };
+  // 삭제 버튼 애니메이션 스타일
+  const deleteButtonStyle = useAnimatedStyle(() => {
+    return {
+      opacity: translateX.value < -20 ? 1 : 0,
+      transform: [{ scale: translateX.value < -20 ? 1 : 0.8 }],
+    };
+  });
+
+  // 스와이프 제스처
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .onUpdate((event) => {
+      // 왼쪽으로만 스와이프 허용
+      if (event.translationX < 0) {
+        translateX.value = Math.max(event.translationX, -100);
+      } else if (isSwipeOpen) {
+        // 오른쪽으로 스와이프하면 닫기
+        translateX.value = Math.min(event.translationX - 100, 0);
+      }
+    })
+    .onEnd((event) => {
+      const shouldOpen = event.translationX < -50;
+      const shouldClose = event.translationX > 50 && isSwipeOpen;
+      
+      if (shouldOpen && !isSwipeOpen) {
+        translateX.value = withTiming(-100);
+        runOnJS(setIsSwipeOpen)(true);
+      } else if (shouldClose || (!shouldOpen && isSwipeOpen)) {
+        translateX.value = withTiming(0);
+        runOnJS(setIsSwipeOpen)(false);
+      } else if (!isSwipeOpen) {
+        translateX.value = withTiming(0);
+      } else {
+        translateX.value = withTiming(-100);
+      }
+    });
 
   const handleDeletePress = () => {
     if (onSwipeLeft) {
       onSwipeLeft(id);
     }
-    // 메뉴 닫기
-    setIsSwipeMenuVisible(false);
+    // 스와이프 닫기
     translateX.value = withTiming(0);
+    setIsSwipeOpen(false);
+  };
+
+  const handleChatPress = () => {
+    if (isSwipeOpen) {
+      // 스와이프가 열려있으면 닫기
+      translateX.value = withTiming(0);
+      setIsSwipeOpen(false);
+    } else {
+      // 채팅방 열기
+      onPress(item);
+    }
   };
 
   // 겹쳐진 프로필 렌더링 함수
@@ -110,42 +149,45 @@ const GroupChatList = ({ item, onPress, onSwipeLeft }) => {
 
   return (
     <View style={styles.chatItemContainer}>
-      <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
-        <Ionicons name="trash" size={24} color="white" />
-      </TouchableOpacity>
-      
-      <Animated.View style={[styles.chatItem, animatedStyle]}>
-        <TouchableOpacity 
-          style={styles.chatContent} 
-          onPress={() => onPress(item)}
-          onLongPress={handleSwipeToggle}
-        >
-          {renderProfileImages()}
-          <View style={styles.textContent}>
-            <View style={styles.header}>
-              <View style={styles.leftSection}>
-                <Text style={styles.chatTitle} numberOfLines={1}>{title}</Text>
-                <Text style={styles.participants}> · {participants?.length || 0}명</Text>
-              </View>
-              <View style={styles.rightSection}>
-                <Text style={styles.timestamp}>{timestamp}</Text>
-                <TouchableOpacity onPress={handleSwipeToggle} style={styles.menuButton}>
-                  <Ionicons name="ellipsis-vertical" size={16} color="#A0A0A0" />
-                </TouchableOpacity>
-              </View>
-            </View>
-            <View style={styles.chatDetails}>
-              <Text style={styles.chatMessage} numberOfLines={1}>{message}</Text>
-              
-              {unreadCount > 0 && (
-                <View style={styles.unreadBadge}>
-                  <Text style={styles.unreadText}>{unreadCount}</Text>
-                </View>
-              )}
-            </View>
-          </View>
+      {/* 삭제 버튼 (뒤쪽에 숨겨짐) */}
+      <Animated.View style={[styles.deleteButtonContainer, deleteButtonStyle]}>
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
+          <Ionicons name="trash" size={24} color="white" />
         </TouchableOpacity>
       </Animated.View>
+      
+      {/* 메인 채팅 아이템 */}
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.chatItem, animatedStyle]}>
+          <TouchableOpacity 
+            style={styles.chatContent} 
+            onPress={handleChatPress}
+            activeOpacity={0.7}
+          >
+            {renderProfileImages()}
+            <View style={styles.textContent}>
+              <View style={styles.header}>
+                <View style={styles.leftSection}>
+                  <Text style={styles.chatTitle} numberOfLines={1}>{title}</Text>
+                  <Text style={styles.participants}> · {participants?.length || 0}명</Text>
+                </View>
+                <View style={styles.rightSection}>
+                  <Text style={styles.timestamp}>{timestamp}</Text>
+                </View>
+              </View>
+              <View style={styles.chatDetails}>
+                <Text style={styles.chatMessage} numberOfLines={1}>{message}</Text>
+                
+                {unreadCount > 0 && (
+                  <View style={styles.unreadBadge}>
+                    <Text style={styles.unreadText}>{unreadCount}</Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </TouchableOpacity>
+        </Animated.View>
+      </GestureDetector>
     </View>
   );
 };
@@ -153,17 +195,24 @@ const GroupChatList = ({ item, onPress, onSwipeLeft }) => {
 const styles = StyleSheet.create({
   chatItemContainer: {
     position: 'relative',
+    backgroundColor: '#fff',
   },
-  deleteButton: {
+  deleteButtonContainer: {
     position: 'absolute',
     top: 0,
     right: 0,
     width: 80,
     height: '100%',
-    backgroundColor: '#FF6347',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
+  },
+  deleteButton: {
+    backgroundColor: '#FF6347',
+    width: 80,
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   chatItem: {
     backgroundColor: '#fff',
@@ -243,9 +292,6 @@ const styles = StyleSheet.create({
   timestamp: {
     fontSize: 12,
     color: '#A0A0A0',
-  },
-  menuButton: {
-    padding: 4,
   },
   chatDetails: {
     flexDirection: 'row',
