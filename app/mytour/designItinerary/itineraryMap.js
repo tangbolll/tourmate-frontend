@@ -120,10 +120,24 @@ export default function ItineraryMap() {
   }, [tourId, period.type]);
 
   // --- 마커 데이터 ---
-  const markersToDisplay = useMemo(() => {
-    return scheduleData[selectedDay] || [];
-  }, [selectedDay, scheduleData]);
+const markersToDisplay = useMemo(() => {
+  const dayData = scheduleData[selectedDay] || [];
   
+  // BottomSheet와 동일한 로직으로 시간순 정렬 및 order 재부여
+  const sortedData = [...dayData] // 원본 배열을 변경하지 않기 위해 복사
+    .sort((a, b) => {
+      if (a.startTime && b.startTime) {
+        return a.startTime.localeCompare(b.startTime);
+      }
+      return 0;
+    })
+    .map((item, index) => ({
+      ...item,
+      order: index + 1 // 새로운 order 번호 부여
+    }));
+    
+  return sortedData;
+}, [selectedDay, scheduleData]);  
   // --- WebView가 준비되고 마커가 변경될 때, 웹뷰로 데이터를 전송 ---
   useEffect(() => {
     if (isWebViewReady && webViewRef.current) {
