@@ -106,77 +106,74 @@ const AccompanyList = () => {
         }
     }, [currentUserId]);
 
-    const fetchData = useCallback(async (tab, force = false) => {
-        if (!force && dataLoaded[tab]) {
-            console.log(`🔄 ${tab} 탭 데이터 이미 로드됨, 건너뛰기`);
-            return;
+const fetchData = useCallback(async (tab, force = false) => {
+    if (!force && dataLoaded[tab]) {
+        console.log(`🔄 ${tab} 탭 데이터 이미 로드됨, 건너뛰기`);
+        return;
+    }
+
+    try {
+        updateLoadingState(tab, true);
+        console.log(`🌐 ${tab} 탭 데이터 로딩 시작...`);
+        let rawData; // ✅ rawData 변수 선언
+        
+        switch (tab) {
+            case 'feed':
+                rawData = await fetchAccompanyFeedApi(currentUserId);
+                break;
+            case 'mine':
+                rawData = await fetchMyCreatedAccompanyApi(currentUserId);
+                break;
+            case 'applied':
+                rawData = await fetchMyAppliedAccompanyApi(currentUserId);
+                break;
+            default:
+                console.warn('⚠️ 알 수 없는 탭:', tab);
+                return;
+        }
+        
+        if (rawData && rawData.length > 0) {
+            console.log("### API 응답 데이터 구조 확인:", JSON.stringify(rawData[0], null, 2));
         }
 
-        try {
-            updateLoadingState(tab, true);
-            console.log(`🌐 ${tab} 탭 데이터 로딩 시작...`);
-            let data;
-            
-            switch (tab) {
-                case 'feed':
-                    data = await fetchAccompanyFeedApi(currentUserId);
-                    setFeedList(data);
-                    break;
-                case 'mine':
-                    data = await fetchMyCreatedAccompanyApi(currentUserId);
-                    setMyCreatedAccompanyList(data);
-                    break;
-                case 'applied':
-                    data = await fetchMyAppliedAccompanyApi(currentUserId);
-                    setMyAppliedAccompanyList(data);
-                    break;
-                default:
-                    console.warn('⚠️ 알 수 없는 탭:', tab);
-                    return;
-            }
-            
-            if (rawData && rawData.length > 0) {
-                console.log("### API 응답 데이터 구조 확인:", JSON.stringify(rawData[0], null, 2));
-            }
+        // ✅ BigInt일 수 있는 모든 ID를 안전하게 문자열로 변환
+        const processedData = rawData.map(item => ({
+            ...item,
+            id: item.id?.toString(), // 기본 게시물 ID
+            // 만약 author 객체 안에 id가 있다면 아래처럼 추가
+            author: item.author ? {
+                ...item.author,
+                id: item.author.id?.toString()
+            } : item.author,
+            // (콘솔에서 확인 후 다른 BigInt ID가 있다면 여기에 계속 추가)
+        }));
 
-            // 3. ✅ BigInt일 수 있는 모든 ID를 안전하게 문자열로 변환
-            const processedData = rawData.map(item => ({
-                ...item,
-                id: item.id?.toString(), // 기본 게시물 ID
-                // 만약 author 객체 안에 id가 있다면 아래처럼 추가
-                author: item.author ? {
-                    ...item.author,
-                    id: item.author.id?.toString()
-                } : item.author,
-                // (콘솔에서 확인 후 다른 BigInt ID가 있다면 여기에 계속 추가)
-            }));
-
-            // 4. ✅ 가공된 데이터를 state에 저장
-            switch (tab) {
-                case 'feed':
-                    setFeedList(processedData);
-                    break;
-                case 'mine':
-                    setMyCreatedAccompanyList(processedData);
-                    break;
-                case 'applied':
-                    setMyAppliedAccompanyList(processedData);
-                    break;
-            }
-            
-            updateDataLoadedState(tab, true);
-            if (processedData.length > 0) {
-                await fetchLikesForPosts(processedData);
-            }
-            console.log(`✅ ${tab} 데이터 로딩 완료. (${processedData.length}개)`);
-
-        } catch (error) {
-            console.error(`❌ ${tab} 데이터 로딩 실패:`, error);
-            handleApiError(error, tab);
-        } finally {
-            updateLoadingState(tab, false);
+        // ✅ 가공된 데이터를 state에 저장
+        switch (tab) {
+            case 'feed':
+                setFeedList(processedData);
+                break;
+            case 'mine':
+                setMyCreatedAccompanyList(processedData);
+                break;
+            case 'applied':
+                setMyAppliedAccompanyList(processedData);
+                break;
         }
-    }, [currentUserId, dataLoaded, fetchLikesForPosts]);
+        
+        updateDataLoadedState(tab, true);
+        if (processedData.length > 0) {
+            await fetchLikesForPosts(processedData);
+        }
+        console.log(`✅ ${tab} 데이터 로딩 완료. (${processedData.length}개)`);
+
+    } catch (error) {
+        console.error(`❌ ${tab} 데이터 로딩 실패:`, error);
+        handleApiError(error, tab);
+    } finally {
+        updateLoadingState(tab, false);
+    }
+}, [currentUserId, dataLoaded, fetchLikesForPosts]);
 
     useFocusEffect(
         useCallback(() => {
