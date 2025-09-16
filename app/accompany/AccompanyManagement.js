@@ -278,7 +278,7 @@ const AccompanyManagement = () => {
                     {console.log('Applicant hashtags:', applicant.hashtags)}
                     {console.log('Applicant tags:', applicant.tags)}
                     <Text style={styles.hashtags}>
-                        {(applicant.hashtags && applicant.hashtags.join(' ')) || (applicant.tags && applicant.tags.join(' ')) || ''}
+                        {(applicant.hashtags && applicant.hashtags.map(tag => `#${tag}`).join(' ')) || (applicant.tags && applicant.tags.map(tag => `#${tag}`).join(' ')) || ''}
                     </Text>
                 </View>
             </View>
@@ -316,7 +316,7 @@ const AccompanyManagement = () => {
                         {companion.isHost && <Text style={styles.hostTag}>호스트</Text>}
                     </View>
                     <Text style={styles.hashtags}>
-                        {(companion.hashtags && companion.hashtags.join(' ')) || (companion.tags && companion.tags.join(' ')) || ''}
+                        {(companion.hashtags && companion.hashtags.map(tag => `#${tag}`).join(' ')) || (companion.tags && companion.tags.map(tag => `#${tag}`).join(' ')) || ''}
                     </Text>
                 </View>
             </View>

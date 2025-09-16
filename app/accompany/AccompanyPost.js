@@ -44,7 +44,7 @@ export default function AccompanyPost() {
     const [memberPopupData, setMemberPopupData] = useState([]);
     const [memberDataLoading, setMemberDataLoading] = useState(false);
 
-    const { accompanyData, applicants, participants, currentParticipants, maxParticipants, setAccompanyData } = useAccompanyStore();
+    const { accompanyData, applicants, participants, currentParticipants, maxParticipants, setAccompanyData, clearAccompanyData } = useAccompanyStore();
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -572,6 +572,7 @@ export default function AccompanyPost() {
     // postId를 사용하여 데이터 로드
     useFocusEffect(
         useCallback(() => {
+            clearAccompanyData();
             if (postId && currentUserId) {
                 fetchAccompanyDetail(postId);
                 fetchComments(postId);
@@ -715,6 +716,16 @@ const fetchMemberData = async () => {
         setMemberDataLoading(false);
     }
 };
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.safeArea}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <Text>동행 정보를 가져오는 중...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     // 에러 상태
     if (error || !accompanyData?.accompanyInfo) {
