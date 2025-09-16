@@ -1020,7 +1020,7 @@ const styles = StyleSheet.create({
         left: -16,
         right: -16,
         height: 90,
-        backgroundColor: '#b0b0b0',
+        backgroundColor: '#d3d3d3',
         zIndex: -1,
     },
     backButton: {
