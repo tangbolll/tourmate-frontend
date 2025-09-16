@@ -245,6 +245,10 @@ export default function AccompanyPost() {
             else if (diffInHours < 1) {
                 return `${diffInMinutes}분 전`;
             }
+            // 10시간 미만
+            else if (diffInHours < 10) {
+                return `${diffInHours}시간 전`;
+            }
             // 24시간 미만
             else if (diffInHours < 24) {
                 return messageTime.format('HH:mm');

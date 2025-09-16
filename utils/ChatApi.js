@@ -3,28 +3,168 @@ import 'dayjs/locale/ko';
 import axios from 'axios';
 import { API_URL } from './apiConfig';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import utc from 'dayjs/plugin/utc';
+import timezone from 'dayjs/plugin/timezone';
 
+// dayjs 플러그인 확장
+dayjs.extend(utc);
+dayjs.extend(timezone);
+dayjs.locale('ko');
 
-const formatTime = (dateString) => {
-    if (!dateString) return '';
+// 🔧 UTC 시간을 한국 시간대로 변환하는 공통 함수
+const parseUTCToKoreanTime = (dateString) => {
+    if (!dateString) return null;
 
-    // 서버에서 보내는 시간이 UTC라고 가정
     // 시간대 정보가 없으면 UTC(Z)를 붙임
     let utcDateString = dateString;
     if (!dateString.includes('Z') && !dateString.includes('+')) {
-        utcDateString = dateString + 'Z'; // UTC 표시
+        utcDateString = dateString + 'Z';
     }
 
-    const date = new Date(utcDateString);
-    
-    const result = date.toLocaleTimeString('ko-KR', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: true,
-        timeZone: 'Asia/Seoul' // UTC를 한국 시간으로 변환
-    });
-    return result;
+    return dayjs.utc(utcDateString).tz('Asia/Seoul');
 };
+
+// 🔧 채팅방 리스트용 타임스탬프 포맷팅 (사용자 친화적)
+export const formatChatTimestamp = (timestamp) => {
+    if (!timestamp) return '';
+    
+    const messageTime = parseUTCToKoreanTime(timestamp);
+    if (!messageTime) return '';
+    
+    const now = dayjs().tz('Asia/Seoul');
+    const diffInMinutes = now.diff(messageTime, 'minute');
+    const diffInHours = now.diff(messageTime, 'hour');
+    const diffInDays = now.diff(messageTime, 'day');
+    
+    // 1분 미만
+    if (diffInMinutes < 1) {
+        return '방금';
+    }
+    // 1시간 미만
+    else if (diffInHours < 1) {
+        return `${diffInMinutes}분 전`;
+    }
+    // 24시간 미만 - 시간:분으로 표시
+    else if (diffInHours < 24) {
+        return messageTime.format('HH:mm');
+    }
+    // 2일 전
+    else if (diffInDays === 1) {
+        return '어제';
+    }
+    // 3일 전까지는 구체적으로
+    else if (diffInDays === 2) {
+        return '2일 전';
+    }
+    else if (diffInDays === 3) {
+        return '3일 전';
+    }
+    // 1주일 미만 - 월일로 표시
+    else if (diffInDays < 100) {
+        return messageTime.format('M월 D일');
+    }
+    // 1주일 이상 - 년도까지
+    else {
+        const currentYear = now.year();
+        const messageYear = messageTime.year();
+        
+        // 같은 년도면 월.일만
+        if (currentYear === messageYear) {
+            return messageTime.format('M.D');
+        } else {
+            return messageTime.format('YYYY.M.D');
+        }
+    }
+};
+
+// 🔧 채팅 메시지용 시간 포맷팅 (HH:mm)
+export const formatMessageTime = (dateString) => {
+    if (!dateString) return '';
+
+    const messageTime = parseUTCToKoreanTime(dateString);
+    if (!messageTime) return '';
+    
+    return messageTime.format('HH:mm');
+};
+
+// 🔧 날짜 포맷팅 함수 (YYYY.M.D 형식)
+export const formatPostDate = (timestamp) => {
+    if (!timestamp) return '알 수 없음';
+    
+    const date = parseUTCToKoreanTime(timestamp);
+    if (!date) return '알 수 없음';
+    
+    return date.format('YYYY.M.D');
+};
+
+// 🔧 채팅방 메시지 날짜 구분선용 포맷팅
+export const formatMessageDateSeparator = (timestamp) => {
+    if (!timestamp) return '';
+    
+    const messageTime = parseUTCToKoreanTime(timestamp);
+    if (!messageTime) return '';
+    
+    const now = dayjs().tz('Asia/Seoul');
+    const diffInDays = now.diff(messageTime, 'day');
+    
+    if (diffInDays === 0) {
+        return '오늘';
+    } else if (diffInDays === 1) {
+        return '어제';
+    } else if (diffInDays < 7) {
+        return messageTime.format('M월 D일');
+    } else {
+        const currentYear = now.year();
+        const messageYear = messageTime.year();
+        
+        if (currentYear === messageYear) {
+            return messageTime.format('M월 D일');
+        } else {
+            return messageTime.format('YYYY년 M월 D일');
+        }
+    }
+};
+
+// 🔧 상대적 시간 표시 (더 자세한 버전)
+export const formatRelativeTime = (timestamp) => {
+    if (!timestamp) return '';
+    
+    const messageTime = parseUTCToKoreanTime(timestamp);
+    if (!messageTime) return '';
+    
+    const now = dayjs().tz('Asia/Seoul');
+    const diffInSeconds = now.diff(messageTime, 'second');
+    const diffInMinutes = now.diff(messageTime, 'minute');
+    const diffInHours = now.diff(messageTime, 'hour');
+    const diffInDays = now.diff(messageTime, 'day');
+    const diffInWeeks = now.diff(messageTime, 'week');
+    const diffInMonths = now.diff(messageTime, 'month');
+    
+    if (diffInSeconds < 30) {
+        return '방금 전';
+    } else if (diffInMinutes < 1) {
+        return '1분 미만';
+    } else if (diffInMinutes < 60) {
+        return `${diffInMinutes}분 전`;
+    } else if (diffInHours < 24) {
+        return `${diffInHours}시간 전`;
+    } else if (diffInDays === 1) {
+        return '어제';
+    } else if (diffInDays < 7) {
+        return `${diffInDays}일 전`;
+    } else if (diffInWeeks === 1) {
+        return '1주일 전';
+    } else if (diffInWeeks < 4) {
+        return `${diffInWeeks}주일 전`;
+    } else if (diffInMonths === 1) {
+        return '1개월 전';
+    } else if (diffInMonths < 12) {
+        return `${diffInMonths}개월 전`;
+    } else {
+        return messageTime.format('YYYY.M.D');
+    }
+};
+
 
 // 참가자 데이터 변환 함수
 const transformParticipants = (room) => {
@@ -82,35 +222,6 @@ const transformParticipants = (room) => {
     return transformedParticipants;
 };
 
-// 리스트용 시간 포맷팅
-const formatTimeForList = (dateString) => {
-    if (!dateString) return '';
-    
-    const now = new Date();
-    const messageDate = new Date(dateString);
-    const diffInMs = now - messageDate;
-    const diffInHours = diffInMs / (1000 * 60 * 60);
-    const diffInDays = diffInMs / (1000 * 60 * 60 * 24);
-    
-    if (diffInHours < 1) {
-        // 1시간 이내
-        const minutes = Math.floor(diffInMs / (1000 * 60));
-        return minutes <= 0 ? '방금' : `${minutes}분 전`;
-    } else if (diffInHours < 24) {
-        // 24시간 이내
-        return `${Math.floor(diffInHours)}시간 전`;
-    } else if (diffInDays < 7) {
-        // 일주일 이내
-        return `${Math.floor(diffInDays)}일 전`;
-    } else {
-        // 그 이상
-        return messageDate.toLocaleDateString('ko-KR', {
-            month: 'short',
-            day: 'numeric'
-        });
-    }
-};
-
 // 내가 속한 채팅방 목록 가져오기
 export const getMyChatRooms = async (userId) => {
     try {
@@ -162,8 +273,8 @@ export const getMyChatRooms = async (userId) => {
                 // 참가자 정보 처리
                 participants: transformParticipants(room),
                 
-                // 시간 처리 - 다양한 필드명 대응
-                createdAt: formatTimeForList(
+                // 🔧 시간 처리 - UTC → 한국시간 변환 적용
+                createdAt: formatChatTimestamp(
                     room.lastMessageTime || 
                     room.updatedAt || 
                     room.lastUpdated || 
@@ -402,7 +513,7 @@ export const fetchOrCreateChatRoom = async (accompanyIdOrChatRoomId, currentUser
     }
 };
 
-// 기존 메시지 불러오기
+// 🔧 기존 메시지 불러오기 (UTC → 한국시간 변환 적용)
 export const fetchMessages = async (roomId, currentUserId) => {
     try {
         const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
@@ -427,12 +538,16 @@ export const fetchMessages = async (roomId, currentUserId) => {
                     isSelf: String(msg.senderId) === String(currentUserId),
                 },
                 text: msg.content,
-                time: formatTime(msg.sendTime),
+                time: formatMessageTime(msg.sendTime), // 🔧 UTC → 한국시간 변환 적용
                 sendTime: msg.sendTime
             }));
             
-            // 시간순 정렬
-            transformedMessages.sort((a, b) => new Date(a.sendTime) - new Date(b.sendTime));
+            // 시간순 정렬 (UTC 시간을 기준으로 정렬)
+            transformedMessages.sort((a, b) => {
+                const dateA = dayjs.utc(a.sendTime).tz('Asia/Seoul');
+                const dateB = dayjs.utc(b.sendTime).tz('Asia/Seoul');
+                return dateA.isBefore(dateB) ? -1 : 1;
+            });
             
             return transformedMessages;
         } else {

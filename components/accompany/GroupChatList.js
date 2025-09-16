@@ -172,6 +172,7 @@ const GroupChatList = ({ item, onPress, onSwipeLeft }) => {
                   <Text style={styles.participants}> · {participants?.length || 0}명</Text>
                 </View>
                 <View style={styles.rightSection}>
+                  {/* ✅ 이미 포맷된 timestamp를 그대로 사용 */}
                   <Text style={styles.timestamp}>{timestamp}</Text>
                 </View>
               </View>
