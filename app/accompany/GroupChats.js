@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { View, Text, StyleSheet, SafeAreaView, FlatList, TouchableOpacity, Alert } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,7 +15,7 @@ const GroupChats = () => {
     const [chatRooms, setChatRooms] = useState([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
-    const { currentUserId, user, loading: authLoading } = useAuth(); // ✅ authLoading 추가
+    const { currentUserId, user, loading: authLoading } = useAuth();
 
     // ✅ 인증 상태 로그 추가
     useEffect(() => {
@@ -25,36 +25,8 @@ const GroupChats = () => {
         console.log('📱 user:', user);
     }, [authLoading, currentUserId, user]);
 
-    // ✅ 인증 완료 후 채팅방 로드
-    useEffect(() => {
-        console.log('📱 GroupChats - useEffect 트리거');
-        console.log('📱 authLoading:', authLoading);
-        console.log('📱 currentUserId:', currentUserId);
-        
-        // 인증 로딩이 완료되고 currentUserId가 있을 때만 실행
-        if (!authLoading && currentUserId) {
-            console.log('📱✅ 조건 만족 - 채팅방 로드 시작');
-            loadChatRooms();
-        } else if (!authLoading && !currentUserId) {
-            console.log('📱❌ 인증되지 않은 사용자 - 로그인 페이지로 이동');
-            // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
-            Alert.alert(
-                '로그인 필요', 
-                '로그인이 필요한 서비스입니다.',
-                [
-                    {
-                        text: '확인',
-                        onPress: () => router.push('/auth/login')
-                    }
-                ]
-            );
-        } else {
-            console.log('📱⏳ 인증 로딩 중...');
-        }
-    }, [authLoading, currentUserId]); // ✅ authLoading 의존성 추가
-
     // 채팅방 목록 로드 함수
-    const loadChatRooms = async () => {
+    const loadChatRooms = useCallback(async () => {
         try {
             console.log('📱 loadChatRooms 시작');
             console.log('📱 currentUserId 확인:', currentUserId);
@@ -97,7 +69,47 @@ const GroupChats = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [currentUserId, router]);
+
+    // ✅ 인증 완료 후 채팅방 로드
+    useEffect(() => {
+        console.log('📱 GroupChats - useEffect 트리거');
+        console.log('📱 authLoading:', authLoading);
+        console.log('📱 currentUserId:', currentUserId);
+        
+        // 인증 로딩이 완료되고 currentUserId가 있을 때만 실행
+        if (!authLoading && currentUserId) {
+            console.log('📱✅ 조건 만족 - 채팅방 로드 시작');
+            loadChatRooms();
+        } else if (!authLoading && !currentUserId) {
+            console.log('📱❌ 인증되지 않은 사용자 - 로그인 페이지로 이동');
+            // 인증되지 않은 사용자는 로그인 페이지로 리다이렉트
+            Alert.alert(
+                '로그인 필요', 
+                '로그인이 필요한 서비스입니다.',
+                [
+                    {
+                        text: '확인',
+                        onPress: () => router.push('/auth/login')
+                    }
+                ]
+            );
+        } else {
+            console.log('📱⏳ 인증 로딩 중...');
+        }
+    }, [authLoading, currentUserId, loadChatRooms]);
+
+    // ✅ 화면이 포커스될 때마다 채팅방 목록 새로고침
+    useFocusEffect(
+        useCallback(() => {
+            console.log('📱🔄 화면 포커스 - 채팅방 목록 새로고침');
+            
+            // 인증이 완료되고 currentUserId가 있을 때만 새로고침
+            if (!authLoading && currentUserId) {
+                loadChatRooms();
+            }
+        }, [authLoading, currentUserId, loadChatRooms])
+    );
 
     // 새로고침 함수
     const onRefresh = async () => {
