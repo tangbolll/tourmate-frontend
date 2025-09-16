@@ -2,7 +2,8 @@ import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-const ScheduleLocationInput = ({ location, setLocation, onChangeText }) => {
+// React.memo로 컴포넌트를 감싸서 props가 변경될 때만 리렌더링되도록 최적화
+const ScheduleLocationInput = React.memo(({ location, setLocation }) => {
     console.log('ScheduleLocationInput location prop:', location);
 
     return (
@@ -14,14 +15,14 @@ const ScheduleLocationInput = ({ location, setLocation, onChangeText }) => {
                 <TextInput
                     style={commonStyles.input}
                     value={location}
-                    onChangeText={onChangeText}
+                    onChangeText={setLocation}
                     placeholder="위치 추가 *"
                     placeholderTextColor="#CCCCCC"
                 />
             </View>
         </View>
     );
-};
+});
 
 const commonStyles = StyleSheet.create({
     section: {

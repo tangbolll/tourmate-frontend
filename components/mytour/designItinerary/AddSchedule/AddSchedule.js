@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import {
     View,
     Text,
@@ -22,56 +22,55 @@ import ScheduleActions from './ScheduleActions';
 
 const { height: screenHeight } = Dimensions.get('window');
 
-const AddSchedule = (props) => {
-    // 👇 2. 컴포넌트가 받은 모든 props를 그대로 출력합니다.
-    console.log("✅ 4. AddSchedule 컴포넌트가 실제로 받은 모든 props:", props);
-
-    // 👇 3. props에서 필요한 값들을 직접 꺼내 씁니다.
-    const {
-        visible,
-        onClose,
-        onScheduleAdded,
-        selectedDay,
-        selectedDate,
-        hour,
-        minute,
-        startTime: propStartTime, // 별명은 그대로 사용
-        endTime: propEndTime,     // 별명은 그대로 사용
-        periodType,
-        startDate,
-        endDate,
-        days,
-        existingSchedule,
-        onScheduleDelete,
-        currentTourId,
-        initialTitle = '',
-        initialLocation = '',
-    } = props;
-
-    console.log('DesignItinerary로부터 받은 모든 props:', initialTitle, initialLocation);
-    console.log(`[AddSchedule] 팝업이 받음 - periodType: ${periodType}, startTime: ${startTime}, endTime: ${endTime}, days: ${days}`);
+const AddSchedule = ({
+    visible,
+    onClose,
+    onScheduleAdded,
+    selectedDay,
+    selectedDate,
+    hour,
+    minute,
+    startTime: propStartTime,
+    endTime: propEndTime,
+    periodType,
+    startDate,
+    endDate,
+    days,
+    existingSchedule,
+    onScheduleDelete,
+    currentTourId,
+    initialTitle = '',
+    initialLocation = '',
+}) => {
+    // --- State Management ---
     const [category, setCategory] = useState('숙소');
     const [title, setTitle] = useState('');
     const [startTime, setStartTime] = useState('07:00');
     const [endTime, setEndTime] = useState('08:00');
-    const [location, setLocation] = useState('');
-    const [selectedLocationObject, setSelectedLocationObject] = useState(null); // ✅ 추가
+    const [location, setLocation] = useState(() => initialLocation || '');
+    const [selectedLocationObject, setSelectedLocationObject] = useState(null);
     const [memo, setMemo] = useState('');
     const [currentSelectedDate, setCurrentSelectedDate] = useState('');
     const [showDateDropdown, setShowDateDropdown] = useState(false);
-    const [memoHeight, setMemoHeight] = useState(40);
-    const [keyboardHeight, setKeyboardHeight] = useState(0);
-    const [memoFocused, setMemoFocused] = useState(false);
-    const scrollViewRef = useRef(null);
-
-    const [showConfirmModal, setShowConfirmModal] = useState(false);
-    const [scheduleToDelete, setScheduleToDelete] = useState(null);
-
-    // --- 💡 1. 위치 검색 관련 State 추가 ---
-    const [searchResults, setSearchResults] = useState([]);
     const [showSearchResults, setShowSearchResults] = useState(false);
-    const [isSearching, setIsSearching] = useState(false); // 로딩 상태 관리를 위해 추가
-    // ------------------------------------
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+
+    // --- Refs ---
+    const scrollViewRef = useRef(null);
+    const [memoHeight, setMemoHeight] = useState(40);
+    const [memoFocused, setMemoFocused] = useState(false);
+    const prevInitialLocationRef = useRef('');
+    const hasInitializedRef = useRef(false);
+    const prevVisibleRef = useRef(visible);
+
+    // --- Constants ---
+    const isEditMode = !!existingSchedule;
+    const popupTitle = isEditMode ? '일정 수정' : '일정 추가';
+    const isSaveEnabled = title.trim() && location.trim() && currentSelectedDate;
+
+    const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
+    const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 
     const categories = [
         { key: '숙소', label: '숙소', icon: 'home', color: '#FFD965' },
@@ -80,35 +79,7 @@ const AddSchedule = (props) => {
         { key: '휴식', label: '휴식', icon: 'pause-circle', color: '#C6D6C3' }
     ];
 
-    const isEditMode = !!existingSchedule;
-    const popupTitle = isEditMode ? '일정 수정' : '일정 추가';
-    const isSaveEnabled = title.trim() && location.trim() && currentSelectedDate;
-
-    const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
-    const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
-
-    // ... (키보드 및 날짜 관련 useEffect 로직은 변경 없음) ...
-    useEffect(() => {
-        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (event) => {
-            setKeyboardHeight(event.endCoordinates.height);
-        });
-        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
-            setKeyboardHeight(0);
-        });
-        return () => {
-            keyboardDidShowListener.remove();
-            keyboardDidHideListener.remove();
-        };
-    }, []);
-
-    useEffect(() => {
-        if (memoFocused && keyboardHeight > 0) {
-            setTimeout(() => {
-                scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
-        }
-    }, [memoFocused, keyboardHeight]);
-
+    // --- Helpers ---
     const availableDates = useMemo(() => {
         const dateList = [];
         if (periodType === 'date' && startDate && endDate) {
@@ -131,126 +102,113 @@ const AddSchedule = (props) => {
         return dateList;
     }, [periodType, startDate, endDate, days]);
 
-    useEffect(() => {
-        const performInitialSearch = async (query) => {
-            console.log(`[Search] Starting search for query: "${query}"`);
-            setLocation(query); // Show original string first
-            try {
-                const response = await fetch(`${KAKAO_API_URL}?query=${encodeURIComponent(query)}&size=1`, {
-                    headers: { 'Authorization': `KakaoAK ${kakaoRestApiKey}` }
-                });
-                if (!response.ok) {
-                    throw new Error(`Kakao API search failed with status: ${response.status}`);
-                }
-                const data = await response.json();
-                console.log('[Search] Kakao API response:', data);
-                if (data.documents && data.documents.length > 0) {
-                    const firstResult = data.documents[0];
-                    console.log('[Search] Success! Found location:', firstResult.place_name);
-                    setLocation(firstResult.place_name);
-                    setSelectedLocationObject(firstResult);
-                } else {
-                    console.log('[Search] No results found.');
-                }
-            } catch (error) {
-                console.error("[Search] An error occurred during search:", error);
-            }
-        };
-
-        if (visible) {
-            console.log("[Effect] AddSchedule modal is visible. Checking for existing schedule...");
-            if (existingSchedule) {
-                console.log("[Effect] EDIT MODE DETECTED. existingSchedule:", existingSchedule);
-                console.log("[Effect] Location data:", existingSchedule.location);
-                console.log("[Effect] Type of location data:", typeof existingSchedule.location);
-
-                // --- Edit Mode ---
-                setCategory(existingSchedule.tag || '숙소');
-                setTitle(existingSchedule.title || '');
-                setStartTime(existingSchedule.startTime || '07:00');
-                setEndTime(existingSchedule.endTime || '08:00');
-                setMemo(existingSchedule.memo || '');
-                setCurrentSelectedDate(existingSchedule.date || existingSchedule.dayDescription || '');
-
-                const locationData = existingSchedule.location;
-                if (typeof locationData === 'object' && locationData !== null && locationData.place_name) {
-                    console.log("[Effect] Location is already a Kakao object.");
-                    setLocation(locationData.place_name);
-                    setSelectedLocationObject(locationData);
-                } else if (typeof locationData === 'string' && locationData) {
-                    console.log("[Effect] Location is a string. Performing auto-search...");
-                    performInitialSearch(locationData);
-                } else {
-                    console.log("[Effect] Location is empty or in an invalid format.");
-                    setLocation('');
-                    setSelectedLocationObject(null);
-                }
-
+    // performInitialSearch를 useCallback으로 메모화
+    const performInitialSearch = useCallback(async (query) => {
+        if (!query || query.trim().length === 0) return;
+        
+        try {
+            const response = await fetch(`${KAKAO_API_URL}?query=${encodeURIComponent(query)}&size=1`, {
+                headers: { 'Authorization': `KakaoAK ${kakaoRestApiKey}` }
+            });
+            if (!response.ok) throw new Error(`Kakao API search failed with status: ${response.status}`);
+            const data = await response.json();
+            if (data.documents && data.documents.length > 0) {
+                const firstResult = data.documents[0];
+                setLocation(firstResult.place_name);
+                setSelectedLocationObject(firstResult);
             } else {
-                console.log("[Effect] ADD MODE DETECTED.");
-                // --- Add Mode ---
-                setCategory('숙소');
-                setTitle(initialTitle);
-                setMemo('');
-
-                if (initialLocation) {
-                    console.log("[Effect] Add mode has initialLocation. Performing auto-search...");
-                    performInitialSearch(initialLocation);
-                } else {
-                    setLocation('');
-                    setSelectedLocationObject(null);
-                }
-
-                // Date initialization
-                if (selectedDate) {
-                    setCurrentSelectedDate(selectedDate);
-                } else if (selectedDay && availableDates.length > 0) {
-                    const dayString = `${selectedDay}일차`;
-                    const foundDate = availableDates.find(d => d.value === dayString);
-                    if (foundDate) {
-                        setCurrentSelectedDate(foundDate.value);
-                    } else if (availableDates[selectedDay - 1]) {
-                        setCurrentSelectedDate(availableDates[selectedDay - 1].value);
-                    }
-                }
-
-                // Time initialization
-                if (propStartTime && propEndTime) {
-                    setStartTime(propStartTime);
-                    setEndTime(propEndTime);
-                } else if (hour !== undefined && minute !== undefined) {
-                    const initialHour = String(hour).padStart(2, '0');
-                    const initialMinute = String(minute).padStart(2, '0');
-                    const endHour = (hour + 1) % 24;
-                    setStartTime(`${initialHour}:${initialMinute}`);
-                    setEndTime(`${String(endHour).padStart(2, '0')}:${initialMinute}`);
-                } else {
-                    setStartTime('07:00');
-                    setEndTime('08:00');
-                }
+                setLocation(query);
+                setSelectedLocationObject(null);
             }
+        } catch (error) {
+            console.log('Initial search error:', error);
+            setLocation(query);
+            setSelectedLocationObject(null);
         }
-    }, [visible, existingSchedule, initialTitle, initialLocation]);
+    }, [kakaoRestApiKey, KAKAO_API_URL]);
 
+    // --- Effects ---
+    
+    // visible 상태가 변경될 때만 처리
     useEffect(() => {
+        // 모달이 닫히면 상태를 초기화합니다.
         if (!visible) {
+            setCategory('숙소');
+            setTitle('');
+            setStartTime('07:00');
+            setEndTime('08:00');
+            setLocation('');
+            setSelectedLocationObject(null);
+            setMemo('');
+            setCurrentSelectedDate('');
             setShowDateDropdown(false);
-            setMemoHeight(40);
-            setKeyboardHeight(0);
-            setMemoFocused(false);
-            // --- 💡 2. 모달이 닫힐 때 검색 결과 초기화 ---
             setShowSearchResults(false);
             setSearchResults([]);
-            setLocation('');
-            // ---------------------------------------
+            return;
         }
-    }, [visible]);
 
-    // --- 💡 3. 위치 검색 핸들러 함수 수정 ---
-    const handleMeetLocationSearch = async (query) => {
+        // 모달이 열릴 때만 실행되는 초기화 로직
+        if (existingSchedule) {
+            // 편집 모드: 기존 일정 데이터를 불러옵니다.
+            const locationData = existingSchedule.location;
+            if (typeof locationData === 'object' && locationData !== null && locationData.place_name) {
+                setLocation(locationData.place_name);
+                setSelectedLocationObject(locationData);
+            } else {
+                setLocation(locationData || '');
+                setSelectedLocationObject(null);
+            }
+            setTitle(existingSchedule.title || '');
+            setMemo(existingSchedule.memo || '');
+            setCategory(existingSchedule.tag || '숙소');
+            setStartTime(existingSchedule.startTime || '07:00');
+            setEndTime(existingSchedule.endTime || '08:00');
+            setCurrentSelectedDate(existingSchedule.date || existingSchedule.dayDescription || '');
+        } else {
+            // 추가 모드: 초기값을 설정하고 initialLocation이 있으면 검색합니다.
+            const defaultStartTime = propStartTime || (hour !== undefined && minute !== undefined ? `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` : '07:00');
+            const defaultEndTime = propEndTime || (hour !== undefined && minute !== undefined ? `${String((hour + 1) % 24).padStart(2, '0')}:${String(minute).padStart(2, '0')}` : '08:00');
+            const defaultDate = selectedDate || (selectedDay && availableDates[selectedDay - 1] ? availableDates[selectedDay - 1].value : (availableDates.length > 0 ? availableDates[0].value : ''));
+
+            setTitle(initialTitle);
+            setMemo('');
+            setCategory('숙소');
+            setStartTime(defaultStartTime);
+            setEndTime(defaultEndTime);
+            setCurrentSelectedDate(defaultDate);
+
+            // initialLocation이 있을 때만 검색 실행하고,
+            // 그렇지 않으면 location 상태를 건드리지 않도록 수정
+            if (initialLocation && initialLocation.trim() && prevInitialLocationRef.current !== initialLocation) {
+                prevInitialLocationRef.current = initialLocation;
+                performInitialSearch(initialLocation);
+            } else {
+                // 이 부분을 삭제하여 불필요한 setLocation 호출을 막습니다.
+                // setLocation('');
+                // setSelectedLocationObject(null);
+            }
+        }
+    }, [visible, existingSchedule, initialLocation, performInitialSearch, propStartTime, propEndTime, selectedDate, selectedDay, availableDates, hour, minute]);
+
+    // 메모 포커스 핸들러
+    const handleMemoFocus = useCallback(() => {
+        setMemoFocused(true);
+        if (scrollViewRef.current) {
+            setTimeout(() => {
+                scrollViewRef.current.scrollToEnd({ animated: true });
+            }, 100);
+        }
+    }, []);
+
+    const handleMemoBlur = useCallback(() => {
+        setMemoFocused(false);
+    }, []);
+
+    // --- Search Handlers ---
+    const handleLocationSearch = useCallback(async (query) => {
+        console.log('Location search called with:', query);
+        setLocation(query);
         setSelectedLocationObject(null);
-        console.log('Searching for:', query);
-        setLocation(query); // ❌ 오류 수정: setMeetLocationInput -> setLocation
 
         if (query.trim().length < 2) {
             setSearchResults([]);
@@ -269,35 +227,35 @@ const AddSchedule = (props) => {
                     'Content-Type': 'application/json'
                 }
             });
-
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
+            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
-            console.log('Search results:', data.documents);
             setSearchResults(data.documents || []);
         } catch (error) {
-            console.error('카카오맵 API 호출 에러:', error);
+            console.log('Search error:', error);
             setSearchResults([]);
         } finally {
             setIsSearching(false);
         }
-    };
-    // ------------------------------------
+    }, [kakaoRestApiKey, KAKAO_API_URL]);
 
-    const handleSave = () => {
+    const handleLocationSelect = useCallback((item) => {
+        setLocation(item.place_name);
+        setSelectedLocationObject(item);
+        setShowSearchResults(false);
+        Keyboard.dismiss();
+    }, []);
+
+    // --- Action Handlers ---
+    const handleSave = useCallback(() => {
         if (!title.trim() || !location.trim() || !currentSelectedDate) {
             Alert.alert('알림', '제목, 위치, 날짜는 필수 입력 항목입니다.');
             return;
         }
 
-        // Time validation
         const timeToMinutes = (timeString) => {
             const [hours, minutes] = timeString.split(':').map(Number);
             return hours * 60 + minutes;
         };
-
         const startMinutes = timeToMinutes(startTime);
         const endMinutes = timeToMinutes(endTime);
 
@@ -307,72 +265,65 @@ const AddSchedule = (props) => {
         }
 
         let datePayload = {};
-        
-        const locationData = selectedLocationObject || location.trim();
-
         if (typeof currentSelectedDate === 'string' && currentSelectedDate.includes('일차')) {
-            // "2일차" 처럼 '일차'가 포함된 문자열이면 dayDescription에 값을 넣습니다.
-            datePayload = {
-                date: null,
-                dayDescription: currentSelectedDate,
-            };
+            datePayload = { date: null, dayDescription: currentSelectedDate };
         } else {
-            // "2025-09-03" 처럼 '일차'가 없는 일반 날짜 문자열이면 date에 값을 넣습니다.
-            datePayload = {
-                date: currentSelectedDate,
-                dayDescription: null,
-            };
+            datePayload = { date: currentSelectedDate, dayDescription: null };
         }
 
         const scheduleData = {
             id: existingSchedule?.id || null,
-            category,
+            tag: category,
             title: title.trim(),
             startTime,
             endTime,
-            location: locationData,
+            location: selectedLocationObject ? selectedLocationObject : location.trim(),
             memo: memo.trim(),
             travelId: currentTourId,
             ...datePayload,
         };
         onScheduleAdded(scheduleData);
         onClose();
-    };
+    }, [title, location, currentSelectedDate, startTime, endTime, category, selectedLocationObject, memo, existingSchedule?.id, currentTourId, onScheduleAdded, onClose]);
 
-    const handleDelete = () => {
+    const handleDelete = useCallback(() => {
         if (onScheduleDelete && existingSchedule?.id) {
             Alert.alert(
-                '일정 삭제', // '여유시간 삭제'가 아니라 '일정 삭제'가 더 적절합니다.
+                '일정 삭제',
                 '정말로 이 일정을 삭제하시겠습니까?',
                 [
                     { text: '취소', style: 'cancel' },
-                    { 
-                        text: '삭제', 
-                        style: 'destructive', 
-                        // `onScheduleDelete`를 `existingSchedule.id`와 함께 호출합니다.
-                        onPress: () => onScheduleDelete(existingSchedule.id) 
+                    {
+                        text: '삭제',
+                        style: 'destructive',
+                        onPress: () => onScheduleDelete(existingSchedule.id)
                     }
                 ]
             );
-
         } else {
-            console.error('오류: 삭제할 일정이 없거나 삭제 함수가 전달되지 않았습니다.');
+            Alert.alert('오류', '삭제할 일정이 없거나 삭제 함수가 전달되지 않았습니다.');
         }
-    };
+    }, [onScheduleDelete, existingSchedule?.id]);
 
-    const handleMemoFocus = () => setMemoFocused(true);
-    const handleMemoBlur = () => setMemoFocused(false);
-
-    const handleOverlayPress = () => {
-        if (showDateDropdown || showSearchResults) { // 검색 결과 창도 닫도록 조건 추가
+    const handleOverlayPress = useCallback(() => {
+        if (showDateDropdown || showSearchResults) {
             setShowDateDropdown(false);
             setShowSearchResults(false);
-            Keyboard.dismiss(); // 키보드도 닫기
+            Keyboard.dismiss();
         } else {
             onClose();
         }
-    };
-    
+    }, [showDateDropdown, showSearchResults, onClose]);
+
+    // location prop을 메모화하여 ScheduleLocationInput의 불필요한 렌더링 방지
+    const locationInputProps = useMemo(() => ({
+        location,
+        setLocation,
+        onChangeText: handleLocationSearch
+    }), [location, handleLocationSearch]);
+
+    console.log('AddSchedule render - location:', location);
+
     return (
         <Modal
             visible={visible}
@@ -388,9 +339,7 @@ const AddSchedule = (props) => {
                 <TouchableOpacity
                     style={[
                         commonStyles.container,
-                        memoFocused && keyboardHeight > 0 && {
-                            transform: [{ translateY: -keyboardHeight * 0.3 }]
-                        }
+                        memoFocused && { transform: [{ translateY: -100 }] }
                     ]}
                     activeOpacity={1}
                 >
@@ -431,28 +380,20 @@ const AddSchedule = (props) => {
                             endTime={endTime}
                             setEndTime={setEndTime}
                         />
-                        {/* --- 💡 4. 위치 입력과 검색 결과를 View로 감싸기 --- */}
                         <View style={{ zIndex: 1000 }}>
                             <ScheduleLocationInput
-                                location={location}
-                                setLocation={setLocation}
-                                onChangeText={handleMeetLocationSearch}
+                                {...locationInputProps}
                             />
                             {showSearchResults && (
                                 <View style={styles.searchResultsContainer}>
                                     <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 150 }}>
                                         {isSearching ? (
-                                             <Text style={styles.infoText}>검색 중...</Text>
+                                            <Text style={styles.infoText}>검색 중...</Text>
                                         ) : searchResults.length > 0 ? (
                                             searchResults.map((item, index) => (
                                                 <TouchableOpacity
                                                     key={item.id || index}
-                                                    onPress={() => {
-                                                        setLocation(item.place_name);         
-                                                        setSelectedLocationObject(item);       
-                                                        setShowSearchResults(false);
-                                                        Keyboard.dismiss();
-                                                    }}
+                                                    onPress={() => handleLocationSelect(item)}
                                                     style={styles.searchResultItem}
                                                 >
                                                     <Text style={styles.placeName}>{item.place_name}</Text>
@@ -466,7 +407,6 @@ const AddSchedule = (props) => {
                                 </View>
                             )}
                         </View>
-                        {/* ------------------------------------------- */}
                         <ScheduleMemoInput
                             memo={memo}
                             setMemo={setMemo}
@@ -488,7 +428,6 @@ const AddSchedule = (props) => {
     );
 };
 
-// --- 💡 5. 스타일 코드 수정 및 추가 ---
 const commonStyles = StyleSheet.create({
     overlay: {
         flex: 1,
@@ -532,14 +471,14 @@ const commonStyles = StyleSheet.create({
 const styles = StyleSheet.create({
     searchResultsContainer: {
         position: 'absolute',
-        top: '100%', // 입력창 바로 아래에 위치
+        top: '100%',
         left: 0,
         right: 0,
         backgroundColor: '#fff',
         borderRadius: 8,
         borderWidth: 1,
         borderColor: '#ccc',
-        marginTop: 4, // 입력창과의 간격
+        marginTop: 4,
     },
     searchResultItem: {
         paddingVertical: 10,
@@ -564,4 +503,3 @@ const styles = StyleSheet.create({
 });
 
 export default AddSchedule;
-

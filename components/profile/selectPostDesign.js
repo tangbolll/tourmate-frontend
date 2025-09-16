@@ -23,7 +23,7 @@ const designImages = {
         require('../../assets/postcardType/2.png'),
         require('../../assets/postcardType/3.png'),
         require('../../assets/postcardType/4.png'),
-        // require('../../assets/postcardType/5.png'),
+        require('../../assets/postcardType/5.png'),
     ],
     Plain: [
         require('../../assets/postcardType/6.png'),

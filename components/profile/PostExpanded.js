@@ -15,35 +15,16 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { toggleLikePostcard, toggleScrapPostcard, fetchPostcardDetailApi} from '../../utils/HomePostApi';
 import { useRouter } from 'expo-router';
-import EditPostFloatingButtons from '../../components/profile/EditPostFloatingButtons'; // ⭐ 1. 이 줄을 추가하세요.
+import EditPostFloatingButtons from '../../components/profile/EditPostFloatingButtons';
+import { postcardTemplates, getPostcardOverlayStyle } from '../../utils/PostcardTemplates';
 import { deletePostcardApi } from '../../utils/PostCardApi';
-import { togglePostcardPublicScopeApi } from '../../utils/PostCardApi'; // 예시 경로
-
+import { togglePostcardPublicScopeApi } from '../../utils/PostCardApi';
 
 const { width, height } = Dimensions.get('window');
 
-// 로컬 템플릿 이미지 매핑
-const postcardTemplates = {
-    1: require('../../assets/postcardType/1.png'),
-    2: require('../../assets/postcardType/2.png'),
-    3: require('../../assets/postcardType/3.png'),
-    4: require('../../assets/postcardType/4.png'),
-    5: require('../../assets/postcardType/5.png'),
-    6: require('../../assets/postcardType/6.png'),
-    7: require('../../assets/postcardType/7.png'),
-    8: require('../../assets/postcardType/8.png'),
-    9: require('../../assets/postcardType/9.png'),
-    10: require('../../assets/postcardType/10.png'),
-    11: require('../../assets/postcardType/11.png'),
-    12: require('../../assets/postcardType/12.png'),
-    13: require('../../assets/postcardType/13.png'),
-    14: require('../../assets/postcardType/14.png'),
-    15: require('../../assets/postcardType/15.png'),
-};
-
-// 템플릿 이미지 가져오기 함수
+// 템플릿 이미지 가져오기 함수 (기존과 동일)
 const getPostcardTemplate = (typeImageUrl) => {
-    if (!typeImageUrl) return postcardTemplates[1]; // 기본 템플릿
+    if (!typeImageUrl) return postcardTemplates[1];
     
     try {
         const match = typeImageUrl.match(/(\d+)\.png$/);
@@ -58,7 +39,7 @@ const getPostcardTemplate = (typeImageUrl) => {
     }
 };
 
-// 날짜 포맷팅 함수
+// 날짜 포맷팅 함수 (기존과 동일)
 const formatDate = (dateString) => {
     if (!dateString) return '';
     
@@ -78,8 +59,6 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
     const router = useRouter(); 
     console.log('PostExpanded로 전달된 postData:', JSON.stringify(postData, null, 2));
 
-
-    // 서버에서 받은 데이터를 기반으로 초기 상태 설정
     const [isLiked, setIsLiked] = useState(postData?.isLiked || false);
     const [isScraped, setIsScraped] = useState(postData?.isScraped || false);
     const [likeCount, setLikeCount] = useState(postData?.likeCount || 0);
@@ -87,28 +66,25 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
     const [likeLoading, setLikeLoading] = useState(false);
     const [scrapLoading, setScrapLoading] = useState(false);
 
-    // 목 데이터 (fallback용)
-
-    const mockData = {
-        profileImage: 'https://via.placeholder.com/50',
-        postcardName: '부산의 바다 !',
-        userName: '추리를봐야',
-        location: '부산',
-        date: '2021.03.04',
-        postcardImage: 'https://via.placeholder.com/400x300',
-        timeAgo: '5시간 전',
-        likeCount: 23,
-        scrapCount: 46,
-        postcardContent: '',
-        isLiked: false,
-        isScraped: false,
-        typeImageUrl: '../postcardType/1.png', // 기본 템플릿
-        ...postData
-    };
+    const mockData = {
+        profileImage: 'https://via.placeholder.com/50',
+        postcardName: '부산의 바다 !',
+        userName: '추리를봐야',
+        location: '부산',
+        date: '2021.03.04',
+        postcardImage: 'https://via.placeholder.com/400x300',
+        timeAgo: '5시간 전',
+        likeCount: 23,
+        scrapCount: 46,
+        postcardContent: '',
+        isLiked: false,
+        isScraped: false,
+        typeImageUrl: '../postcardType/1.png',
+        ...postData
+    };
 
     useEffect(() => {
         if (postData) {
-            // postData가 변경될 때마다 좋아요/스크랩 상태 동기화
             setIsLiked(postData.isLiked || false);
             setIsScraped(postData.isScraped || false);
             setLikeCount(postData.likeCount || 0);
@@ -116,8 +92,6 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
         }
     }, [postData]);
 
-
-    // 실제 표시할 데이터 (서버 데이터가 있으면 서버 데이터 우선)
     const displayData = {
         postcardName: postData?.title || postData?.postcardName || mockData.postcardName,
         userName: postData?.author || postData?.userName || mockData.userName,
@@ -129,6 +103,8 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
         postcardContent: postData?.content || postData?.postcardContent || mockData.postcardContent,
         templateImage: getPostcardTemplate(postData?.typeImageUrl || mockData.typeImageUrl),
         profileImage: postData?.profileImage || mockData.profileImage,
+        // 템플릿 번호도 가져와서 상태에 저장
+        templateNumber: postData?.typeImageUrl ? parseInt(postData.typeImageUrl.match(/(\d+)\.png$/)?.[1], 10) : 1
     };
 
     const handleLike = async () => {
@@ -347,24 +323,20 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
             onRequestClose={onClose}
         >
             <View style={styles.modalContainer}>
-                {/* 마스크 배경 */}
                 <TouchableOpacity 
                     style={styles.backdrop}
                     activeOpacity={1}
                     onPress={onClose}
                 />
                 
-                {/* 상단 헤더 */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={onClose} style={styles.closeButton}>
                         <Ionicons name="close" size={24} color="#fff" />
                     </TouchableOpacity>
                 </View>
 
-                {/* 엽서 제목 */}
                 <Text style={styles.postcardTitle}>{displayData.postcardName}</Text>
                 
-                {/* 사용자 정보 */}
                 <View style={styles.userInfo}>
                     <Image source={{ uri: displayData.profileImage }} style={styles.profileImage} />
                     <Text style={styles.userText}>
@@ -372,7 +344,6 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
                     </Text>
                 </View>
 
-                {/* 엽서 이미지 */}
                 <View style={styles.imageSection}>
                     <Image source={{ uri: displayData.postcardImage }} style={styles.postcardImage} />
                 </View>
@@ -384,15 +355,17 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
                         style={styles.postcardContainer}
                         resizeMode="contain"
                     >
-                        <View style={styles.postcardOverlay}>
+                        {/* 2. getPostcardOverlayStyle 함수로 동적 스타일 적용 */}
+                        <View style={getPostcardOverlayStyle(displayData.templateNumber)}>
                             <ScrollView style={styles.contentScrollArea} showsVerticalScrollIndicator={false}>
                                 <Text style={styles.contentText}>{String(displayData.postcardContent || '')}</Text>
                             </ScrollView>
+                            {/* 3. 날짜 텍스트를 오버레이 내부에 배치 */}
+                            <Text style={styles.dateText}>{displayData.date}</Text>
                         </View>
                     </ImageBackground>
                 </View>
                 
-                {/* actionSection: EditPostFloatingButtons만 포함 */}
                 <View style={styles.actionSection}>
                     <EditPostFloatingButtons
                         onDelete={handleDelete}
@@ -407,7 +380,6 @@ const PostExpanded = ({ visible, postData, onClose, onDataUpdate, currentUserId 
             </View>
         </Modal>
     );
-    
 };
 
 const styles = StyleSheet.create({
@@ -451,9 +423,9 @@ const styles = StyleSheet.create({
         fontSize: 24,
         fontWeight: 'bold',
         textAlign: 'center',
-        paddingVertical: 15,
+        paddingVertical: 20,
         color: '#fff',
-        marginBottom: 10,
+        marginBottom: 12,
     },
     userInfo: {
         flexDirection: 'row',
@@ -461,7 +433,7 @@ const styles = StyleSheet.create({
         paddingHorizontal: 16,
         justifyContent: 'flex-start',
         width: '100%',
-        paddingLeft: 12,
+        paddingLeft: 30,
     },
     profileImage: {
         width: 20,
@@ -495,12 +467,6 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
     },
-    postcardOverlay: {
-        width: '80%',
-        height: '70%',
-        padding: 20,
-        justifyContent: 'space-between',
-    },
     locationTitle: {
         fontSize: 16,
         fontWeight: 'bold',
@@ -527,7 +493,6 @@ const styles = StyleSheet.create({
     actionSection: {
         width: '100%',
         alignItems: 'center',
-        paddingVertical: 20, // 위아래 여백
     },
     actionButton: {
         alignItems: 'center',
