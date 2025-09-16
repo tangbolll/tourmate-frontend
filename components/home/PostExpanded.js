@@ -17,6 +17,9 @@ import { toggleLikePostcard, toggleScrapPostcard, fetchPostcardDetailApi} from '
 
 const { width, height } = Dimensions.get('window');
 
+const defaultProfile = require('../../assets/defaultprofile.png');
+
+
 // 로컬 템플릿 이미지 매핑
 const postcardTemplates = {
     1: require('../../assets/postcardType/1.png'),
@@ -211,6 +214,10 @@ const PostExpanded = ({
     onDataUpdate, 
     currentUserId 
 }) => {
+
+    console.log('PostExpanded - 전달받은 postData:', postData);
+    console.log('PostExpanded - profileImage 값:', postData?.profileImage);
+
     // 서버에서 받은 데이터를 기반으로 초기 상태 설정
     const [isLiked, setIsLiked] = useState(postData?.isLiked || false);
     const [isScraped, setIsScraped] = useState(postData?.isScraped || false);
@@ -293,9 +300,12 @@ const PostExpanded = ({
         postcardImage: detailData?.imageUrl || postData?.imageUrl || postData?.postcardImage || mockData.postcardImage,
         postcardContent: detailData?.content || postData?.content || postData?.postcardContent || mockData.postcardContent,
         templateImage: getPostcardTemplate(detailData?.typeImageUrl || postData?.typeImageUrl || mockData.typeImageUrl),
-        profileImage: postData?.profileImage || mockData.profileImage,
+        profileImage: detailData?.profileImage || postData?.profileImage || mockData.profileImage,
         typeImageUrl: detailData?.typeImageUrl || postData?.typeImageUrl || mockData.typeImageUrl,
     };
+
+    console.log('PostExpanded - displayData.profileImage:', displayData.profileImage);
+
 
     // 템플릿 번호 가져오기
     const templateNumber = getTemplateNumber(displayData.typeImageUrl);
@@ -471,7 +481,13 @@ const PostExpanded = ({
                     
                     {/* 사용자 정보 */}
                     <View style={styles.userInfo}>
-                        <Image source={{ uri: displayData.profileImage }} style={styles.profileImage} />
+                        <Image 
+                            source={
+                                displayData.profileImage
+                                ? { uri: displayData.profileImage } // ✅ profileImage가 있으면 uri를 사용
+                                : defaultProfile // ⛔️ 없으면 기본 이미지 사용
+                            }
+                            style={styles.profileImage}  />
                         <Text style={styles.userText}>
                             {displayData.userName} · {displayData.location} · {displayData.date}
                         </Text>
@@ -590,6 +606,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
+        justifyContent: 'flex-start',
+        width: '100%',
+        paddingLeft: 12,
     },
     profileImage: {
         width: 20,

@@ -459,6 +459,9 @@ const styles = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         paddingHorizontal: 16,
+        justifyContent: 'flex-start',
+        width: '100%',
+        paddingLeft: 12,
     },
     profileImage: {
         width: 20,

@@ -274,7 +274,13 @@ const Post = ({ postData, onDataUpdate }) => {
             {/* 확대 모달 */}
             <PostExpanded 
                 visible={showExpanded}
-                postData={data}
+                postData={{
+                        ...postData, // 원본 데이터를 모두 복사 (profileImage 포함)
+                        isLiked: isLiked, // 최신 좋아요 상태로 덮어쓰기
+                        isScraped: isBookmarked, // 최신 스크랩 상태로 덮어쓰기
+                        likeCount: currentLikeCount, // 최신 좋아요 카운트로 덮어쓰기
+                        scrapCount: currentScrapCount, // 최신 스크랩 카운트로 덮어쓰기
+                    }}                
                 onClose={() => setShowExpanded(false)}
                 onDataUpdate={handleDataUpdateFromExpanded}
                 currentUserId={currentUserId}
