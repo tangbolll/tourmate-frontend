@@ -337,7 +337,7 @@ export const fetchCommentsApi = async (accompanyId) => {
         return {
             id: comment.id?.toString(),
             nickname: comment.userNickname,
-            time: comment.createdAt ? formatTimeAgo(comment.createdAt) : '방금 전',
+            createdAt: comment.createdAt,
             content: comment.content,
             profileImage: comment.authorProfileImage,
             isHost: comment.hostComment,
@@ -345,7 +345,7 @@ export const fetchCommentsApi = async (accompanyId) => {
                 return {
                     id: reply.id?.toString(),
                     nickname: reply.userNickname,
-                    time: reply.createdAt ? formatTimeAgo(reply.createdAt) : '방금 전',
+                    createdAt: reply.createdAt,
                     content: reply.content,
                     profileImage: reply.authorProfileImage,
                     isHost: reply.hostComment,

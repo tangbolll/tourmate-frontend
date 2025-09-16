@@ -16,6 +16,7 @@ import AlarmPopup from '../../components/accompany/AlarmPopup';
 import MemberPopup from '../../components/accompany/MemberPopup';
 import EventHeader from '../../components/accompany/EventHeader';
 import AccompanyBottomButton from '../../components/accompany/AccompanyBottomButton';
+import dayjs from 'dayjs';
 
 import {
     fetchAccompanyDetailApi,
@@ -61,10 +62,11 @@ export default function AccompanyPost() {
     const [showAlarmPopupHost, setShowAlarmPopupHost] = useState(false);
     const [closed, setClosed] = useState(false);
     const [showMemberPopupGuest, setShowMemberPopupGuest] = useState(false);
-    // const [showMemberPopupHost, setShowMemberPopupHost] = useState(false);
+    
+    // 키보드 상태 관리 - 키보드 높이 추가
     const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
     const scrollViewRef = useRef(null);
-
 
     // 새로운 신청 관련 상태 추가
     const [unreadApplicationsCount, setUnreadApplicationsCount] = useState(0);
@@ -201,13 +203,71 @@ export default function AccompanyPost() {
         }
     };
 
-    // 댓글 불러오기 함수 (리팩토링 적용)
+
+
+    // 댓글 불러오기 함수 (리팩토링 적용) - UTC를 KST로 변환
     const fetchComments = async (accompanyId) => {
         try {
-            const transformedComments = await fetchCommentsApi(accompanyId);
-            setComments(transformedComments);
+            // API에서 받은 데이터를 변환하지 않고 그대로 사용합니다.
+            const originalComments = await fetchCommentsApi(accompanyId);
+            setComments(originalComments);
         } catch (error) {
             console.error('❌ 댓글 조회 오류:', error);
+        }
+    };
+
+        const formatCommentTime = (dateString) => {
+        if (!dateString) return '';
+
+        try {
+            // UTC 문자열을 표준 형식으로 변환
+            const isoString = dateString.replace(' ', 'T');
+            const utcString = isoString.endsWith('Z') ? isoString : `${isoString}Z`;
+            
+            // dayjs로 파싱하고 상대 시간 계산
+            const messageTime = dayjs(utcString);
+            
+            if (!messageTime.isValid()) {
+                console.error('Invalid date parsed:', dateString);
+                return '시간 오류';
+            }
+
+            const now = dayjs();
+            const diffInHours = now.diff(messageTime, 'hour');
+            const diffInMinutes = now.diff(messageTime, 'minute');
+            const diffInDays = now.diff(messageTime, 'day');
+            
+            // 1분 미만
+            if (diffInMinutes < 1) {
+                return '방금 전';
+            }
+            // 1시간 미만
+            else if (diffInHours < 1) {
+                return `${diffInMinutes}분 전`;
+            }
+            // 24시간 미만
+            else if (diffInHours < 24) {
+                return messageTime.format('HH:mm');
+            }
+            // 2일 미만
+            else if (diffInDays < 2) {
+                return messageTime.format('2일 전');
+            }
+            // 3일 미만
+            else if (diffInDays < 3) {
+                return messageTime.format('3일 전');
+            }
+            // 1주일 미만
+            else if (diffInDays < 100) {
+                return messageTime.format('M월 D일');
+            }
+            else {
+                return messageTime.format('YYYY.M.D');
+            }
+            
+        } catch (error) {
+            console.error('Error formatting time:', dateString, error);
+            return '시간 오류';
         }
     };
 
@@ -522,36 +582,50 @@ export default function AccompanyPost() {
         }, [postId, currentUserId])
     );
 
-    // // 정기적으로 새로운 신청을 확인하는 useEffect 추가
-    // useEffect(() => {
-    //     if (!isHost || !postId) return;
-
-    //     const interval = setInterval(() => {
-    //         fetchUnreadApplications();
-    //     }, 30000); // 30초마다 확인
-
-    //     return () => clearInterval(interval);
-    // }, [isHost, postId]);
-
-    // Keyboard listeners to handle scrolling when keyboard appears
+    // 키보드 리스너 설정 - 키보드 높이 추적 추가
     useEffect(() => {
         const keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
-            () => {
+            (e) => {
+                console.log('키보드 표시됨:', e.endCoordinates.height);
                 setKeyboardVisible(true);
-                scrollViewRef.current?.scrollToEnd({ animated: true });
+                setKeyboardHeight(e.endCoordinates.height);
+                
+                // 키보드 나타날 때 자동 스크롤
+                setTimeout(() => {
+                    scrollViewRef.current?.scrollToEnd({ animated: true });
+                }, 150);
             }
         );
         const keyboardDidHideListener = Keyboard.addListener(
             'keyboardDidHide',
             () => {
+                console.log('키보드 숨김');
                 setKeyboardVisible(false);
+                setKeyboardHeight(0);
             }
         );
+
+        // iOS용 키보드 리스너 추가
+        const keyboardWillShowListener = Platform.OS === 'ios' 
+            ? Keyboard.addListener('keyboardWillShow', (e) => {
+                setKeyboardVisible(true);
+                setKeyboardHeight(e.endCoordinates.height);
+            })
+            : null;
+
+        const keyboardWillHideListener = Platform.OS === 'ios'
+            ? Keyboard.addListener('keyboardWillHide', () => {
+                setKeyboardVisible(false);
+                setKeyboardHeight(0);
+            })
+            : null;
 
         return () => {
             keyboardDidShowListener.remove();
             keyboardDidHideListener.remove();
+            keyboardWillShowListener?.remove();
+            keyboardWillHideListener?.remove();
         };
     }, []);
 
@@ -663,158 +737,173 @@ const fetchMemberData = async () => {
     return (
         <SafeAreaView style={styles.safeArea}>
             <View style={{ flex: 1 }}>
-                {/* ScrollView를 KeyboardAvoidingView로 감쌈 */}
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === "ios" ? "padding" : "height"}
-                    style={{ flex: 1 }}
-                    keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
+                {/* ScrollView */}
+                <ScrollView
+                    ref={scrollViewRef}
+                    style={styles.scrollView}
+                    contentContainerStyle={[
+                        styles.scrollContent,
+                        {
+                            paddingBottom: keyboardVisible 
+                                ? keyboardHeight + 80  // 키보드 높이 + 하단 버튼 + 여유
+                                : 80  // 기본: 하단 버튼 높이만큼만
+                        }
+                    ]}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
+                    onContentSizeChange={() => {
+                        if (keyboardVisible) {
+                            setTimeout(() => {
+                                scrollViewRef.current?.scrollToEnd({ animated: true });
+                            }, 100);
+                        }
+                    }}
                 >
-                    <ScrollView
-                        ref={scrollViewRef}
-                        style={styles.scrollView}
-                        contentContainerStyle={[ 
-                            styles.scrollContent,
-                            { paddingBottom: keyboardVisible ? 0 : 100 }
-                        ]}
-                        keyboardShouldPersistTaps="handled"
+                    {/* Gray background that scrolls with content */}
+                    <View style={styles.grayBackground} />
+
+                    {/* Back button */}
+                    <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                        <Ionicons name="chevron-back" size={24} color="black" />
+                    </TouchableOpacity>
+
+                    {/* Event header card */}
+                    <EventHeader
+                        title={accompanyData?.accompanyInfo?.title}
+                        location={accompanyData?.accompanyInfo?.location}
+                        participants={currentParticipants} // From Zustand store
+                        maxParticipants={maxParticipants} // From Zustand store
+                        newApplication={hasNewApplications} 
+                        onParticipantsClick={handleParticipantsClick}
+                        postId={postId}
+                        currentUserId={currentUserId}
+                        status={accompanyData?.accompanyInfo?.status}
+                        chatAccess={chatAccess}
+                    />
+
+                    {/* 더보기 버튼 */}
+                    <TouchableOpacity
+                        style={styles.moreButton}
+                        onPress={() => setShowMoreMenu(prev => !prev)}
                     >
-                        {/* Gray background that scrolls with content */}
-                        <View style={styles.grayBackground} />
+                        <Feather name="more-vertical" size={24} color="black" />
+                    </TouchableOpacity>
 
-                        {/* Back button */}
-                        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                            <Ionicons name="chevron-back" size={24} color="black" />
-                        </TouchableOpacity>
-
-                        {/* Event header card */}
-                        <EventHeader
-                            title={accompanyData?.accompanyInfo?.title}
-                            location={accompanyData?.accompanyInfo?.location}
-                            participants={currentParticipants} // From Zustand store
-                            maxParticipants={maxParticipants} // From Zustand store
-                            newApplication={hasNewApplications} 
-                            onParticipantsClick={handleParticipantsClick}
-                            postId={postId}
-                            currentUserId={currentUserId}
-                            status={accompanyData?.accompanyInfo?.status}
-                            chatAccess={chatAccess}
-                        />
-
-                        {/* 더보기 버튼 */}
-                        <TouchableOpacity
-                            style={styles.moreButton}
-                            onPress={() => setShowMoreMenu(prev => !prev)}
-                        >
-                            <Feather name="more-vertical" size={24} color="black" />
-                        </TouchableOpacity>
-
-                        {/* "더보기" 메뉴 드롭다운 */}
-                        {isHost && showMoreMenu && (
-                            <View style={styles.moreMenu}>
-                                <TouchableOpacity
-                                    style={styles.menuItem}
-                                    onPress={() => {
-                                        console.log("삭제 버튼 클릭됨!");
-                                        setShowMoreMenu(false); // 메뉴 닫기
-                                        handleDeletePost(); 
-                                    }}
-                                >
-                                    <Text style={styles.menuText}>삭제하기</Text>
-                                </TouchableOpacity>
-                            </View>
-                        )}
-
-                
-
-                        {/* Host info outside header */}
-                        <View style={styles.hostInfoContainer}>
-                            <Text style={styles.hostInfoText}>
-                                <Text style={styles.hostInfoLabel}>호스트 </Text>
-                                {accompanyData?.accompanyInfo?.createdByName}
-                                <Text style={styles.hostInfoLabel}>  게시일 </Text>
-                                {accompanyData?.accompanyInfo?.createdAt}
-                                <Text style={styles.hostInfoLabel}>  조회수 </Text>
-                                {accompanyData?.accompanyInfo?.views}
-                            </Text>
+                    {/* "더보기" 메뉴 드롭다운 */}
+                    {isHost && showMoreMenu && (
+                        <View style={styles.moreMenu}>
+                            <TouchableOpacity
+                                style={styles.menuItem}
+                                onPress={() => {
+                                    console.log("삭제 버튼 클릭됨!");
+                                    setShowMoreMenu(false); // 메뉴 닫기
+                                    handleDeletePost(); 
+                                }}
+                            >
+                                <Text style={styles.menuText}>삭제하기</Text>
+                            </TouchableOpacity>
                         </View>
+                    )}
 
-                        <EventSchedule
-                            travelStartDate={accompanyData?.accompanyInfo?.travelStartDate}
-                            travelEndDate={accompanyData?.accompanyInfo?.travelEndDate}
-                            recruitStartDate={accompanyData?.accompanyInfo?.recruitStartDate}
-                            recruitEndDate={accompanyData?.accompanyInfo?.recruitEndDate}
-                        />
-                        <Intro
-                            message={accompanyData?.accompanyInfo?.description}
-                            // photos={accompanyData?.accompanyInfo?.imageUrls || []}
-                        />
+            
 
-                        <GatheringPlace
-                            location={accompanyData?.accompanyInfo?.meetingPoint}
-                        />
-                        <Conditions
-                            gender={accompanyData?.accompanyInfo?.gender}
-                            ageRange={Array.from(accompanyData?.accompanyInfo?.ageRange || [])}
-                        />
-                        <Categories
-                            category={Array.from(accompanyData?.accompanyInfo?.category || [])}
-                            tags={Array.from(accompanyData?.accompanyInfo?.tags || [])}
-                        />
+                    {/* Host info outside header */}
+                    <View style={styles.hostInfoContainer}>
+                        <Text style={styles.hostInfoText}>
+                            <Text style={styles.hostInfoLabel}>호스트 </Text>
+                            {accompanyData?.accompanyInfo?.createdByName}
+                            <Text style={styles.hostInfoLabel}>  게시일 </Text>
+                            {accompanyData?.accompanyInfo?.createdAt}
+                            <Text style={styles.hostInfoLabel}>  조회수 </Text>
+                            {accompanyData?.accompanyInfo?.views}
+                        </Text>
+                    </View>
 
-                        {/* 댓글 섹션 제목 (항상 표시) */}
-                        <View style={styles.commentDivider} />
-                        <Text style={styles.commentTitle}> 코멘트</Text>
+                    <EventSchedule
+                        travelStartDate={accompanyData?.accompanyInfo?.travelStartDate}
+                        travelEndDate={accompanyData?.accompanyInfo?.travelEndDate}
+                        recruitStartDate={accompanyData?.accompanyInfo?.recruitStartDate}
+                        recruitEndDate={accompanyData?.accompanyInfo?.recruitEndDate}
+                    />
+                    <Intro
+                        message={accompanyData?.accompanyInfo?.description}
+                        // photos={accompanyData?.accompanyInfo?.imageUrls || []}
+                    />
 
-                        {/* 댓글 목록 동적 렌더링 */}
-                        {comments.map((comment) => (
-                            <React.Fragment key={`comment_${comment.id}`}>
-                                <Comment
-                                    profileImage={comment.profileImage}
-                                    nickname={comment.nickname}
-                                    time={comment.time}
-                                    content={comment.content}
-                                    isHost={comment.isHost}
+                    <GatheringPlace
+                        location={accompanyData?.accompanyInfo?.meetingPoint}
+                    />
+                    <Conditions
+                        gender={accompanyData?.accompanyInfo?.gender}
+                        ageRange={Array.from(accompanyData?.accompanyInfo?.ageRange || [])}
+                    />
+                    <Categories
+                        category={Array.from(accompanyData?.accompanyInfo?.category || [])}
+                        tags={Array.from(accompanyData?.accompanyInfo?.tags || [])}
+                    />
+
+                    {/* 댓글 섹션 제목 (항상 표시) */}
+                    <View style={styles.commentDivider} />
+                    <Text style={styles.commentTitle}> 코멘트</Text>
+
+                    {/* 댓글 목록 동적 렌더링 */}
+
+                    {comments.map((comment) => (
+                        <React.Fragment key={`comment_${comment.id}`}>
+                            <Comment
+                                profileImage={comment.profileImage}
+                                nickname={comment.nickname}
+                                // 서버에서 받은 createdAt 또는 time 문자열을 직접 포맷팅 함수에 전달
+                                time={formatCommentTime(comment.createdAt || comment.time)}
+                                content={comment.content}
+                                isHost={comment.isHost}
+                                onReplyPress={() => handleReplyPress(comment.id)}
+                                style={comment.isTemporary ? { opacity: 0.7 } : {}}
+                            />
+
+                            {/* 답글들 렌더링 */}
+                            {comment.replies && comment.replies.map((reply) => (
+                                <Reply
+                                    key={`reply_${comment.id}_${reply.id}`}
+                                    profileImage={reply.profileImage}
+                                    nickname={reply.nickname}
+                                    // 답글도 동일하게 적용
+                                    time={formatCommentTime(reply.createdAt || reply.time)}
+                                    content={reply.content}
+                                    isHost={reply.isHost}
                                     onReplyPress={() => handleReplyPress(comment.id)}
-                                    style={comment.isTemporary ? { opacity: 0.7 } : {}}
+                                    style={reply.isTemporary ? { opacity: 0.7 } : {}}
                                 />
+                            ))}
+                        </React.Fragment>
+                    ))}
 
-                                {/* 답글들 렌더링 */}
-                                {comment.replies && comment.replies.map((reply) => (
-                                    <Reply
-                                        key={`reply_${comment.id}_${reply.id}`}
-                                        profileImage={reply.profileImage}
-                                        nickname={reply.nickname}
-                                        time={reply.time}
-                                        content={reply.content}
-                                        isHost={reply.isHost}
-                                        onReplyPress={() => handleReplyPress(comment.id)}
-                                        style={reply.isTemporary ? { opacity: 0.7 } : {}}
-                                    />
-                                ))}
-                            </React.Fragment>
-                        ))}
-                        
-                        <WriteComment
-                            onSend={handleSend}
-                            onFocus={() => {
-                                setTimeout(() => {
-                                    scrollViewRef.current?.scrollToEnd({ animated: true });
-                                }, 300);
-                            }}
-                            placeholder={
-                                replyingTo
-                                    ? "답글을 작성해주세요..."
-                                    : "50자 내로 코멘트를 작성해주세요."
-                            }
-                            isReplyMode={!!replyingTo}
-                            onCancel={cancelReply}
-                        />
-                    </ScrollView>
-                </KeyboardAvoidingView>
+                    
+                    <WriteComment
+                        onSend={handleSend}
+                        onFocus={() => {
+                            setTimeout(() => {
+                                scrollViewRef.current?.scrollToEnd({ animated: true });
+                            }, 300);
+                        }}
+                        placeholder={
+                            replyingTo
+                                ? "답글을 작성해주세요..."
+                                : "50자 내로 코멘트를 작성해주세요."
+                        }
+                        isReplyMode={!!replyingTo}
+                        onCancel={cancelReply}
+                    />
+                </ScrollView>
 
-                {/* 하단 버튼을 절대 위치로 고정 */}
+                {/* 하단 버튼을 키보드 위치에 따라 절대 위치로 조정 */}
                 {accompanyData?.accompanyInfo && (
-                <View style={styles.bottomButtonContainer}>
+                <View style={[
+                    styles.bottomButtonContainer,
+                    {
+                        bottom: keyboardVisible ? keyboardHeight : 0
+                    }
+                ]}>
                     <AccompanyBottomButton
                         isHost={isHost}
                         accompanyStatus={accompanyData?.accompanyInfo?.status}
@@ -965,7 +1054,6 @@ const styles = StyleSheet.create({
     },
     bottomButtonContainer: {
         position: 'absolute',
-        bottom: 0,
         left: 0,
         right: 0,
         backgroundColor: '#fff',
