@@ -33,7 +33,8 @@ const AccompanyList = () => {
     const [myCreatedAccompanyList, setMyCreatedAccompanyList] = useState([]);
     const [feedList, setFeedList] = useState([]);
 
-    const { currentUserId } = useAuth();
+    const { currentUserId: rawCurrentUserId } = useAuth();
+    const currentUserId = rawCurrentUserId ? rawCurrentUserId.toString() : null;
 
     const [loadingStates, setLoadingStates] = useState({
         feed: false,
@@ -134,11 +135,40 @@ const AccompanyList = () => {
                     return;
             }
             
-            updateDataLoadedState(tab, true);
-            if (data.length > 0) {
-                await fetchLikesForPosts(data);
+            if (rawData && rawData.length > 0) {
+                console.log("### API 응답 데이터 구조 확인:", JSON.stringify(rawData[0], null, 2));
             }
-            console.log(`✅ ${tab} 데이터 로딩 완료. (${data.length}개)`);
+
+            // 3. ✅ BigInt일 수 있는 모든 ID를 안전하게 문자열로 변환
+            const processedData = rawData.map(item => ({
+                ...item,
+                id: item.id?.toString(), // 기본 게시물 ID
+                // 만약 author 객체 안에 id가 있다면 아래처럼 추가
+                author: item.author ? {
+                    ...item.author,
+                    id: item.author.id?.toString()
+                } : item.author,
+                // (콘솔에서 확인 후 다른 BigInt ID가 있다면 여기에 계속 추가)
+            }));
+
+            // 4. ✅ 가공된 데이터를 state에 저장
+            switch (tab) {
+                case 'feed':
+                    setFeedList(processedData);
+                    break;
+                case 'mine':
+                    setMyCreatedAccompanyList(processedData);
+                    break;
+                case 'applied':
+                    setMyAppliedAccompanyList(processedData);
+                    break;
+            }
+            
+            updateDataLoadedState(tab, true);
+            if (processedData.length > 0) {
+                await fetchLikesForPosts(processedData);
+            }
+            console.log(`✅ ${tab} 데이터 로딩 완료. (${processedData.length}개)`);
 
         } catch (error) {
             console.error(`❌ ${tab} 데이터 로딩 실패:`, error);
