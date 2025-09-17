@@ -54,7 +54,7 @@ const LoginScreen = () => {
         </TouchableOpacity>
 
         <View style={styles.linksContainer}>
-          <TouchableOpacity onPress={() => router.push('/auth/password-reset')}>
+          <TouchableOpacity onPress={() => alert("기능 준비중입니다.\n관리자에게 문의 주시면 신속한 도움 드리겠습니다.\n불편을 드려 죄송합니다.") /*router.push('/auth/password-reset')*/}>
             <Text style={styles.linkText}>비밀번호 찾기</Text>
           </TouchableOpacity>
           <Text style={styles.linkSeparator}>l</Text>
