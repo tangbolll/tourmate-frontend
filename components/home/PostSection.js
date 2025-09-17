@@ -37,7 +37,9 @@ const PostSection = forwardRef((props, ref) => {
             
             if (result.success) {
                 const { content, totalPages, last } = result.data;
-                setPosts(content || []);
+                // uploadedDate를 기준으로 최신순으로 정렬
+                const sortedContent = (content || []).sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+                setPosts(sortedContent);
                 setCurrentPage(0);
                 setHasMoreData(!last && totalPages > 1);
             } else {
@@ -64,7 +66,9 @@ const PostSection = forwardRef((props, ref) => {
             
             if (result.success) {
                 const { content, totalPages, last } = result.data;
-                setPosts(content || []);
+                // uploadedDate를 기준으로 최신순으로 정렬
+                const sortedContent = (content || []).sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt));
+                setPosts(sortedContent);
                 setCurrentPage(0);
                 setHasMoreData(!last && totalPages > 1);
             } else {
@@ -106,7 +110,10 @@ const PostSection = forwardRef((props, ref) => {
                     }));
                 }
                 
-                setPosts(prevPosts => [...prevPosts, ...enhancedContent]);
+                // 이전 게시물과 새 게시물을 합친 후 정렬
+                setPosts(prevPosts => 
+                    [...prevPosts, ...enhancedContent].sort((a, b) => new Date(b.uploadedAt) - new Date(a.uploadedAt))
+                );
                 setCurrentPage(nextPage);
                 setHasMoreData(!last);
             } else {
