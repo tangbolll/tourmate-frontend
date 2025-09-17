@@ -8,9 +8,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseURL } from '../../../utils/apiConfig';
 import { searchLocation } from '../../../utils/locationUtils';
 import { WebView } from 'react-native-webview';
+import Constants from 'expo-constants';
+
 
 // 카카오 JavaScript API 키를 입력하세요.
-const kakaoJavaScriptApiKey = 'db029e231db073bfecc94156e14ecf9c';
+const kakaoJavaScriptApiKey = Constants.expoConfig.extra.kakaoJavaScriptApiKey;
 
 export default function ItineraryMap() {
   const router = useRouter();

@@ -3,14 +3,14 @@ import {
     View,
     Text,
     StyleSheet,
-    SafeAreaView,
     TouchableOpacity,
     ScrollView,
     Dimensions,
     Image,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
-import SaveButton from './SaveButton'; // SaveButton 컴포넌트 경로 확인
+import { useSafeAreaInsets } from 'react-native-safe-area-context'; // 훅 임포트
+import SaveButton from './SaveButton';
 
 const { width } = Dimensions.get('window');
 // 148:100 비율을 유지하기 위한 상수
@@ -42,6 +42,7 @@ const designImages = {
 };
 
 const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
+    const insets = useSafeAreaInsets(); // insets 값 가져오기
     const tabs = {
         Line: 1,
         Plain: 2,
@@ -117,7 +118,7 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top }]}>
             <View style={styles.header}>
                 <Text style={styles.headerTitle}>엽서 선택</Text>
                 <TouchableOpacity
@@ -160,7 +161,7 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                 {getDesignData().map((design) => renderPostcardDesign(design))}
             </ScrollView>
 
-            <View style={styles.saveButtonContainer}>
+            <View style={[styles.saveButtonContainer, { paddingBottom: insets.bottom || 16 }]}>
                 <SaveButton
                     title="엽서 선택"
                     onPress={handleSavePress}
@@ -168,7 +169,7 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                     style={styles.saveButton}
                 />
             </View>
-        </SafeAreaView>
+        </View>
     );
 };
 
