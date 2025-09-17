@@ -4,7 +4,7 @@
     "slug": "tourmate-frontend",
     "owner": "seoyeon88",
     "icon": "./assets/icon.png",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
@@ -14,6 +14,7 @@
       "bundleIdentifier": "com.tourmate.tourmate"
     },
     "android": {
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
