@@ -529,6 +529,32 @@ export const deletePostcardApi = async (postcardId) => {
     }
 };
 
+// 10. 불완전한 엽서 자동 삭제
+export const handleIncompletePostcard = async (postcardId) => {
+    if (!postcardId) {
+        console.log("🗑️ 유효하지 않은 엽서 ID, 삭제 로직을 건너뜁니다.");
+        return;
+    }
+
+    try {
+        console.log(`🔍 엽서 ${postcardId}의 완성 상태 확인 중...`);
+        const postcard = await getPostcardByIdApi(postcardId);
+
+        // imageUrl과 postcardType이 모두 없는 경우 (사용자가 내용을 추가하지 않은 경우)
+        const isEmpty = !postcard.imageUrl && !postcard.postcardType;
+
+        if (isEmpty) {
+            console.log(`🗑️ 엽서 ${postcardId}가 비어있어 삭제를 시도합니다.`);
+            await deletePostcardApi(postcardId);
+            console.log(`✅ 엽서 ${postcardId}가 성공적으로 삭제되었습니다.`);
+        } else {
+            console.log(`✅ 엽서 ${postcardId}는 내용이 채워져 있어 삭제하지 않습니다.`);
+        }
+    } catch (error) {
+        console.error(`❌ 불완전한 엽서 처리 중 오류 발생 (ID: ${postcardId}):`, error);
+    }
+};
+
 // ============================================================================
 // # 섹션 4: 엽서 상호작용 및 공개범위 API
 // ============================================================================

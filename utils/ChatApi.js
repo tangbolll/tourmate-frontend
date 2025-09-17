@@ -276,6 +276,9 @@ export const getMyChatRooms = async (userId) => {
                 // 🔧 시간 처리 - UTC → 한국시간 변환 적용
                 createdAt: formatChatTimestamp(
                     room.lastMessageTime || 
+                    room.last_message_time || // snake_case 버전
+                    room.lastActivity ||     // 다른 일반적인 이름
+                    room.last_activity_at || // 다른 일반적인 이름
                     room.updatedAt || 
                     room.lastUpdated || 
                     room.createdAt || 

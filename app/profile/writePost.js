@@ -19,6 +19,7 @@ import {
     updatePostcardApi,
     deleteFolderApi,
     togglePostcardPublicScopeApi,
+    handleIncompletePostcard,
 } from "../../utils/PostCardApi";
 
 const postcardTemplates = {
@@ -42,6 +43,20 @@ const postcardTemplates = {
 const WritePost = () => {
     const router = useRouter();
     const params = useLocalSearchParams();
+
+    useEffect(() => {
+        const postcardIdToCheck = params.postcardId;
+        // 'startInEditMode'는 편집이 필요한 새로 생성된 엽서를 나타내는 플래그입니다.
+        const shouldCheckOnExit = params.startInEditMode === 'true' && postcardIdToCheck;
+
+        // 이 반환 함수는 컴포넌트가 마운트 해제될 때 실행되는 정리 함수입니다.
+        return () => {
+            if (shouldCheckOnExit) {
+                console.log(`화면을 벗어납니다. 새 엽서(ID: ${postcardIdToCheck})의 완성 여부를 확인하고, 비어있으면 삭제합니다.`);
+                handleIncompletePostcard(postcardIdToCheck);
+            }
+        };
+    }, [params.postcardId, params.startInEditMode]); // effect의 의존성
 
     const [isLoading, setIsLoading] = useState(true);
 
