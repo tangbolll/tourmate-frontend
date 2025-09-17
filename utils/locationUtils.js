@@ -1,6 +1,9 @@
+import Constants from 'expo-constants';
 
-const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
+
+const kakaoRestApiKey = Constants.expoConfig.extra.kakaoRestApiKey;
 const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
+
 
 export const searchLocation = async (query) => {
     if (!query || typeof query !== 'string' || query.trim() === '') {

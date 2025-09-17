@@ -10,7 +10,8 @@ import {
     Keyboard,
     Dimensions,
     TextInput,
-    Platform
+    Platform,
+    KeyboardAvoidingView
 } from 'react-native';
 import ScheduleHeader from './ScheduleHeader';
 import ScheduleCategorySelector from './ScheduleCategorySelector';
@@ -19,6 +20,7 @@ import ScheduleTimeInput from './ScheduleTimeInput';
 import ScheduleLocationInput from './ScheduleLocationInput';
 import ScheduleMemoInput from './ScheduleMemoInput';
 import ScheduleActions from './ScheduleActions';
+import Constants from 'expo-constants';
 
 const { height: screenHeight } = Dimensions.get('window');
 
@@ -42,7 +44,6 @@ const AddSchedule = ({
     initialTitle = '',
     initialLocation = '',
 }) => {
-    // --- State Management ---
     const [category, setCategory] = useState('숙소');
     const [title, setTitle] = useState('');
     const [startTime, setStartTime] = useState('07:00');
@@ -55,21 +56,16 @@ const AddSchedule = ({
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
-
-    // --- Refs ---
-    const scrollViewRef = useRef(null);
     const [memoHeight, setMemoHeight] = useState(40);
     const [memoFocused, setMemoFocused] = useState(false);
-    const prevInitialLocationRef = useRef('');
-    const hasInitializedRef = useRef(false);
-    const prevVisibleRef = useRef(visible);
 
-    // --- Constants ---
+    const scrollViewRef = useRef(null);
+    const prevInitialLocationRef = useRef('');
     const isEditMode = !!existingSchedule;
     const popupTitle = isEditMode ? '일정 수정' : '일정 추가';
     const isSaveEnabled = title.trim() && location.trim() && currentSelectedDate;
 
-    const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
+    const kakaoRestApiKey = Constants.expoConfig.extra.kakaoRestApiKey;
     const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 
     const categories = [
@@ -79,20 +75,18 @@ const AddSchedule = ({
         { key: '휴식', label: '휴식', icon: 'pause-circle', color: '#C6D6C3' }
     ];
 
-    // --- Helpers ---
     const availableDates = useMemo(() => {
         const dateList = [];
         if (periodType === 'date' && startDate && endDate) {
             const start = new Date(startDate);
             const end = new Date(endDate);
             for (let date = new Date(start); date <= end; date.setDate(date.getDate() + 1)) {
-                const dateString = date.toISOString().split('T')[0];
                 const year = date.getFullYear();
                 const month = String(date.getMonth() + 1).padStart(2, '0');
                 const day = String(date.getDate()).padStart(2, '0');
                 const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
                 const dayName = dayNames[date.getDay()];
-                dateList.push({ value: dateString, label: `${year}-${month}-${day} (${dayName})` });
+                dateList.push({ value: date.toISOString().split('T')[0], label: `${year}-${month}-${day} (${dayName})` });
             }
         } else if (periodType === 'duration' && days) {
             for (let i = 1; i <= days; i++) {
@@ -102,10 +96,8 @@ const AddSchedule = ({
         return dateList;
     }, [periodType, startDate, endDate, days]);
 
-    // performInitialSearch를 useCallback으로 메모화
     const performInitialSearch = useCallback(async (query) => {
         if (!query || query.trim().length === 0) return;
-        
         try {
             const response = await fetch(`${KAKAO_API_URL}?query=${encodeURIComponent(query)}&size=1`, {
                 headers: { 'Authorization': `KakaoAK ${kakaoRestApiKey}` }
@@ -127,11 +119,7 @@ const AddSchedule = ({
         }
     }, [kakaoRestApiKey, KAKAO_API_URL]);
 
-    // --- Effects ---
-    
-    // visible 상태가 변경될 때만 처리
     useEffect(() => {
-        // 모달이 닫히면 상태를 초기화합니다.
         if (!visible) {
             setCategory('숙소');
             setTitle('');
@@ -147,9 +135,7 @@ const AddSchedule = ({
             return;
         }
 
-        // 모달이 열릴 때만 실행되는 초기화 로직
         if (existingSchedule) {
-            // 편집 모드: 기존 일정 데이터를 불러옵니다.
             const locationData = existingSchedule.location;
             if (typeof locationData === 'object' && locationData !== null && locationData.place_name) {
                 setLocation(locationData.place_name);
@@ -165,7 +151,6 @@ const AddSchedule = ({
             setEndTime(existingSchedule.endTime || '08:00');
             setCurrentSelectedDate(existingSchedule.date || existingSchedule.dayDescription || '');
         } else {
-            // 추가 모드: 초기값을 설정하고 initialLocation이 있으면 검색합니다.
             const defaultStartTime = propStartTime || (hour !== undefined && minute !== undefined ? `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}` : '07:00');
             const defaultEndTime = propEndTime || (hour !== undefined && minute !== undefined ? `${String((hour + 1) % 24).padStart(2, '0')}:${String(minute).padStart(2, '0')}` : '08:00');
             const defaultDate = selectedDate || (selectedDay && availableDates[selectedDay - 1] ? availableDates[selectedDay - 1].value : (availableDates.length > 0 ? availableDates[0].value : ''));
@@ -177,55 +162,50 @@ const AddSchedule = ({
             setEndTime(defaultEndTime);
             setCurrentSelectedDate(defaultDate);
 
-            // initialLocation이 있을 때만 검색 실행하고,
-            // 그렇지 않으면 location 상태를 건드리지 않도록 수정
             if (initialLocation && initialLocation.trim() && prevInitialLocationRef.current !== initialLocation) {
                 prevInitialLocationRef.current = initialLocation;
                 performInitialSearch(initialLocation);
-            } else {
-                // 이 부분을 삭제하여 불필요한 setLocation 호출을 막습니다.
-                // setLocation('');
-                // setSelectedLocationObject(null);
             }
         }
     }, [visible, existingSchedule, initialLocation, performInitialSearch, propStartTime, propEndTime, selectedDate, selectedDay, availableDates, hour, minute]);
 
-    // 메모 포커스 핸들러
+    // 키보드가 올라올 때 항상 맨 아래로 스크롤
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', () => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+        });
+        return () => keyboardDidShowListener.remove();
+    }, []);
+
     const handleMemoFocus = useCallback(() => {
         setMemoFocused(true);
-        if (scrollViewRef.current) {
-            setTimeout(() => {
-                scrollViewRef.current.scrollToEnd({ animated: true });
-            }, 100);
-        }
+        setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
     }, []);
 
-    const handleMemoBlur = useCallback(() => {
-        setMemoFocused(false);
+    const handleMemoBlur = useCallback(() => setMemoFocused(false), []);
+
+    const handleLocationFocus = useCallback(() => {
+        setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
     }, []);
 
-    // --- Search Handlers ---
     const handleLocationSearch = useCallback(async (query) => {
-        console.log('Location search called with:', query);
         setLocation(query);
         setSelectedLocationObject(null);
-
         if (query.trim().length < 2) {
             setSearchResults([]);
             setShowSearchResults(false);
             return;
         }
-
         setIsSearching(true);
         setShowSearchResults(true);
-
         try {
             const response = await fetch(`${KAKAO_API_URL}?query=${encodeURIComponent(query)}&size=10`, {
                 method: 'GET',
-                headers: {
-                    'Authorization': `KakaoAK ${kakaoRestApiKey}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'Authorization': `KakaoAK ${kakaoRestApiKey}`, 'Content-Type': 'application/json' }
             });
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
             const data = await response.json();
@@ -245,31 +225,22 @@ const AddSchedule = ({
         Keyboard.dismiss();
     }, []);
 
-    // --- Action Handlers ---
     const handleSave = useCallback(() => {
         if (!title.trim() || !location.trim() || !currentSelectedDate) {
             Alert.alert('알림', '제목, 위치, 날짜는 필수 입력 항목입니다.');
             return;
         }
-
         const timeToMinutes = (timeString) => {
             const [hours, minutes] = timeString.split(':').map(Number);
             return hours * 60 + minutes;
         };
-        const startMinutes = timeToMinutes(startTime);
-        const endMinutes = timeToMinutes(endTime);
-
-        if (startMinutes >= endMinutes) {
+        if (timeToMinutes(startTime) >= timeToMinutes(endTime)) {
             Alert.alert('오류', '종료 시간은 시작 시간보다 늦어야 합니다.');
             return;
         }
-
-        let datePayload = {};
-        if (typeof currentSelectedDate === 'string' && currentSelectedDate.includes('일차')) {
-            datePayload = { date: null, dayDescription: currentSelectedDate };
-        } else {
-            datePayload = { date: currentSelectedDate, dayDescription: null };
-        }
+        const datePayload = currentSelectedDate.includes('일차')
+            ? { date: null, dayDescription: currentSelectedDate }
+            : { date: currentSelectedDate, dayDescription: null };
 
         const scheduleData = {
             id: existingSchedule?.id || null,
@@ -277,7 +248,7 @@ const AddSchedule = ({
             title: title.trim(),
             startTime,
             endTime,
-            location: selectedLocationObject ? selectedLocationObject : location.trim(),
+            location: selectedLocationObject || location.trim(),
             memo: memo.trim(),
             travelId: currentTourId,
             ...datePayload,
@@ -288,18 +259,10 @@ const AddSchedule = ({
 
     const handleDelete = useCallback(() => {
         if (onScheduleDelete && existingSchedule?.id) {
-            Alert.alert(
-                '일정 삭제',
-                '정말로 이 일정을 삭제하시겠습니까?',
-                [
-                    { text: '취소', style: 'cancel' },
-                    {
-                        text: '삭제',
-                        style: 'destructive',
-                        onPress: () => onScheduleDelete(existingSchedule.id)
-                    }
-                ]
-            );
+            Alert.alert('일정 삭제', '정말로 이 일정을 삭제하시겠습니까?', [
+                { text: '취소', style: 'cancel' },
+                { text: '삭제', style: 'destructive', onPress: () => onScheduleDelete(existingSchedule.id) }
+            ]);
         } else {
             Alert.alert('오류', '삭제할 일정이 없거나 삭제 함수가 전달되지 않았습니다.');
         }
@@ -315,115 +278,85 @@ const AddSchedule = ({
         }
     }, [showDateDropdown, showSearchResults, onClose]);
 
-    // location prop을 메모화하여 ScheduleLocationInput의 불필요한 렌더링 방지
     const locationInputProps = useMemo(() => ({
         location,
         setLocation,
-        onChangeText: handleLocationSearch
-    }), [location, handleLocationSearch]);
-
-    console.log('AddSchedule render - location:', location);
+        onChangeText: handleLocationSearch,
+        onFocus: handleLocationFocus
+    }), [location, handleLocationSearch, handleLocationFocus]);
 
     return (
-        <Modal
-            visible={visible}
-            transparent={true}
-            animationType="fade"
-            onRequestClose={onClose}
-        >
-            <TouchableOpacity
-                style={commonStyles.overlay}
-                activeOpacity={1}
-                onPress={handleOverlayPress}
-            >
-                <TouchableOpacity
-                    style={[
-                        commonStyles.container,
-                        memoFocused && { transform: [{ translateY: -100 }] }
-                    ]}
-                    activeOpacity={1}
-                >
-                    <ScheduleHeader
-                        title={popupTitle}
-                        onClose={onClose}
-                    />
-                    <ScrollView
-                        ref={scrollViewRef}
-                        style={commonStyles.content}
-                        showsVerticalScrollIndicator={false}
-                        keyboardShouldPersistTaps="handled"
-                    >
-                        <View style={commonStyles.section}>
-                            <TextInput
-                                style={commonStyles.titleInput}
-                                value={title}
-                                onChangeText={setTitle}
-                                placeholder="일정 제목 입력 *"
-                                placeholderTextColor="#CCCCCC"
+        <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+            <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+                <TouchableOpacity style={commonStyles.overlay} activeOpacity={1} onPress={handleOverlayPress}>
+                    <TouchableOpacity style={[commonStyles.container, { maxHeight: '80%' }]} activeOpacity={1}>
+                        <ScheduleHeader title={popupTitle} onClose={onClose} />
+                        <ScrollView
+                            ref={scrollViewRef}
+                            style={commonStyles.content}
+                            showsVerticalScrollIndicator={false}
+                            keyboardShouldPersistTaps="handled"
+                        >
+                            <View style={commonStyles.section}>
+                                <TextInput
+                                    style={commonStyles.titleInput}
+                                    value={title}
+                                    onChangeText={setTitle}
+                                    placeholder="일정 제목 입력 *"
+                                    placeholderTextColor="#CCCCCC"
+                                />
+                            </View>
+                            <ScheduleCategorySelector categories={categories} selectedCategory={category} onSelectCategory={setCategory} />
+                            <ScheduleDateInput
+                                currentSelectedDate={currentSelectedDate}
+                                availableDates={availableDates}
+                                showDateDropdown={showDateDropdown}
+                                setShowDateDropdown={setShowDateDropdown}
+                                handleDateSelect={setCurrentSelectedDate}
                             />
-                        </View>
-                        <ScheduleCategorySelector
-                            categories={categories}
-                            selectedCategory={category}
-                            onSelectCategory={setCategory}
-                        />
-                        <ScheduleDateInput
-                            currentSelectedDate={currentSelectedDate}
-                            availableDates={availableDates}
-                            showDateDropdown={showDateDropdown}
-                            setShowDateDropdown={setShowDateDropdown}
-                            handleDateSelect={setCurrentSelectedDate}
-                        />
-                        <ScheduleTimeInput
-                            startTime={startTime}
-                            setStartTime={setStartTime}
-                            endTime={endTime}
-                            setEndTime={setEndTime}
-                        />
-                        <View style={{ zIndex: 1000 }}>
-                            <ScheduleLocationInput
-                                {...locationInputProps}
+                            <ScheduleTimeInput startTime={startTime} setStartTime={setStartTime} endTime={endTime} setEndTime={setEndTime} />
+                            <View style={{ zIndex: 1000, position: 'relative' }}>
+                                <ScheduleLocationInput {...locationInputProps} />
+                                {showSearchResults && (
+                                    <View style={styles.searchResultsContainer}>
+                                        <ScrollView
+                                            nestedScrollEnabled={true} // 중첩 스크롤 허용
+                                            keyboardShouldPersistTaps="handled"
+                                        >
+                                            {isSearching ? (
+                                                <Text style={styles.infoText}>검색 중...</Text>
+                                            ) : searchResults.length > 0 ? (
+                                                searchResults.map((item, index) => (
+                                                    <TouchableOpacity
+                                                        key={item.id || index}
+                                                        onPress={() => handleLocationSelect(item)}
+                                                        style={styles.searchResultItem}
+                                                    >
+                                                        <Text style={styles.placeName}>{item.place_name}</Text>
+                                                        <Text style={styles.addressName}>{item.address_name}</Text>
+                                                    </TouchableOpacity>
+                                                ))
+                                            ) : (
+                                                <Text style={styles.infoText}>검색 결과가 없습니다.</Text>
+                                            )}
+                                        </ScrollView>
+                                    </View>
+                                )}
+
+                            </View>
+                            <ScheduleMemoInput
+                                memo={memo}
+                                setMemo={setMemo}
+                                memoHeight={memoHeight}
+                                setMemoHeight={setMemoHeight}
+                                onFocus={handleMemoFocus}
+                                onBlur={handleMemoBlur}
                             />
-                            {showSearchResults && (
-                                <View style={styles.searchResultsContainer}>
-                                    <ScrollView nestedScrollEnabled={true} style={{ maxHeight: 150 }}>
-                                        {isSearching ? (
-                                            <Text style={styles.infoText}>검색 중...</Text>
-                                        ) : searchResults.length > 0 ? (
-                                            searchResults.map((item, index) => (
-                                                <TouchableOpacity
-                                                    key={item.id || index}
-                                                    onPress={() => handleLocationSelect(item)}
-                                                    style={styles.searchResultItem}
-                                                >
-                                                    <Text style={styles.placeName}>{item.place_name}</Text>
-                                                    <Text style={styles.addressName}>{item.address_name}</Text>
-                                                </TouchableOpacity>
-                                            ))
-                                        ) : (
-                                            <Text style={styles.infoText}>검색 결과가 없습니다.</Text>
-                                        )}
-                                    </ScrollView>
-                                </View>
-                            )}
-                        </View>
-                        <ScheduleMemoInput
-                            memo={memo}
-                            setMemo={setMemo}
-                            memoHeight={memoHeight}
-                            setMemoHeight={setMemoHeight}
-                            onFocus={handleMemoFocus}
-                            onBlur={handleMemoBlur}
-                        />
-                    </ScrollView>
-                    <ScheduleActions
-                        isEditMode={isEditMode}
-                        isSaveEnabled={isSaveEnabled}
-                        onDelete={handleDelete}
-                        onSave={handleSave}
-                    />
+                        </ScrollView>
+                        <ScheduleActions isEditMode={isEditMode} isSaveEnabled={isSaveEnabled} onDelete={handleDelete} onSave={handleSave} />
+                    </TouchableOpacity>
                 </TouchableOpacity>
-            </TouchableOpacity>
+            </KeyboardAvoidingView>
         </Modal>
     );
 };
@@ -479,6 +412,13 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         borderColor: '#ccc',
         marginTop: 4,
+        zIndex: 10000,
+        elevation: 10000,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        maxHeight: 200, // 컨테이너 자체에 최대 높이 지정
     },
     searchResultItem: {
         paddingVertical: 10,

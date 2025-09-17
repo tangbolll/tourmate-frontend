@@ -50,13 +50,7 @@ const PostcardSlider = ({
                     );
                 })}
                 
-                {/* 더 추가하기 버튼 */}
-                <TouchableOpacity 
-                    style={styles.addButton} 
-                    onPress={onAddNewPostcard}
-                >
-                    <Feather name="plus" size={24} color="#999" />
-                </TouchableOpacity>
+                
             </ScrollView>
         </View>
     );

@@ -1,6 +1,18 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Image, ScrollView } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { API_URL } from '../../utils/apiConfig'; // API_URL 임포트
+
+// 이미지 전체 URL을 만들어주는 헬퍼 함수
+const getFullImageUrl = (imagePath) => {
+    if (!imagePath) {
+        return null; // 이미지 경로가 없으면 null 반환
+    }
+    if (imagePath.startsWith('http')) {
+        return imagePath; // 이미 전체 URL인 경우 그대로 반환
+    }
+    return `${API_URL}${imagePath}`; // 상대 경로인 경우 API_URL과 조합
+};
 
 const MemberPopup = ({ members, onClose, maxParticipants }) => {
     const participants = members.length;
@@ -27,27 +39,31 @@ const MemberPopup = ({ members, onClose, maxParticipants }) => {
                     style={styles.membersList} 
                     contentContainerStyle={styles.membersListContent}
                 >
-                    {members.map((member, index) => (
-                        <View key={index} style={styles.memberItem}>
-                            <Image 
-                                source={require('../../assets/defaultprofile.png')} 
-                                style={styles.profileImage}
-                                defaultSource={require('../../assets/defaultprofile.png')}
-                            />
-                            <View style={styles.memberInfoContainer}>
-                                <View style={styles.memberInfo}>
-                                    <Text style={styles.memberName}>{member.name}</Text>
-                                    <Text style={styles.memberDetail}> · {member.gender} · {member.age}세</Text>
-                                    {member.isHost && <Text style={styles.hostLabel}>호스트</Text>}
-                                </View>
-                                <View style={styles.tagContainer}>
-                                    {member.tags.map((tag, tagIndex) => (
-                                        <Text key={tagIndex} style={styles.tag}>#{tag}</Text>
-                                    ))}
+                    {members.map((member, index) => {
+                        // 각 멤버의 프로필 이미지 URL 가져오기
+                        const imageUrl = getFullImageUrl(member.profileImage);
+                        return (
+                            <View key={index} style={styles.memberItem}>
+                                <Image 
+                                    // imageUrl이 있으면 uri를, 없으면 기본 이미지를 사용
+                                    source={imageUrl ? { uri: imageUrl } : require('../../assets/defaultprofile.png')} 
+                                    style={styles.profileImage}
+                                />
+                                <View style={styles.memberInfoContainer}>
+                                    <View style={styles.memberInfo}>
+                                        <Text style={styles.memberName}>{member.name}</Text>
+                                        <Text style={styles.memberDetail}> · {member.gender} · {member.age}세</Text>
+                                        {member.isHost && <Text style={styles.hostLabel}>호스트</Text>}
+                                    </View>
+                                    <View style={styles.tagContainer}>
+                                        {member.tags.map((tag, tagIndex) => (
+                                            <Text key={tagIndex} style={styles.tag}>#{tag}</Text>
+                                        ))}
+                                    </View>
                                 </View>
                             </View>
-                        </View>
-                    ))}
+                        );
+                    })}
                 </ScrollView>
             </View>
         </View>

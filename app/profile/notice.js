@@ -12,12 +12,12 @@ const noticesData = [
     title: 'TOURMATE가 출시되었습니다🥳',
     date: '2025.09.07',
   },
-  // {
-  //   id: '1',
-  //   category: '가이드',
-  //   title: '여행 후 엽서를 만드는 방법을 알아보세요',
-  //   date: '2025.09.01',
-  // },
+  {
+    id: '1',
+    category: '업데이트',
+    title: 'TOURMATE v1.0.2 업데이트😄',
+    date: '2025.09.17',
+  },
   // {
   //   id: '2',
   //   category: '가이드',

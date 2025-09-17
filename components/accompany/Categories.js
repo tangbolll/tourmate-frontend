@@ -47,7 +47,7 @@ const styles = StyleSheet.create({
     },
     row: {
         flexDirection: 'row',
-        alignItems: 'flex-start',
+        alignItems: 'center',
         marginBottom: 8,
     },
     tagSection: {
@@ -56,9 +56,9 @@ const styles = StyleSheet.create({
     label: {
         fontSize: 16,
         fontWeight: '500',
-        marginTop: 6,
         marginLeft: 8,
         width: 40,
+        marginTop: 2, // 시각적 보정을 위한 미세 조정
     },
     chipContainer: {
         flexDirection: 'row',

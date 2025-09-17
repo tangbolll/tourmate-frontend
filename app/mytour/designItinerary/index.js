@@ -645,7 +645,7 @@ const transformAIResponseToSchedules = async (aiData, travelId, period = { type:
                 travelId: currentTourId,
                 timeSlot: `${newScheduleData.startTime} ~ ${newScheduleData.endTime}`,
                 title: newScheduleData.title,
-                tag: newScheduleData.category || 'CUSTOM',
+                tag: newScheduleData.tag || 'CUSTOM',
                 location: locationName,
                 latitude: latitude !== null ? latitude : 0.0,
                 longitude: longitude !== null ? longitude : 0.0,

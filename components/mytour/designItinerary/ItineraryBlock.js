@@ -133,15 +133,23 @@ const timeSlotUtils = {
 
 // 일정 관련 유틸리티
 const scheduleUtils = {
-    getCategoryStyle: (category) => {
-        const categoryStyles = {
+    getCategoryStyle: (category, isAiSuggestion = false) => {
+        const baseStyles = {
             '숙소': { backgroundColor: '#FFF5CC', borderColor: '#FFD965', textColor: '#000' },
             '식사': { backgroundColor: '#FFE5D5', borderColor: '#FF9E6D', textColor: '#000' },
             '관광': { backgroundColor: '#E6F1FB', borderColor: '#A3C8E9', textColor: '#000' },
             '휴식': { backgroundColor: '#EFF5EC', borderColor: '#C6D6C3', textColor: '#000' }
         };
 
-        return categoryStyles[category] || categoryStyles['관광'];
+        const aiStyles = {
+            '숙소': { backgroundColor: '#FFFCF2', borderColor: '#FFEEC2', textColor: '#777' },
+            '식사': { backgroundColor: '#FFF5F0', borderColor: '#FFCBB3', textColor: '#777' },
+            '관광': { backgroundColor: '#F5FAFF', borderColor: '#D1E3F4', textColor: '#777' },
+            '휴식': { backgroundColor: '#F7FAF5', borderColor: '#E3EAE2', textColor: '#777' }
+        };
+
+        const styles = isAiSuggestion ? aiStyles : baseStyles;
+        return styles[category] || (isAiSuggestion ? aiStyles['관광'] : baseStyles['관광']);
     },
 
     getScheduleInfo: (dayNumber, timeSlot, scheduleData) => {
@@ -306,7 +314,7 @@ const TimeBlock = ({
         return null;
     }
 
-    const categoryStyle = scheduleUtils.getCategoryStyle(schedule.tag);
+    const categoryStyle = scheduleUtils.getCategoryStyle(schedule.tag, schedule.isAiSuggestion);
     // 일정 블록의 높이는 일정의 총 분 단위 길이를 픽셀 스케일로 변환하여 계산
     const calculatedHeight = (
         scheduleUtils.calculateBlockHeight(
@@ -352,6 +360,10 @@ const TimeBlock = ({
                     </View>
                 )}
             </View>
+            {/* AI 제안 라벨 추가 */}
+            {schedule.isAiSuggestion && (
+                <Text style={styles.aiLabel}>AI 제안</Text>
+            )}
         </TouchableOpacity>
     );
 };
@@ -690,6 +702,18 @@ const styles = StyleSheet.create({
         color: '#9ca3af',
         textAlign: 'center',
         fontWeight: '300',
+    },
+    aiLabel: {
+        position: 'absolute',
+        bottom: 4,
+        right: 6,
+        fontSize: 9,
+        fontWeight: 'bold',
+        color: '#007BFF',
+        paddingHorizontal: 3,
+        paddingVertical: 1,
+        borderRadius: 3,
+        overflow: 'hidden', // borderRadius를 적용하기 위해 추가
     },
 });
 

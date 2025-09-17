@@ -33,7 +33,7 @@
         "GOOGLE_MAPS_API_KEY": "AIzaSyDrGxwjhoKQw7-3ds0GvjeCYNdDSguAqWc"
       },
       "android": {
-        "buildType": "apk",
+        "buildType": "app-bundle",
         "image": "latest"
       }
     }

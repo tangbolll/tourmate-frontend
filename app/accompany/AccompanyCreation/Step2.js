@@ -387,7 +387,6 @@ const styles = StyleSheet.create({
     },
     chip: {
         height: 30,
-        paddingVertical: 6,
         paddingHorizontal: 10,
         backgroundColor: '#fff',
         borderRadius: 20,
@@ -395,6 +394,8 @@ const styles = StyleSheet.create({
         borderWidth: 1,
         marginRight: 5,
         marginBottom: 7,
+        justifyContent: 'center', // 수직 중앙 정렬
+        alignItems: 'center',     // 수평 중앙 정렬
     },
     chipSelected: {
         backgroundColor: '#222',

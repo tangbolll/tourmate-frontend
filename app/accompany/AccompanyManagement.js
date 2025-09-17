@@ -102,31 +102,55 @@ const AccompanyManagement = () => {
 
     // 신청 수락 처리 - ID 타입 변환 추가
     const handleAcceptApplication = async (applicantId) => {
+        const currentCount = participants.length;
+        const info = accompanyData?.accompanyInfo;
+        let maxCount = null;
+
+        // 디버깅을 위해 info 객체 전체를 콘솔에 출력
+        console.log('[수락 로직 디버깅] accompanyInfo 객체:', info);
+
+        if (info) {
+            const possibleFields = ['maxRecruit', 'maxParticipants', 'maxMember', 'recruitNum'];
+            for (const field of possibleFields) {
+                const value = info[field];
+                if (value !== null && value !== undefined && !isNaN(Number(value))) {
+                    maxCount = Number(value);
+                    console.log(`[수락 로직 디버깅] '${field}' 필드에서 최대 인원 (${maxCount})을 찾았습니다.`);
+                    break;
+                }
+            }
+        }
+
+        // maxCount를 찾지 못한 경우, 사용자에게 알리고 함수를 중단
+        if (maxCount === null) {
+            Alert.alert(
+                '데이터 오류', 
+                '최대 모집 인원 정보를 찾을 수 없어 수락을 진행할 수 없습니다. 서버 응답 데이터를 확인해주세요.\n\n받은 정보: ' + JSON.stringify(info, null, 2)
+            );
+            return;
+        }
+
+        console.log('[수락 로직 디버깅] 최종 인원 체크:', { currentCount, maxCount });
+
+        if (currentCount >= maxCount) {
+            Alert.alert('모집 완료', '모집 정원이 다 찼습니다. 더 이상 수락할 수 없습니다.');
+            return;
+        }
+
         try {
-            console.log('🔍 수락 버튼 클릭:', { applicantId, type: typeof applicantId });
-            
-            // ✅ ID를 숫자로 변환
             const numericApplicantId = Number(applicantId);
-            
             if (isNaN(numericApplicantId)) {
-                console.error('❌ 유효하지 않은 applicantId:', applicantId);
                 Alert.alert('오류', '유효하지 않은 사용자 ID입니다.');
                 return;
             }
             
             await acceptApplicationApi(postId, numericApplicantId);
             
-            // UI 업데이트: 신청자를 참가자로 이동
-            console.log('Before accept - applicants:', applicants.map(a => a.userId));
-            console.log('Before accept - participants:', participants.map(p => p.userId));
             const acceptedApplicant = applicants.find(app => Number(app.userId) === numericApplicantId);
-            console.log('Accepted applicant found:', acceptedApplicant);
             if (acceptedApplicant) {
                 const newApplicants = applicants.filter(app => Number(app.userId) !== numericApplicantId);
                 const newParticipants = [...participants, { ...acceptedApplicant, isHost: false }];
                 updateParticipants(newApplicants, newParticipants);
-                console.log('After accept - new applicants (Zustand):', newApplicants.map(a => a.userId));
-                console.log('After accept - new participants (Zustand):', newParticipants.map(p => p.userId));
             }
             
             Alert.alert('성공', '신청을 수락했습니다.');

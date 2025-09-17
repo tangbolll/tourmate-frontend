@@ -2,9 +2,8 @@ import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-// React.memo로 컴포넌트를 감싸서 props가 변경될 때만 리렌더링되도록 최적화
-const ScheduleLocationInput = React.memo(({ location, setLocation }) => {
-    console.log('ScheduleLocationInput location prop:', location);
+const ScheduleLocationInput = React.memo(({ location, setLocation, onChangeText }) => {
+    console.log('ScheduleLocationInput props:', { location, hasOnChangeText: !!onChangeText });
 
     return (
         <View style={commonStyles.section}>
@@ -15,7 +14,15 @@ const ScheduleLocationInput = React.memo(({ location, setLocation }) => {
                 <TextInput
                     style={commonStyles.input}
                     value={location}
-                    onChangeText={setLocation}
+                    onChangeText={(text) => {
+                        console.log('TextInput onChange:', text);
+                        // onChangeText가 있으면 검색 실행, 없으면 setLocation만 실행
+                        if (onChangeText) {
+                            onChangeText(text); // 이게 handleLocationSearch 호출
+                        } else if (setLocation) {
+                            setLocation(text);
+                        }
+                    }}
                     placeholder="위치 추가 *"
                     placeholderTextColor="#CCCCCC"
                 />
