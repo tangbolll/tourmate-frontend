@@ -10,7 +10,6 @@ import { searchLocation } from '../../../utils/locationUtils';
 import { WebView } from 'react-native-webview';
 import Constants from 'expo-constants';
 
-
 // 카카오 JavaScript API 키를 입력하세요.
 const kakaoJavaScriptApiKey = Constants.expoConfig.extra.kakaoJavaScriptApiKey;
 
@@ -25,7 +24,7 @@ export default function ItineraryMap() {
   // --- 상태 관리 ---
   const [scheduleData, setScheduleData] = useState({});
   const [selectedLocationId, setSelectedLocationId] = useState(null);
-  const [selectedDay, setSelectedDay] = useState(1); // 'all' 대신 1로 초기화
+  const [selectedDay, setSelectedDay] = useState(1);
   const [isWebViewReady, setIsWebViewReady] = useState(false);
 
   // --- Ref 관리 ---
@@ -43,7 +42,7 @@ export default function ItineraryMap() {
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
         return diffDays + 1;
     }
-    return 1; // Default to 1 if no period info is available
+    return 1;
   }, [period]);
 
   // --- API 데이터 로딩 ---
@@ -71,7 +70,7 @@ export default function ItineraryMap() {
                 ...item,
                 latitude: parseFloat(locationData.y),
                 longitude: parseFloat(locationData.x),
-                name: locationData.place_name, // Update name from search result
+                name: locationData.place_name,
               };
             }
           }
@@ -122,33 +121,43 @@ export default function ItineraryMap() {
   }, [tourId, period.type]);
 
   // --- 마커 데이터 ---
-const markersToDisplay = useMemo(() => {
-  const dayData = scheduleData[selectedDay] || [];
-  
-  // BottomSheet와 동일한 로직으로 시간순 정렬 및 order 재부여
-  const sortedData = [...dayData] // 원본 배열을 변경하지 않기 위해 복사
-    .sort((a, b) => {
-      if (a.startTime && b.startTime) {
-        return a.startTime.localeCompare(b.startTime);
-      }
-      return 0;
-    })
-    .map((item, index) => ({
-      ...item,
-      order: index + 1 // 새로운 order 번호 부여
-    }));
+  const markersToDisplay = useMemo(() => {
+    const dayData = scheduleData[selectedDay] || [];
     
-  return sortedData;
-}, [selectedDay, scheduleData]);  
+    const sortedData = [...dayData]
+      .sort((a, b) => {
+        if (a.startTime && b.startTime) {
+          return a.startTime.localeCompare(b.startTime);
+        }
+        return 0;
+      })
+      .map((item, index) => ({
+        ...item,
+        order: index + 1
+      }));
+      
+    return sortedData;
+  }, [selectedDay, scheduleData]);  
+
   // --- WebView가 준비되고 마커가 변경될 때, 웹뷰로 데이터를 전송 ---
   useEffect(() => {
     if (isWebViewReady && webViewRef.current) {
       const validMarkers = markersToDisplay.filter(m => m.lat && m.lng);
+      
       const message = JSON.stringify({
         type: 'UPDATE_MARKERS',
         payload: validMarkers,
       });
-      webViewRef.current.postMessage(message);
+      
+      // iOS에서는 약간의 지연을 주고 전송
+      setTimeout(() => {
+        webViewRef.current.postMessage(message);
+        
+        // iOS에서 두 번째 시도 (혹시 첫 번째가 실패할 경우를 대비)
+        setTimeout(() => {
+          webViewRef.current.postMessage(message);
+        }, 100);
+      }, 100);
     }
   }, [markersToDisplay, isWebViewReady]);
 
@@ -192,20 +201,59 @@ const markersToDisplay = useMemo(() => {
           <meta charset="utf-8">
           <title>지도</title>
           <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-          <style> body, html { margin: 0; padding: 0; height: 100%; } #map { width: 100%; height: 100%; } </style>
+          <style> 
+            body, html { margin: 0; padding: 0; height: 100%; } 
+            #map { width: 100%; height: 100%; }
+          </style>
       </head>
       <body>
           <div id="map"></div>
           <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoJavaScriptApiKey}&autoload=false"></script>
           <script>
+            let map = null;
+            let markers = [];
+            
+            // iOS WebView 메시지 수신을 위한 다중 방식
+            function setupMessageHandlers() {
+              // 방식 1: document.addEventListener
+              document.addEventListener('message', function(event) {
+                handleMessage(event.data);
+              });
+              
+              // 방식 2: window.addEventListener  
+              window.addEventListener('message', function(event) {
+                handleMessage(event.data);
+              });
+            }
+            
+            function handleMessage(data) {
+              try {
+                const { type, payload } = JSON.parse(data);
+                
+                switch(type) {
+                  case 'UPDATE_MARKERS':
+                    addMarkers(payload);
+                    break;
+                  case 'FIT_TO_COORDINATES':
+                    fitToCoordinates(payload);
+                    break;
+                  case 'ANIMATE_TO_REGION':
+                    animateToRegion(payload);
+                    break;
+                }
+              } catch (e) {
+                console.error('메시지 처리 오류:', e);
+              }
+            }
+
             kakao.maps.load(function() {
               const container = document.getElementById('map');
               const options = {
                 center: new kakao.maps.LatLng(37.5665, 126.9780),
                 level: 7
               };
-              const map = new kakao.maps.Map(container, options);
-              let markers = [];
+              
+              map = new kakao.maps.Map(container, options);
 
               function clearMarkers() {
                 markers.forEach(marker => marker.setMap(null));
@@ -218,15 +266,15 @@ const markersToDisplay = useMemo(() => {
 
                 const bounds = new kakao.maps.LatLngBounds();
 
-                markerData.forEach(data => {
+                markerData.forEach((data, index) => {
                   const position = new kakao.maps.LatLng(data.lat, data.lng);
-                  // 커스텀 마커 HTML 생성
                   const content = '<div style="background-color: #0064FF; color: white; border-radius: 50%; width: 30px; height: 30px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);">' + data.order + '</div>';
                   
                   const customOverlay = new kakao.maps.CustomOverlay({
                       position: position,
                       content: content,
-                      yAnchor: 1
+                      yAnchor: 1,
+                      zIndex: 100 + index
                   });
 
                   customOverlay.setMap(map);
@@ -255,23 +303,15 @@ const markersToDisplay = useMemo(() => {
                   map.panTo(moveLatLon);
               }
 
-              // React Native로부터 메시지 수신
-              document.addEventListener('message', function(event) {
-                const { type, payload } = JSON.parse(event.data);
-                switch(type) {
-                  case 'UPDATE_MARKERS':
-                    addMarkers(payload);
-                    break;
-                  case 'FIT_TO_COORDINATES':
-                    fitToCoordinates(payload);
-                    break;
-                  case 'ANIMATE_TO_REGION':
-                    animateToRegion(payload);
-                    break;
-                }
-              });
-
-              // WebView가 준비되었음을 React Native에 알림
+              // 전역으로 함수들을 노출
+              window.addMarkers = addMarkers;
+              window.fitToCoordinates = fitToCoordinates;
+              window.animateToRegion = animateToRegion;
+              
+              // 메시지 핸들러 설정
+              setupMessageHandlers();
+              
+              // 준비 완료 알림
               window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'READY' }));
             });
           </script>
@@ -299,7 +339,17 @@ const markersToDisplay = useMemo(() => {
           style={{ flex: 1 }}
           source={{ html: createMapHTML() }}
           javaScriptEnabled={true}
-          onLoad={() => setIsWebViewReady(true)}
+          domStorageEnabled={true}
+          startInLoadingState={false}
+          mixedContentMode={'always'}
+          allowsInlineMediaPlaybook={true}
+          mediaPlaybackRequiresUserAction={false}
+          allowsFullscreenVideo={true}
+          bounces={false}
+          scrollEnabled={false}
+          onLoadEnd={() => {
+            setTimeout(() => setIsWebViewReady(true), 500);
+          }}
           onMessage={(event) => {
             const data = JSON.parse(event.nativeEvent.data);
             if (data.type === 'READY') {
