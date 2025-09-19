@@ -1,8 +1,8 @@
 {
   "expo": {
-    "name": "tourmate-frontend",
+    "name": "tourmate",
     "slug": "tourmate-frontend",
-    "owner": "seoyeon88",
+    "owner": "tangboll",
     "icon": "./assets/icon.png",
     "version": "1.0.1",
     "orientation": "portrait",
@@ -25,8 +25,7 @@
         "android.permission.ACCESS_FINE_LOCATION",
         "android.permission.ACCESS_COARSE_LOCATION"
       ],
-      "package": "com.anonymous.tourmatefrontend",
-      "usesCleartextTraffic": true
+      "package": "com.anonymous.tourmatefrontend"
     },
     "web": {
       "bundler": "metro",
@@ -52,7 +51,6 @@
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": true,
             "networkSecurityConfig": {
               "cleartextTrafficPermitted": true
             }
@@ -70,8 +68,8 @@
         "origin": false
       },
       "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com",
-      "eas": {
-        "projectId": "2febce94-551e-4e11-a994-fcf972f73929"
+ "eas": {
+        "projectId": "401b1de9-4267-4c86-a340-33d8fbc0c8cf"
       },
       "kakaoRestApiKey": "258d62eaabf3e1213e2b974f01185d44",
       "kakaoJavaScriptApiKey": "db029e231db073bfecc94156e14ecf9c"
