@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "tourmate",
+    "name": "Tourmate",
     "slug": "tourmate-frontend",
     "owner": "tangboll",
     "icon": "./assets/icon.png",
@@ -11,7 +11,7 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tourmate.tourmate"
+      "bundleIdentifier": "com.villageShare.villlage-app"
     },
     "android": {
       "versionCode": 2,
