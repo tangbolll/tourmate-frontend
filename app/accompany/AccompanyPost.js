@@ -652,6 +652,7 @@ export default function AccompanyPost() {
     };
 
     const handleConfirmClose = async () => {
+
         setShowAlarmPopupHost(false);
         
         try {
@@ -681,6 +682,7 @@ export default function AccompanyPost() {
             Alert.alert('오류', error.message || '마감 처리 중 오류가 발생했습니다.');
         }
     };
+
     
 
 const fetchMemberData = async () => {
@@ -717,6 +719,7 @@ const fetchMemberData = async () => {
     }
 };
 
+
     if (loading) {
         return (
             <SafeAreaView style={styles.safeArea}>
@@ -726,6 +729,7 @@ const fetchMemberData = async () => {
             </SafeAreaView>
         );
     }
+
 
     // 에러 상태
     if (error || !accompanyData?.accompanyInfo) {
@@ -776,7 +780,6 @@ const fetchMemberData = async () => {
                 >
                     {/* Gray background that scrolls with content */}
                     <View style={styles.grayBackground} />
-
                     {/* Back button */}
                     <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
                         <Ionicons name="chevron-back" size={24} color="black" />

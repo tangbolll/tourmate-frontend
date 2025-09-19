@@ -2,16 +2,18 @@
   "expo": {
     "name": "tourmate",
     "slug": "tourmate-frontend",
-    "owner": "tangboll",
-    "icon": "./assets/icon.png",
-    "version": "1.0.1",
+    "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "myapp",
+    "icon": "./assets/iphoneicon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.tourmate.tourmate"
+      "bundleIdentifier": "com.villageShare.villlage-app",
+            "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "versionCode": 2,
@@ -64,8 +66,9 @@
     "extra": {
       "API_BASE_URL_DEV": "https://tourmate-backend-pdmg.onrender.com",
       "API_BASE_URL_LOCAL": "https://tourmate-backend-pdmg.onrender.com",
-      "router": {
-        "origin": false
+      "router": {},
+      "eas": {
+        "projectId": "401b1de9-4267-4c86-a340-33d8fbc0c8cf"
       },
       "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com",
  "eas": {
