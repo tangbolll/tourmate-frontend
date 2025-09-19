@@ -10,7 +10,7 @@ import {
     ActivityIndicator,
     RefreshControl 
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Feather } from '@expo/vector-icons';
 import PostDirectoryHeader from '../../components/profile/PostDirectoryHeader';
 import PostDirectoryFooter from '../../components/profile/PostDirectoryFooter';
@@ -79,6 +79,9 @@ export default function PostDirectory() {
                 postcardTypeId: pc.postcardTypeId,
             }));
             
+            // 엽서를 ID 오름차순으로 정렬 (오래된 것이 먼저)
+            formattedPostcards.sort((a, b) => a.id - b.id);
+
             console.log('📌 formattedPostcards:', formattedPostcards);
             setPostcards(formattedPostcards);
         } catch (error) {
@@ -97,10 +100,12 @@ export default function PostDirectory() {
         setRefreshing(false);
     }, [fetchPostcards]);
 
-    // 디렉토리 ID가 변경될 때마다 엽서 데이터를 불러오는 useEffect
-    useEffect(() => {
-        fetchPostcards(true); // 초기 로딩은 showLoading = true
-    }, [fetchPostcards]);
+    // 화면이 포커스될 때마다 엽서 데이터를 다시 불러옵니다.
+    useFocusEffect(
+        useCallback(() => {
+            fetchPostcards(true);
+        }, [fetchPostcards])
+    );
 
     // 뒤로가기 처리
     const handleBackPress = useCallback(() => {

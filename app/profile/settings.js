@@ -42,7 +42,8 @@ const SettingsScreen = () => {
   // 확인 후 실제 로그아웃 실행
   const performActualLogout = async () => {
     try {
-      await performLogout(); // AuthContext의 performLogout 호출
+      await performLogout();
+      router.dismissAll();
       router.replace('/auth/login');
     } catch (error) {
       console.error('로그아웃 실패:', error);

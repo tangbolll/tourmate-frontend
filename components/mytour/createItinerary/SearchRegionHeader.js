@@ -41,16 +41,15 @@ const styles = StyleSheet.create({
         padding: 4,
     },
     searchInput: {
-        height: 38,
         flex: 1,
         paddingHorizontal: 12,
+        paddingVertical: 6,  // 추가
         borderWidth: 1,
         borderColor: '#e0e0e0',
         borderRadius: 8,
         fontSize: 16,
         color: '#333',
         backgroundColor: '#fff',
-        height: 38,
     },
 });
 

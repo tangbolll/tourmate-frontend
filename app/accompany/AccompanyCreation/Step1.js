@@ -19,7 +19,8 @@ import CalendarPopup from '../../../components/accompany/CalendarPopup';
 import ImageSelector from '../../../components/accompany/ImageSelector';
 import dayjs from 'dayjs';
 
-const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
+
+const kakaoRestApiKey = Constants.expoConfig.extra.kakaoRestApiKey;
 
 // 카카오맵 API URL 수정
 const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';

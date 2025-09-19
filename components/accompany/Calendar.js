@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Alert, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { formatDate } from '../../utils/dateUtils';
 
@@ -39,23 +39,40 @@ const Calendar = ({ onSelect, visible, startDate, endDate }) => {
             <View style={styles.calendarRow}>
                 <View style={styles.calendarColumn}>
                     <Text style={styles.calendarTitle}>시작일 선택</Text>
-                    <DateTimePicker
-                        value={tempStartDate}
-                        mode="date"
-                        display="default"
-                        onChange={handleStartDateChange}
-                        fontColor="#000"
-                    />
+                    <View style={styles.datePickerWrapper}>
+                        <DateTimePicker
+                            value={tempStartDate}
+                            mode="date"
+                            display="spinner"
+                            onChange={handleStartDateChange}
+                            textColor="#000000"
+                            accentColor="#007AFF"
+                            themeVariant="light"
+                            style={[
+                                styles.datePicker,
+                                Platform.OS === 'ios' && styles.iosDatePicker
+                            ]}
+                        />
+                    </View>
                 </View>
                 <View style={styles.calendarColumn}>
                     <Text style={styles.calendarTitle}>종료일 선택</Text>
-                    <DateTimePicker
-                        value={tempEndDate}
-                        mode="date"
-                        display="default"
-                        onChange={handleEndDateChange}
-                        minimumDate={tempStartDate}
-                    />
+                    <View style={styles.datePickerWrapper}>
+                        <DateTimePicker
+                            value={tempEndDate}
+                            mode="date"
+                            display="spinner"
+                            onChange={handleEndDateChange}
+                            minimumDate={tempStartDate}
+                            textColor="#000000"
+                            accentColor="#007AFF"
+                            themeVariant="light"
+                            style={[
+                                styles.datePicker,
+                                Platform.OS === 'ios' && styles.iosDatePicker
+                            ]}
+                        />
+                    </View>
                 </View>
             </View>
             <TouchableOpacity style={styles.calendarConfirmButton} onPress={handleConfirm}>
@@ -71,7 +88,8 @@ const styles = StyleSheet.create({
         padding: 15,
         borderWidth: 1,
         borderColor: '#eee',
-        borderRadius: 8
+        borderRadius: 8,
+        backgroundColor: '#ffffff', // 배경색 명시
     },
     calendarRow: {
         flexDirection: 'row',
@@ -84,7 +102,37 @@ const styles = StyleSheet.create({
     calendarTitle: {
         fontWeight: 'bold',
         marginBottom: 10,
-        textAlign: 'center'
+        textAlign: 'center',
+        color: '#000000', // 텍스트 색상 명시
+    },
+    datePickerWrapper: {
+        backgroundColor: '#ffffff',
+        borderRadius: 8,
+        padding: Platform.OS === 'ios' ? 5 : 0,
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOffset: {
+                    width: 0,
+                    height: 1,
+                },
+                shadowOpacity: 0.1,
+                shadowRadius: 2,
+                elevation: 2,
+            },
+        }),
+    },
+    datePicker: {
+        backgroundColor: '#ffffff',
+        ...Platform.select({
+            android: {
+                color: '#000000',
+            },
+        }),
+    },
+    iosDatePicker: {
+        height: 120, // iOS에서 높이 명시
+        width: 150,  // iOS에서 너비 명시
     },
     calendarConfirmButton: {
         backgroundColor: '#000',
@@ -99,5 +147,3 @@ const styles = StyleSheet.create({
         fontWeight: 'bold'
     }
 });
-
-export default Calendar;

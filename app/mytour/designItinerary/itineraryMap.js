@@ -6,10 +6,13 @@ import DesignItineraryMapHeader from '../../../components/mytour/designItinerary
 import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getBaseURL } from '../../../utils/apiConfig';
+import { searchLocation } from '../../../utils/locationUtils';
 import { WebView } from 'react-native-webview';
+import Constants from 'expo-constants';
+
 
 // 카카오 JavaScript API 키를 입력하세요.
-const kakaoJavaScriptApiKey = 'db029e231db073bfecc94156e14ecf9c';
+const kakaoJavaScriptApiKey = Constants.expoConfig.extra.kakaoJavaScriptApiKey;
 
 export default function ItineraryMap() {
   const router = useRouter();
@@ -22,32 +25,63 @@ export default function ItineraryMap() {
   // --- 상태 관리 ---
   const [scheduleData, setScheduleData] = useState({});
   const [selectedLocationId, setSelectedLocationId] = useState(null);
-  const [selectedDay, setSelectedDay] = useState('all');
+  const [selectedDay, setSelectedDay] = useState(1); // 'all' 대신 1로 초기화
   const [isWebViewReady, setIsWebViewReady] = useState(false);
 
   // --- Ref 관리 ---
   const webViewRef = useRef(null);
 
-  // --- API 데이터 로딩 (기존과 동일) ---
+  // --- 총 여행 일수 계산 ---
+  const totalDays = useMemo(() => {
+    if (period && period.days) {
+      return parseInt(period.days, 10);
+    }
+    if (period && period.startDate && period.endDate) {
+        const start = new Date(period.startDate);
+        const end = new Date(period.endDate);
+        const diffTime = Math.abs(end - start);
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays + 1;
+    }
+    return 1; // Default to 1 if no period info is available
+  }, [period]);
+
+  // --- API 데이터 로딩 ---
   useEffect(() => {
     if (!tourId) return;
     const fetchTourData = async () => {
-      // ... (API 호출 로직은 기존과 동일하므로 생략) ...
       try {
         const token = await AsyncStorage.getItem('jwtToken');
         if (!token) return;
         const response = await axios.get(`${getBaseURL()}/api/travelSchedule/travel/${tourId}`, {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const schedules = response.data;
+        let schedules = response.data;
         if (!schedules || !Array.isArray(schedules) || schedules.length === 0) {
           setScheduleData({});
           return;
         }
+
+        // Process schedules to include coordinates for string locations
+        const processedSchedules = await Promise.all(schedules.map(async (item) => {
+          if ((!item.latitude || !item.longitude) && typeof item.location === 'string') {
+            const locationData = await searchLocation(item.location);
+            if (locationData) {
+              return {
+                ...item,
+                latitude: parseFloat(locationData.y),
+                longitude: parseFloat(locationData.x),
+                name: locationData.place_name, // Update name from search result
+              };
+            }
+          }
+          return item;
+        }));
+
         let groupedByDay = {};
         const currentPeriodType = period.type;
         if (currentPeriodType === 'date') {
-          const validSchedules = schedules.filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
+          const validSchedules = processedSchedules.filter(s => s.date).sort((a, b) => new Date(a.date) - new Date(b.date));
           if (validSchedules.length > 0) {
             const firstDate = new Date(validSchedules[0].date);
             groupedByDay = validSchedules.reduce((acc, item) => {
@@ -56,17 +90,19 @@ export default function ItineraryMap() {
               if (!acc[dayIndex]) acc[dayIndex] = [];
               acc[dayIndex].push({
                 id: item.id, name: item.title, category: item.tag,
-                order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude
+                order: acc[dayIndex].length + 1, lat: item.latitude, lng: item.longitude,
+                startTime: item.startTime, 
+                endTime: item.endTime
               });
               return acc;
             }, {});
           }
         } else if (currentPeriodType === 'duration') {
-          groupedByDay = schedules.reduce((acc, item) => {
+          groupedByDay = processedSchedules.reduce((acc, item) => {
             if (item.dayDescription) {
               const dayMatch = String(item.dayDescription).match(/\d+/);
               if (dayMatch && dayMatch[0]) {
-                const dayIndex = dayMatch[0];
+                const dayIndex = parseInt(dayMatch[0], 10);
                 if (!acc[dayIndex]) acc[dayIndex] = [];
                 acc[dayIndex].push({
                   id: item.id, name: item.title, category: item.tag,
@@ -86,13 +122,24 @@ export default function ItineraryMap() {
   }, [tourId, period.type]);
 
   // --- 마커 데이터 ---
-  const markersToDisplay = useMemo(() => {
-    if (selectedDay === 'all') {
-      return Object.values(scheduleData).flat();
-    }
-    return scheduleData[selectedDay] || [];
-  }, [selectedDay, scheduleData]);
+const markersToDisplay = useMemo(() => {
+  const dayData = scheduleData[selectedDay] || [];
   
+  // BottomSheet와 동일한 로직으로 시간순 정렬 및 order 재부여
+  const sortedData = [...dayData] // 원본 배열을 변경하지 않기 위해 복사
+    .sort((a, b) => {
+      if (a.startTime && b.startTime) {
+        return a.startTime.localeCompare(b.startTime);
+      }
+      return 0;
+    })
+    .map((item, index) => ({
+      ...item,
+      order: index + 1 // 새로운 order 번호 부여
+    }));
+    
+  return sortedData;
+}, [selectedDay, scheduleData]);  
   // --- WebView가 준비되고 마커가 변경될 때, 웹뷰로 데이터를 전송 ---
   useEffect(() => {
     if (isWebViewReady && webViewRef.current) {
@@ -105,14 +152,12 @@ export default function ItineraryMap() {
     }
   }, [markersToDisplay, isWebViewReady]);
 
-  // --- BottomSheet 연동 함수 (WebView만 제어하도록 단순화) ---
+  // --- BottomSheet 연동 함수 ---
   const handleDayChange = (dayKey) => {
     setSelectedDay(dayKey);
     setSelectedLocationId(null);
     
-    const markersForDay = dayKey === 'all'
-      ? Object.values(scheduleData).flat()
-      : scheduleData[dayKey] || [];
+    const markersForDay = scheduleData[dayKey] || [];
       
     const validCoordinates = markersForDay
       .map(marker => ({ latitude: marker.lat, longitude: marker.lng }))
@@ -138,9 +183,8 @@ export default function ItineraryMap() {
     }
   };
   
-  // --- 카카오맵 WebView를 위한 HTML 생성 함수 (기존과 동일) ---
+  // --- 카카오맵 WebView를 위한 HTML 생성 함수 ---
   const createMapHTML = () => {
-     // ... (HTML/JS 코드는 이전 답변과 동일하므로 생략) ...
     return `
       <!DOCTYPE html>
       <html>
@@ -268,6 +312,7 @@ export default function ItineraryMap() {
       <View style={styles.bottomSheetContainer}>
         <BottomSheet
           itineraryData={scheduleData}
+          totalDays={totalDays}
           onLocationSelect={handleLocationSelect}
           onDayChange={handleDayChange}
         />

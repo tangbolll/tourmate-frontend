@@ -122,7 +122,8 @@ const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 150
             
             const response = await fetch(url, {
                 ...mergedOptions,
-                signal: controller.signal
+                signal: controller.signal,
+                cache: 'no-cache', // 캐시 사용 안 함
             });
             
             clearTimeout(timeoutId);
@@ -184,17 +185,18 @@ const fetchWithRetryMultipart = async (url, options = {}, maxRetries = 2, timeou
         try {
             console.log(`🔄 Multipart API 호출 시도 ${attempt}/${maxRetries}: ${url}`);
             
-            // ⭐⭐⭐ 디버깅을 위해 FormData 내용을 로깅합니다. ⭐⭐⭐
-            if (mergedOptions.body instanceof FormData) {
-                console.log('📦 전송될 FormData 내용:');
-                for (let pair of mergedOptions.body.entries()) {
-                    console.log(` -> ${pair[0]}:`, typeof pair[1] === 'string' ? pair[1].substring(0, 50) + '...' : 'File Object');
-                }
-            }
+            // ⭐⭐⭐ FormData 로깅은 React Native에서 .entries()를 지원하지 않으므로 주석 처리합니다. ⭐⭐⭐
+            // if (mergedOptions.body instanceof FormData) {
+            //     console.log('📦 전송될 FormData 내용:');
+            //     for (let pair of mergedOptions.body.entries()) {
+            //         console.log(` -> ${pair[0]}:`, typeof pair[1] === 'string' ? pair[1].substring(0, 50) + '...' : 'File Object');
+            //     }
+            // }
 
             const response = await fetch(url, {
                 ...mergedOptions,
-                signal: controller.signal
+                signal: controller.signal,
+                cache: 'no-cache', // 캐시 사용 안 함
             });
             
             clearTimeout(timeoutId);
@@ -393,6 +395,11 @@ export const createPostcardInExistingFolderApi = async (folderId, postcardData, 
     const url = `${API_URL}/api/postcards/folders/${folderId}`;
 
     try {
+        const token = await AsyncStorage.getItem('jwtToken');
+        if (!token) {
+            throw new Error('JWT 토큰이 없습니다.');
+        }
+
         const formData = new FormData();
         formData.append('postcardData', JSON.stringify(postcardData));
         
@@ -406,22 +413,46 @@ export const createPostcardInExistingFolderApi = async (folderId, postcardData, 
                 type: fileType,
             });
         }
+
+        // ❌ 이 부분을 제거 - React Native에서는 formData.entries() 지원하지 않음
+        // console.log('FormData 내용:');
+        // for (let [key, value] of formData.entries()) {
+        //     console.log(`${key}: ${typeof value === 'object' ? JSON.stringify(value) : value}`);
+        // }
+
+        console.log(`API 호출: ${url}`);
+        console.log('전송할 데이터:', JSON.stringify(postcardData));
+        if (imageFile) {
+            console.log('이미지 파일:', imageFile.uri);
+        }
         
-        const response = await fetchWithRetryMultipart(url, {
+        const response = await fetch(url, {
             method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                // Content-Type을 명시하지 않음 (자동으로 multipart/form-data 설정됨)
+            },
             body: formData,
         });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error(`HTTP 에러 ${response.status}: ${errorText}`);
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+        }
+
         const result = await response.json();
         
-        // API 응답 로그 확인
-        console.log('✅ createPostcardInExistingFolderApi 응답:', result);
+        console.log('createPostcardInExistingFolderApi 응답:', result);
         console.log('새로 생성된 엽서 ID:', result.postcardId);
         
         return result;
     } catch (error) {
+        console.error('createPostcardInExistingFolderApi 에러:', error);
         throw error;
     }
 };
+
 
 // 6. 폴더별 엽서 목록 조회
 export const getPostcardsByFolderApi = async (folderId) => {
@@ -495,6 +526,32 @@ export const deletePostcardApi = async (postcardId) => {
         return null;
     } catch (error) {
         throw error;
+    }
+};
+
+// 10. 불완전한 엽서 자동 삭제
+export const handleIncompletePostcard = async (postcardId) => {
+    if (!postcardId) {
+        console.log("🗑️ 유효하지 않은 엽서 ID, 삭제 로직을 건너뜁니다.");
+        return;
+    }
+
+    try {
+        console.log(`🔍 엽서 ${postcardId}의 완성 상태 확인 중...`);
+        const postcard = await getPostcardByIdApi(postcardId);
+
+        // imageUrl과 postcardType이 모두 없는 경우 (사용자가 내용을 추가하지 않은 경우)
+        const isEmpty = !postcard.imageUrl && !postcard.postcardType;
+
+        if (isEmpty) {
+            console.log(`🗑️ 엽서 ${postcardId}가 비어있어 삭제를 시도합니다.`);
+            await deletePostcardApi(postcardId);
+            console.log(`✅ 엽서 ${postcardId}가 성공적으로 삭제되었습니다.`);
+        } else {
+            console.log(`✅ 엽서 ${postcardId}는 내용이 채워져 있어 삭제하지 않습니다.`);
+        }
+    } catch (error) {
+        console.error(`❌ 불완전한 엽서 처리 중 오류 발생 (ID: ${postcardId}):`, error);
     }
 };
 
@@ -576,6 +633,20 @@ export const unlikePostcardApi = async (postcardId, userId) => {
         return null;
     } catch (error) {
         throw error;
+    }
+};
+
+// 좋아요한 엽서 목록
+export const getUserLikedPostcardsApi = async (userId) => {
+    const url = `${API_URL}/api/postcards/users/${userId}/liked`;
+    console.log('🌐 사용자가 좋아요한 엽서 목록 조회 API 호출:', url);
+    try {
+        const response = await fetchWithRetry(url);
+        const data = await response.json();
+        return { success: true, data: data };
+    } catch (error) {
+        console.error('사용자가 좋아요한 엽서 목록 조회 실패:', error);
+        return { success: false, error: error.message, data: [] };
     }
 };
 

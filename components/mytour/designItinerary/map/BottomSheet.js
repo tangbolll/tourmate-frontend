@@ -20,13 +20,12 @@ const categories = [
 // 부모로부터 onLocationSelect 함수를 props로 받습니다.
 const BottomSheet = ({ 
     itineraryData = {}, 
+    totalDays = 5, // 전체 여행 일수를 props로 받습니다 (기본값 5일)
     onLocationSelect = () => {},
     onDayChange = () => {}
 }) => {
     const [selectedDay, setSelectedDay] = useState(1);
     const [selectedLocationInSheet, setSelectedLocationInSheet] = useState(null);
-
-    
 
     const getCategoryColor = (category) => {
         const categoryInfo = categories.find(cat => cat.key === category);
@@ -44,17 +43,31 @@ const BottomSheet = ({
         onLocationSelect(location); // 부모에게 선택된 위치 정보를 전달
     };
 
-    const daysList = Object.keys(itineraryData).map(key => {
-        const match = key.match(/\d+/);
-        return match ? parseInt(match[0], 10) : null;
-    }).filter(day => day !== null).sort((a, b) => a - b);
-    const currentDayItinerary = itineraryData[selectedDay] || [];
+    // 1일차부터 totalDays까지 모든 일차를 생성
+    const daysList = Array.from({ length: totalDays }, (_, i) => i + 1);
+    
+    // 현재 선택된 날짜의 일정 (없으면 빈 배열)
+    const unsortedItinerary = itineraryData[selectedDay] || [];
+    console.log("Unsorted Itinerary for day " + selectedDay, JSON.stringify(unsortedItinerary, null, 2));
 
-    // --- 이 부분이 다시 추가되었습니다 ---
+    // 시간순으로 정렬하고, 새로운 order 번호를 부여
+    const currentDayItinerary = [...unsortedItinerary] // Create a shallow copy to avoid mutating prop
+        .sort((a, b) => {
+            if (a.startTime && b.startTime) {
+                return a.startTime.localeCompare(b.startTime);
+            }
+            return 0;
+        })
+        .map((item, index) => ({
+            ...item,
+            order: index + 1 // Re-assign the order number
+        }));
+    
+    console.log("Sorted and Re-ordered Itinerary:", JSON.stringify(currentDayItinerary, null, 2));
+
     // 현재 선택된 날짜의 일정을 왼쪽과 오른쪽 열로 나눕니다.
     const leftColumnItems = currentDayItinerary.filter((_, idx) => idx % 2 === 0);
     const rightColumnItems = currentDayItinerary.filter((_, idx) => idx % 2 === 1);
-    // --- ---
 
     return (
         <View style={styles.container}>
@@ -67,12 +80,27 @@ const BottomSheet = ({
                 {daysList.map(day => (
                     <TouchableOpacity
                         key={day}
-                        style={[styles.dayButton, selectedDay === day && styles.selectedDayButton]}
+                        style={[
+                            styles.dayButton, 
+                            selectedDay === day && styles.selectedDayButton,
+                            // 스케줄이 있는 날은 점 표시
+                            itineraryData[day] && itineraryData[day].length > 0 && styles.hasScheduleDay
+                        ]}
                         onPress={() => handleDaySelect(day)}
                     >
-                        <Text style={[styles.dayButtonText, selectedDay === day && styles.selectedDayButtonText]}>
+                        <Text style={[
+                            styles.dayButtonText, 
+                            selectedDay === day && styles.selectedDayButtonText
+                        ]}>
                             {day}일차
                         </Text>
+                        {/* 스케줄이 있는 날에 작은 점 표시 */}
+                        {itineraryData[day] && itineraryData[day].length > 0 && (
+                            <View style={[
+                                styles.scheduleDot,
+                                selectedDay === day && styles.selectedScheduleDot
+                            ]} />
+                        )}
                     </TouchableOpacity>
                 ))}
             </ScrollView>
@@ -84,7 +112,6 @@ const BottomSheet = ({
                 contentContainerStyle={{ paddingBottom: 60 }}
             >
                 {currentDayItinerary.length > 0 ? (
-                    // --- 이 부분도 2열 구조로 다시 수정되었습니다 ---
                     <View style={styles.twoColumnContainer}>
                         <View style={styles.column}>
                             {leftColumnItems.map(item => (
@@ -119,10 +146,9 @@ const BottomSheet = ({
                             ))}
                         </View>
                     </View>
-                    // --- ---
                 ) : (
                     <View style={styles.emptyContainer}>
-                        <Text style={styles.emptyText}>이 날의 일정이 없습니다.</Text>
+                        <Text style={styles.emptyText}>{selectedDay}일차 일정이 없습니다.</Text>
                     </View>
                 )}
             </ScrollView>
@@ -130,7 +156,6 @@ const BottomSheet = ({
     );
 };
 
-// 스타일은 이전에 제공해주신 코드를 그대로 사용했습니다.
 const styles = StyleSheet.create({
     container: {
         position: 'absolute',
@@ -163,6 +188,7 @@ const styles = StyleSheet.create({
         marginRight: 8,
         alignItems: 'center',
         justifyContent: 'center',
+        position: 'relative', // 점 표시를 위해 추가
     },
     dayButtonText: {
         fontSize: 12,
@@ -171,6 +197,9 @@ const styles = StyleSheet.create({
     },
     selectedDayButton: { backgroundColor: '#000' },
     selectedDayButtonText: { color: '#fff' },
+    selectedScheduleDot: {
+        backgroundColor: '#fff',
+    },
     itineraryList: { paddingHorizontal: 16 },
     twoColumnContainer: { flexDirection: 'row', justifyContent: 'space-between' },
     column: { flex: 1, marginHorizontal: 4 },

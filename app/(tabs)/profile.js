@@ -176,6 +176,7 @@ export default function ProfileHome() {
             params.endDate = folderData.endDate;
         }
         params.newlyCreated = 'true';
+        params.startInEditMode = 'true'; // 편집 모드에서 시작하도록 추가
 
         console.log('Navigating to WritePost with params:', params);
         router.push({
@@ -227,8 +228,8 @@ export default function ProfileHome() {
                                 directoryName: selectedFolder.title,
                                 startDate: selectedFolder.startDate,
                                 endDate: selectedFolder.endDate,
-                                postcardId: response.postcardId.toString(), // 새로 생성된 엽서 ID
-                                newlyCreated: 'false' // 기존 폴더
+                                postcardId: response.postcardId.toString(), // 이 부분이 중요
+                                newlyCreated: 'false'
                             };
                             
                             console.log('WritePost로 이동할 params:', params);
@@ -275,7 +276,7 @@ export default function ProfileHome() {
                     postcard: {
                         content: '',
                         imageUrl: '',
-                        postcardType: 1,
+                        postcardType: null,
                     },
                 };
                 console.log('새 폴더 및 엽서 생성 API 호출 준비:', requestBody);
@@ -362,15 +363,24 @@ export default function ProfileHome() {
         }
         
         try {
-            // 기본 엽서 데이터 생성
+            // 현재 폴더의 엽서 개수 확인 (순서 결정용)
+            const currentFolder = folders.find(f => f.id === selectedFolder.id);
+            const currentPostcardCount = currentFolder?.postcards?.length || 0;
+            
+            // 기본 엽서 데이터 생성 (순서 정보 추가)
             const postcardData = {
                 content: '',
-                postcardType: 1, // 기본 엽서 템플릿
+                postcardType: null, // 기본 엽서 템플릿
+                order: currentPostcardCount + 1, // 맨 뒤 순서로 설정
+                // 또는 백엔드 API가 다른 필드를 사용한다면:
+                // position: currentPostcardCount + 1,
+                // sequence: currentPostcardCount + 1,
             };
             
             console.log('기존 폴더에 엽서 생성:', {
                 folderId: selectedFolder.id,
-                postcardData
+                postcardData,
+                currentPostcardCount
             });
             
             // API 호출로 새 엽서 생성
@@ -382,14 +392,19 @@ export default function ProfileHome() {
             console.log('✅ 엽서 생성 응답:', response);
             
             if (response && response.postcardId) {
-                // WritePost 페이지로 바로 이동
+                // 데이터 새로고침 후 WritePost로 이동
+                await fetchData(userEmail);
+                
+                // WritePost 페이지로 이동하면서 새로 생성된 엽서 ID 전달
                 const params = {
                     directoryId: selectedFolder.id.toString(),
                     directoryName: selectedFolder.title,
                     startDate: selectedFolder.startDate,
                     endDate: selectedFolder.endDate,
                     postcardId: response.postcardId.toString(), // 새로 생성된 엽서 ID
-                    newlyCreated: 'false' // 기존 폴더이므로 false
+                    newlyCreated: 'false', // 기존 폴더
+                    shouldSelectLast: 'true', // 마지막 엽서를 선택하라는 플래그
+                    startInEditMode: 'true', // 편집 모드에서 시작
                 };
                 
                 console.log('WritePost로 이동할 params:', params);
@@ -401,13 +416,12 @@ export default function ProfileHome() {
             } else {
                 throw new Error('엽서 생성 응답에 postcardId가 없습니다.');
             }
-
             
         } catch (error) {
             console.error('❌ 기존 폴더에 엽서 추가 오류:', error);
             handleApiError(error, '엽서 추가');
         }
-    }, [router, userEmail]);
+    }, [router, userEmail, folders, fetchData]); // folders 의존성 추가
 
     const handleTabPress = useCallback((tab) => {
         setActiveTab(tab);

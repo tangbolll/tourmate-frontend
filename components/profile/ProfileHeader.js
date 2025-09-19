@@ -56,7 +56,11 @@ export function ProfileHeader() {
                 
                 {/* 사용자 태그 */}
                 <View style={styles.tagsContainer}>
-                    <Text style={styles.userType}>{tags?.join(' ')}</Text>
+                    {tags && tags.map((tag, index) => (
+                        <View key={index} style={styles.tagChip}>
+                            <Text style={styles.tagChipText}>#{tag}</Text>
+                        </View>
+                    ))}
                 </View>
             </View>
         </View>
@@ -126,6 +130,18 @@ const styles = StyleSheet.create({
     tagsContainer: {
         flexDirection: 'row',
         flexWrap: 'wrap',
+    },
+    tagChip: {
+    backgroundColor: '#f0f0f0', // 연한 회색 배경
+    borderRadius: 14,
+    paddingVertical: 3,
+    paddingHorizontal: 8,
+    marginRight: 5,
+    marginBottom: 6,
+    },
+    tagChipText: {
+        color: '#555',
+        fontSize: 11, // 폰트 크기 조정
     },
     userType: {
         fontSize: 11,

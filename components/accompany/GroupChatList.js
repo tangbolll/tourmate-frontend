@@ -1,8 +1,13 @@
-import React, { useRef } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Animated, Platform } from 'react-native';
-import { GestureHandlerRootView, PanGestureHandler, State } from 'react-native-gesture-handler';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import Constants from 'expo-constants';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  runOnJS,
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 
 // 기본 프로필 이미지들
 const defaultProfiles = [
@@ -16,8 +21,74 @@ const getFullImageUrl = (imagePath) => {
     return `${API_URL}${imagePath}`;
 };
 
-const GroupChatList = ({ photo, title, message, participants, timestamp, unreadCount, onPress, onSwipeLeft }) => {
-  const translateX = useRef(new Animated.Value(0)).current;
+const GroupChatList = ({ item, onPress, onSwipeLeft }) => {
+  const [isSwipeOpen, setIsSwipeOpen] = useState(false);
+  const translateX = useSharedValue(0);
+  const { title, latestMessage: message, participants, createdAt: timestamp, unreadCount, id } = item;
+
+  // 스와이프 애니메이션 스타일
+  const animatedStyle = useAnimatedStyle(() => {
+    return {
+      transform: [{ translateX: translateX.value }],
+    };
+  });
+
+  // 삭제 버튼 애니메이션 스타일
+  const deleteButtonStyle = useAnimatedStyle(() => {
+    return {
+      opacity: translateX.value < -20 ? 1 : 0,
+      transform: [{ scale: translateX.value < -20 ? 1 : 0.8 }],
+    };
+  });
+
+  // 스와이프 제스처
+  const panGesture = Gesture.Pan()
+    .activeOffsetX([-10, 10])
+    .onUpdate((event) => {
+      // 왼쪽으로만 스와이프 허용
+      if (event.translationX < 0) {
+        translateX.value = Math.max(event.translationX, -100);
+      } else if (isSwipeOpen) {
+        // 오른쪽으로 스와이프하면 닫기
+        translateX.value = Math.min(event.translationX - 100, 0);
+      }
+    })
+    .onEnd((event) => {
+      const shouldOpen = event.translationX < -50;
+      const shouldClose = event.translationX > 50 && isSwipeOpen;
+      
+      if (shouldOpen && !isSwipeOpen) {
+        translateX.value = withTiming(-100);
+        runOnJS(setIsSwipeOpen)(true);
+      } else if (shouldClose || (!shouldOpen && isSwipeOpen)) {
+        translateX.value = withTiming(0);
+        runOnJS(setIsSwipeOpen)(false);
+      } else if (!isSwipeOpen) {
+        translateX.value = withTiming(0);
+      } else {
+        translateX.value = withTiming(-100);
+      }
+    });
+
+  const handleDeletePress = () => {
+    if (onSwipeLeft) {
+      onSwipeLeft(id);
+    }
+    // 스와이프 닫기
+    translateX.value = withTiming(0);
+    setIsSwipeOpen(false);
+  };
+
+  const handleChatPress = () => {
+    if (isSwipeOpen) {
+      // 스와이프가 열려있으면 닫기
+      translateX.value = withTiming(0);
+      setIsSwipeOpen(false);
+    } else {
+      // 채팅방 열기
+      onPress(item);
+    }
+  };
 
   // 겹쳐진 프로필 렌더링 함수
   const renderProfileImages = () => {
@@ -76,85 +147,38 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
     );
   };
 
-  const onGestureEvent = Animated.event(
-    [{ nativeEvent: { translationX: translateX } }],
-    { 
-      useNativeDriver: true,
-      listener: (event) => {
-        // 오른쪽으로 스와이프하는 것을 방지
-        const { translationX } = event.nativeEvent;
-        if (translationX > 0) {
-          translateX.setValue(0);
-        }
-      }
-    }
-  );
-
-  const onHandlerStateChange = (event) => {
-    if (event.nativeEvent.oldState === State.ACTIVE) {
-      const { translationX } = event.nativeEvent;
-      
-      // 왼쪽으로 70픽셀 이상 스와이프했을 때 휴지통 버튼을 보여줍니다
-      if (translationX < -70) {
-        Animated.timing(translateX, {
-          toValue: -80,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-      } else {
-        // 70픽셀 미만으로 스와이프했을 때는 원래 위치로 돌아갑니다
-        Animated.timing(translateX, {
-          toValue: 0,
-          duration: 200,
-          useNativeDriver: true,
-        }).start();
-      }
-    }
-  };
-
-  const handleDeletePress = () => {
-    onSwipeLeft();
-    // 휴지통 버튼을 누른 후 원래 위치로 돌아갑니다
-    Animated.timing(translateX, {
-      toValue: 0,
-      duration: 200,
-      useNativeDriver: true,
-    }).start();
-  };
-
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
     <View style={styles.chatItemContainer}>
-      {/* 배경의 휴지통 버튼 */}
-      <View style={styles.deleteBackground}>
+      {/* 삭제 버튼 (뒤쪽에 숨겨짐) */}
+      <Animated.View style={[styles.deleteButtonContainer, deleteButtonStyle]}>
         <TouchableOpacity style={styles.deleteButton} onPress={handleDeletePress}>
           <Ionicons name="trash" size={24} color="white" />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
       
-      {/* 스와이프 가능한 채팅 아이템 */}
-      <PanGestureHandler
-        onGestureEvent={onGestureEvent}
-        onHandlerStateChange={onHandlerStateChange}
-        activeOffsetX={[-10, 0]} // 왼쪽으로만 스와이프 가능하도록 설정
-      >
-        <Animated.View style={[styles.chatItem, { transform: [{ translateX }] }]}>
-          <TouchableOpacity style={styles.chatContent} onPress={onPress}>
+      {/* 메인 채팅 아이템 */}
+      <GestureDetector gesture={panGesture}>
+        <Animated.View style={[styles.chatItem, animatedStyle]}>
+          <TouchableOpacity 
+            style={styles.chatContent} 
+            onPress={handleChatPress}
+            activeOpacity={0.7}
+          >
             {renderProfileImages()}
             <View style={styles.textContent}>
               <View style={styles.header}>
                 <View style={styles.leftSection}>
-                  <Text style={styles.chatTitle} numberOfLines={1} ellipsizeMode="clip">
-                    {title}
-                  </Text>
-                  <Text style={styles.participants} numberOfLines={1}> · {participants.length}명</Text>
+                  <Text style={styles.chatTitle} numberOfLines={1}>{title}</Text>
+                  <Text style={styles.participants}> · {participants?.length || 0}명</Text>
                 </View>
-                <Text style={styles.timestamp}>{timestamp}</Text>
+                <View style={styles.rightSection}>
+                  {/* ✅ 이미 포맷된 timestamp를 그대로 사용 */}
+                  <Text style={styles.timestamp}>{timestamp}</Text>
+                </View>
               </View>
               <View style={styles.chatDetails}>
-                <Text style={styles.chatMessage} numberOfLines={1}>
-                  {message}
-                </Text>
+                <Text style={styles.chatMessage} numberOfLines={1}>{message}</Text>
+                
                 {unreadCount > 0 && (
                   <View style={styles.unreadBadge}>
                     <Text style={styles.unreadText}>{unreadCount}</Text>
@@ -164,28 +188,28 @@ const GroupChatList = ({ photo, title, message, participants, timestamp, unreadC
             </View>
           </TouchableOpacity>
         </Animated.View>
-      </PanGestureHandler>
+      </GestureDetector>
     </View>
-    </GestureHandlerRootView>
   );
 };
 
 const styles = StyleSheet.create({
   chatItemContainer: {
     position: 'relative',
+    backgroundColor: '#fff',
   },
-  deleteBackground: {
+  deleteButtonContainer: {
     position: 'absolute',
     top: 0,
     right: 0,
-    bottom: 0,
     width: 80,
-    backgroundColor: '#FF6347',
+    height: '100%',
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 1,
   },
   deleteButton: {
+    backgroundColor: '#FF6347',
     width: 80,
     height: '100%',
     justifyContent: 'center',
@@ -211,6 +235,7 @@ const styles = StyleSheet.create({
     width: 50,
     height: 50,
     borderRadius: 25,
+    marginRight: 15,
   },
   multipleAvatarsContainer: {
     width: 70,
@@ -234,12 +259,6 @@ const styles = StyleSheet.create({
   frontAvatar: {
     left: 0,
   },
-  profileImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 15,
-  },
   textContent: {
     flex: 1,
   },
@@ -254,6 +273,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
     marginRight: 12,
+  },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
   },
   chatTitle: {
     fontSize: 16,
@@ -285,6 +309,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginLeft: 8,
+    zIndex: 10,
   },
   unreadText: {
     color: 'white',

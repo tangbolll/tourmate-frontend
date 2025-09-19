@@ -1,26 +1,29 @@
 {
   "expo": {
-    "name": "tourmate-frontend",
+    "name": "tourmate",
     "slug": "tourmate-frontend",
-    "version": "1.0.0",
+    "owner": "tangboll",
+    "icon": "./assets/icon.png",
+    "version": "1.0.1",
     "orientation": "portrait",
     "scheme": "myapp",
-    "icon": "./assets/iphoneicon.png",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.villageShare.villlage-app",
-            "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
-      }
+      "bundleIdentifier": "com.tourmate.tourmate"
     },
     "android": {
+      "versionCode": 2,
       "adaptiveIcon": {
         "backgroundColor": "#ffffff"
       },
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.INTERNET",
+        "android.permission.ACCESS_NETWORK_STATE",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.ACCESS_COARSE_LOCATION"
       ],
       "package": "com.anonymous.tourmatefrontend"
     },
@@ -38,7 +41,6 @@
           "backgroundColor": "#ffffff"
         }
       ],
-      "expo-web-browser",
       [
         "expo-image-picker",
         {
@@ -49,12 +51,8 @@
         "expo-build-properties",
         {
           "android": {
-            "usesCleartextTraffic": true,
-            "extraMavenRepos": [
-              "https://devrepo.kakao.com/nexus/content/groups/public/"
-            ],
-            "manifestApplicationAttributes": {
-              "com.kakao.sdk.AppKey": "bf2ed7b5e3276022c9ad3ce91414cdb8"
+            "networkSecurityConfig": {
+              "cleartextTrafficPermitted": true
             }
           }
         }
@@ -66,11 +64,15 @@
     "extra": {
       "API_BASE_URL_DEV": "https://tourmate-backend-pdmg.onrender.com",
       "API_BASE_URL_LOCAL": "https://tourmate-backend-pdmg.onrender.com",
-      "router": {},
-      "eas": {
+      "router": {
+        "origin": false
+      },
+      "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com",
+ "eas": {
         "projectId": "401b1de9-4267-4c86-a340-33d8fbc0c8cf"
       },
-      "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com"
+      "kakaoRestApiKey": "258d62eaabf3e1213e2b974f01185d44",
+      "kakaoJavaScriptApiKey": "db029e231db073bfecc94156e14ecf9c"
     }
   }
 }

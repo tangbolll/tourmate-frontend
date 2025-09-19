@@ -60,6 +60,8 @@ const Post = ({ postData, onDataUpdate }) => {
         }
     }, [postData?.postcardId, postData?.isLiked, postData?.isScraped, postData?.likeCount, postData?.scrapCount]);
 
+    // console.log("원본 데이터: ", postData);
+
     // 실제 데이터가 없으면 기본값 사용
     const data = {
         postcardId: postData?.postcardId,
@@ -69,13 +71,14 @@ const Post = ({ postData, onDataUpdate }) => {
         likeCount: currentLikeCount,
         scrapCount: currentScrapCount,
         // UTC 시간을 한국 시간으로 변환
-        timeAgo: postData?.createdAt ? formatChatTimestamp(dayjs.utc(postData.createdAt).tz('Asia/Seoul').toDate()) : '알 수 없음',
+        timeAgo: postData?.uploadedAt ? formatChatTimestamp(dayjs.utc(postData.uploadedAt).tz('Asia/Seoul').toDate()) : '알 수 없음',
         location: postData?.location,
-        // UTC 시간을 한국 시간으로 변환
-        date: formatPostDate(dayjs.utc(postData?.createdAt).tz('Asia/Seoul').toDate()),
+        date: postData?.visitDate ? formatPostDate(postData.visitDate) : '날짜 없음',
         isLiked: isLiked,
         isScraped: isBookmarked,
     };
+
+    // console.log("가공 데이터: ", data);
 
     const handleLike = async () => {
         if (!data.postcardId || likeLoading) return;
@@ -271,7 +274,13 @@ const Post = ({ postData, onDataUpdate }) => {
             {/* 확대 모달 */}
             <PostExpanded 
                 visible={showExpanded}
-                postData={data}
+                postData={{
+                        ...postData, // 원본 데이터를 모두 복사 (profileImage 포함)
+                        isLiked: isLiked, // 최신 좋아요 상태로 덮어쓰기
+                        isScraped: isBookmarked, // 최신 스크랩 상태로 덮어쓰기
+                        likeCount: currentLikeCount, // 최신 좋아요 카운트로 덮어쓰기
+                        scrapCount: currentScrapCount, // 최신 스크랩 카운트로 덮어쓰기
+                    }}                
                 onClose={() => setShowExpanded(false)}
                 onDataUpdate={handleDataUpdateFromExpanded}
                 currentUserId={currentUserId}

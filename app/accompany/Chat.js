@@ -11,7 +11,8 @@ import {
     SafeAreaView,
     Alert,
     ActivityIndicator,
-    Dimensions
+    Dimensions,
+    Keyboard
 } from 'react-native';
 import Constants from 'expo-constants';
 import { Feather } from '@expo/vector-icons';
@@ -23,6 +24,7 @@ import { Client } from '@stomp/stompjs';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../../context/AuthContext';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     fetchOrCreateChatRoom,
     fetchMessages,
@@ -31,8 +33,7 @@ import {
     markMessagesAsRead
 } from '../../utils/ChatApi';
 
-
-const { width: screenWidth } = Dimensions.get('window');
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 // 날짜 구분선 컴포넌트
 const DateSeparator = ({ date }) => {
@@ -53,7 +54,7 @@ const MessageBubble = ({ message, showSenderName, showTime, isFirstInGroup, isLa
         <View style={[
             bubbleStyles.messageContainer,
             isMyMessage ? bubbleStyles.myMessageContainer : bubbleStyles.otherMessageContainer,
-            isFirstInGroup ? {} : { marginTop: 2 }, // 연속 메시지는 간격 줄임
+            isFirstInGroup ? {} : { marginTop: 2 },
             style
         ]}> 
             {!isMyMessage && showSenderName && (
@@ -72,10 +73,8 @@ const MessageBubble = ({ message, showSenderName, showTime, isFirstInGroup, isLa
                 <View style={[
                     bubbleStyles.bubble,
                     isMyMessage ? bubbleStyles.myBubble : bubbleStyles.otherBubble,
-                    // 연속 메시지의 경우 꼬리 표시 조건 변경
                     isFirstInGroup ? {} : (isMyMessage ? { marginRight: 8 } : { marginLeft: 8 })
                 ]}>
-                    {/* 첫 번째 메시지에만 꼬리 표시 */}
                     {isFirstInGroup && (
                         <View style={[
                             bubbleStyles.tail,
@@ -104,11 +103,17 @@ const MessageBubble = ({ message, showSenderName, showTime, isFirstInGroup, isLa
 const Chat = () => {
     const params = useLocalSearchParams();
     const router = useRouter();
+    const insets = useSafeAreaInsets();
     const postId = params.postId;
     const chatRoomId = params.chatRoomId;
     const { currentUserId } = useAuth();
 
-    // 상태로 관리
+    // 키보드 상태 관리 - 더 안정적인 방식
+    const [keyboardHeight, setKeyboardHeight] = useState(0);
+    const [keyboardVisible, setKeyboardVisible] = useState(false);
+    const [screenData, setScreenData] = useState(Dimensions.get('window'));
+
+    // 기존 상태들
     const [chatRoom, setChatRoom] = useState(null);
     const [accompanyInfo, setAccompanyInfo] = useState(null);
     const [messages, setMessages] = useState([]);
@@ -122,6 +127,56 @@ const Chat = () => {
     const scrollViewRef = useRef();
     const stompClientRef = useRef(null);
 
+    // 화면 크기 변화 감지 (키보드로 인한)
+    useEffect(() => {
+        const subscription = Dimensions.addEventListener('change', ({ window, screen }) => {
+            setScreenData(window);
+        });
+
+        return () => subscription?.remove();
+    }, []);
+
+    // 키보드 리스너 설정 - 개선된 버전
+    useEffect(() => {
+        const keyboardDidShowListener = Keyboard.addListener('keyboardDidShow', (e) => {
+            console.log('키보드 표시됨:', e.endCoordinates.height);
+            setKeyboardHeight(e.endCoordinates.height);
+            setKeyboardVisible(true);
+            
+            // 키보드가 나타날 때 자동 스크롤 - 약간의 지연
+            setTimeout(() => {
+                scrollViewRef.current?.scrollToEnd({ animated: true });
+            }, 150);
+        });
+
+        const keyboardDidHideListener = Keyboard.addListener('keyboardDidHide', () => {
+            console.log('키보드 숨김');
+            setKeyboardHeight(0);
+            setKeyboardVisible(false);
+        });
+
+        const keyboardWillShowListener = Platform.OS === 'ios' 
+            ? Keyboard.addListener('keyboardWillShow', (e) => {
+                setKeyboardHeight(e.endCoordinates.height);
+                setKeyboardVisible(true);
+            })
+            : null;
+
+        const keyboardWillHideListener = Platform.OS === 'ios'
+            ? Keyboard.addListener('keyboardWillHide', () => {
+                setKeyboardHeight(0);
+                setKeyboardVisible(false);
+            })
+            : null;
+
+        return () => {
+            keyboardDidShowListener?.remove();
+            keyboardDidHideListener?.remove();
+            keyboardWillShowListener?.remove();
+            keyboardWillHideListener?.remove();
+        };
+    }, []);
+
     // 날짜 포맷팅 함수들
     const formatTime = (dateString) => {
         if (!dateString) return '';
@@ -132,16 +187,6 @@ const Chat = () => {
             hour12: true 
         });
     };
-
-    // 🔧 키보드 간격 조정을 위한 플랫폼별 스타일
-    const platformStyles = StyleSheet.create({
-        inputWrapperIOS: {
-            marginBottom: 20, // iOS에서 키보드와의 간격
-        },
-        inputWrapperAndroid: {
-            marginBottom: 15, // Android에서 키보드와의 간격
-        },
-    });
 
     const formatDateForSeparator = (dateString) => {
         if (!dateString) return '';
@@ -170,7 +215,6 @@ const Chat = () => {
         messages.forEach((message, index) => {
             const messageDate = message.sendTime;
             
-            // 날짜가 바뀌었거나 첫 번째 메시지인 경우 날짜 구분선 추가
             if (!currentDate || !isSameDay(currentDate, messageDate)) {
                 currentDate = messageDate;
                 grouped.push({
@@ -180,11 +224,9 @@ const Chat = () => {
                 });
             }
             
-            // 연속 메시지 그룹 처리
             const prevMessage = messages[index - 1];
             const nextMessage = messages[index + 1];
             
-            // 같은 사용자의 연속 메시지인지 확인
             const isSameUser = prevMessage && 
                 prevMessage.user?.isSelf === message.user?.isSelf &&
                 (prevMessage.user?.name === message.user?.name || 
@@ -195,24 +237,18 @@ const Chat = () => {
                 (nextMessage.user?.name === message.user?.name || 
                  (nextMessage.user?.isSelf && message.user?.isSelf));
             
-            // 같은 시간(분)인지 확인
             const isSameTime = prevMessage && 
                 formatTime(prevMessage.sendTime) === formatTime(message.sendTime);
             
             const isNextSameTime = nextMessage && 
                 formatTime(nextMessage.sendTime) === formatTime(message.sendTime);
             
-            // 연속 메시지 그룹에서의 위치 결정
             const isFirstInGroup = !isSameUser || !isSameDay(prevMessage?.sendTime, messageDate);
             const isLastInGroup = !isNextSameUser || !isSameDay(nextMessage?.sendTime, messageDate);
             
-            // 시간 표시 여부 결정 (같은 사용자의 연속 메시지 중 마지막에만 시간 표시)
             const showTime = isLastInGroup || !isNextSameTime;
-            
-            // 사용자명 표시 여부 결정 (연속 메시지의 첫 번째에만 표시)
             const showSenderName = isFirstInGroup;
             
-            // 메시지 추가
             grouped.push({
                 type: 'message',
                 ...message,
@@ -226,6 +262,7 @@ const Chat = () => {
         return grouped;
     };
 
+    // 웹소켓 연결 (기존 코드 유지)
     useEffect(() => {
         if (!chatRoom?.id || !currentUserId) {
             console.log('웹소켓 연결 조건 미충족:', { 
@@ -247,55 +284,51 @@ const Chat = () => {
             console.log('✅ 웹소켓 연결 성공:', frame);
             setIsConnected(true);
 
-            // 채팅방 구독
-            const subscription = stompClient.subscribe(
-                `/topic/chatroom.${chatRoom.id}`, 
-                (message) => {
-                    console.log('📨 새 메시지 수신:', message.body);
-                    try {
-                        const chatMessage = JSON.parse(message.body);
-                        
-                        // 🔧 내가 보낸 메시지는 웹소켓으로 받지 않음 (낙관적 업데이트로 이미 처리됨)
-                        if (String(chatMessage.senderId) === String(currentUserId)) {
-                            console.log('🔄 내 메시지는 웹소켓에서 무시:', chatMessage.senderId);
-                            return;
-                        }
-                        
-                        // 🔧 상대방 메시지만 웹소켓으로 처리 (낙관적 업데이트 없음)
-                        const newMessage = {
-                            id: chatMessage.id || `ws_${chatMessage.roomId}_${Date.now()}_${Math.random()}`,
-                            user: {
-                                isSelf: false, // 상대방의 메시지
-                                name: chatMessage.senderNickname || `사용자${chatMessage.senderId}`
-                            },
-                            text: chatMessage.content,
-                            time: formatTime(chatMessage.sendTime || new Date()),
-                            sendTime: chatMessage.sendTime || new Date().toISOString()
-                        };
-                        
-                        setMessages(prev => {
-                            // 🔧 강화된 중복 메시지 방지 (ID와 내용 기반)
-                            const isDuplicate = prev.some(msg => 
-                                msg.id === newMessage.id || 
-                                (msg.text === newMessage.text && 
-                                 msg.user?.name === newMessage.user?.name &&
-                                 Math.abs(new Date(msg.sendTime) - new Date(newMessage.sendTime)) < 1000) // 1초 이내 같은 내용
-                            );
+                const subscription = stompClient.subscribe(
+                    `/topic/chatroom.${chatRoom.id}`, 
+                    (message) => {
+                        console.log('📨 새 메시지 수신:', message.body);
+                        try {
+                            const chatMessage = JSON.parse(message.body);
                             
-                            if (isDuplicate) {
-                                console.log('🔄 중복 메시지 방지:', newMessage.id);
-                                return prev;
+                            if (String(chatMessage.senderId) === String(currentUserId)) {
+                                console.log('🔄 내 메시지는 웹소켓에서 무시:', chatMessage.senderId);
+                                return;
                             }
                             
-                            console.log('➕ 상대방 새 메시지 추가:', newMessage);
-                            return [...prev, newMessage];
-                        });
-                        
-                    } catch (error) {
-                        console.error('❌ 메시지 파싱 오류:', error);
+                            const newMessage = {
+                                id: chatMessage.id || `ws_${chatMessage.roomId}_${Date.now()}_${Math.random()}`,
+                                user: {
+                                    isSelf: false,
+                                    name: chatMessage.senderNickname || `사용자${chatMessage.senderId}`
+                                },
+                                text: chatMessage.content,
+                                time: formatTime(chatMessage.sendTime || new Date()),
+                                sendTime: chatMessage.sendTime || new Date().toISOString()
+                            };
+                            
+                            setMessages(prev => {
+                                const isDuplicate = prev.some(msg => 
+                                    msg.id === newMessage.id || 
+                                    (msg.text === newMessage.text && 
+                                     msg.user?.name === newMessage.user?.name &&
+                                     Math.abs(new Date(msg.sendTime) - new Date(newMessage.sendTime)) < 1000)
+                                );
+                                
+                                if (isDuplicate) {
+                                    console.log('🔄 중복 메시지 방지:', newMessage.id);
+                                    return prev;
+                                }
+                                
+                                console.log('➕ 상대방 새 메시지 추가:', newMessage);
+                                return [...prev, newMessage];
+                            });
+                            
+                        } catch (error) {
+                            console.error('❌ 메시지 파싱 오류:', error);
+                        }
                     }
-                }
-            );
+                );
 
             console.log('📡 채팅방 구독 완료:', `/topic/chatroom.${chatRoom.id}`);
         },
@@ -316,23 +349,22 @@ const Chat = () => {
     stompClient.activate();
     stompClientRef.current = stompClient;
 
-    // 클린업 함수
-    return () => {
-        console.log('🔌 웹소켓 연결 해제');
-        if (stompClientRef.current) {
-            stompClientRef.current.deactivate();
-            stompClientRef.current = null;
-        }
-        setIsConnected(false);
-    };
-}, [chatRoom?.id, currentUserId]);
+        return () => {
+            console.log('🔌 웹소켓 연결 해제');
+            if (stompClientRef.current) {
+                stompClientRef.current.deactivate();
+                stompClientRef.current = null;
+            }
+            setIsConnected(false);
+        };
+    }, [chatRoom?.id, currentUserId]);
 
-// 메시지 전송 함수 (낙관적 업데이트는 내 메시지에만)
-const handleSendStomp = async (text = '') => {
-    if (!text.trim()) {
-        console.log('❌ 빈 메시지는 전송할 수 없습니다.');
-        return;
-    }
+    // 메시지 전송 함수 (기존 코드 유지)
+    const handleSendStomp = async (text = '') => {
+        if (!text.trim()) {
+            console.log('❌ 빈 메시지는 전송할 수 없습니다.');
+            return;
+        }
 
     if (!stompClientRef.current?.connected) {
         console.log('❌ 웹소켓이 연결되지 않음');
@@ -346,162 +378,152 @@ const handleSendStomp = async (text = '') => {
         return;
     }
 
-    setSendingMessage(true);
-    
-    // 🔧 낙관적 업데이트는 오직 내 메시지에만 적용
-    const tempId = `my_temp_${Date.now()}_${Math.random()}`;
-    const tempMessage = {
-        id: tempId,
-        user: {
-            name: '나',
-            isSelf: true
-        },
-        text: text.trim(),
-        time: formatTime(new Date()),
-        sendTime: new Date().toISOString(),
-        isTemporary: true,
-        tempId: tempId
-    };
-    
-    console.log('➕ 낙관적 업데이트 - 내 메시지만 임시 추가:', tempMessage);
-    setMessages(prev => [...prev, tempMessage]);
-    setInputText('');
-
-    try {
-        // 서버로 보낼 메시지 포맷
-        const messageBody = {
-            senderId: parseInt(currentUserId),
-            roomId: chatRoom.id,
-            message: text.trim()
+        setSendingMessage(true);
+        
+        const tempId = `my_temp_${Date.now()}_${Math.random()}`;
+        const tempMessage = {
+            id: tempId,
+            user: {
+                name: '나',
+                isSelf: true
+            },
+            text: text.trim(),
+            time: formatTime(new Date()),
+            sendTime: new Date().toISOString(),
+            isTemporary: true,
+            tempId: tempId
         };
+        
+        console.log('➕ 낙관적 업데이트 - 내 메시지만 임시 추가:', tempMessage);
+        setMessages(prev => [...prev, tempMessage]);
+        setInputText('');
+
+        // 메시지 추가 후 스크롤
+        setTimeout(() => {
+            scrollViewRef.current?.scrollToEnd({ animated: true });
+        }, 100);
+
+        try {
+            const messageBody = {
+                senderId: parseInt(currentUserId),
+                roomId: chatRoom.id,
+                message: text.trim()
+            };
 
         console.log('📤 메시지 전송:', messageBody);
 
-        // STOMP 클라이언트로 메시지 전송
-        stompClientRef.current.publish({
-            destination: '/app/chat.sendMessage',
-            body: JSON.stringify(messageBody)
-        });
+            stompClientRef.current.publish({
+                destination: '/app/chat.sendMessage',
+                body: JSON.stringify(messageBody)
+            });
 
         console.log('✅ 메시지 전송 완료');
 
-        // 🔧 전송 성공 - 임시 메시지의 임시 상태만 해제
-        setTimeout(() => {
-            setMessages(prev => 
-                prev.map(msg => 
-                    msg.tempId === tempId 
-                        ? { ...msg, isTemporary: false, tempId: undefined }
-                        : msg
-                )
-            );
-        }, 500); // 0.5초 후 임시 상태 해제
+            setTimeout(() => {
+                setMessages(prev => 
+                    prev.map(msg => 
+                        msg.tempId === tempId 
+                            ? { ...msg, isTemporary: false, tempId: undefined }
+                            : msg
+                    )
+                );
+            }, 500);
 
-    } catch (error) {
-        console.error('❌ 메시지 전송 오류:', error);
-        
-        // 🔧 실패 시에만 임시 메시지 제거
-        setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
-        Alert.alert('전송 실패', '메시지를 보낼 수 없습니다.');
-    } finally {
-        setSendingMessage(false);
-    }
-};
+        } catch (error) {
+            console.error('❌ 메시지 전송 오류:', error);
+            
+            setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
+            Alert.alert('전송 실패', '메시지를 보낼 수 없습니다.');
+        } finally {
+            setSendingMessage(false);
+        }
+    };
 
-    // 메시지 추가 시 자동 스크롤
+    // 메시지 추가 시 자동 스크롤 (개선된 로직)
     useEffect(() => {
         if (scrollViewRef.current && messages.length > 0) {
+            const delay = keyboardVisible ? 200 : 100;
             setTimeout(() => {
                 scrollViewRef.current?.scrollToEnd({ animated: true });
-            }, 100);
+            }, delay);
         }
     }, [messages]);
 
-// 초기 데이터 로드
-useEffect(() => {
-    const loadChatData = async () => {
-        if (!currentUserId) {
-            console.log('⏳ currentUserId 로딩 대기 중...');
-            return;
-        }
-        
-        if (!chatRoomId && !postId) {
-            setError('잘못된 접근입니다.');
-            setLoading(false);
-            return;
-        }
-
-        try {
-            setLoading(true);
-            setError(null);
-            
-            console.log('🚀 채팅방 초기화 시작');
-            console.log('📝 파라미터:', { chatRoomId, postId, currentUserId });
-            
-            let roomData;
-            
-            // 1. 채팅방 정보 가져오기
-            if (chatRoomId) {
-                roomData = await fetchOrCreateChatRoom(chatRoomId, currentUserId, true);
-            } else if (postId) {
-                roomData = await fetchOrCreateChatRoom(postId, currentUserId, false);
-            }
-            if (!roomData) {
-                setError('채팅방을 불러올 수 없습니다.');
+    // 초기 데이터 로드 (기존 코드 유지)
+    useEffect(() => {
+        const loadChatData = async () => {
+            if (!currentUserId) {
+                console.log('⏳ currentUserId 로딩 대기 중...');
                 return;
             }
             
-            console.log('🏠 채팅방 데이터:', roomData);
-            setChatRoom(roomData);
-            
-            // 2. 동행 게시물 정보 가져오기
-            const accompanyIdToUse = roomData.accompanyId || postId;
-            console.log('🎯 동행 ID:', accompanyIdToUse);
-            
-            if (accompanyIdToUse) {
-                try {
-                    // 🔧 currentUserId를 두 번째 매개변수로 전달
-                    const postInfo = await getAccompanyPostInfo(accompanyIdToUse, currentUserId);
-                    console.log('📋 동행 정보:', postInfo);
-                    setAccompanyInfo(postInfo);
-                } catch (error) {
-                    console.error('동행 정보 조회 실패:', error);
-                    // 동행 정보 조회 실패해도 계속 진행
+            if (!chatRoomId && !postId) {
+                setError('잘못된 접근입니다.');
+                setLoading(false);
+                return;
+            }
+
+            try {
+                setLoading(true);
+                setError(null);
+                
+                console.log('🚀 채팅방 초기화 시작');
+                console.log('📝 파라미터:', { chatRoomId, postId, currentUserId });
+                
+                let roomData;
+                
+                if (chatRoomId) {
+                    roomData = await fetchOrCreateChatRoom(chatRoomId, currentUserId, true);
+                } else if (postId) {
+                    roomData = await fetchOrCreateChatRoom(postId, currentUserId, false);
                 }
-            }
-            
-            // 3. 기존 메시지 목록 가져오기
-            const messages = await fetchMessages(roomData.id, currentUserId);
-            console.log('💬 메시지 개수:', messages.length);
-            setMessages(messages);
+                if (!roomData) {
+                    setError('채팅방을 불러올 수 없습니다.');
+                    return;
+                }
+                
+                console.log('🏠 채팅방 데이터:', roomData);
+                setChatRoom(roomData);
+                
+                const accompanyIdToUse = roomData.accompanyId || postId;
+                console.log('🎯 동행 ID:', accompanyIdToUse);
+                
+                if (accompanyIdToUse) {
+                    try {
+                        const postInfo = await getAccompanyPostInfo(accompanyIdToUse, currentUserId);
+                        console.log('📋 동행 정보:', postInfo);
+                        setAccompanyInfo(postInfo);
+                    } catch (error) {
+                        console.error('동행 정보 조회 실패:', error);
+                    }
+                }
+                
+                const messages = await fetchMessages(roomData.id, currentUserId);
+                console.log('💬 메시지 개수:', messages.length);
+                setMessages(messages);
 
-            // 4. 메시지 읽음 처리
-            if (roomData && roomData.id && currentUserId) {
-                await markMessagesAsRead(roomData.id, currentUserId);
+                if (roomData && roomData.id && currentUserId) {
+                    await markMessagesAsRead(roomData.id, currentUserId);
+                }
+                
+                console.log('✅ 채팅방 초기화 완료');
+                
+            } catch (error) {
+                console.error('❌ 채팅 데이터 로드 실패:', error);
+                setError('채팅방을 불러올 수 없습니다.');
+                Alert.alert('오류', '채팅방 연결에 실패했습니다.');
+            } finally {
+                setLoading(false);
             }
-            
-            console.log('✅ 채팅방 초기화 완료');
-            
-        } catch (error) {
-            console.error('❌ 채팅 데이터 로드 실패:', error);
-            setError('채팅방을 불러올 수 없습니다.');
-            Alert.alert('오류', '채팅방 연결에 실패했습니다.');
-        } finally {
-            setLoading(false);
-        }
-    }; 
+        }; 
 
-    loadChatData();
-}, [chatRoomId, postId, currentUserId]); // 🔧 currentUserId도 의존성에 추가
-    
+        loadChatData();
+    }, [chatRoomId, postId, currentUserId]);
+        
     // 메시지 전송 핸들러
     const handleSend = () => {
         if (!inputText.trim()) return;
         handleSendStomp(inputText);
-    };
-
-    // 액션 버튼 토글
-    const toggleActions = () => {
-        setShowActions(!showActions);
     };
 
     // 게시물 보기 버튼
@@ -548,33 +570,31 @@ useEffect(() => {
     return (
         <SafeAreaView style={styles.container}>
             {/* 헤더 부분 */}
-        <View style={styles.header}>
-            <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
-                <Feather name="chevron-left" size={24} color="black" />
-            </TouchableOpacity>
-            
-            <View style={styles.headerContent}>
-                <View style={styles.headerLocationRow}>
-                    <Icon name="map-pin" size={12} color="black" style={styles.icon} />
-                    <Text style={styles.locationText}>
-                        {accompanyInfo?.location || chatRoom?.location || '위치 정보 없음'}
-                    </Text>
-                    <Ionicons name="person" size={12} color="black" style={[styles.icon, { marginLeft: 12 }]} />
-                    <Text style={styles.participantsText}>
-                        {/* 🔧 participants 처리 방식 변경 */}
-                        {Array.isArray(chatRoom?.participants) ? chatRoom.participants.length : (chatRoom?.participantCount || 0)}명 / {accompanyInfo?.maxParticipants || chatRoom?.maxParticipants || '?'}명
-                    </Text>
-                </View>
-                <View style={styles.headerTitleRow}>
-                    <TouchableOpacity onPress={handleViewPost}>
-                        <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
-                    {accompanyInfo?.title || '테스트 제목'}
-                    </Text>
+            <View style={styles.header}>
+                <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
+                    <Feather name="chevron-left" size={24} color="black" />
                 </TouchableOpacity>
+                
+                <View style={styles.headerContent}>
+                    <View style={styles.headerLocationRow}>
+                        <Icon name="map-pin" size={12} color="black" style={styles.icon} />
+                        <Text style={styles.locationText}>
+                            {accompanyInfo?.location || chatRoom?.location || '위치 정보 없음'}
+                        </Text>
+                        <Ionicons name="person" size={12} color="black" style={[styles.icon, { marginLeft: 12 }]} />
+                        <Text style={styles.participantsText}>
+                            {Array.isArray(chatRoom?.participants) ? chatRoom.participants.length : (chatRoom?.participantCount || 0)}명 / {accompanyInfo?.maxParticipants || chatRoom?.maxParticipants || '?'}명
+                        </Text>
+                    </View>
+                    <View style={styles.headerTitleRow}>
+                        <TouchableOpacity onPress={handleViewPost}>
+                            <Text style={styles.headerTitle} numberOfLines={1} ellipsizeMode="tail">
+                                {accompanyInfo?.title || '테스트 제목'}
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
             </View>
-        </View>
-
-        </View>
 
             {/* 공지사항 */}
             <View style={styles.announcementWrapper}>
@@ -587,11 +607,25 @@ useEffect(() => {
                 </View>
             </View>
 
-            {/* 채팅 메시지 목록 */}
+            {/* 채팅 메시지 목록 - 키보드와 함께 조정되는 ScrollView */}
             <ScrollView 
                 style={styles.messagesContainer}
                 ref={scrollViewRef}
-                onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+                contentContainerStyle={[
+                    styles.messagesContentContainer,
+                    {
+                        paddingBottom: keyboardVisible 
+                            ? keyboardHeight + 80  // 키보드 높이 + 입력창 + 여유 공간
+                            : 80  // 기본 상태에서는 입력창 높이만큼만
+                    }
+                ]}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+                onContentSizeChange={() => {
+                    setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                    }, 100);
+                }}
             >
                 {groupedMessages.length === 0 ? (
                     <View style={styles.emptyContainer}>
@@ -624,31 +658,17 @@ useEffect(() => {
                 )}
             </ScrollView>
 
-            {/* 확장 버튼 클릭 시 노출되는 하단 버튼 영역
-            {showActions && (
-                <View style={styles.bottomButtons}>
-                    <TouchableOpacity style={styles.actionButtonTop}>
-                        <Text style={styles.actionButtonText}>내 위치 공유하기</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionButtonBottom}>
-                        <Text style={styles.actionButtonText}>사진/동영상 전송하기</Text>
-                    </TouchableOpacity>
-                </View>
-            )} */}
-
-            {/* 메시지 입력 영역 - 키보드 간격 조정 */}
-            <KeyboardAvoidingView
-                behavior={Platform.OS === "ios" ? "padding" : "height"}
-                keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 30}
-                style={styles.inputContainer}
-            >
-                {/* <TouchableOpacity style={styles.addButton} onPress={toggleActions}>
-                    <Feather name={showActions ? "x" : "plus"} size={24} color="black" />
-                </TouchableOpacity> */}
-                <View style={[
-                    styles.inputWrapper, 
-                    Platform.OS === 'ios' ? platformStyles.inputWrapperIOS : platformStyles.inputWrapperAndroid
-                ]}>
+            {/* 메시지 입력 영역 - 키보드 높이에 따라 절대 위치 조정 */}
+            <View style={[
+                styles.inputContainer,
+                {
+                    position: 'absolute',
+                    bottom: keyboardVisible ? keyboardHeight : 0,
+                    left: 0,
+                    right: 0,
+                }
+            ]}>
+                <View style={styles.inputWrapper}>
                     <TextInput
                         style={styles.input}
                         placeholder="메시지를 입력해주세요."
@@ -656,7 +676,13 @@ useEffect(() => {
                         value={inputText}
                         onChangeText={setInputText}
                         multiline
+                        maxHeight={80}
                         editable={!sendingMessage && isConnected}
+                        onFocus={() => {
+                            setTimeout(() => {
+                                scrollViewRef.current?.scrollToEnd({ animated: true });
+                            }, 300);
+                        }}
                     />
                     <TouchableOpacity 
                         style={styles.sendButton} 
@@ -674,12 +700,12 @@ useEffect(() => {
                         )}
                     </TouchableOpacity>
                 </View>
-            </KeyboardAvoidingView>
+            </View>
         </SafeAreaView>
     );
 };
 
-// 스타일 정의
+// 기존 스타일들 유지하되 일부 수정
 const bubbleStyles = StyleSheet.create({
     messageContainer: {
         marginVertical: 3,
@@ -826,7 +852,7 @@ const styles = StyleSheet.create({
         fontWeight: '500',
     },
     header: {
-        backgroundColor: '#00000066',
+        backgroundColor: '#d3d3d3',
         paddingTop: 30,
         paddingBottom: 12,
         paddingHorizontal: 16,
@@ -857,19 +883,7 @@ const styles = StyleSheet.create({
     participantsText: {
         fontSize: 12,
     },
-    connectionStatus: {
-        marginLeft: 8,
-    },
-    connected: {
-        color: '#10B981',
-    },
-    disconnected: {
-        color: '#EF4444',
-    },
-    connectionText: {
-        fontSize: 8,
-    },
-        headerTitle: {
+    headerTitle: {
         fontSize: 20,
         fontWeight: 'bold',
         marginRight: 4,
@@ -904,6 +918,9 @@ const styles = StyleSheet.create({
         flex: 1,
         padding: 8,
     },
+    messagesContentContainer: {
+        flexGrow: 1,
+    },
     dateSeparatorContainer: {
         flexDirection: 'row',
         alignItems: 'center',
@@ -935,44 +952,14 @@ const styles = StyleSheet.create({
         fontSize: 14,
         color: '#999',
     },
-    bottomButtons: {
-        borderTopWidth: 1,
-        borderTopColor: '#E5E7EB',
-    },
-    actionButtonTop: {
-        padding: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#4B5563',
-        borderTopLeftRadius: 8,
-        borderTopRightRadius: 8,
-    },
-    actionButtonBottom: {
-        padding: 12,
-        justifyContent: 'center',
-        alignItems: 'center',
-        backgroundColor: '#4B5563',
-    },
-    actionButtonText: {
-        color: 'white',
-        fontWeight: '500',
-    },
     inputContainer: {
-        flexDirection: 'row',
-        padding: 8,
-        alignItems: 'center',
+        backgroundColor: 'white',
         borderTopWidth: 1,
         borderTopColor: '#E5E7EB',
-        backgroundColor: 'white',
-        marginBottom : -20
-    },
-    addButton: {
-        padding: 6,
-        marginRight: 4,
-        marginBottom: 30,
+        paddingHorizontal: 8,
+        paddingVertical: 8,
     },
     inputWrapper: {
-        flex: 1,
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
@@ -980,19 +967,20 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         paddingLeft: 12,
         paddingRight: 4,
-        marginRight: 8,
         backgroundColor: 'white',
+        minHeight: 44,
     },
     input: {
         flex: 1,
         paddingVertical: 8,
-        maxHeight: 100,
         color: '#000',
     },
     sendButton: {
         padding: 8,
         justifyContent: 'center',
         alignItems: 'center',
+        minWidth: 40,
+        minHeight: 40,
     }
 });
 

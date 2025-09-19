@@ -128,7 +128,7 @@ export default function DesignItinerary() {
                     travelId: currentTourId,
                     timeSlot: `${aiSchedule.startTime} ~ ${aiSchedule.endTime}`,
                     title: aiSchedule.title,
-                    tag: aiSchedule.tag || 'ATTRACTION',
+                    tag: aiSchedule.tag || '관광',
                     location: aiSchedule.location || '',
                     latitude: aiSchedule.latitude || 0.0,
                     longitude: aiSchedule.longitude || 0.0,
@@ -221,7 +221,7 @@ export default function DesignItinerary() {
     };
 
     // AI 응답을 스케줄 형식으로 변환하는 함수
-    const transformAIResponseToSchedules = async (aiData, travelId, period = { type: 'date' }) => {
+const transformAIResponseToSchedules = async (aiData, travelId, period = { type: 'date' }) => {
     const schedules = {};
     if (!aiData || typeof aiData !== 'object') return schedules;
 
@@ -240,46 +240,62 @@ export default function DesignItinerary() {
         });
     };
 
-    // 🔥 핵심 수정: 실제 날짜를 기반으로 day 번호 계산
-    Object.keys(aiData).forEach(dateKey => {
+    Object.keys(aiData).forEach((dateKey, index) => {
         let dayKey;
-        
-        if (period.type === 'date' && period.startDate) {
-            // 날짜 기반: 실제 날짜와 시작일의 차이로 day 번호 계산
-            const tripStartDate = new Date(period.startDate);
-            const currentDate = new Date(dateKey);
-            const dayDiff = Math.floor((currentDate - tripStartDate) / (1000 * 60 * 60 * 24));
-            const dayNumber = dayDiff + 1;
-            dayKey = `day${dayNumber}`;
+
+        // 1. 날짜 형식 (YYYY-MM-DD)인지 먼저 확인
+        if (period.type === 'date' && period.startDate && dayjs(dateKey, 'YYYY-MM-DD', true).isValid()) {
+            const tripStartDate = dayjs(period.startDate).startOf('day');
+            const currentDate = dayjs(dateKey).startOf('day');
+            const dayNumber = currentDate.diff(tripStartDate, 'day') + 1;
             
-            console.log(`🔄 날짜 매핑: ${dateKey} -> ${dayKey} (시작일: ${period.startDate})`);
-        } else {
-            // 기간 기반: 기존 로직 유지 (순차적 배정)
-            const dateIndex = Object.keys(aiData).indexOf(dateKey);
-            dayKey = `day${dateIndex + 1}`;
+            if (dayNumber > 0) {
+                dayKey = `day${dayNumber}`;
+                console.log(`🔄 [AI] 날짜 키 매핑: "${dateKey}" -> ${dayKey}`);
+            }
+        }
+
+        // 2. 날짜 형식이 아니면 "1일차", "Day 2" 같은 문자열에서 숫자 추출 시도
+        if (!dayKey) {
+            const dayMatch = dateKey.match(/(?:day|일차)\s*(\d+)|(\d+)\s*(?:day|일차)/i);
+            const digitMatch = dateKey.match(/^\d+$/);
+
+            if (dayMatch && (dayMatch[1] || dayMatch[2])) {
+                const dayNumber = dayMatch[1] || dayMatch[2];
+                dayKey = `day${dayNumber}`;
+                console.log(`🔄 [AI] 문자열 키 매핑: "${dateKey}" -> ${dayKey}`);
+            } else if (digitMatch) {
+                dayKey = `day${digitMatch[0]}`;
+                console.log(`🔄 [AI] 숫자 키 매핑: "${dateKey}" -> ${dayKey}`);
+            }
+        }
+
+        // 3. 위 방법으로도 dayKey를 찾지 못하면 순서(index) 기반으로 대체
+        if (!dayKey) {
+            dayKey = `day${index + 1}`;
+            console.warn(`⚠️ [AI] "${dateKey}"에 대한 매핑 규칙을 찾지 못해 순서 기반으로 매핑: ${dayKey}`);
         }
         
         const dayActivities = Array.isArray(aiData[dateKey]) ? aiData[dateKey] : [];
-        schedules[dayKey] = [];
+        schedules[dayKey] = schedules[dayKey] || [];
 
         const existingDaySchedules = combinedScheduleData[dayKey] || [];
 
         dayActivities.forEach((activity, activityIndex) => {
-            // 1️⃣ 기존 일정 끝나는 시간 기준
             let startTimeMinutes = 9 * 60; // 기본 9:00
-            if (existingDaySchedules.length > 0) {
-                const latestEnd = existingDaySchedules
+            const allSchedulesForDay = [...existingDaySchedules, ...schedules[dayKey]];
+
+            if (allSchedulesForDay.length > 0) {
+                const latestEnd = allSchedulesForDay
                     .map(s => parseTime(s.endTime))
                     .sort((a, b) => b - a)[0];
                 startTimeMinutes = Math.max(startTimeMinutes, latestEnd);
             }
 
-            // 2️⃣ AI 일정 길이
             const duration = (activity.stayDuration || 2) * 60;
             let endTimeMinutes = startTimeMinutes + duration;
 
-            // 3️⃣ 겹치면 30분씩 밀기
-            while (isOverlapping(existingDaySchedules, {
+            while (isOverlapping(allSchedulesForDay, {
                 startTime: `${Math.floor(startTimeMinutes/60).toString().padStart(2,'0')}:${(startTimeMinutes%60).toString().padStart(2,'0')}`,
                 endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`
             })) {
@@ -294,19 +310,17 @@ export default function DesignItinerary() {
                 endTime: `${Math.floor(endTimeMinutes/60).toString().padStart(2,'0')}:${(endTimeMinutes%60).toString().padStart(2,'0')}`,
                 location: activity.location || activity.attractionName || '',
                 memo: activity.tip || '',
-                tag: activity.scheduleType || '관광',
+                tag: '관광',
                 isAiSuggestion: true,
-                categoryColor: scheduleUtils.getCategoryStyle(activity.scheduleType || '관광').borderColor,
+                categoryColor: scheduleUtils.getCategoryStyle('관광').borderColor,
             };
 
-            // 🔥 수정: 실제 날짜 정보도 포함
             if (period.type === 'date') {
                 schedule.date = dateKey;
             } else {
                 schedule.dayDescription = dayKey.replace('day', 'Day ');
             }
 
-            existingDaySchedules.push(schedule);
             schedules[dayKey].push(schedule);
         });
     });
@@ -314,7 +328,6 @@ export default function DesignItinerary() {
     console.log('🔄 최종 AI 스케줄 매핑:', schedules);
     return schedules;
 };
-
 
 
     // 나머지 기존 함수들은 동일하게 유지...
@@ -632,7 +645,7 @@ export default function DesignItinerary() {
                 travelId: currentTourId,
                 timeSlot: `${newScheduleData.startTime} ~ ${newScheduleData.endTime}`,
                 title: newScheduleData.title,
-                tag: newScheduleData.category || 'CUSTOM',
+                tag: newScheduleData.tag || 'CUSTOM',
                 location: locationName,
                 latitude: latitude !== null ? latitude : 0.0,
                 longitude: longitude !== null ? longitude : 0.0,

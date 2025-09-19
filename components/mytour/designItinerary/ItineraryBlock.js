@@ -5,7 +5,8 @@ import {
     StyleSheet,
     ScrollView,
     Dimensions,
-    TouchableOpacity
+    TouchableOpacity,
+    Animated 
 } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -132,15 +133,23 @@ const timeSlotUtils = {
 
 // 일정 관련 유틸리티
 const scheduleUtils = {
-    getCategoryStyle: (category) => {
-        const categoryStyles = {
+    getCategoryStyle: (category, isAiSuggestion = false) => {
+        const baseStyles = {
             '숙소': { backgroundColor: '#FFF5CC', borderColor: '#FFD965', textColor: '#000' },
             '식사': { backgroundColor: '#FFE5D5', borderColor: '#FF9E6D', textColor: '#000' },
             '관광': { backgroundColor: '#E6F1FB', borderColor: '#A3C8E9', textColor: '#000' },
             '휴식': { backgroundColor: '#EFF5EC', borderColor: '#C6D6C3', textColor: '#000' }
         };
 
-        return categoryStyles[category] || categoryStyles['관광'];
+        const aiStyles = {
+            '숙소': { backgroundColor: '#FFFCF2', borderColor: '#FFEEC2', textColor: '#777' },
+            '식사': { backgroundColor: '#FFF5F0', borderColor: '#FFCBB3', textColor: '#777' },
+            '관광': { backgroundColor: '#F5FAFF', borderColor: '#D1E3F4', textColor: '#777' },
+            '휴식': { backgroundColor: '#F7FAF5', borderColor: '#E3EAE2', textColor: '#777' }
+        };
+
+        const styles = isAiSuggestion ? aiStyles : baseStyles;
+        return styles[category] || (isAiSuggestion ? aiStyles['관광'] : baseStyles['관광']);
     },
 
     getScheduleInfo: (dayNumber, timeSlot, scheduleData) => {
@@ -305,7 +314,7 @@ const TimeBlock = ({
         return null;
     }
 
-    const categoryStyle = scheduleUtils.getCategoryStyle(schedule.tag);
+    const categoryStyle = scheduleUtils.getCategoryStyle(schedule.tag, schedule.isAiSuggestion);
     // 일정 블록의 높이는 일정의 총 분 단위 길이를 픽셀 스케일로 변환하여 계산
     const calculatedHeight = (
         scheduleUtils.calculateBlockHeight(
@@ -351,6 +360,10 @@ const TimeBlock = ({
                     </View>
                 )}
             </View>
+            {/* AI 제안 라벨 추가 */}
+            {schedule.isAiSuggestion && (
+                <Text style={styles.aiLabel}>AI 제안</Text>
+            )}
         </TouchableOpacity>
     );
 };
@@ -432,197 +445,106 @@ const DateColumn = ({
     );
 };
 
-// 메인 컴포넌트
-const ItineraryBlock = ({
-    periodType,
-    startDate,
-    endDate,
-    nights,
-    days,
-    scheduleData = {},
-    onTimeBlockClick
-}) => {
-    const horizontalScrollViewRef = useRef(null);
-    const verticalScrollViewRef = useRef(null);
-    const blocksHorizontalScrollViewRef = useRef(null);
-    const blocksVerticalScrollViewRef = useRef(null);
+// 세로 스크롤 동기화
+const handleVerticalScroll = (event) => {
+  const y = event.nativeEvent.contentOffset.y;
+  if (verticalScrollViewRef.current) {
+    verticalScrollViewRef.current.scrollTo({ y, animated: false });
+  }
+};
 
-    const isHeaderScrolling = useRef(false);
-    const isBlocksScrolling = useRef(false);
+// 메인 컴포넌트
+const ItineraryBlock = ({ periodType, startDate, endDate, days, scheduleData = {}, onTimeBlockClick }) => {
+    // ❗ 스크롤 위치를 추적하기 위한 Animated.Value를 다시 사용합니다.
+    const scrollX = useRef(new Animated.Value(0)).current;
+    const scrollY = useRef(new Animated.Value(0)).current;
 
     const dates = dateUtils.generateDates(periodType, startDate, endDate, days);
     const { baseSlots, daySlotInfo } = timeSlotUtils.generateTimeSlotsForAllDays(dates, scheduleData);
 
-    // 사용 가능한 너비에서 시간 라벨 컬럼 너비(35)와 좌우 패딩(8*2)을 제외
-    const availableWidth = width - 35 - (8 * 2); // 8은 gridContainer의 paddingHorizontal
-    // 날짜 블록의 너비 계산 (가로 간격은 horizontalItemSpacing * 2 적용)
-    const DATE_BLOCK_WIDTH = dates.length <= 3 ? 
-        availableWidth / dates.length - (horizontalItemSpacing * 2) : 
-        availableWidth / 3 - (horizontalItemSpacing * 2);
-
-    const [currentVisibleRange, setCurrentVisibleRange] = useState({
-        start: 1,
-        end: Math.min(3, dates.length)
-    });
-
-    const updateVisibleRange = (scrollX) => {
-        if (dates.length <= 3) {
-            setCurrentVisibleRange({ start: 1, end: dates.length });
-            return;
-        }
-
-        // 스크롤 위치에 따라 현재 보이는 날짜 범위 업데이트 (블록 너비와 가로 마진 고려)
-        const currentIndex = Math.round(scrollX / (DATE_BLOCK_WIDTH + horizontalItemSpacing * 2));
-        const visibleCount = Math.min(3, dates.length);
-        const start = Math.max(1, currentIndex + 1);
-        const end = Math.min(dates.length, start + visibleCount - 1);
-
-        setCurrentVisibleRange({ start, end });
-    };
-
-    const handleHeaderHorizontalScroll = (event) => {
-        if (isBlocksScrolling.current) return;
-
-        isHeaderScrolling.current = true;
-        const scrollX = event.nativeEvent.contentOffset.x;
-
-        updateVisibleRange(scrollX);
-
-        if (blocksHorizontalScrollViewRef.current) {
-            blocksHorizontalScrollViewRef.current.scrollTo({
-                x: scrollX,
-                animated: false
-            });
-        }
-
-        setTimeout(() => {
-            isHeaderScrolling.current = false;
-        }, 50);
-    };
-
-    const handleBlocksHorizontalScroll = (event) => {
-        if (isHeaderScrolling.current) return;
-
-        isBlocksScrolling.current = true;
-        const scrollX = event.nativeEvent.contentOffset.x;
-
-        updateVisibleRange(scrollX);
-
-        if (horizontalScrollViewRef.current) {
-            horizontalScrollViewRef.current.scrollTo({
-                x: scrollX,
-                animated: false
-            });
-        }
-
-        setTimeout(() => {
-            isBlocksScrolling.current = false;
-        }, 50);
-    };
-
-    const handleVerticalScroll = (event) => {
-        const scrollY = event.nativeEvent.contentOffset.y;
-
-        if (verticalScrollViewRef.current) {
-            verticalScrollViewRef.current.scrollTo({
-                y: scrollY,
-                animated: false
-            });
-        }
-    };
+    const availableWidth = width - 35 - (8 * 2);
+    const DATE_BLOCK_WIDTH = dates.length <= 3
+        ? availableWidth / dates.length - (horizontalItemSpacing * 2)
+        : availableWidth / 3 - (horizontalItemSpacing * 2);
 
     return (
         <View style={styles.container}>
-            {/* 상단 위치 표시바 */}
-            <View style={styles.positionBar}>
-                {dates.length > 3 && (
-                    <View style={styles.progressBar}>
-                        <View
-                            style={[
-                                styles.progressIndicator,
-                                {
-                                    width: `${(3 / dates.length) * 100}%`,
-                                    left: `${((currentVisibleRange.start - 1) / dates.length) * 100}%`
-                                }
-                            ]}
-                        />
-                    </View>
-                )}
-            </View>
-
             <View style={styles.gridContainer}>
-                {/* 날짜 헤더 영역 */}
+                {/* 날짜 헤더 */}
                 <View style={styles.headerRow}>
                     <View style={styles.timeColumnHeader} />
-
                     <ScrollView
-                        ref={horizontalScrollViewRef}
                         horizontal
                         showsHorizontalScrollIndicator={false}
+                        scrollEnabled={false} // ❗ 헤더는 직접 스크롤되지 않도록 다시 false로 설정합니다.
                         style={styles.dateHeaderScrollView}
-                        contentContainerStyle={styles.dateHeaderContent}
-                        scrollEventThrottle={1}
-                        onScroll={handleHeaderHorizontalScroll}
-                        bounces={false}
-                        decelerationRate="fast"
                     >
-                        {dates.map((dateInfo, index) => (
-                            <View key={index} style={[styles.dateColumnHeader, { width: DATE_BLOCK_WIDTH, marginRight: horizontalItemSpacing * 2 }]}>
-                                <Text style={styles.dateHeaderText}>
-                                    {periodType === 'date' ? (
-                                        `${dateInfo.month}/${dateInfo.date}(${dateInfo.dayName})`
-                                    ) : (
-                                        `${dateInfo.dayNumber}일차`
-                                    )}
-                                </Text>
-                            </View>
-                        ))}
+                        {/* ❗ Animated.View로 감싸고 transform으로 X축 이동을 적용합니다. */}
+                        <Animated.View
+                            style={[
+                                styles.dateHeaderContent,
+                                {
+                                    transform: [{ translateX: Animated.multiply(scrollX, -1) }]
+                                }
+                            ]}
+                        >
+                            {dates.map((dateInfo, index) => (
+                                <View
+                                    key={index}
+                                    style={[styles.dateColumnHeader, { width: DATE_BLOCK_WIDTH, marginRight: horizontalItemSpacing * 2 }]}
+                                >
+                                    <Text style={styles.dateHeaderText}>
+                                        {periodType === 'date'
+                                            ? `${dateInfo.month}/${dateInfo.date}(${dateInfo.dayName})`
+                                            : `${dateInfo.dayNumber}일차`}
+                                    </Text>
+                                </View>
+                            ))}
+                        </Animated.View>
                     </ScrollView>
                 </View>
 
-                {/* 메인 그리드 영역 */}
+                {/* 메인 그리드 */}
                 <View style={styles.mainGrid}>
-                    {/* 시간 라벨 컬럼 (고정) */}
-                    <View style={styles.timeColumn}>
-                        <ScrollView
-                            ref={verticalScrollViewRef}
-                            showsVerticalScrollIndicator={false}
-                            style={styles.timeColumnScrollView}
-                            scrollEventThrottle={1}
-                            bounces={false}
-                            decelerationRate="fast"
-                            // 👇 이 속성을 추가하여 스크롤을 비활성화합니다.
-                            scrollEnabled={false} 
+                    {/* 시간 라벨 */}
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        scrollEnabled={false} // ❗ 시간 라벨도 직접 스크롤되지 않도록 false로 설정합니다.
+                        style={styles.timeColumn}
+                    >
+                        {/* ❗ Animated.View로 감싸고 transform으로 Y축 이동을 적용합니다. */}
+                        <Animated.View
+                            style={{
+                                transform: [{ translateY: Animated.multiply(scrollY, -1) }]
+                            }}
                         >
                             {baseSlots.map((timeSlot, index) => (
-                                <TimeLabel
-                                    key={index}
-                                    timeSlot={timeSlot}
-                                    index={index}
-                                />
+                                <TimeLabel key={index} timeSlot={timeSlot} index={index} />
                             ))}
-                        </ScrollView>
-                    </View>
+                        </Animated.View>
+                    </ScrollView>
 
-                    {/* 일정 블록 영역 */}
+                    {/* 일정 블록 (실제 스크롤이 일어나는 영역) */}
                     <ScrollView
-                        ref={blocksHorizontalScrollViewRef}
                         horizontal
                         showsHorizontalScrollIndicator={false}
-                        style={styles.blocksHorizontalScrollView}
-                        scrollEventThrottle={1}
-                        onScroll={handleBlocksHorizontalScroll}
+                        scrollEventThrottle={16}
                         bounces={false}
-                        decelerationRate="fast"
+                        // ❗ onScroll 이벤트를 통해 scrollX 값을 직접 업데이트합니다.
+                        onScroll={Animated.event(
+                            [{ nativeEvent: { contentOffset: { x: scrollX } } }],
+                            { useNativeDriver: false }
+                        )}
                     >
                         <ScrollView
-                            ref={blocksVerticalScrollViewRef}
                             showsVerticalScrollIndicator={false}
-                            style={styles.blocksVerticalScrollView}
-                            scrollEventThrottle={1}
-                            onScroll={handleVerticalScroll}
+                            scrollEventThrottle={16}
                             bounces={false}
-                            decelerationRate="fast"
+                            // ❗ onScroll 이벤트를 통해 scrollY 값을 직접 업데이트합니다.
+                            onScroll={Animated.event(
+                                [{ nativeEvent: { contentOffset: { y: scrollY } } }],
+                                { useNativeDriver: false }
+                            )}
                         >
                             <View style={styles.dateColumnsContainer}>
                                 {dates.map((dateInfo, index) => (
@@ -780,6 +702,18 @@ const styles = StyleSheet.create({
         color: '#9ca3af',
         textAlign: 'center',
         fontWeight: '300',
+    },
+    aiLabel: {
+        position: 'absolute',
+        bottom: 4,
+        right: 6,
+        fontSize: 9,
+        fontWeight: 'bold',
+        color: '#007BFF',
+        paddingHorizontal: 3,
+        paddingVertical: 1,
+        borderRadius: 3,
+        overflow: 'hidden', // borderRadius를 적용하기 위해 추가
     },
 });
 

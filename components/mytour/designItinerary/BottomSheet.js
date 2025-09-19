@@ -240,17 +240,6 @@ const BottomSheet = ({
 
     // AI 일정 생성 시작
     const handleAIGenerateStart = () => {
-        // '기간' 기반(duration) 여행일 경우 기능 제한
-        if (periodType === 'duration') {
-            Alert.alert(
-                "업데이트 준비 중", // 팝업 제목
-                "일자별 여행에서의 AI 일정 생성 기능은 현재 준비 중입니다. 날짜별 여행에서는 이용할 수 있습니다!", // 팝업 메시지
-                [{ text: "확인" }] // 버튼
-            );
-            return; // AI 생성 모드로 진입하지 않고 함수를 종료합니다.
-        }
-
-        // '날짜' 기반(date) 여행일 경우에만 기존 로직 실행
         setIsAIGenerating(true);
     };
 
@@ -334,15 +323,35 @@ const BottomSheet = ({
         try {
             console.log("AI 일정 생성 준비 데이터: ", result);
             
-            const dates = result.selectedDates.includes('전체')
-                ? generateFullDateList(startDate, endDate)
-                : convertDateStringsToISO(result.selectedDates);
+            // ✅ 1. dates와 dayDescriptions 변수를 null로 초기화합니다.
+            let dates = null;
+            let dayDescriptions = null;
+
+            // ✅ 2. 부모로부터 받은 periodType prop을 확인하여 분기 처리합니다.
+            if (periodType === 'date') {
+                // '날짜별' 선택 시 기존 로직을 그대로 사용하여 dates를 채웁니다.
+                dates = result.selectedDates.includes('전체')
+                    ? generateFullDateList(startDate, endDate)
+                    : convertDateStringsToISO(result.selectedDates);
+            } else { // '일자별' 선택 시
+                // '전체'를 선택했는지 확인합니다.
+                if (result.selectedDates.includes('전체')) {
+                    // 'days' prop(예: 5)을 사용하여 ["1일차", "2일차", ..., "5일차"] 배열 생성
+                    dayDescriptions = Array.from({ length: days }, (_, i) => `${i + 1}일차`);
+                } else {
+                    // 특정 일자만 선택한 경우, 그 값을 그대로 사용합니다.
+                    dayDescriptions = result.selectedDates;
+                }
+            }
 
             const style = mapPreferenceToStyleEnum(result.selectedPreference);
 
+            // ✅ 3. requestBody에 dates와 dayDescriptions를 모두 포함시킵니다.
+            // 둘 중 하나는 데이터가 있고, 다른 하나는 null이 됩니다.
             const requestBody = {
                 travelId,
                 dates,
+                dayDescriptions,
                 style,
                 attractionList: tempSelectedAttractions.map(a => ({
                     id: a.id,
@@ -354,6 +363,8 @@ const BottomSheet = ({
             };
 
             console.log('서버 전송 데이터:', JSON.stringify(requestBody, null, 2));
+
+            // ... (이하 fetch 로직은 동일) ...
 
             const token = await AsyncStorage.getItem('jwtToken');
             if (!token) throw new Error('인증 토큰이 없습니다.');
@@ -369,12 +380,15 @@ const BottomSheet = ({
                 body: JSON.stringify(requestBody)
             });
 
-            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+            if (!response.ok) {
+                const errorBody = await response.text();
+                console.error('서버 에러 응답:', errorBody);
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
 
             const aiResponseData = await response.json();
             console.log('서버 AI 응답:', aiResponseData);
 
-            // ✅ 핵심: AI 응답을 부모 컴포넌트로 전달
             if (onCreateSchedule) {
                 onCreateSchedule(tempSelectedAttractions, result, aiResponseData);
             }
@@ -385,10 +399,11 @@ const BottomSheet = ({
         } finally {
             setShowAiPopup(false);
             setTempSelectedAttractions([]);
-            setIsAIGenerating(false); // AI 모드 종료
-            setAiSelectedAttractions([]); // 선택된 관광지 초기화
+            setIsAIGenerating(false);
+            setAiSelectedAttractions([]);
         }
     };
+
 
     // 3. AI 스케줄 컨트롤 컴포넌트 (새로 생성)
 

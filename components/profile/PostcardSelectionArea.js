@@ -2,25 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity, Text, Image, TextInput } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import PostcardOverlay from './PostcardOverlay';
-
-// 엽서 번호에 따라 이미지 경로를 매핑
-const postcardImages = {
-    1: require('../../assets/postcardType/1.png'),
-    2: require('../../assets/postcardType/2.png'),
-    3: require('../../assets/postcardType/3.png'),
-    4: require('../../assets/postcardType/4.png'),
-    // 5: require('../../assets/postcardType/5.png'),
-    6: require('../../assets/postcardType/6.png'),
-    7: require('../../assets/postcardType/7.png'),
-    8: require('../../assets/postcardType/8.png'),
-    9: require('../../assets/postcardType/9.png'),
-    10: require('../../assets/postcardType/10.png'),
-    // 11: require('../../assets/postcardType/11.png'),
-    // 12: require('../../assets/postcardType/12.png'),
-    // 13: require('../../assets/postcardType/13.png'),
-    // 14: require('../../assets/postcardType/14.png'),
-    // 15: require('../../assets/postcardType/15.png'),
-};
+import { postcardTemplates, getPostcardOverlayStyle } from '../../utils/PostcardTemplates';
 
 const PostcardSelectionArea = ({
     selectedPostcard,
@@ -32,11 +14,15 @@ const PostcardSelectionArea = ({
     onOverlayClose,
     onWritePress,
     onDrawPress,
-    postcardContent, // 엽서 텍스트 내용
-    onContentChange, // 텍스트 변경 핸들러
-    isTextEditing, // 텍스트 편집 상태
-    textInputRef // TextInput 참조
+    postcardContent,
+    onContentChange,
+    isTextEditing,
+    textInputRef
 }) => {
+    const templateNumber = selectedPostcard?.code;
+
+    const textLayout = getPostcardOverlayStyle(templateNumber);
+
     return (
         <View style={styles.container}>
             <TouchableOpacity
@@ -48,18 +34,15 @@ const PostcardSelectionArea = ({
                 disabled={!isEditMode}
             >
                 {selectedPostcard ? (
-                    // 엽서가 선택되면 해당 이미지 경로를 사용하여 이미지 렌더링
                     <View style={styles.postcardContainer}>
                         <Image
-                            // 수정된 부분: selectedPostcard 객체의 code 속성을 사용
-                            source={postcardImages[selectedPostcard?.code]}
+                            source={postcardTemplates[templateNumber]}
                             style={styles.postcardImage}
                         />
                         {isTextEditing ? (
-                            // 텍스트 편집 모드일 때 투명한 TextInput 렌더링
                             <TextInput
                                 ref={textInputRef}
-                                style={styles.postcardTextInput}
+                                style={[styles.postcardTextInput, textLayout]}
                                 multiline
                                 value={postcardContent}
                                 onChangeText={onContentChange}
@@ -68,8 +51,7 @@ const PostcardSelectionArea = ({
                                 placeholderTextColor="#000"
                             />
                         ) : (
-                            // 텍스트 편집 모드가 아닐 때 텍스트 렌더링
-                            <Text style={styles.postcardTextDisplay}>
+                            <Text style={[styles.postcardTextDisplay, textLayout]}>
                                 {postcardContent}
                             </Text>
                         )}
@@ -82,7 +64,6 @@ const PostcardSelectionArea = ({
                         />
                     </View>
                 ) : (
-                    // 엽서가 선택되지 않았을 때 플레이스홀더 표시
                     <View style={styles.postcardPlaceholder}>
                         <Feather
                             name="file-text"
@@ -139,32 +120,22 @@ const styles = StyleSheet.create({
         color: '#999',
         fontWeight: '500',
     },
-    // 엽서 위에 글을 쓰는 TextInput 스타일 추가
     postcardTextInput: {
-        position: 'absolute',
-        top: 40,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        fontSize: 16,
-        color: '#000', // 텍스트 색상
-        textAlign: 'center',
-        textAlignVertical: 'center',
-        paddingHorizontal: 16,
-        backgroundColor: 'transparent',
-    },
-    // 텍스트가 표시될 때의 스타일 추가
-    postcardTextDisplay: {
-        position: 'absolute',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
         fontSize: 16,
         color: '#000',
         textAlign: 'center',
         textAlignVertical: 'center',
         paddingHorizontal: 16,
+        backgroundColor: 'transparent',
+        position: 'absolute',
+    },
+    postcardTextDisplay: {
+        fontSize: 16,
+        color: '#000',
+        textAlign: 'center',
+        textAlignVertical: 'center',
+        paddingHorizontal: 16,
+        position: 'absolute',
     },
 });
 

@@ -2,5 +2,6 @@
     "cSpell.words": [
         "firstname",
         "lastname"
-    ]
+    ],
+    "java.configuration.updateBuildConfiguration": "interactive"
 }

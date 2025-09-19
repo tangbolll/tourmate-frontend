@@ -2,8 +2,8 @@ import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 
-const ScheduleLocationInput = ({ location, setLocation, onChangeText }) => {
-    console.log('ScheduleLocationInput location prop:', location);
+const ScheduleLocationInput = React.memo(({ location, setLocation, onChangeText }) => {
+    console.log('ScheduleLocationInput props:', { location, hasOnChangeText: !!onChangeText });
 
     return (
         <View style={commonStyles.section}>
@@ -14,14 +14,22 @@ const ScheduleLocationInput = ({ location, setLocation, onChangeText }) => {
                 <TextInput
                     style={commonStyles.input}
                     value={location}
-                    onChangeText={onChangeText}
+                    onChangeText={(text) => {
+                        console.log('TextInput onChange:', text);
+                        // onChangeText가 있으면 검색 실행, 없으면 setLocation만 실행
+                        if (onChangeText) {
+                            onChangeText(text); // 이게 handleLocationSearch 호출
+                        } else if (setLocation) {
+                            setLocation(text);
+                        }
+                    }}
                     placeholder="위치 추가 *"
                     placeholderTextColor="#CCCCCC"
                 />
             </View>
         </View>
     );
-};
+});
 
 const commonStyles = StyleSheet.create({
     section: {

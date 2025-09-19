@@ -3,9 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity, Alert, ActivityIndicator, Lin
 import { WebView } from 'react-native-webview';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as Clipboard from 'expo-clipboard';
+import Constants from 'expo-constants';
 
-const kakaoRestApiKey = '258d62eaabf3e1213e2b974f01185d44';
-const kakaoJavaScriptApiKey = 'db029e231db073bfecc94156e14ecf9c';
+const kakaoRestApiKey = Constants.expoConfig.extra.kakaoRestApiKey;
+const kakaoJavaScriptApiKey = Constants.expoConfig.extra.kakaoJavaScriptApiKey;
 const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 
 const GatheringPlace = ({ location }) => {

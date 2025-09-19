@@ -223,7 +223,6 @@ const styles = StyleSheet.create({
     dateInputWrapper: {
         flexDirection: 'row',
         alignItems: 'center',
-        padding: 12,
         paddingHorizontal: 16,
         borderWidth: 1,
         borderColor: '#d1d5db',
@@ -231,6 +230,7 @@ const styles = StyleSheet.create({
         backgroundColor: 'white',
         flex: 1,
         height: 44,
+        zIndex: 1,  // zIndex 추가
     },
     icon: {
         marginRight: 8,
@@ -275,17 +275,5 @@ const styles = StyleSheet.create({
     placeholderText: {
         color: '#9ca3af',  // placeholder 색상
     },
-    dateInputWrapper: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: 12,
-        paddingHorizontal: 16,
-        borderWidth: 1,
-        borderColor: '#d1d5db',
-        borderRadius: 8,
-        backgroundColor: 'white',
-        flex: 1,
-        height: 44,
-        zIndex: 1,  // zIndex 추가
-    },
+    
 });

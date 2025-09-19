@@ -185,21 +185,30 @@ export default function Result() {
 
     const handleSetProfile = async () => {
         try {
-            // 서버에 POST 요청 (아직 구현되지 않았으므로 로그만 출력)
-            console.log('프로필 설정 POST 요청:', {
-                travelType: travelType,
-                title: travelResults[travelType].title,
-                tags: travelResults[travelType].tags,
-                timestamp: new Date().toISOString()
+            const resultData = travelResults[travelType];
+            if (!resultData) {
+                Alert.alert("오류", "결과 데이터를 찾을 수 없습니다.");
+                return;
+            }
+
+            // ✅ 수정된 부분: 태그 데이터를 파라미터로 전달합니다.
+
+            // 1. 전달할 태그 배열을 가져옵니다.
+            const tagsToPass = resultData.tags;
+
+            // 2. router.push를 사용하여 pathname과 params를 함께 전달합니다.
+            //    배열은 보통 JSON 문자열로 변환하여 전달하는 것이 가장 안전합니다.
+            router.push({
+                pathname: '/profile/edit', // ✅ 실제 프로필 수정 화면 경로로 정확하게 수정해주세요.
+                params: {
+                    // 'initialTags'라는 이름으로 태그 데이터를 담아 보냅니다.
+                    initialTags: JSON.stringify(tagsToPass) 
+                }
             });
-            
-            // 결과를 AsyncStorage에 저장 (필요시)
-            //await AsyncStorage.setItem('userTravelType', travelType);
-            
-            // (tabs)/index.js로 이동
-            router.push('/profile/edit'); // Then push profile settings
+
         } catch (error) {
-            console.error('프로필 설정 오류:', error);
+            console.error('프로필 설정으로 이동 중 오류:', error);
+            Alert.alert("오류", "프로필 설정 화면으로 이동하는 데 실패했습니다.");
         }
     };
 
