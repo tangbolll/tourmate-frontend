@@ -71,12 +71,6 @@
         "projectId": "401b1de9-4267-4c86-a340-33d8fbc0c8cf"
       },
       "API_BASE_URL_PROD": "https://tourmate-backend-pdmg.onrender.com"
-    },
-    "doctor": {
-      "reactNativeDirectoryCheck": {
-        "listUnknownPackages": false,
-        "exclude": ["react-native-keyboard-aware-scroll-view"]
-      }
     }
   }
 }
