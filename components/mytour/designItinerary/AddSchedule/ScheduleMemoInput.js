@@ -1,30 +1,23 @@
 import React from 'react';
 import { View, TextInput, StyleSheet } from 'react-native';
-import { Feather } from '@expo/vector-icons';;
+import { Feather } from '@expo/vector-icons';
 
-const ScheduleMemoInput = ({ memo, setMemo, memoHeight, setMemoHeight, onFocus, onBlur }) => {
-    const handleMemoContentSizeChange = (event) => {
-        const { height } = event.nativeEvent.contentSize;
-        const newHeight = Math.max(40, Math.min(height + 10, 120));
-        setMemoHeight(newHeight);
-    };
-
+const ScheduleMemoInput = ({ memo, setMemo, onFocus, onBlur }) => {
     return (
-        <View style={commonStyles.section}>
-            <View style={commonStyles.inputRow}>
-                <View style={commonStyles.iconContainer}>
+        <View style={styles.section}>
+            <View style={styles.inputRow}>
+                <View style={styles.iconContainer}>
                     <Feather name="file-text" size={16} color="#666" />
                 </View>
                 <TextInput
-                    style={[commonStyles.memoInput, { height: Math.max(40, memoHeight) }]}
+                    style={styles.memoInput}
                     value={memo}
                     onChangeText={setMemo}
                     placeholder="메모 추가"
                     placeholderTextColor="#CCCCCC"
                     multiline={true}
                     textAlignVertical="top"
-                    onContentSizeChange={handleMemoContentSizeChange}
-                    scrollEnabled={memoHeight >= 120}
+                    scrollEnabled={true} // 항상 스크롤 가능
                     onFocus={onFocus}
                     onBlur={onBlur}
                 />
@@ -33,7 +26,7 @@ const ScheduleMemoInput = ({ memo, setMemo, memoHeight, setMemoHeight, onFocus, 
     );
 };
 
-const commonStyles = StyleSheet.create({
+const styles = StyleSheet.create({
     section: {
         marginBottom: 16,
         position: 'relative',
@@ -51,7 +44,7 @@ const commonStyles = StyleSheet.create({
     memoInput: {
         flex: 1,
         fontSize: 14,
-        minHeight: 40,
+        height: 80, // 고정 높이 (재렌더링 없음)
         paddingVertical: 10,
         paddingHorizontal: 16,
         borderWidth: 1,

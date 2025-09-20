@@ -56,7 +56,7 @@ const AddSchedule = ({
     const [showSearchResults, setShowSearchResults] = useState(false);
     const [isSearching, setIsSearching] = useState(false);
     const [searchResults, setSearchResults] = useState([]);
-    const [memoHeight, setMemoHeight] = useState(40);
+    // const [memoHeight, setMemoHeight] = useState(40);
     const [memoFocused, setMemoFocused] = useState(false);
 
     const scrollViewRef = useRef(null);
@@ -347,8 +347,8 @@ const AddSchedule = ({
                             <ScheduleMemoInput
                                 memo={memo}
                                 setMemo={setMemo}
-                                memoHeight={memoHeight}
-                                setMemoHeight={setMemoHeight}
+                                // memoHeight={memoHeight}
+                                // setMemoHeight={setMemoHeight}
                                 onFocus={handleMemoFocus}
                                 onBlur={handleMemoBlur}
                             />
