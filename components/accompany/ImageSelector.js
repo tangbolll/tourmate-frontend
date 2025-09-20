@@ -2,7 +2,6 @@ import React from 'react';
 import { View, Text, TouchableOpacity, Image, FlatList, StyleSheet, Alert, Platform } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import Formdata from 'form-data';
 
 const ImageSelector = ({ images, setImages, thumbnailIndex, setThumbnailIndex, maxImgCount = 10 }) => {
     

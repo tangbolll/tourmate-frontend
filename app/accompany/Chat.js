@@ -28,7 +28,9 @@ import {
     fetchMessages,
     getWebSocketURL,
     getAccompanyPostInfo,
-    markMessagesAsRead
+    markMessagesAsRead,
+    formatMessageTime, // 간단한 시간 포맷팅 함수
+    getCurrentKoreanTime // 현재 한국시간 생성 함수
 } from '../../utils/ChatApi';
 
 
@@ -122,18 +124,7 @@ const Chat = () => {
     const scrollViewRef = useRef();
     const stompClientRef = useRef(null);
 
-    // 날짜 포맷팅 함수들
-    const formatTime = (dateString) => {
-        if (!dateString) return '';
-        const date = new Date(dateString);
-        return date.toLocaleTimeString('ko-KR', { 
-            hour: '2-digit', 
-            minute: '2-digit',
-            hour12: true 
-        });
-    };
-
-    // 🔧 키보드 간격 조정을 위한 플랫폼별 스타일
+    // 키보드 간격 조정을 위한 플랫폼별 스타일
     const platformStyles = StyleSheet.create({
         inputWrapperIOS: {
             marginBottom: 20, // iOS에서 키보드와의 간격
@@ -195,12 +186,12 @@ const Chat = () => {
                 (nextMessage.user?.name === message.user?.name || 
                  (nextMessage.user?.isSelf && message.user?.isSelf));
             
-            // 같은 시간(분)인지 확인
+            // 같은 시간(분)인지 확인 - 모든 시간을 동일한 방식으로 처리
             const isSameTime = prevMessage && 
-                formatTime(prevMessage.sendTime) === formatTime(message.sendTime);
+                formatMessageTime(prevMessage.sendTime) === formatMessageTime(message.sendTime);
             
             const isNextSameTime = nextMessage && 
-                formatTime(nextMessage.sendTime) === formatTime(message.sendTime);
+                formatMessageTime(nextMessage.sendTime) === formatMessageTime(message.sendTime);
             
             // 연속 메시지 그룹에서의 위치 결정
             const isFirstInGroup = !isSameUser || !isSameDay(prevMessage?.sendTime, messageDate);
@@ -255,13 +246,13 @@ const Chat = () => {
                     try {
                         const chatMessage = JSON.parse(message.body);
                         
-                        // 🔧 내가 보낸 메시지는 웹소켓으로 받지 않음 (낙관적 업데이트로 이미 처리됨)
+                        // 내가 보낸 메시지는 웹소켓으로 받지 않음 (낙관적 업데이트로 이미 처리됨)
                         if (String(chatMessage.senderId) === String(currentUserId)) {
                             console.log('🔄 내 메시지는 웹소켓에서 무시:', chatMessage.senderId);
                             return;
                         }
                         
-                        // 🔧 상대방 메시지만 웹소켓으로 처리 (낙관적 업데이트 없음)
+                        // 상대방 메시지만 웹소켓으로 처리
                         const newMessage = {
                             id: chatMessage.id || `ws_${chatMessage.roomId}_${Date.now()}_${Math.random()}`,
                             user: {
@@ -269,17 +260,17 @@ const Chat = () => {
                                 name: chatMessage.senderNickname || `사용자${chatMessage.senderId}`
                             },
                             text: chatMessage.content,
-                            time: formatTime(chatMessage.sendTime || new Date()),
+                            time: formatMessageTime(chatMessage.sendTime), // 서버 시간 → 한국시간 변환
                             sendTime: chatMessage.sendTime || new Date().toISOString()
                         };
                         
                         setMessages(prev => {
-                            // 🔧 강화된 중복 메시지 방지 (ID와 내용 기반)
+                            // 중복 메시지 방지
                             const isDuplicate = prev.some(msg => 
                                 msg.id === newMessage.id || 
                                 (msg.text === newMessage.text && 
                                  msg.user?.name === newMessage.user?.name &&
-                                 Math.abs(new Date(msg.sendTime) - new Date(newMessage.sendTime)) < 1000) // 1초 이내 같은 내용
+                                 Math.abs(new Date(msg.sendTime) - new Date(newMessage.sendTime)) < 1000)
                             );
                             
                             if (isDuplicate) {
@@ -348,8 +339,9 @@ const handleSendStomp = async (text = '') => {
 
     setSendingMessage(true);
     
-    // 🔧 낙관적 업데이트는 오직 내 메시지에만 적용
+    // 낙관적 업데이트 - 현재 한국시간 사용
     const tempId = `my_temp_${Date.now()}_${Math.random()}`;
+    const currentKoreanTime = getCurrentKoreanTime(); // Date 객체로 한국시간 생성
     const tempMessage = {
         id: tempId,
         user: {
@@ -357,13 +349,14 @@ const handleSendStomp = async (text = '') => {
             isSelf: true
         },
         text: text.trim(),
-        time: formatTime(new Date()),
-        sendTime: new Date().toISOString(),
+        time: formatMessageTime(currentKoreanTime), // Date 객체를 포맷팅
+        sendTime: currentKoreanTime.toISOString(), // 서버 저장용 ISO 문자열
         isTemporary: true,
         tempId: tempId
     };
     
-    console.log('➕ 낙관적 업데이트 - 내 메시지만 임시 추가:', tempMessage);
+    console.log('➕ 낙관적 업데이트 - 내 메시지 임시 추가:', tempMessage);
+    console.log('📅 한국시간:', currentKoreanTime, '포맷된 시간:', tempMessage.time);
     setMessages(prev => [...prev, tempMessage]);
     setInputText('');
 
@@ -385,7 +378,7 @@ const handleSendStomp = async (text = '') => {
 
         console.log('✅ 메시지 전송 완료');
 
-        // 🔧 전송 성공 - 임시 메시지의 임시 상태만 해제
+        // 전송 성공 - 임시 메시지의 임시 상태만 해제
         setTimeout(() => {
             setMessages(prev => 
                 prev.map(msg => 
@@ -399,7 +392,7 @@ const handleSendStomp = async (text = '') => {
     } catch (error) {
         console.error('❌ 메시지 전송 오류:', error);
         
-        // 🔧 실패 시에만 임시 메시지 제거
+        // 실패 시에만 임시 메시지 제거
         setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
         Alert.alert('전송 실패', '메시지를 보낼 수 없습니다.');
     } finally {
@@ -459,7 +452,6 @@ useEffect(() => {
             
             if (accompanyIdToUse) {
                 try {
-                    // 🔧 currentUserId를 두 번째 매개변수로 전달
                     const postInfo = await getAccompanyPostInfo(accompanyIdToUse, currentUserId);
                     console.log('📋 동행 정보:', postInfo);
                     setAccompanyInfo(postInfo);
@@ -491,7 +483,7 @@ useEffect(() => {
     }; 
 
     loadChatData();
-}, [chatRoomId, postId, currentUserId]); // 🔧 currentUserId도 의존성에 추가
+}, [chatRoomId, postId, currentUserId]);
     
     // 메시지 전송 핸들러
     const handleSend = () => {
@@ -561,7 +553,6 @@ useEffect(() => {
                     </Text>
                     <Ionicons name="person" size={12} color="black" style={[styles.icon, { marginLeft: 12 }]} />
                     <Text style={styles.participantsText}>
-                        {/* 🔧 participants 처리 방식 변경 */}
                         {Array.isArray(chatRoom?.participants) ? chatRoom.participants.length : (chatRoom?.participantCount || 0)}명 / {accompanyInfo?.maxParticipants || chatRoom?.maxParticipants || '?'}명
                     </Text>
                 </View>
@@ -624,27 +615,12 @@ useEffect(() => {
                 )}
             </ScrollView>
 
-            {/* 확장 버튼 클릭 시 노출되는 하단 버튼 영역
-            {showActions && (
-                <View style={styles.bottomButtons}>
-                    <TouchableOpacity style={styles.actionButtonTop}>
-                        <Text style={styles.actionButtonText}>내 위치 공유하기</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.actionButtonBottom}>
-                        <Text style={styles.actionButtonText}>사진/동영상 전송하기</Text>
-                    </TouchableOpacity>
-                </View>
-            )} */}
-
             {/* 메시지 입력 영역 - 키보드 간격 조정 */}
             <KeyboardAvoidingView
                 behavior={Platform.OS === "ios" ? "padding" : "height"}
                 keyboardVerticalOffset={Platform.OS === "ios" ? 40 : 30}
                 style={styles.inputContainer}
             >
-                {/* <TouchableOpacity style={styles.addButton} onPress={toggleActions}>
-                    <Feather name={showActions ? "x" : "plus"} size={24} color="black" />
-                </TouchableOpacity> */}
                 <View style={[
                     styles.inputWrapper, 
                     Platform.OS === 'ios' ? platformStyles.inputWrapperIOS : platformStyles.inputWrapperAndroid
