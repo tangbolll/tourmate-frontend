@@ -38,11 +38,11 @@ const parseServerTimeToKorean = (serverTimeString) => {
     }
 };
 
-// 🔧 현재 한국 시간 생성 (UTC + 9시간)
+// 🔧 현재 로컬 시간 생성 (낙관적 업데이트용)
 export const getCurrentKoreanTime = () => {
-    const now = new Date();
-    const koreanTime = new Date(now.getTime() + (9 * 60 * 60 * 1000));
-    return koreanTime;
+    // 낙관적 업데이트에서는 현재 로컬 시간을 그대로 사용
+    // formatMessageTime에서 Date 객체는 +9시간 변환 없이 그대로 처리됨
+    return new Date();
 };
 
 // 🔧 한국 시간을 12시간 형식으로 포맷팅
