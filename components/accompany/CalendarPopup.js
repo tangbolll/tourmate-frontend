@@ -29,7 +29,6 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
             try {
                 onSelectDates(range);
             } catch (error) {
-                console.error('Error in onSelectDates:', error);
             }
             closeModal();
         }
@@ -39,7 +38,6 @@ export default function CalendarPopup({ visible, onClose = () => {}, onSelectDat
         try {
             setTimeout(() => { onClose(); }, 100); // 콜백 실행 전 약간의 지연
         } catch (error) {
-            console.error('Error in closeModal:', error);
         }
     };
 

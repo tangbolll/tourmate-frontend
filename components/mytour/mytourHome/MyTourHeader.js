@@ -35,7 +35,6 @@ export default function MyTourHeader({ onSortChange, onFilterPress, onFilterAppl
     };
 
     const handleFilterApply = (appliedFilters) => {
-        console.log('Filters applied:', appliedFilters);
         setFilters(appliedFilters);
         if (onFilterApply) {
             onFilterApply(appliedFilters);

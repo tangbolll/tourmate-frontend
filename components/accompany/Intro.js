@@ -81,7 +81,6 @@ const Intro = ({ message, photos }) => {
                                     style={styles.image} 
                                     resizeMode="cover" 
                                     onError={(error) => {
-                                        console.log('Image load error:', error);
                                     }}
                                 />
                             </View>

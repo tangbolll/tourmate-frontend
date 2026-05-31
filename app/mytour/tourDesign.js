@@ -32,7 +32,6 @@ const TourDesign = () => {
     };
 
     const handleNext = () => {
-        console.log('선택된 지역:', selectedRegions);
         router.push({
         pathname: './createItinerary',
         params: {

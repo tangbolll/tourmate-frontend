@@ -32,7 +32,6 @@ const DibsorScrap = ({ router }) => {
             const allPosts = await fetchAccompanyFeedApi(currentUserId);
             return allPosts;
         } catch (error) {
-            console.error('❌ 전체 동행 피드 로드 실패:', error);
             handleApiError(error, '전체 피드 로드');
             return [];
         }
@@ -46,11 +45,9 @@ const DibsorScrap = ({ router }) => {
             setLoading(true);
             
             // 1. 전체 동행 피드 데이터 가져오기
-            console.log('🔍 전체 동행 피드 데이터 로딩 시작...');
             const allPosts = await fetchAccompanyFeedApi(currentUserId);
             
             // 2. 모든 포스트의 좋아요 상태 조회
-            console.log('🔍 좋아요 상태 일괄 조회 시작...');
             const accompanyIds = allPosts.map(post => post.id);
             if (accompanyIds.length === 0) {
                 setDibsList([]);
@@ -70,10 +67,8 @@ const DibsorScrap = ({ router }) => {
             setLikedPosts(likesMap);
             setDibsLoaded(true);
 
-            console.log('✅ 찜 데이터 로드 완료:', likedAccompanyPosts.length, '개');
             
         } catch (error) {
-            console.error('❌ 찜 데이터 로드 실패:', error);
             setDibsList([]);
             Alert.alert('오류', '찜 목록을 불러오는 중 오류가 발생했습니다.');
         } finally {
@@ -89,7 +84,6 @@ const DibsorScrap = ({ router }) => {
             setLoading(true);
             
             // TODO: 실제 스크랩 API 호출로 대체
-            console.log('🔍 스크랩 데이터 로딩 시작 (더미 데이터 사용)...');
             const dummyScrapData = [
 
                 {
@@ -216,9 +210,7 @@ const DibsorScrap = ({ router }) => {
             
             setScrapList(dummyScrapData);
             setScrapLoaded(true);
-            console.log('✅ 스크랩 데이터 로드 완료.');
         } catch (error) {
-            console.error('❌ 스크랩 데이터 로드 실패:', error);
             setScrapList([]);
             Alert.alert('오류', '스크랩 목록을 불러오는 중 오류가 발생했습니다.');
         } finally {
@@ -294,7 +286,6 @@ const DibsorScrap = ({ router }) => {
             }
             
         } catch (error) {
-            console.error('❌ 좋아요 처리 실패:', error);
             // 에러 시 원래 상태로 복원
             setLikedPosts(prev => ({
                 ...prev,
@@ -323,7 +314,6 @@ const DibsorScrap = ({ router }) => {
                 selectedTab={selectedTab}
                 setSelectedTab={setSelectedTab}
                 onSortChange={(sortKey) => {
-                    console.log('Selected sort key:', sortKey);
                 }}
             />
             

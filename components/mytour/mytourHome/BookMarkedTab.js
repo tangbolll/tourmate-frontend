@@ -19,7 +19,6 @@ export default function BookmarkedTab({ bookmarkedEvents = [], onBookmarkUpdate,
 
     const handleEventPress = (event) => {
         // 이벤트 상세 페이지로 이동하는 로직
-        console.log('Event pressed:', event);
     };
 
     const handleBookmarkChange = (eventId) => {

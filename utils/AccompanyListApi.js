@@ -19,9 +19,6 @@ const api = axios.create({
 api.interceptors.request.use(
     config => {
         if (__DEV__) {
-            console.log(`🌐 API 요청 시작: ${config.method.toUpperCase()} ${config.url}`);
-            if (config.params) console.log('🔍 요청 파라미터:', config.params);
-            if (config.data) console.log('🔍 요청 데이터:', config.data);
         }
         return config;
     },
@@ -32,15 +29,11 @@ api.interceptors.request.use(
 api.interceptors.response.use(
     response => {
         if (__DEV__) {
-            console.log(`✅ API 응답 성공: ${response.config.method.toUpperCase()} ${response.config.url}`);
-            console.log('🔍 응답 상태:', response.status);
-            console.log('🔍 응답 데이터:', response.data);
         }
         return response;
     },
     error => {
         if (__DEV__) {
-            console.error(`❌ API 요청 실패: ${error.config?.url}`, {
                 message: error.message,
                 status: error.response?.status,
                 data: error.response?.data,
@@ -51,7 +44,6 @@ api.interceptors.response.use(
         if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
             Alert.alert('네트워크 오류', '서버 응답 시간이 초과되었습니다.');
         } else if (error.response?.status === 404) {
-            console.warn('⚠️ 리소스를 찾을 수 없습니다 (404)');
         } else if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
             Alert.alert(
                 '네트워크 연결 오류',
@@ -162,7 +154,6 @@ export const toggleLikeApi = async (accompanyId, userId) => {
 export const getLikeStatusApi = async (accompanyId, userId) => {
     const numericAccompanyId = Number(accompanyId);
     if (isNaN(numericAccompanyId)) {
-        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
         return { isLiked: false, likeCount: 0 };
     }
 

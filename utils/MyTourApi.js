@@ -40,7 +40,6 @@ export const fetchMyTours = async (userId) => {
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
-        console.error('API 호출 에러:', error);
         throw error;
     }
 };
@@ -63,7 +62,6 @@ export const toggleTourFavorite = async (tourId, userId) => {
         throw new Error(errorText || `서버 에러: ${response.status}`);
 
     } catch (error) {
-        console.error('즐겨찾기 토글 API 상세 에러:', error.message || error);
         throw error;    
     }
 };
@@ -83,7 +81,6 @@ export const deleteMyTours = async (tourIds) => {
         if (!results.every(r => r.status === 'fulfilled')) throw new Error('일부 여행 삭제에 실패했습니다.');
         return true;
     } catch (error) {
-        console.error('여행 삭제 에러:', error);
         throw error;
     }
 };
@@ -101,7 +98,6 @@ export const createTour = async (tourData) => {
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
-        console.error('여행 생성 에러:', error);
         throw error;
     }
 };
@@ -119,7 +115,6 @@ export const updateTour = async (tourId, tourData) => {
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
-        console.error('여행 수정 에러:', error);
         throw error;
     }
 };
@@ -132,7 +127,6 @@ export const getTourDetails = async (tourId) => {
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
-        console.error('여행 상세 정보 조회 에러:', error);
         throw error;
     }
 };
@@ -143,11 +137,9 @@ export const searchUsers = async (nickname) => {
         return []; // 검색어가 2글자 미만이면 요청하지 않음
     }
     try {
-        console.log("검색 API 호출:", `${getBaseURL()}/api/user/search?nickname=${nickname}`);
         const response = await axios.get(`${getBaseURL()}/api/user/search?nickname=${encodeURIComponent(nickname)}`);
         return response.data;
     } catch (error) {
-        console.error('Error searching users:', error);
         return []; // 에러 발생 시 빈 배열 반환
     }
 };
@@ -163,7 +155,6 @@ export const getAllSchedulesByTravel = async (travelId) => {
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
-        console.error('전체 여행 스케줄 조회 에러:', error);
         throw error;
     }
 };
@@ -181,7 +172,6 @@ export const createTravelSchedule = async (scheduleData) => {
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
-        console.error('여행 스케줄 생성 에러:', error);
         throw error;
     }
 };
@@ -195,7 +185,6 @@ export const getTravelScheduleDetails = async (scheduleId) => {
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
-        console.error('여행 스케줄 상세 조회 에러:', error);
         throw error;
     }
 };
@@ -208,13 +197,10 @@ export const deleteTravelSchedule = async (scheduleId) => {
         const response = await fetch(url, { method: 'DELETE', headers });
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`[deleteTravelSchedule] API Error: Status ${response.status}, ${response.statusText}, Body: ${errorText}`);
             throw new Error(`일정 삭제 실패: ${response.status} ${response.statusText} - ${errorText}`);
         }
-        console.log(`[deleteTravelSchedule] API Success: Status ${response.status}, ${response.statusText}`);
         return true;
     } catch (error) {
-        console.error('여행 스케줄 삭제 에러:', error);
         throw error;
     }
 };
@@ -232,7 +218,6 @@ export const updateTravelSchedule = async (scheduleId, scheduleData) => {
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
-        console.error('여행 스케줄 수정 에러:', error);
         throw error;
     }
 };
@@ -246,7 +231,6 @@ export const getSchedulesByDate = async (travelId, date) => {
         if (!response.ok) throw new Error(await response.text());
         return await response.json();
     } catch (error) {
-        console.error('날짜별 여행 스케줄 조회 에러:', error);
         throw error;
     }
 };
@@ -265,7 +249,6 @@ export const deleteTravelSchedules = async (scheduleIds) => {
         if (!results.every(r => r.status === 'fulfilled')) throw new Error('일부 여행 스케줄 삭제에 실패했습니다.');
         return true;
     } catch (error) {
-        console.error('여행 스케줄 배치 삭제 에러:', error);
         throw error;
     }
 };

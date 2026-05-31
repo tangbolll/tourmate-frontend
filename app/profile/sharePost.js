@@ -152,7 +152,6 @@ const sharePost = () => {
                 { 
                     text: '업로드', 
                     onPress: () => {
-                        console.log('엽서 업로드:', selectedPostcards, postcardDetails);
                         Alert.alert('업로드 완료', '엽서가 성공적으로 업로드되었습니다.');
                         router.back();
                     }

@@ -181,8 +181,6 @@ export default function Question() {
         try {
             // 답변 분석해서 여행 타입 계산
             const travelType = calculateTravelType(finalAnswers);
-            console.log('Test completed:', finalAnswers);
-            console.log('Calculated travel type:', travelType);
             
             // 결과를 AsyncStorage에 저장
             await AsyncStorage.setItem('travelTestResult', travelType);
@@ -191,7 +189,6 @@ export default function Question() {
             // 결과 페이지로 이동
             router.push('/typeTest/result');
         } catch (error) {
-            console.error('결과 저장 오류:', error);
             // 오류가 발생해도 결과 페이지로 이동
             router.push('/typeTest/result');
         }

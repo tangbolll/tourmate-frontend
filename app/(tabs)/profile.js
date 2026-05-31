@@ -40,7 +40,6 @@ export default function ProfileHome() {
                     setUserData(data);
                 }
             } catch (error) {
-                console.error('Error fetching user data in ProfileHome:', error);
             }
         };
 
@@ -56,7 +55,6 @@ export default function ProfileHome() {
         try {
             const fetchedFolders = await getFoldersByUserApi(userEmail);
             setFolders(fetchedFolders);
-            console.log("✅ 폴더 목록을 성공적으로 불러왔습니다:", fetchedFolders);
         } catch (error) {
             handleApiError(error, '폴더 목록 조회');
         }
@@ -99,7 +97,6 @@ export default function ProfileHome() {
             params.endDate = folderData.endDate;
         }
 
-        console.log('Navigating to WritePost with params:', params);
         
         router.push({
             pathname: '/profile/writePost',
@@ -119,7 +116,6 @@ export default function ProfileHome() {
                     userEmail: userEmail,
                     // postcards: [] // 엽서 데이터는 비워둠
                 };
-                console.log('새 폴더 생성 API 호출 준비:', newFolderData);
                 const response = await createPostcardWithNewFolderApi(newFolderData);
                 Alert.alert('성공', '새 폴더가 생성되었습니다.');
                 // 폴더 생성 후 목록 갱신
@@ -133,7 +129,6 @@ export default function ProfileHome() {
                     startDate: folderData.startDate,
                     endDate: folderData.endDate,
                 };
-                console.log('폴더 수정 API 호출 준비:', editingFolder.folderId, updateData);
                 await updateFolderApi(editingFolder.folderId, updateData);
                 Alert.alert('성공', '폴더가 수정되었습니다.');
                 // 폴더 목록 갱신
@@ -148,7 +143,6 @@ export default function ProfileHome() {
     const handleDelete = useCallback(async (folderId) => {
         setCreatePopupVisible(false);
         try {
-            console.log('폴더 삭제 API 호출 준비:', folderId);
             await deleteFolderApi(folderId);
             Alert.alert('성공', '폴더가 삭제되었습니다.');
             // 폴더 목록에서 삭제된 폴더 제거
@@ -160,7 +154,6 @@ export default function ProfileHome() {
 
     // 기존 폴더 선택 처리
     const handleFolderSelect = useCallback((selectedFolder) => {
-        console.log('선택된 폴더:', selectedFolder);
         setSelectPopupVisible(false);
         // 선택된 폴더로 WritePost 페이지로 이동
         navigateToWritePost(selectedFolder);
@@ -172,7 +165,6 @@ export default function ProfileHome() {
 
     // 플로팅 버튼 옵션 선택 처리
     const handleFloatingButtonOption = useCallback((option) => {
-        console.log('Selected option:', option);
         if (option === 'existing') {
             setSelectPopupVisible(true);
         } else if (option === 'new') {

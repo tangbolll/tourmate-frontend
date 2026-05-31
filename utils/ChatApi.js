@@ -37,8 +37,6 @@ const formatTime = (dateString) => {
 export const getMyChatRooms = async (userId) => {
     try {
         const url = `${API_URL}/api/accompany/my-chatrooms?id=${userId}`;
-        console.log('API 호출 URL:', url);
-        console.log('User ID:', userId);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -47,20 +45,16 @@ export const getMyChatRooms = async (userId) => {
             },
         });
 
-        console.log('Response status:', response.status);
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.log('Error response:', errorText);
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('Raw server response:', data);
         
         // 서버 응답 데이터 변환 - UserResponse 객체 배열을 숫자로 변환
         const transformedData = data.map(item => {
-            console.log('Original item:', JSON.stringify(item, null, 2));
             
             // participants가 UserResponse 객체 배열이므로 length로 변환
             let participantCount = 0;
@@ -92,14 +86,11 @@ export const getMyChatRooms = async (userId) => {
                 active: item.active
             };
             
-            console.log('Transformed item:', JSON.stringify(transformed, null, 2));
             return transformed;
         });
         
-        console.log('Transformed data:', transformedData);
         return transformedData;
     } catch (error) {
-        console.error('채팅방 목록을 가져오는데 실패했습니다:', error);
         throw error;
     }
 };
@@ -108,7 +99,6 @@ export const getMyChatRooms = async (userId) => {
 export const getChatRoomById = async (chatRoomId) => {
     try {
         const url = `${API_URL}/api/accompany/chatroom/${chatRoomId}`;
-        console.log('채팅방 상세 조회 URL:', url);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -117,20 +107,16 @@ export const getChatRoomById = async (chatRoomId) => {
             },
         });
 
-        console.log('ChatRoom detail response status:', response.status);
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.log('ChatRoom detail error response:', errorText);
             throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
         }
 
         const data = await response.json();
-        console.log('ChatRoom detail response:', data);
         
         return data;
     } catch (error) {
-        console.error('채팅방 상세 정보를 가져오는데 실패했습니다:', error);
         throw error;
     }
 };
@@ -139,7 +125,6 @@ export const getChatRoomById = async (chatRoomId) => {
 export const exitChatRoom = async (chatRoomId, userId) => {
     try {
         const url = `${API_URL}/api/accompany/chatroom/${chatRoomId}/exit?userId=${userId}`;
-        console.log('Exit chatroom URL:', url);
         
         const response = await fetch(url, {
             method: 'DELETE',
@@ -148,19 +133,15 @@ export const exitChatRoom = async (chatRoomId, userId) => {
             },
         });
 
-        console.log('Exit response status:', response.status);
 
         if (!response.ok) {
             const errorMessage = await response.text();
-            console.log('Exit error response:', errorMessage);
             throw new Error(errorMessage || `HTTP error! status: ${response.status}`);
         }
 
         const result = await response.text();
-        console.log('Exit success:', result);
         return result;
     } catch (error) {
-        console.error('채팅방 나가기에 실패했습니다:', error);
         throw error;
     }
 };
@@ -169,7 +150,6 @@ export const exitChatRoom = async (chatRoomId, userId) => {
 export const getOrCreateChatRoomByAccompanyId = async (accompanyId) => {
     try {
         const url = `${API_URL}/api/accompany/${accompanyId}/chatroom`;
-        console.log('채팅방 조회/생성 API 호출:', url);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -181,14 +161,12 @@ export const getOrCreateChatRoomByAccompanyId = async (accompanyId) => {
         
         if (response.ok) {
             const roomData = await response.json();
-            console.log('✅ 채팅방 데이터:', roomData);
             return roomData;
         } else {
             throw new Error(`채팅방 조회/생성 실패: ${response.status}`);
         }
         
     } catch (error) {
-        console.error('채팅방 조회/생성 오류:', error);
         throw error;
     }
 };
@@ -197,7 +175,6 @@ export const getOrCreateChatRoomByAccompanyId = async (accompanyId) => {
 export const getChatMessages = async (roomId) => {
     try {
         const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
-        console.log('🌐 메시지 조회 API 호출:', url);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -208,13 +185,11 @@ export const getChatMessages = async (roomId) => {
         
         if (response.ok) {
             const messagesData = await response.json();
-            console.log('✅ 메시지 데이터:', messagesData);
             return messagesData;
         } else {
             throw new Error(`메시지 조회 실패: ${response.status}`);
         }
     } catch (error) {
-        console.error('❌ 메시지 조회 오류:', error);
         throw error;
     }
 };
@@ -223,7 +198,6 @@ export const getChatMessages = async (roomId) => {
 export const sendMessage = async (chatRoomId, userId, message) => {
     try {
         const url = `${API_URL}/api/accompany/chatroom/${chatRoomId}/message`;
-        console.log('메시지 전송 API 호출:', url);
         
         const response = await fetch(url, {
             method: 'POST',
@@ -239,13 +213,11 @@ export const sendMessage = async (chatRoomId, userId, message) => {
 
         if (response.ok) {
             const result = await response.json();
-            console.log('✅ 메시지 전송 성공:', result);
             return result;
         } else {
             throw new Error(`메시지 전송 실패: ${response.status}`);
         }
     } catch (error) {
-        console.error('❌ 메시지 전송 오류:', error);
         throw error;
     }
 };
@@ -256,7 +228,6 @@ export const fetchOrCreateChatRoom = async (accompanyIdOrChatRoomId, isChatRoomI
         // chatRoomId로 직접 조회하는 경우
         if (isChatRoomId) {
             const url = `${API_URL}/api/accompany/chatroom/${accompanyIdOrChatRoomId}`;
-            console.log('채팅방 직접 조회:', url);
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -268,14 +239,12 @@ export const fetchOrCreateChatRoom = async (accompanyIdOrChatRoomId, isChatRoomI
             
             if (response.ok) {
                 const roomData = await response.json();
-                console.log('✅ 채팅방 데이터 (직접 조회):', roomData);
                 return roomData;
             }
         } 
         // accompanyId로 조회/생성하는 경우
         else {
             const url = `${API_URL}/api/accompany/${accompanyIdOrChatRoomId}/chatroom`;
-            console.log('채팅방 조회/생성 API 호출:', url);
             
             const response = await fetch(url, {
                 method: 'GET',
@@ -287,7 +256,6 @@ export const fetchOrCreateChatRoom = async (accompanyIdOrChatRoomId, isChatRoomI
             
             if (response.ok) {
                 const roomData = await response.json();
-                console.log('✅ 채팅방 데이터 (동행 ID):', roomData);
                 return roomData;
             }
         }
@@ -295,7 +263,6 @@ export const fetchOrCreateChatRoom = async (accompanyIdOrChatRoomId, isChatRoomI
         throw new Error('채팅방 조회/생성 실패');
         
     } catch (error) {
-        console.error('채팅방 조회/생성 오류:', error);
         throw error;
     }
 };
@@ -305,7 +272,6 @@ export const fetchOrCreateChatRoom = async (accompanyIdOrChatRoomId, isChatRoomI
 export const fetchMessages = async (roomId, currentUserId) => {
     try {
         const url = `${API_URL}/api/accompany/chatroom/${roomId}/messages`;
-        console.log('🌐 메시지 조회 API 호출:', url);
 
         const response = await fetch(url, {
                 method: 'GET',
@@ -316,7 +282,6 @@ export const fetchMessages = async (roomId, currentUserId) => {
             
             if (response.ok) {
                 const messagesData = await response.json();
-                console.log('✅ 메시지 데이터:', messagesData);
                 
                 // 백엔드 응답을 프론트엔드 형식으로 변환
                 const transformedMessages = messagesData.map(msg => ({
@@ -338,7 +303,6 @@ export const fetchMessages = async (roomId, currentUserId) => {
                 throw new Error(`메시지 조회 실패: ${response.status}`);
             }
         } catch (error) {
-            console.error('❌ 메시지 조회 오류:', error);
             throw error;
         }
     };
@@ -347,7 +311,6 @@ export const fetchMessages = async (roomId, currentUserId) => {
 export const getAccompanyPostInfo = async (accompanyId, currentUserId) => {
     try {
         const url = `${API_URL}/api/accompany/AccompanyPost?postId=${accompanyId}&userId=${currentUserId}`;
-        console.log('🌐 동행 게시물 API 호출 (올바른 엔드포인트):', url);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -356,25 +319,20 @@ export const getAccompanyPostInfo = async (accompanyId, currentUserId) => {
             },
         });
 
-        console.log('📡 응답 상태:', response.status, response.statusText);
 
         if (response.ok) {
             const backendData = await response.json();
-            console.log('📋 백엔드 원본 데이터 (올바른 엔드포인트):', backendData);
             
             // 🔧 다른 페이지와 동일한 변환 로직 사용
             const transformedData = transformAccompanyDetailForChat(backendData);
             
-            console.log('✅ 변환된 데이터:', transformedData);
             return transformedData;
             
         } else {
             const errorText = await response.text();
-            console.error('❌ API 오류 응답:', errorText);
             throw new Error(`동행 정보 조회 실패: ${response.status} - ${errorText}`);
         }
     } catch (error) {
-        console.error('❌ 동행 정보 조회 오류:', error);
         throw error;
     }
 };
@@ -383,7 +341,6 @@ export const getAccompanyPostInfo = async (accompanyId, currentUserId) => {
 const transformAccompanyDetailForChat = (backendData) => {
     if (!backendData) return null;
 
-    console.log('🔄 데이터 변환 시작:', backendData);
 
 
     const transformed = {
@@ -402,7 +359,6 @@ const transformAccompanyDetailForChat = (backendData) => {
         createdByName: backendData.nickname || '알 수 없음',
     };
 
-    console.log('✅ 변환 완료:', transformed);
     return transformed;
 };
 

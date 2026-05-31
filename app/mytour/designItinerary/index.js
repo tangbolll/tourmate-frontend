@@ -89,12 +89,8 @@ export default function DesignItinerary() {
         setLoading(true);
         try {
             const data = await getTourDetails(currentTourId);
-            console.log('[DesignItinerary] Tour details data:', data);
-            console.log('[DesignItinerary] Participants from API:', data.participants);
             if (!data) throw new Error("여행 정보를 불러올 수 없습니다.");
 
-            console.log('1️⃣ [DesignItinerary] API로부터 받은 전체 데이터:', data);
-            console.log('1️⃣ [DesignItinerary] API로부터 받은 participants:', data.participants);
 
 
             const mappedScheduleData = {};
@@ -140,7 +136,6 @@ export default function DesignItinerary() {
             setMembers(data.participants || []);
             setIsDataLoaded(true);
         } catch (error) {
-            console.error("여행 데이터 불러오기 실패:", error);
             Alert.alert("에러", "여행 정보를 불러오는데 실패했습니다.", [{ text: "확인", onPress: () => router.push('/mytour') }]);
         } finally {
             setLoading(false);
@@ -204,12 +199,10 @@ const handleSaveEditInfo = async (updatedData) => {
         ownerId: currentUserId
     };
 
-    console.log('4️⃣ 부모: API에 보낼 최종 데이터 ->', tourDataForUpdate);
 
     try {
         // 4. API로 데이터 업데이트
         await updateTour(currentTourId, tourDataForUpdate);
-        console.log('여행 정보 업데이트 성공');
 
         // 5. 성공하면, 서버에서 최신 데이터를 다시 불러와 화면 전체를 동기화
         await fetchTourData(); 
@@ -218,7 +211,6 @@ const handleSaveEditInfo = async (updatedData) => {
         setIsEditModalVisible(false);
 
     } catch (error) {
-        console.error("수정 정보 저장 실패:", error); 
         Alert.alert("오류", "정보를 업데이트하는 데 실패했습니다.");
     }
 };
@@ -255,9 +247,7 @@ useEffect(() => {
             };
 
             await updateTour(currentTourId, tourData);
-            console.log("자동 저장 성공");
         } catch (error) {
-            console.error("자동 저장 실패:", error);
         }
     };
 
@@ -307,7 +297,6 @@ useEffect(() => {
             setShowActionButtons(false);
 
         } catch (error) {
-            console.error("일정 저장 실패:", error);
             Alert.alert("에러", "일정 저장에 실패했습니다.");
         } finally {
             setScheduleLoading(false);
@@ -350,7 +339,6 @@ useEffect(() => {
                 memo: newScheduleData.memo || ''
             };
 
-            console.log('Final payload:', payload);
 
 
 
@@ -364,7 +352,6 @@ useEffect(() => {
             await fetchTourData();
         } catch (error) {
             
-            console.error('일정 저장 에러:', error, await error?.response?.text?.());
             Alert.alert('오류', '일정 저장에 실패했습니다.');
         } finally {
             setScheduleLoading(false);
@@ -373,33 +360,24 @@ useEffect(() => {
     };
     // 일정 삭제 핸들러 - 팝업창에서
     const performDeleteSchedule = async (scheduleId) => {
-        console.log(`[Delete Flow] Starting deletion for schedule ID: ${scheduleId}`);
         setScheduleLoading(true);
         try {
-            console.log(`[Delete Flow] About to call deleteTravelSchedule with ID: ${scheduleId}`);
             const deleteResult = await deleteTravelSchedule(scheduleId);
-            console.log(`[Delete Flow] deleteTravelSchedule API call result: ${deleteResult}`); // Should be true
 
             if (deleteResult) {
-                console.log("[Delete Flow] API call successful. Current scheduleData BEFORE refresh:", JSON.stringify(scheduleData, null, 2));
                 await fetchTourData();
-                console.log("[Delete Flow] Data refreshed successfully. Current scheduleData AFTER refresh:", JSON.stringify(scheduleData, null, 2));
             } else {
-                console.warn("[Delete Flow] deleteTravelSchedule returned false/falsy. Not refreshing data.");
                 Alert.alert('알림', '삭제 요청은 성공했으나, 서버에서 문제가 발생했습니다.');
             }
         } catch (error) {
-            console.error("[Delete Flow] Error during deletion process:", error);
             Alert.alert('오류', `일정 삭제에 실패했습니다: ${error.message || error}`);
         } finally {
             setScheduleLoading(false);
             handleCloseAddSchedulePopup();
-            console.log("[Delete Flow] Deletion process finished.");
         }
     };
 
     const handleScheduleDelete = (scheduleId) => {
-        console.log(`[Delete Flow] handleScheduleDelete called with scheduleId: ${scheduleId}`);
         if (Platform.OS === 'web') {
             setScheduleToDelete(scheduleId);
             setShowConfirmModal(true);
@@ -409,7 +387,6 @@ useEffect(() => {
                 {
                     text: "삭제",
                     onPress: () => {
-                        console.log(`[Delete Flow] "삭제" button pressed for schedule ID: ${scheduleId}`);
                         performDeleteSchedule(scheduleId);
                     },
                     style: "destructive"
@@ -452,7 +429,6 @@ useEffect(() => {
             return Alert.alert("알림", "먼저 여행을 저장한 후 일정을 추가할 수 있습니다.");
         }
                 const dateForDay = date || (period.startDate ? dayjs(period.startDate).add(day - 1, 'day').format('YYYY-MM-DD') : null);
-        console.log(`[handleAddSchedule] day: ${day}, date: ${date}, period.startDate: ${period.startDate}, calculated dateForDay: ${dateForDay}`);
         setSchedulePopupData({ selectedDay: day, selectedDate: dateForDay, selectedHour: hour, existingSchedule: null });
         setShowAddSchedulePopup(true);
     };

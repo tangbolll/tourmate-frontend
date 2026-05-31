@@ -163,7 +163,6 @@ export default function Result() {
                     setTestAnswers(JSON.parse(answers));
                 }
             } catch (error) {
-                console.error('데이터 로드 오류:', error);
             }
         };
 
@@ -185,7 +184,6 @@ export default function Result() {
     const handleSetProfile = async () => {
         try {
             // 서버에 POST 요청 (아직 구현되지 않았으므로 로그만 출력)
-            console.log('프로필 설정 POST 요청:', {
                 travelType: travelType,
                 title: travelResults[travelType].title,
                 tags: travelResults[travelType].tags,
@@ -198,7 +196,6 @@ export default function Result() {
             // (tabs)/index.js로 이동
             router.push('/(tabs)');
         } catch (error) {
-            console.error('프로필 설정 오류:', error);
         }
     };
 

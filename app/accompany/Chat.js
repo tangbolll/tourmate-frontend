@@ -218,11 +218,9 @@ const Chat = () => {
     // 웹소켓 연결 useEffect
     useEffect(() => {
         if (!chatRoom?.id || !currentUserId) {
-            console.log('웹소켓 연결 조건 미충족:', { chatRoomId: chatRoom?.id, currentUserId });
             return;
         }
 
-        console.log('🔌 웹소켓 연결 시작...');
 
         const socket = new SockJS(getWebSocketURL());
         const stompClient = new Client({
@@ -230,16 +228,13 @@ const Chat = () => {
             reconnectDelay: 5000,
             heartbeatIncoming: 4000,
             heartbeatOutgoing: 4000,
-            debug: (str) => console.log('STOMP Debug:', str),
             onConnect: (frame) => {
-                console.log('✅ 웹소켓 연결 성공:', frame);
                 setIsConnected(true);
 
                 // 채팅방 구독
                 const subscription = stompClient.subscribe(
                     `/topic/chatroom.${chatRoom.id}`, 
                     (message) => {
-                        console.log('📨 새 메시지 수신:', message.body);
                         try {
                             const chatMessage = JSON.parse(message.body);
                             
@@ -263,31 +258,24 @@ const Chat = () => {
                             setMessages(prev => {
                                 // 🔧 중복 메시지 방지 (ID 기반)
                                 if (prev.some(msg => msg.id === newMessage.id)) {
-                                    console.log('🔄 중복 메시지 방지:', newMessage.id);
                                     return prev;
                                 }
-                                console.log('➕ 새 메시지 추가:', newMessage);
                                 return [...prev, newMessage];
                             });
                             
                         } catch (error) {
-                            console.error('❌ 메시지 파싱 오류:', error);
                         }
                     }
                 );
 
-                console.log('📡 채팅방 구독 완료:', `/topic/chatroom.${chatRoom.id}`);
             },
             onStompError: (frame) => {
-                console.error('❌ STOMP 오류:', frame.headers['message']);
                 setIsConnected(false);
             },
             onWebSocketClose: (event) => {
-                console.log('🔌 웹소켓 연결 종료:', event);
                 setIsConnected(false);
             },
             onWebSocketError: (error) => {
-                console.error('❌ 웹소켓 오류:', error);
                 setIsConnected(false);
             }
         });
@@ -297,7 +285,6 @@ const Chat = () => {
 
         // 클린업 함수
         return () => {
-            console.log('🔌 웹소켓 연결 해제');
             if (stompClientRef.current) {
                 stompClientRef.current.deactivate();
                 stompClientRef.current = null;
@@ -309,18 +296,15 @@ const Chat = () => {
     // 메시지 전송 함수 (낙관적 업데이트)
     const handleSendStomp = async (text = '') => {
         if (!text.trim()) {
-            console.log('❌ 빈 메시지는 전송할 수 없습니다.');
             return;
         }
 
         if (!stompClientRef.current?.connected) {
-            console.log('❌ 웹소켓이 연결되지 않음');
             Alert.alert('연결 오류', '채팅 서버에 연결되지 않았습니다.');
             return;
         }
 
         if (!chatRoom?.id) {
-            console.log('❌ 채팅방 정보가 없음');
             Alert.alert('오류', '채팅방 정보를 찾을 수 없습니다.');
             return;
         }
@@ -342,7 +326,6 @@ const Chat = () => {
             tempId: tempId // 🔧 임시 메시지 식별용
         };
         
-        console.log('➕ 낙관적 업데이트 - 임시 메시지 추가:', tempMessage);
         setMessages(prev => [...prev, tempMessage]);
         setInputText('');
 
@@ -354,7 +337,6 @@ const Chat = () => {
                 message: text.trim()
             };
 
-            console.log('📤 메시지 전송:', messageBody);
 
             // STOMP 클라이언트로 메시지 전송
             stompClientRef.current.publish({
@@ -362,13 +344,11 @@ const Chat = () => {
                 body: JSON.stringify(messageBody)
             });
 
-            console.log('✅ 메시지 전송 완료');
 
             // 🔧 전송 성공 후 임시 메시지를 완전히 제거 (웹소켓으로 실제 메시지가 오지 않으므로)
             // 낙관적 업데이트된 메시지를 그대로 유지
 
         } catch (error) {
-            console.error('❌ 메시지 전송 오류:', error);
             
             // 🔧 실패 시 임시 메시지 제거
             setMessages(prev => prev.filter(msg => msg.tempId !== tempId));
@@ -400,8 +380,6 @@ const Chat = () => {
         setLoading(true);
         setError(null);
         
-        console.log('🚀 채팅방 초기화 시작');
-        console.log('📝 파라미터:', { chatRoomId, postId });
         
         let roomData;
         
@@ -417,33 +395,26 @@ const Chat = () => {
             return;
         }
         
-        console.log('🏠 채팅방 데이터:', roomData);
         setChatRoom(roomData);
         
         // 2. 동행 게시물 정보 가져오기
         const accompanyIdToUse = roomData.accompanyId || postId;
-        console.log('🎯 동행 ID:', accompanyIdToUse);
         
         if (accompanyIdToUse) {
             try {
                 const postInfo = await getAccompanyPostInfo(accompanyIdToUse);
-                console.log('📋 동행 정보:', postInfo);
                 setAccompanyInfo(postInfo);
             } catch (error) {
-                console.error('동행 정보 조회 실패:', error);
                 // 동행 정보 조회 실패해도 계속 진행
             }
         }
         
         // 3. 기존 메시지 목록 가져오기
         const messages = await fetchMessages(roomData.id, currentUserId);
-        console.log('💬 메시지 개수:', messages.length);
         setMessages(messages);
         
-        console.log('✅ 채팅방 초기화 완료');
         
     } catch (error) {
-        console.error('❌ 채팅 데이터 로드 실패:', error);
         setError('채팅방을 불러올 수 없습니다.');
         Alert.alert('오류', '채팅방 연결에 실패했습니다.');
     } finally {

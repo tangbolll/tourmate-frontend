@@ -18,8 +18,6 @@ const GroupChats = () => {
 
     // 컴포넌트 마운트 시 채팅방 목록 로드
     useEffect(() => {
-      console.log('Component mounted, loading chat rooms...');
-      console.log('Current User ID:', currentUserId);
       loadChatRooms();
     }, []);
 
@@ -28,11 +26,9 @@ const GroupChats = () => {
       try {
         setLoading(true);
         const data = await ChatApi.getMyChatRooms(currentUserId);
-        console.log('Setting chat rooms:', data);
         setChatRooms(data);
       } catch (error) {
         Alert.alert('오류', '채팅방 목록을 불러오는데 실패했습니다.');
-        console.error('loadChatRooms error:', error);
       } finally {
         setLoading(false);
       }
@@ -44,7 +40,6 @@ const GroupChats = () => {
         setRefreshing(true);
         await loadChatRooms();
       } catch (error) {
-        console.error('refresh error:', error);
       } finally {
         setRefreshing(false);
       }
@@ -53,7 +48,6 @@ const GroupChats = () => {
     // 채팅방 클릭 시 상세 정보 가져오고 이동
     const handleChatPress = async (item) => {
         try {
-            console.log(`채팅방 클릭: ${item.title} (ID: ${item.id})`);
             
             // chatRoomId만 전달 (Chat 컴포넌트에서 API로 정보 조회)
             const queryParams = new URLSearchParams({
@@ -64,7 +58,6 @@ const GroupChats = () => {
             router.push(`/accompany/Chat?${queryParams}`);
             
         } catch (error) {
-            console.error('채팅방 이동 실패:', error);
             Alert.alert('오류', '채팅방으로 이동할 수 없습니다.');
         }
     };
@@ -86,10 +79,8 @@ const GroupChats = () => {
         );
         
         Alert.alert('알림', '채팅방에서 나왔습니다.');
-        console.log(`${selectedChat.title} 채팅방 나가기 완료`);
       } catch (error) {
         Alert.alert('오류', '채팅방 나가기에 실패했습니다.');
-        console.error('exit chatroom error:', error);
       } finally {
         setPopupVisible(false);
         setSelectedChat(null);
@@ -151,7 +142,6 @@ const GroupChats = () => {
           }}
           keyExtractor={(item, index) => {
             const key = item.id ? item.id.toString() : index.toString();
-            console.log('KeyExtractor:', key);
             return key;
           }}
           refreshing={refreshing}

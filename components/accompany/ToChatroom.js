@@ -45,7 +45,6 @@ const ToChatroom = ({
         router.push(`/accompany/Chat?${queryParams}`);
 
     } catch (error) {
-        console.error('채팅방 이동 오류:', error);
     } finally {
         setIsNavigating(false);
         }

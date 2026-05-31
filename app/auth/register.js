@@ -87,7 +87,6 @@ const RegisterScreen = () => {
             setEmailAvailable(!isTaken);
             setEmailCheckMessage(isTaken ? '이미 사용 중인 이메일입니다.' : '사용 가능한 이메일입니다.');
         } catch (error) {
-            console.error("Email check failed:", error.message);
             setEmailChecked(false);
             setEmailAvailable(false);
             setEmailCheckMessage('이메일 확인 중 오류가 발생했습니다.');

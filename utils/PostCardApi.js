@@ -26,14 +26,11 @@ const API_URL = getBaseURL();
 export const transformFolderData = (folderData) => {
     if (!folderData) return [];
 
-    console.log('🔍 원본 백엔드 폴더 데이터 전체:', folderData);
-    console.log('🔍 폴더 배열 길이:', folderData.length);
     
     return folderData.map((item, index) => {
         const originalId = item.id;
         const transformedId = item.id?.toString() || Math.random().toString();
         
-        console.log(`🔄 폴더 변환 ${index}: 원본 id=${originalId} → 변환된 id=${transformedId}`);
         
         return {
             id: transformedId,
@@ -53,12 +50,9 @@ export const transformFolderData = (folderData) => {
 export const transformPostcardData = (postcardData) => {
     if (!postcardData) return [];
 
-    console.log('🔍 원본 백엔드 엽서 데이터 전체:', postcardData);
-    console.log('🔍 배열 길이:', postcardData.length);
     
     // 각 아이템의 id를 확인
     postcardData.forEach((item, index) => {
-        console.log(`🔍 엽서 아이템 ${index}: id=${item.postcardId} (타입: ${typeof item.postcardId}), title=${item.title}`);
     });
     
     return postcardData.map((item, index) => {
@@ -66,10 +60,8 @@ export const transformPostcardData = (postcardData) => {
         const originalId = item.postcardId;
         const transformedId = item.postcardId?.toString() || Math.random().toString();
         
-        console.log(`🔄 엽서 변환 ${index}: 원본 id=${originalId} → 변환된 id=${transformedId}`);
         
         if (!originalId) {
-            console.error(`❌ 경고! 엽서 아이템 ${index}의 id가 없습니다:`, item);
         }
         
         return {
@@ -86,7 +78,6 @@ export const transformPostcardData = (postcardData) => {
 
 // API 에러 처리 공통 함수
 export const handleApiError = (error, apiName = 'API') => {
-    console.error(`❌ ${apiName} 오류:`, error);
     
     if (error.name === 'TypeError' && error.message.includes('Network request failed')) {
         Alert.alert(
@@ -95,7 +86,6 @@ export const handleApiError = (error, apiName = 'API') => {
         );
     } else if (error.name === 'AbortError' || error.message.includes('시간이 초과')) {
         // 타임아웃 에러는 Alert를 띄우지 않고 콘솔 로그만
-        console.warn(`⚠️ ${apiName} 타임아웃 발생 (재시도 로직으로 처리됨)`);
     } else {
         Alert.alert('오류', `${apiName} 요청 중 예상치 못한 오류가 발생했습니다: ${error.message}`);
     }
@@ -108,7 +98,6 @@ const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 150
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
         try {
-            console.log(`🔄 API 호출 시도 ${attempt}/${maxRetries}: ${url}`);
             
             const response = await fetch(url, {
                 ...options,
@@ -122,7 +111,6 @@ const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 150
                 throw new Error(`HTTP ${response.status}: ${response.statusText || errorText}`);
             }
 
-            console.log(`✅ API 호출 성공 (시도 ${attempt}/${maxRetries})`);
             return response;
 
         } catch (error) {
@@ -137,7 +125,6 @@ const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 150
             }
 
             // 재시도 전 잠시 대기
-            console.warn(`⚠️ 시도 ${attempt} 실패, ${1000 * attempt}ms 후 재시도...`);
             await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
         }
     }
@@ -146,7 +133,6 @@ const fetchWithRetry = async (url, options = {}, maxRetries = 2, timeoutMs = 150
 // 1. 기존 폴더에 엽서 생성
 export const createPostcardInExistingFolderApi = async (folderId, postcardData) => {
     const url = `${API_URL}/api/postcards/folders/${folderId}`;
-    console.log('🌐 기존 폴더에 엽서 생성 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -165,7 +151,6 @@ export const createPostcardInExistingFolderApi = async (folderId, postcardData) 
 // 2. 새 폴더에 엽서 생성
 export const createPostcardWithNewFolderApi = async (folderAndPostcardData) => {
     const url = `${API_URL}/api/postcards/folders`;
-    console.log('🌐 새 폴더에 엽서 생성 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -184,7 +169,6 @@ export const createPostcardWithNewFolderApi = async (folderAndPostcardData) => {
 // 3. 폴더별 엽서 목록 조회
 export const getPostcardsByFolderApi = async (folderId) => {
     const url = `${API_URL}/api/postcards/folders/${folderId}/postcards`;
-    console.log('🌐 폴더별 엽서 목록 조회 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url);
@@ -197,7 +181,6 @@ export const getPostcardsByFolderApi = async (folderId) => {
 // 4. 엽서 수정
 export const updatePostcardApi = async (postcardId, updateData) => {
     const url = `${API_URL}/api/postcards/${postcardId}`;
-    console.log('🌐 엽서 수정 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -216,7 +199,6 @@ export const updatePostcardApi = async (postcardId, updateData) => {
 // 5. 엽서 즐겨찾기 토글
 export const toggleFavoritePostcardApi = async (postcardId) => {
     const url = `${API_URL}/api/postcards/${postcardId}/favorite`;
-    console.log('🌐 엽서 즐겨찾기 토글 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -232,7 +214,6 @@ export const toggleFavoritePostcardApi = async (postcardId) => {
 // 6. 엽서 삭제
 export const deletePostcardApi = async (postcardId) => {
     const url = `${API_URL}/api/postcards/${postcardId}`;
-    console.log('🌐 엽서 삭제 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -248,7 +229,6 @@ export const deletePostcardApi = async (postcardId) => {
 // 7. 즐겨찾기 엽서 목록 조회 (엽서보드)
 export const getFavoritePostcardsApi = async (userEmail) => {
     const url = `${API_URL}/api/postcards/favorites?userEmail=${encodeURIComponent(userEmail)}`;
-    console.log('🌐 즐겨찾기 엽서 목록 조회 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url);
@@ -261,7 +241,6 @@ export const getFavoritePostcardsApi = async (userEmail) => {
 // 8. 사용자 폴더 목록 조회
 export const getFoldersByUserApi = async (userEmail) => {
     const url = `${API_URL}/api/postcards/folders?userEmail=${encodeURIComponent(userEmail)}`;
-    console.log('🌐 사용자 폴더 목록 조회 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url);
@@ -274,7 +253,6 @@ export const getFoldersByUserApi = async (userEmail) => {
 // 9. 폴더 수정
 export const updateFolderApi = async (folderId, folderData) => {
     const url = `${API_URL}/api/postcards/folders/${folderId}`;
-    console.log('🌐 폴더 수정 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -294,7 +272,6 @@ export const updateFolderApi = async (folderId, folderData) => {
 // 10. 폴더 삭제
 export const deleteFolderApi = async (folderId) => {
     const url = `${API_URL}/api/postcards/folders/${folderId}`;
-    console.log('🌐 폴더 삭제 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -310,7 +287,6 @@ export const deleteFolderApi = async (folderId) => {
 // 11. 엽서 스크랩
 export const scrapPostcardApi = async (postcardId, userId) => {
     const url = `${API_URL}/api/postcards/${postcardId}/scrap?userId=${userId}`;
-    console.log('🌐 엽서 스크랩 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -326,7 +302,6 @@ export const scrapPostcardApi = async (postcardId, userId) => {
 // 12. 엽서 스크랩 취소
 export const unscrapPostcardApi = async (postcardId, userId) => {
     const url = `${API_URL}/api/postcards/${postcardId}/scrap?userId=${userId}`;
-    console.log('🌐 엽서 스크랩 취소 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -342,7 +317,6 @@ export const unscrapPostcardApi = async (postcardId, userId) => {
 // 13. 사용자가 스크랩한 엽서 목록 조회
 export const getScrappedPostcardsApi = async (userId) => {
     const url = `${API_URL}/api/postcards/users/${userId}/scrapped`;
-    console.log('🌐 스크랩한 엽서 목록 조회 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url);
@@ -355,7 +329,6 @@ export const getScrappedPostcardsApi = async (userId) => {
 // 14. 엽서 좋아요
 export const likePostcardApi = async (postcardId, userId) => {
     const url = `${API_URL}/api/postcards/${postcardId}/like?userId=${userId}`;
-    console.log('🌐 엽서 좋아요 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {
@@ -371,7 +344,6 @@ export const likePostcardApi = async (postcardId, userId) => {
 // 15. 엽서 좋아요 취소
 export const unlikePostcardApi = async (postcardId, userId) => {
     const url = `${API_URL}/api/postcards/${postcardId}/like?userId=${userId}`;
-    console.log('🌐 엽서 좋아요 취소 API 호출:', url);
 
     try {
         const response = await fetchWithRetry(url, {

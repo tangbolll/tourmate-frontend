@@ -57,7 +57,6 @@ const ProfileEditScreen = () => {
           setGender(data.gender || '');
         }
       } catch (error) {
-        console.error('Error fetching user data:', error);
         setFormFeedback({ message: '사용자 정보를 불러오는 데 실패했습니다.', type: 'error' });
       }
     };
@@ -85,14 +84,11 @@ const ProfileEditScreen = () => {
       setFormFeedback({ message: '프로필이 성공적으로 업데이트되었습니다.', type: 'success' });
 
     } catch (error) {
-      console.error('Error updating profile:', error);
       setFormFeedback({ message: '프로필 업데이트에 실패했습니다.', type: 'error' });
     }
   };
 
   const handleDeleteAccount = () => {
-    // Since Alert is not working, we use console.log
-    console.log("회원탈퇴 버튼 클릭됨. 여기에 실제 탈퇴 로직(API 호출) 및 확인 절차를 추가해야 합니다.");
     // Example: router.push('/account/delete-confirm');
   };
 

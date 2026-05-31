@@ -30,7 +30,6 @@ const SelectPostDesign = ({ onPostcardSelect, onClose }) => {
                 color: getDesignData().find(d => d.id === selectedDesign)?.color
             };
             
-            console.log('Selected design:', selectedDesignData);
             onPostcardSelect(selectedDesignData);
         }
     };

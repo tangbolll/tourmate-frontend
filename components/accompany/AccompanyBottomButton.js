@@ -17,7 +17,6 @@ const AccompanyBottomButton = ({
     const [UserApplicationStatus, setUserApplicationStatus] = useState(userApplicationStatus); 
 
     useEffect(() => {
-        console.log('🔍 AccompanyBottomButton props 변경 감지:', {
             accompanyStatus,
             userApplicationStatus,
             likes,
@@ -33,7 +32,6 @@ const AccompanyBottomButton = ({
 
     // ✅ 디버깅 로그만 유지 (좋아요 상태는 부모에서 관리)
     useEffect(() => {
-        console.log('🔍 AccompanyBottomButton 현재 표시 상태:', {
             AccompanyStatus,
             UserApplicationStatus,
             부모_likes: likes,
@@ -146,7 +144,6 @@ const AccompanyBottomButton = ({
             // API 호출 성공 시 상태가 유지됩니다.
 
         } catch (error) {
-            console.error('API 호출 중 에러 발생:', error);
             // 에러 발생 시 상태를 이전 상태로 되돌립니다.
             setAccompanyStatus(previousAccompanyStatus);
             setUserApplicationStatus(previousUserApplicationStatus);
@@ -156,8 +153,6 @@ const AccompanyBottomButton = ({
 
     // ✅ 좋아요 토글 - 부모에게 완전히 위임
     const handleLikePress = async () => {
-        console.log('💖 AccompanyBottomButton: 좋아요 버튼 클릭');
-        console.log('🔍 클릭 시점 상태:', { 
             부모_isLiked: isLiked, 
             부모_likes: likes,
             isLoading,
@@ -169,13 +164,11 @@ const AccompanyBottomButton = ({
         
         // 로딩 중이면 처리하지 않음
         if (isLoading) {
-            console.log('⚠️ 로딩 중이므로 좋아요 처리 건너뛰기');
             return;
         }
         
         // 좋아요 정보가 유효하지 않으면 처리하지 않음
         if (likes === undefined || isLiked === undefined || isLiked === null) {
-            console.log('⚠️ 좋아요 정보가 유효하지 않아 처리 건너뛰기', {
                 likes,
                 isLiked
             });
@@ -183,12 +176,9 @@ const AccompanyBottomButton = ({
         }
         
         try {
-            console.log('🚀 부모의 onLikeToggle 호출 시작');
             await onLikeToggle();
-            console.log('✅ AccompanyBottomButton: 부모 좋아요 토글 완료');
             
         } catch (error) {
-            console.log('❌ AccompanyBottomButton: 부모에서 처리된 에러 감지:', error.message);
             // 에러는 부모에서 이미 처리되므로 여기서는 로깅만
         }
     };

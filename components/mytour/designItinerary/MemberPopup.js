@@ -54,7 +54,6 @@ const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd, tourId }) 
 
     // debouncedSearchText가 변경될 때마다 유저 검색 API를 호출
     useEffect(() => {
-        console.log('[MemberPopup] useEffect triggered. debouncedSearchText:', debouncedSearchText);
         const fetchUsers = async () => {
             if (!debouncedSearchText || debouncedSearchText.length < 2) {
                 setSearchResults([]);
@@ -63,12 +62,9 @@ const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd, tourId }) 
             setIsSearching(true);
             try {
                 const users = await searchUsers(debouncedSearchText);
-                console.log('[MemberPopup] searchUsers result (users):', users);
-                console.log('[MemberPopup] members prop:', members);
                 const newUsers = users.filter(user => !members.some(member => member.userId === user.userId));
                 setSearchResults(newUsers);
             } catch (error) {
-                console.error("Error searching users:", error);
                 setSearchResults([]);
             } finally {
                 setIsSearching(false);
@@ -107,7 +103,6 @@ const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd, tourId }) 
                         // 상태 업데이트
                         onMemberDelete && onMemberDelete(member);
                     } catch (error) {
-                        console.error("동반자 삭제 실패:", error);
                         Alert.alert("오류", "동반자 삭제에 실패했습니다.");
                     }
                 },
@@ -149,7 +144,6 @@ const MemberPopup = ({ members, onClose, onMemberDelete, onMemberAdd, tourId }) 
         setSelectedNewMember(null);
         setSearchText('');
     } catch (error) {
-        console.error("멤버 추가 실패:", error);
         Alert.alert("오류", "멤버 추가에 실패했습니다.");
     }
 };

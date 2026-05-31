@@ -65,7 +65,6 @@ const Schedule = ({
                 const savedIds = await AsyncStorage.getItem(key);
                 setHiddenExtraTimeIds(savedIds ? JSON.parse(savedIds) : []);
             } catch (e) {
-                console.error('숨겨진 ID 불러오기 실패:', e);
                 setHiddenExtraTimeIds([]);
             }
         };
@@ -84,7 +83,6 @@ const Schedule = ({
             const key = `hidden_ids_${selectedDay}`;
             await AsyncStorage.setItem(key, JSON.stringify(newHiddenIds));
         } catch (e) {
-            console.error('숨겨진 ID 저장하기 실패:', e);
         }
     };
 

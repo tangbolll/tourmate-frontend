@@ -77,7 +77,6 @@ export default function MyTourFeed({
 
     const handleBookmarkPress = (event) => {
         event.stopPropagation(); // ✅ 카드 클릭 이벤트가 전파되지 않도록 막습니다.
-        console.log("1단계: MyTourFeed의 별 버튼 클릭됨!"); 
         if (onBookmarkPress) {
             onBookmarkPress();
         }

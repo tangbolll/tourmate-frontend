@@ -115,7 +115,6 @@ export default function PostDirectory() {
     const handlePostcardPress = useCallback((postcardId) => {
         if (!isSelectMode) {
             // 선택 모드가 아니면 엽서 상세 페이지로 이동
-            console.log('엽서 상세 페이지로 이동:', postcardId);
             return;
         }
 
@@ -152,19 +151,16 @@ export default function PostDirectory() {
 
     // 푸터 액션 처리
     const handleDelete = useCallback(() => {
-        console.log('선택된 엽서 삭제:', Array.from(selectedPostcards));
         // 삭제 로직 구현
         setSelectedPostcards(new Set());
         setIsSelectMode(false);
     }, [selectedPostcards]);
 
     const handleDownload = useCallback(() => {
-        console.log('선택된 엽서 다운로드:', Array.from(selectedPostcards));
         // 다운로드 로직 구현
     }, [selectedPostcards]);
 
     const handleShare = useCallback(() => {
-        console.log('선택된 엽서 공유:', Array.from(selectedPostcards));
         
         // 선택된 엽서들의 정보를 공유 페이지로 전달
         const selectedPostcardsData = mockPostcards.filter(postcard => 

@@ -71,7 +71,6 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
                     });
                 }
             } catch (error) {
-                console.error("날짜 파싱 또는 필터링 중 오류 발생:", error);
             }
         }
 
@@ -91,7 +90,6 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
             );
         }
         // --- 필터링 로직 끝 ---
-        console.log(`3️⃣ 필터링 후 남은 여행 개수: ${filteredTours.length}개`);
 
 
         // 정렬 로직은 그대로 둡니다.
@@ -110,16 +108,13 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
     }, [mytours, sortType, activeFilters]);
 
     const handleSortChange = (newSortType) => setSortType(newSortType);
-    const handleFilterPress = () => console.log('필터 버튼 클릭');
     const handleFilterApply = (appliedFilters) => {
-        console.log('1️⃣ 필터에서 받은 데이터:', JSON.stringify(appliedFilters, null, 2));
         setActiveFilters(appliedFilters);
     };
     
     // ✅ 피드 클릭 핸들러 수정: 일정 수정 페이지로 이동
     const handleTourPress = (tourId) => {
         if (!isEditMode) {
-            console.log('투어 상세 페이지로 이동:', tourId);
             router.push({
                 pathname: '/mytour/designItinerary',
                 params: { tourId: tourId }
@@ -135,7 +130,6 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
                 onBookmarkUpdate(tourId);
             }
         } catch (error) {
-            console.error('Bookmark update error:', error);
         }
     };
 
@@ -174,11 +168,9 @@ export default function MyTourTab({ mytours = [], onBookmarkUpdate, onToursDelet
 
                                 // 3. 삭제 성공 후, 부모 컴포넌트의 새로고침 함수 호출!
                                 if (onToursDeleted) {
-                                    console.log('[MyTourTab] 삭제 API 성공. 부모에게 새로고침을 요청합니다.');
                                     onToursDeleted(); // 인자 없이 함수만 호출
                                 }
                             } catch (error) {
-                                console.error('여행 삭제 에러:', error);
                                 Alert.alert("삭제 실패", "여행 삭제 중 오류가 발생했습니다.");
                             }
                         },

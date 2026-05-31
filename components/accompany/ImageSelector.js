@@ -59,7 +59,6 @@ const ImageSelector = ({ images, setImages, thumbnailIndex, setThumbnailIndex, m
                 }
             }
         } catch (error) {
-            console.error('이미지 선택 오류:', error);
             Alert.alert('오류', '이미지를 선택하는 중 오류가 발생했습니다.');
         }
     };

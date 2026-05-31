@@ -54,7 +54,7 @@
               "https://devrepo.kakao.com/nexus/content/groups/public/"
             ],
             "manifestApplicationAttributes": {
-              "com.kakao.sdk.AppKey": "REDACTED_KAKAO_APP_KEY"
+              "com.kakao.sdk.AppKey": "YOUR_KAKAO_APP_KEY"
             }
           }
         }

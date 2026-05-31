@@ -33,12 +33,10 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, filters, setFilters
     };
 
     const openCalendar = () => {
-        console.log("캘린더 여는 중 ✅");
         setCalendarVisible(true);
     };
 
     const closeCalendar = () => {
-        console.log("Closing calendar");
         setCalendarVisible(false);
     };
 

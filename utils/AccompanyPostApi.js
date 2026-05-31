@@ -101,7 +101,6 @@ const formatTimeAgo = (dateString) => {
 };
 
 export const fetchAccompanyDetailApi = async (postId, userId) => {
-    console.log('🌐 동행 상세 조회 시작:', { postId, userId });
 
     try {
         // 🚀 병렬로 필요한 API들을 모두 호출
@@ -124,7 +123,6 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
             );
         }
 
-        console.log(`📡 ${apiCalls.length}개의 API를 병렬로 호출합니다.`);
         
         // 병렬 실행
         const responses = await Promise.allSettled(apiCalls);
@@ -136,9 +134,7 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
         }
         
         const backendData = await basicResponse.value.json();
-        console.log('📋 기본 동행 데이터:', backendData);
 
-        console.log('📋 백엔드 응답 전체 구조:', {
             전체데이터: backendData,
             호스트관련: {
                 userId: backendData.userId,
@@ -160,9 +156,7 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
             const likeResponse = responses[1];
             if (likeResponse.status === 'fulfilled' && likeResponse.value.ok) {
                 likeData = await likeResponse.value.json();
-                console.log('📝 좋아요 상태 조회 성공:', likeData);
             } else {
-                console.warn('⚠️ 좋아요 상태 조회 실패:', likeResponse.reason || likeResponse.value?.status);
             }
         }
 
@@ -177,12 +171,9 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
                 
                 if (currentApplication) {
                     userApplicationStatus = currentApplication.userApplicationStatus || 'CANCELLED';
-                    console.log('📝 사용자 신청 상태 확인:', currentApplication);
                 } else {
-                    console.log('📝 신청 내역 없음');
                 }
             } else {
-                console.warn('⚠️ 신청 상태 조회 실패:', applicationResponse.reason || applicationResponse.value?.status);
             }
         }
 
@@ -194,7 +185,6 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
             userApplicationStatus: userApplicationStatus
         };
 
-        console.log('🔍 최종 병합 결과:', {
             기본_likeCount: backendData.likeCount,
             API_likeCount: likeData.likeCount,
             API_liked: likeData.liked,
@@ -203,12 +193,10 @@ export const fetchAccompanyDetailApi = async (postId, userId) => {
         });
 
         const transformedData = transformAccompanyDetail(combinedData);
-        console.log('✅ 최종 변환 완료:', transformedData);
         
         return transformedData;
 
     } catch (error) {
-        console.error('❌ fetchAccompanyDetailApiOptimized 에러:', error);
         throw error;
     }
 };
@@ -218,16 +206,12 @@ export const toggleLikeApi = async (accompanyId, userId) => {
     const numericAccompanyId = Number(accompanyId);
     
     if (isNaN(numericAccompanyId)) {
-        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
         throw new Error('Invalid accompanyId provided.');
     }
 
-    console.log(`🔍 toggleLikeApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
 
     try {
         const url = `${API_URL}/api/accompany/${numericAccompanyId}/like`;
-        console.log(`🌐 API 호출 URL: ${url}`);
-        console.log(`🌐 API 호출 파라미터: id=${userId}`);
         
         const response = await axios.post(url, null, {
             params: {
@@ -236,13 +220,11 @@ export const toggleLikeApi = async (accompanyId, userId) => {
             timeout: 10000 // 10초 타임아웃 추가
         });
         
-        console.log(`✅ toggleLikeApi 응답 성공:`, {
             status: response.status,
             data: response.data,
             headers: response.headers
         });
         
-        console.log(`🔍 토글 응답 데이터 상세 분석:`, {
             liked: response.data.liked,
             liked_type: typeof response.data.liked,
             likeCount: response.data.likeCount,
@@ -256,7 +238,6 @@ export const toggleLikeApi = async (accompanyId, userId) => {
             likeCount: Number(response.data.likeCount) || 0 // Number로 확실히 변환, fallback 0
         };
         
-        console.log(`🔍 최종 반환값:`, {
             isLiked: result.isLiked,
             isLiked_type: typeof result.isLiked,
             likeCount: result.likeCount,
@@ -266,7 +247,6 @@ export const toggleLikeApi = async (accompanyId, userId) => {
         return result;
         
     } catch (error) {
-        console.error(`❌ toggleLikeApi 에러 (ID: ${numericAccompanyId}):`, {
             message: error.message,
             status: error.response?.status,
             statusText: error.response?.statusText,
@@ -288,15 +268,12 @@ export const getLikeStatusApi = async (accompanyId, userId) => {
     const numericAccompanyId = Number(accompanyId);
     
     if (isNaN(numericAccompanyId)) {
-        console.error('❌ 유효하지 않은 accompanyId가 전달되었습니다:', accompanyId);
         return { isLiked: false, likeCount: 0 };
     }
     
-    console.log(`🔍 getLikeStatusApi 호출: accompanyId=${numericAccompanyId}, userId=${userId}`);
     
     try {
         const url = `${API_URL}/api/accompany/${numericAccompanyId}/like/status?id=${userId}`;
-        console.log(`🌐 API 호출 URL: ${url}`);
         
         const response = await fetch(url, {
             method: 'GET',
@@ -310,8 +287,6 @@ export const getLikeStatusApi = async (accompanyId, userId) => {
         }
         
         const data = await response.json();
-        console.log(`✅ getLikeStatusApi 응답 성공:`, data);
-        console.log(`🔍 응답 데이터 타입 확인:`, {
             isLiked: typeof data.isLiked,
             likeCount: typeof data.likeCount,
             전체_응답: data
@@ -324,19 +299,16 @@ export const getLikeStatusApi = async (accompanyId, userId) => {
         };
         
     } catch (error) {
-        console.error(`❌ getLikeStatusApi 에러 (ID: ${numericAccompanyId}):`, {
             message: error.message,
             name: error.name
         });
         
         // 404 에러인 경우 (동행이 존재하지 않음)
         if (error.message.includes('status: 404')) {
-            console.warn(`⚠️ 동행 ID ${numericAccompanyId}를 찾을 수 없습니다.`);
             return { isLiked: false, likeCount: 0 };
         }
         
         // 다른 에러의 경우
-        console.error(`❌ 좋아요 상태 조회 실패 (ID: ${numericAccompanyId}):`, error.message);
         return { isLiked: false, likeCount: 0 };
     }
 };
@@ -344,7 +316,6 @@ export const getLikeStatusApi = async (accompanyId, userId) => {
 // 댓글 목록을 가져오는 API 함수
 export const fetchCommentsApi = async (accompanyId) => {
     const url = `${API_URL}/api/accompany/${accompanyId}/comments`;
-    console.log('🌐 댓글 조회 API 호출:', url);
 
     const response = await fetch(url);
     if (!response.ok) {
@@ -373,7 +344,6 @@ export const fetchCommentsApi = async (accompanyId) => {
 // 댓글/답글을 저장하는 API 함수
 export const saveCommentApi = async (postId, content, userId, parentCommentId = null) => {
     const url = `${API_URL}/api/accompany/${postId}/comments`;
-    console.log('🌐 댓글 작성 API 호출:', url);
 
     const requestBody = {
         content: content.trim(),
@@ -422,9 +392,6 @@ export const toggleApplicationApi = async (postId, userId, currentUserApplicatio
             method = 'POST';
         }
         
-        console.log(`🌐 동행 ${isCurrentlyApplied ? '취소' : '신청'} API 호출:`, url);
-        console.log(`📝 HTTP Method: ${method}`);
-        console.log(`📝 Current Status: ${currentUserApplicationStatus}`);
 
         const response = await fetch(url, {
             method: method,
@@ -435,7 +402,6 @@ export const toggleApplicationApi = async (postId, userId, currentUserApplicatio
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`❌ API 응답 오류 (${response.status}):`, errorText);
             
             if (errorText.includes('already applied')) {
                 throw new Error('이미 신청한 동행입니다.');
@@ -450,7 +416,6 @@ export const toggleApplicationApi = async (postId, userId, currentUserApplicatio
 
         // 🔥 중요: 백엔드가 문자열을 반환하므로 text()로 받기
         const result = await response.text();
-        console.log(`✅ 동행 ${isCurrentlyApplied ? '취소' : '신청'} 성공:`, result);
         
         // 🔥 성공했으므로 새로운 상태 반환
         return {
@@ -460,7 +425,6 @@ export const toggleApplicationApi = async (postId, userId, currentUserApplicatio
         };
 
     } catch (error) {
-        console.error(`❌ 동행 ${isUserApplied(currentUserApplicationStatus) ? '취소' : '신청'} 오류:`, error);
         throw error;
     }
 };
@@ -468,7 +432,6 @@ export const toggleApplicationApi = async (postId, userId, currentUserApplicatio
 // 동행 모집 마감 API 함수
 export const closeAccompanyPostApi = async (postId) => {
     const url = `${API_URL}/api/accompany/${postId}/close`;
-    console.log('🌐 동행 모집 마감 API 호출:', url);
 
     const response = await fetch(url, { method: 'PATCH' });
     if (!response.ok) {
@@ -482,7 +445,6 @@ export const closeAccompanyPostApi = async (postId) => {
 // 동행 삭제 코드
 export const deleteAccompanyPostApi = async (postId) => {
     try {
-        console.log('🗑️ DELETE API 호출 시작 - postId:', postId);
         
         const response = await fetch(`${API_URL}/api/accompany/${postId}`, {
             method: 'DELETE',
@@ -502,10 +464,8 @@ export const deleteAccompanyPostApi = async (postId) => {
                 // JSON 파싱 실패 시 응답을 텍스트로 읽기
                 try {
                     const errorText = await response.text();
-                    console.error('❌ 서버 응답 (텍스트):', errorText);
                     errorMessage = `서버 오류 (${response.status}): ${response.statusText}`;
                 } catch (textError) {
-                    console.error('❌ 응답 읽기 실패:', textError);
                     errorMessage = `서버 오류 (${response.status})`;
                 }
             }
@@ -517,7 +477,6 @@ export const deleteAccompanyPostApi = async (postId) => {
         let data;
         try {
             const responseText = await response.text();
-            console.log('📄 응답 텍스트:', responseText);
             
             if (responseText.trim() === '') {
                 // 빈 응답인 경우
@@ -527,16 +486,13 @@ export const deleteAccompanyPostApi = async (postId) => {
                 data = JSON.parse(responseText);
             }
         } catch (parseError) {
-            console.warn('⚠️ JSON 파싱 실패, 하지만 삭제는 성공:', parseError);
             // 파싱 실패해도 HTTP 상태가 성공이면 삭제된 것으로 간주
             data = { success: true, message: '삭제 완료' };
         }
         
-        console.log('✅ DELETE API 성공:', data);
         return data;
         
     } catch (error) {
-        console.error('🔥 DELETE API 에러:', error);
         throw error;
     }
 };
@@ -546,7 +502,6 @@ export const deleteAccompanyPostApi = async (postId) => {
 export const getUnreadApplicationsApi = async (accompanyId, hostId) => {
     try {
         const url = `${API_URL}/api/accompany/${accompanyId}/unread-applications?hostId=${hostId}`;
-        console.log('🌐 읽지 않은 신청 개수 조회 API 호출:', url);
 
         const response = await fetch(url, {
             method: 'GET',
@@ -557,19 +512,16 @@ export const getUnreadApplicationsApi = async (accompanyId, hostId) => {
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`❌ 읽지 않은 신청 개수 조회 실패 (${response.status}):`, errorText);
             throw new Error(`읽지 않은 신청 개수 조회에 실패했습니다. (${response.status})`);
         }
 
         const result = await response.json();
-        console.log('✅ 읽지 않은 신청 개수 조회 성공:', result);
         
         return {
             unreadCount: result.unreadCount || 0
         };
 
     } catch (error) {
-        console.error('❌ 읽지 않은 신청 개수 조회 오류:', error);
         throw error;
     }
 };
@@ -578,17 +530,14 @@ export const getUnreadApplicationsApi = async (accompanyId, hostId) => {
 export const getChatAccessApi = async (postId, userId) => {
     try {
         const url = `${API_URL}/api/accompany/${postId}/chat-access?userId=${userId}`;
-        console.log('🌐 채팅 접근 권한 조회 API 호출:', url);
         
         const response = await fetch(url);
         
         if (!response.ok) {
-            console.warn(`⚠️ 채팅 접근 권한 조회 실패: ${response.status}`);
             return { canAccess: false, isCompleted: false };
         }
         
         const data = await response.json();
-        console.log('✅ 채팅 접근 권한 조회 성공:', data);
         
         return {
             canAccess: data.canAccess || false,
@@ -596,7 +545,6 @@ export const getChatAccessApi = async (postId, userId) => {
         };
         
     } catch (error) {
-        console.error('❌ 채팅 접근 권한 조회 오류:', error);
         return { canAccess: false, isCompleted: false };
     }
 };
@@ -606,7 +554,6 @@ export const markApplicationsViewedApi = async (accompanyId, hostId) => {
     try {
         // ✅ 백엔드와 일치하는 URL 경로 사용
         const url = `${API_URL}/api/accompany/${accompanyId}/mark-applications-viewed?hostId=${hostId}`;
-        console.log('🌐 신청 읽음 표시 API 호출:', url);
 
         const response = await fetch(url, {
             method: 'POST',  // 백엔드가 POST 사용
@@ -617,25 +564,20 @@ export const markApplicationsViewedApi = async (accompanyId, hostId) => {
 
         if (!response.ok) {
             if (response.status === 404) {
-                console.warn('⚠️ 읽음 표시 API 엔드포인트가 없습니다. 건너뜁니다.');
                 return { success: false, skipped: true };
             }
             
             const errorText = await response.text();
-            console.error(`❌ 신청 읽음 표시 실패 (${response.status}):`, errorText);
             throw new Error(`신청 읽음 표시에 실패했습니다. (${response.status})`);
         }
 
         const result = await response.text();
-        console.log('✅ 신청 읽음 표시 성공:', result);
         return { success: true };
 
     } catch (error) {
-        console.error('❌ 신청 읽음 표시 오류:', error);
         
         // 네트워크 에러는 무시하고 계속 진행
         if (error.message.includes('Failed to fetch')) {
-            console.warn('⚠️ 네트워크 오류로 읽음 표시 실패, 건너뜁니다.');
             return { success: false, skipped: true };
         }
         

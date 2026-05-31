@@ -83,7 +83,6 @@ export default function AccompanyPost() {
             setUnreadApplicationsCount(result.unreadCount);
             setHasNewApplications(result.unreadCount > 0);
         } catch (error) {
-            console.error('❌ 읽지 않은 신청 개수 조회 실패:', error);
         }
     };
 
@@ -96,13 +95,11 @@ export default function AccompanyPost() {
             setUnreadApplicationsCount(0);
             setHasNewApplications(false);
         } catch (error) {
-            console.error('❌ 신청 읽음 표시 실패:', error);
         }
     };
 
     // AccompanyPost.jsx에 추가할 누락된 함수
     const handleDeletePost = () => {
-        console.log("🔥 handleDeletePost 함수 시작됨!");
         setShowDeletePopup(true);
     };
 
@@ -114,9 +111,7 @@ export default function AccompanyPost() {
         
         // 백그라운드에서 삭제 (에러 무시)
         deleteAccompanyPostApi(postId)
-            .then(() => console.log('✅ 삭제 성공'))
             .catch(error => {
-                console.error('❌ 삭제 실패:', error);
                 // 사용자는 이미 나갔으므로 에러 알림 없음
             });
     };
@@ -150,7 +145,6 @@ export default function AccompanyPost() {
             // ✅ 호스트 판별 로직 수정 - createdBy 또는 userId 사용
             const hostStatus = String(transformedData.createdBy || transformedData.userId) === String(currentUserId);
             
-            console.log('🔍 호스트 체크 상세:', {
                 transformedData_createdBy: transformedData.createdBy,
                 transformedData_userId: transformedData.userId,
                 currentUserId: currentUserId,
@@ -169,21 +163,16 @@ export default function AccompanyPost() {
 
             // ✅ 호스트인 경우 읽지 않은 신청 조회
             if (hostStatus) {
-                console.log('✅ 호스트 확인! 읽지 않은 신청 조회 시작');
                 try {
                     const result = await getUnreadApplicationsApi(id, currentUserId);
-                    console.log('📍 읽지 않은 신청 결과:', result);
                     setUnreadApplicationsCount(result.unreadCount);
                     setHasNewApplications(result.unreadCount > 0);
                 } catch (err) {
-                    console.error('❌ 읽지 않은 신청 조회 실패:', err);
                 }
             } else {
-                console.log('❌ 호스트가 아님');
             }
 
         } catch (err) {
-            console.error('❌ 데이터 로드 오류:', err);
             setError(err.message || '데이터를 불러오지 못했습니다.');
             Alert.alert('오류', '동행 정보를 불러오지 못했습니다.');
         } finally {
@@ -197,7 +186,6 @@ export default function AccompanyPost() {
             const transformedComments = await fetchCommentsApi(accompanyId);
             setComments(transformedComments);
         } catch (error) {
-            console.error('❌ 댓글 조회 오류:', error);
         }
     };
 
@@ -268,18 +256,15 @@ export default function AccompanyPost() {
     // 좋아요 토글 함수 - AccompanyBottomButton에서 호출됨
     const handleLikeToggle = useCallback(async () => {
         if (!postId || !currentUserId) {
-            console.error('❌ AccompanyPost: postId 또는 currentUserId가 유효하지 않음', { postId, currentUserId });
             Alert.alert('오류', '게시물 정보를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
             return;
         }
 
         // 이미 로딩 중이면 중복 처리 방지
         if (isLikeLoading) {
-            console.log('⚠️ AccompanyPost: 이미 좋아요 처리 중이므로 무시');
             return;
         }
 
-        console.log('💖 AccompanyPost: 좋아요 토글 시작', {
             postId,
             currentUserId,
             현재_isLiked: isLiked,
@@ -294,16 +279,13 @@ export default function AccompanyPost() {
             setIsLikeLoading(true);
 
             // ✅ API 호출 - 서버가 최종 상태 결정
-            console.log('🚀 toggleLikeApi 호출 중...');
             const result = await toggleLikeApi(postId, currentUserId);
             
-            console.log('✅ AccompanyPost: 좋아요 토글 API 응답:', result);
             
             // ✅ API 응답으로 상태 업데이트
             const newIsLiked = Boolean(result.isLiked);
             const newLikeCount = Number(result.likeCount) || 0;
             
-            console.log('🔄 상태 업데이트 진행:', {
                 이전_isLiked: isLiked,
                 새로운_isLiked: newIsLiked,
                 이전_likeCount: likeCount,
@@ -314,10 +296,8 @@ export default function AccompanyPost() {
             setIsLiked(newIsLiked);
             setLikeCount(newLikeCount);
             
-            console.log('✨ AccompanyPost: 상태 업데이트 완료');
 
         } catch (error) {
-            console.error('❌ AccompanyPost: 좋아요 토글 실패:', {
                 error: error.message,
                 postId,
                 currentUserId,
@@ -348,7 +328,6 @@ export default function AccompanyPost() {
 
     useEffect(() => {
         if (postData) {
-            console.log('🔍 AccompanyPost: postData 전체 구조 확인:', {
                 postData: postData,
                 keys: Object.keys(postData),
                 isLiked: postData.isLiked,
@@ -366,30 +345,23 @@ export default function AccompanyPost() {
             if (typeof postData.isLiked === 'boolean') {
                 initialIsLiked = postData.isLiked;
                 needsSeparateLikeQuery = false;
-                console.log('🔍 AccompanyPost: 초기 좋아요 상태 설정 (isLiked)', postData.isLiked);
             } else if (typeof postData.liked === 'boolean') {
                 initialIsLiked = postData.liked;
                 needsSeparateLikeQuery = false;
-                console.log('🔍 AccompanyPost: 초기 좋아요 상태 설정 (liked)', postData.liked);
             } else {
-                console.log('⚠️ AccompanyPost: 좋아요 상태 필드를 찾을 수 없어 별도 API 조회 필요');
             }
             
             // likeCount 필드 확인
             if (typeof postData.likeCount === 'number') {
                 initialLikeCount = postData.likeCount;
-                console.log('🔍 AccompanyPost: 초기 좋아요 수 설정 (likeCount)', postData.likeCount);
             } else if (typeof postData.likes === 'number') {
                 initialLikeCount = postData.likes;
-                console.log('🔍 AccompanyPost: 초기 좋아요 수 설정 (likes)', postData.likes);
             } else {
-                console.log('⚠️ AccompanyPost: 좋아요 수 필드를 찾을 수 없어 기본값 0 사용');
             }
             
             setIsLiked(initialIsLiked);
             setLikeCount(initialLikeCount);
             
-            console.log('✨ AccompanyPost: 좋아요 상태 초기화 완료', {
                 설정된_isLiked: initialIsLiked,
                 설정된_likeCount: initialLikeCount,
                 별도조회필요: needsSeparateLikeQuery
@@ -407,7 +379,6 @@ export default function AccompanyPost() {
         if (!postId || !currentUserId) return;
         
         try {
-            console.log('🔍 AccompanyPost: 별도 좋아요 상태 조회 시작');
             setIsLikeLoading(true);
             
             const likeStatus = await getLikeStatusApi(postId, currentUserId);
@@ -415,9 +386,7 @@ export default function AccompanyPost() {
             setIsLiked(likeStatus.isLiked);
             setLikeCount(likeStatus.likeCount);
             
-            console.log('✨ AccompanyPost: 별도 좋아요 상태 조회 완료', likeStatus);
         } catch (error) {
-            console.error('❌ AccompanyPost: 별도 좋아요 상태 조회 실패:', error);
             // 실패 시 기본값 유지
             setIsLiked(false);
             setLikeCount(0);
@@ -434,7 +403,6 @@ export default function AccompanyPost() {
         const currentStatus = postData?.userApplicationStatus;
         const isCurrentlyApplied = isUserApplied(currentStatus);
         
-        console.log('🔄 신청/취소 시작:', {
             currentStatus,
             isCurrentlyApplied,
             postId,
@@ -451,7 +419,6 @@ export default function AccompanyPost() {
         try {
             // currentStatus 대신 isCurrentlyApplied 전달
             const result = await toggleApplicationApi(postId, currentUserId, currentStatus);
-            console.log('✅ API 호출 성공:', result);
             
             // API 결과의 newStatus를 사용해서 최종 상태 업데이트
             setPostData(prev => ({
@@ -462,7 +429,6 @@ export default function AccompanyPost() {
             setShowAlarmPopup(true);
             
         } catch (error) {
-            console.error(`❌ 동행 ${isCurrentlyApplied ? '취소' : '신청'} 오류:`, error);
             Alert.alert('오류', error.message);
             
             // 🔥 오류 발생 시 원래 상태로 롤백
@@ -480,7 +446,6 @@ export default function AccompanyPost() {
             setShowAlarmPopupHost(false);
             Alert.alert("성공", "동행 모집이 마감되었습니다.");
         } catch (error) {
-            console.error('❌ 동행 모집 마감 오류:', error);
             Alert.alert('오류', error.message);
         }
     };
@@ -587,7 +552,6 @@ export default function AccompanyPost() {
             await closeAccompanyPostApi(postId);
             Alert.alert("성공", "동행 모집이 마감되었습니다.");
         } catch (error) {
-            console.error('❌ 동행 모집 마감 오류:', error);
             
             // 3. API 실패 시 UI 롤백
             setPostData(prev => ({
@@ -687,7 +651,6 @@ export default function AccompanyPost() {
                                 <TouchableOpacity
                                     style={styles.menuItem}
                                     onPress={() => {
-                                        console.log("삭제 버튼 클릭됨!");
                                         setShowMoreMenu(false); // 메뉴 닫기
                                         handleDeletePost(); 
                                     }}

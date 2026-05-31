@@ -8,7 +8,6 @@ const SearchRegionHistory = () => {
     const [searchedRegions, setSearchedRegions] = useState(['부산', '제주도', '도쿄', '오사카']);
 
     const handleBack = () => {
-        console.log('뒤로가기');
     };
 
     const handleRemoveRegion = (index) => {
@@ -22,7 +21,6 @@ const SearchRegionHistory = () => {
 
     const handleSearch = () => {
         if (searchText.trim() !== '') {
-            console.log('지도에서 검색:', searchText);
             
             // 검색 기록에 추가 (중복 제거 후 맨 앞에 추가)
             const newSearchedRegions = [searchText, ...searchedRegions.filter(region => region !== searchText)];

@@ -268,8 +268,6 @@ const TimeBlock = ({
                 timeString: clickedTimeString,
                 existingSchedule: clickedExistingSchedule
             });
-            console.log('[TimeBlock] dateInfo:', dateInfo);
-            console.log('[TimeBlock] date passed to onTimeBlockClick:', dateInfo.fullDate || dateInfo.displayText);
         }
     };
 

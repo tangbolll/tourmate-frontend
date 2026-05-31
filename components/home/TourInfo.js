@@ -38,7 +38,6 @@ const TourInfo = ({ tourData }) => {
     };
 
     const handleMoreOptionsPress = () => {
-        console.log('더 많은 옵션');
     };
 
     return (

@@ -36,7 +36,6 @@ export default function ItineraryMap() {
       try {
         const token = await AsyncStorage.getItem('jwtToken');
         if (!token) {
-          console.warn("토큰이 없습니다!");
           return;
         }
 
@@ -59,7 +58,6 @@ export default function ItineraryMap() {
         setMarkers(coords);
 
       } catch (error) {
-        console.error('스케줄 불러오기 실패:', error);
       }
     };
 
@@ -91,7 +89,6 @@ export default function ItineraryMap() {
 
   const dateInfo = formatDateRange();
   const handleBackPress = () => router.back();
-  const handleMemberPress = () => console.log('멤버 아이콘 클릭');
 
   return (
     <SafeAreaView style={styles.container}>

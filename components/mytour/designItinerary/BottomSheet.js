@@ -141,7 +141,6 @@ const BottomSheet = ({
                 setAttractions(items.filter(item => item.contenttypeid === '12'));
             } catch (e) {
                 setError(e);
-                console.error(e);
             } finally {
                 setIsLoading(false);
             }
@@ -182,7 +181,6 @@ const BottomSheet = ({
         setExpandedSections(prev => ({ ...prev, [item.contentid]: !prev[item.contentid] }));
 
         if (detailMap[item.contentid]) {
-            console.log("캐시된 상세 정보 사용:", detailMap[item.contentid]);
             return;
         }
 
@@ -212,7 +210,6 @@ const BottomSheet = ({
                 }
             }));
         } catch (e) {
-            console.error("상세정보 불러오기 실패:", e);
         }
     };
 

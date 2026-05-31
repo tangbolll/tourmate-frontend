@@ -50,11 +50,8 @@ useEffect(() => {
     }
 
     const handleToursDeleted = (deletedTourIds) => {
-        console.log('[MyTourHome] handleToursDeleted called with:', deletedTourIds);
         setTours(prevTours => {
-            console.log('[MyTourHome] Before setTours, prevTours count:', prevTours.length);
             const newTours = prevTours.filter(tour => !deletedTourIds.includes(tour.id));
-            console.log('[MyTourHome] After setTours, newTours count:', newTours.length);
             return newTours;
         });
     };

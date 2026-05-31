@@ -9,7 +9,6 @@ const ShowSchedule = ({
 }) => {
     // 더 강력한 방어 코드
     if (!schedule || typeof schedule !== 'object') {
-        console.warn('ShowSchedule: schedule prop is missing or invalid:', schedule);
         return null;
     }
 

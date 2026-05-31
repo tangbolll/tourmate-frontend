@@ -174,7 +174,6 @@ const AccompanyCreation = () => {
 
 
 const handleSubmit = async () => {
-        console.log('🚀 동행 생성 시작');
         setIsLoading(true);
 
         try {
@@ -224,11 +223,8 @@ const handleSubmit = async () => {
                 });
             }
             
-            console.log('📤 FormData 생성 완료');
-            console.log('📝 전송할 데이터:', accompanyData);
 
             const url = `${getBaseURL()}/api/accompany/create`;
-            console.log('🌐 API URL:', url);
 
             const response = await axios.post(url, formData, {
                 headers: {
@@ -237,11 +233,9 @@ const handleSubmit = async () => {
                 },
             });
 
-            console.log('📡 응답 받음:', response.status);
 
             if (response.status === 200) {
                 const result = response.data;
-                console.log('✅ 성공 응답:', result);
                 Alert.alert(
                     "동행 생성 완료",
                     "동행이 성공적으로 생성되었습니다!",
@@ -258,9 +252,7 @@ const handleSubmit = async () => {
                 );
             }
         } catch (error) {
-            console.error('❌ 네트워크 에러:', error);
             if (error.response) {
-                console.log('❌ 서버 에러 응답:', error.response.data);
                 Alert.alert(
                     "동행 생성 실패",
                     `서버 오류 발생 (${error.response.status})\n\n${JSON.stringify(error.response.data, null, 2)}`

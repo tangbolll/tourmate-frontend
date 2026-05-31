@@ -80,7 +80,6 @@ const AccompanyManagement = () => {
             setLikeCount(Number(result.likeCount) || 0);
             
         } catch (error) {
-            console.error('❌ 좋아요 토글 실패:', error);
             Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
         } finally {
             setIsLikeLoading(false);
@@ -90,13 +89,11 @@ const AccompanyManagement = () => {
     // 신청 수락 처리 - ID 타입 변환 추가
     const handleAcceptApplication = async (applicantId) => {
         try {
-            console.log('🔍 수락 버튼 클릭:', { applicantId, type: typeof applicantId });
             
             // ✅ ID를 숫자로 변환
             const numericApplicantId = Number(applicantId);
             
             if (isNaN(numericApplicantId)) {
-                console.error('❌ 유효하지 않은 applicantId:', applicantId);
                 Alert.alert('오류', '유효하지 않은 사용자 ID입니다.');
                 return;
             }
@@ -113,7 +110,6 @@ const AccompanyManagement = () => {
             Alert.alert('성공', '신청을 수락했습니다.');
             
         } catch (error) {
-            console.error('❌ 신청 수락 실패:', error);
             Alert.alert('오류', error.message || '신청 수락에 실패했습니다.');
         }
     };
@@ -121,13 +117,11 @@ const AccompanyManagement = () => {
     // 신청 거절 처리 - ID 타입 변환 추가
     const handleRejectApplication = async (applicantId) => {
         try {
-            console.log('🔍 거절 버튼 클릭:', { applicantId, type: typeof applicantId });
             
             // ✅ ID를 숫자로 변환
             const numericApplicantId = Number(applicantId);
             
             if (isNaN(numericApplicantId)) {
-                console.error('❌ 유효하지 않은 applicantId:', applicantId);
                 Alert.alert('오류', '유효하지 않은 사용자 ID입니다.');
                 return;
             }
@@ -140,7 +134,6 @@ const AccompanyManagement = () => {
             Alert.alert('성공', '신청을 거절했습니다.');
             
         } catch (error) {
-            console.error('❌ 신청 거절 실패:', error);
             Alert.alert('오류', error.message || '신청 거절에 실패했습니다.');
         }
     };
@@ -148,13 +141,11 @@ const AccompanyManagement = () => {
     // 참가자 내보내기 처리 - ID 타입 변환 추가
     const handleRemoveParticipant = async (participantId) => {
         try {
-            console.log('🔍 내보내기 버튼 클릭:', { participantId, type: typeof participantId });
             
             // ✅ ID를 숫자로 변환
             const numericParticipantId = Number(participantId);
             
             if (isNaN(numericParticipantId)) {
-                console.error('❌ 유효하지 않은 participantId:', participantId);
                 Alert.alert('오류', '유효하지 않은 사용자 ID입니다.');
                 return;
             }
@@ -167,7 +158,6 @@ const AccompanyManagement = () => {
             Alert.alert('성공', '참가자를 내보냈습니다.');
             
         } catch (error) {
-            console.error('❌ 참가자 내보내기 실패:', error);
             Alert.alert('오류', error.message || '참가자 내보내기에 실패했습니다.');
         }
     };
@@ -182,7 +172,6 @@ const AccompanyManagement = () => {
             const data = await getAccompanyManagementDataApi(postId, currentUserId);
             
             // ✅ 받은 데이터 구조 확인
-            console.log('🔍 받은 데이터 구조:', {
                 applicants: data.applicants,
                 participants: data.participants,
                 applicantsIds: data.applicants?.map(app => ({ id: app.id, type: typeof app.id })),
@@ -201,7 +190,6 @@ const AccompanyManagement = () => {
             setLikeCount(data.accompanyInfo.likeCount || data.accompanyInfo.likes || 0);
             
         } catch (err) {
-            console.error('❌ 동행 관리 데이터 로드 오류:', err);
             setError(err.message || '데이터를 불러오지 못했습니다.');
             Alert.alert('오류', '동행 관리 정보를 불러오지 못했습니다.');
         } finally {
@@ -227,7 +215,6 @@ const AccompanyManagement = () => {
             Alert.alert('성공', '동행 모집이 마감되었습니다.');
             
         } catch (error) {
-            console.error('❌ 동행 마감 실패:', error);
             Alert.alert('오류', error.message || '동행 마감에 실패했습니다.');
         }
     };

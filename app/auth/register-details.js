@@ -99,7 +99,6 @@ const RegisterDetailsScreen = () => {
             router.replace('/auth/login');
 
         } catch (error) {
-            console.error("Registration Failed:", error);
             Alert.alert("회원가입 실패", `오류 발생: ${error.message || '알 수 없는 오류'}`);
         }
     };
@@ -115,7 +114,6 @@ const RegisterDetailsScreen = () => {
             setNicknameAvailable(!isDuplicate);
             setNicknameCheckMessage(isDuplicate ? '이미 사용 중인 닉네임입니다.' : '사용 가능한 닉네임입니다.');
         } catch (error) {
-            console.error("Nickname check failed:", error.response?.data || error.message);
             setNicknameChecked(false);
             setNicknameAvailable(false);
             setNicknameCheckMessage('닉네임 확인 중 오류가 발생했습니다.');

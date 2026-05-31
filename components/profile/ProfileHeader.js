@@ -21,7 +21,6 @@ export function ProfileHeader() { // onLogout prop 제거
                     setUserData(data);
                 }
             } catch (error) {
-                console.error('Error fetching user data:', error);
             }
         };
 

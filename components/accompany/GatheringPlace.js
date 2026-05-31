@@ -4,8 +4,8 @@ import { WebView } from 'react-native-webview';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import * as Clipboard from 'expo-clipboard';
 
-const kakaoRestApiKey = 'REDACTED_KAKAO_REST_API_KEY';
-const kakaoJavaScriptApiKey = 'REDACTED_KAKAO_JS_API_KEY';
+const kakaoRestApiKey = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY || '';
+const kakaoJavaScriptApiKey = process.env.EXPO_PUBLIC_KAKAO_JS_API_KEY || '';
 const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 
 const GatheringPlace = ({ location }) => {
@@ -14,20 +14,17 @@ const GatheringPlace = ({ location }) => {
     const [error, setError] = useState(null);
 
     useEffect(() => {
-        console.log('[GatheringPlace] useEffect - location:', location);
         if (location) {
             searchLocation(location);
         }
     }, [location]);
 
     const searchLocation = async (query) => {
-        console.log('[GatheringPlace] searchLocation 시작 - query:', query);
         setIsLoading(true);
         setError(null);
         
         try {
             if (!kakaoRestApiKey || kakaoRestApiKey === 'YOUR_ACTUAL_KAKAO_REST_API_KEY') {
-                console.log('[GatheringPlace] API 키가 없어 기본 좌표 사용');
                 // API 키가 없을 때 기본 좌표 (서울시청)
                 const defaultMapData = {
                     latitude: 37.5665,
@@ -35,13 +32,11 @@ const GatheringPlace = ({ location }) => {
                     placeName: query,
                     address: '서울특별시 중구'
                 };
-                console.log('[GatheringPlace] 기본 mapData 설정:', defaultMapData);
                 setMapData(defaultMapData);
                 setIsLoading(false);
                 return;
             }
 
-            console.log('[GatheringPlace] Kakao API 호출 시작');
             const response = await fetch(`${KAKAO_API_URL}?query=${encodeURIComponent(query)}&size=1`, {
                 method: 'GET',
                 headers: {
@@ -49,14 +44,12 @@ const GatheringPlace = ({ location }) => {
                 }
             });
 
-            console.log('[GatheringPlace] API 응답 상태:', response.status);
 
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
 
             const data = await response.json();
-            console.log('[GatheringPlace] API 응답 데이터:', JSON.stringify(data, null, 2));
             
             if (data.documents && data.documents.length > 0) {
                 const place = data.documents[0];
@@ -66,10 +59,8 @@ const GatheringPlace = ({ location }) => {
                     placeName: place.place_name,
                     address: place.address_name
                 };
-                console.log('[GatheringPlace] 검색된 mapData 설정:', newMapData);
                 setMapData(newMapData);
             } else {
-                console.log('[GatheringPlace] 검색 결과 없음, 기본 좌표 사용');
                 // 검색 결과가 없을 때 기본 좌표
                 const fallbackMapData = {
                     latitude: 37.5665,
@@ -80,7 +71,6 @@ const GatheringPlace = ({ location }) => {
                 setMapData(fallbackMapData);
             }
         } catch (error) {
-            console.error('[GatheringPlace] 위치 검색 에러:', error);
             setError(error.message);
             // 에러 시 기본 좌표
             const errorMapData = {
@@ -89,10 +79,8 @@ const GatheringPlace = ({ location }) => {
                 placeName: query,
                 address: '위치를 찾을 수 없습니다'
             };
-            console.log('[GatheringPlace] 에러 시 mapData 설정:', errorMapData);
             setMapData(errorMapData);
         } finally {
-            console.log('[GatheringPlace] searchLocation 완료');
             setIsLoading(false);
         }
     };
@@ -118,13 +106,10 @@ const GatheringPlace = ({ location }) => {
                 
                 if (canOpenApp) {
                     await Linking.openURL(appUrl);
-                    console.log('카카오맵 앱으로 열기:', appUrl);
                 } else {
                     await Linking.openURL(webUrl);
-                    console.log('카카오맵 웹으로 열기:', webUrl);
                 }
             } catch (error) {
-                console.error('카카오맵 열기 실패:', error);
                 Alert.alert('오류', '카카오맵을 열 수 없습니다.');
             }
         }
@@ -133,11 +118,9 @@ const GatheringPlace = ({ location }) => {
     // WebView용 HTML 생성 - 실제 카카오 지도
     const createMapHTML = () => {
         if (!mapData) {
-            console.log('[GatheringPlace] createMapHTML - mapData가 없음');
             return '';
         }
         
-        console.log('[GatheringPlace] createMapHTML - mapData:', mapData);
         
         const htmlContent = `
         <!DOCTYPE html>
@@ -157,40 +140,33 @@ const GatheringPlace = ({ location }) => {
             <div class="debug" id="debug">로딩 중...</div>
             <div id="map"></div>
             <script>
-                console.log('[WebView] 스크립트 시작');
                 
                 function updateDebug(message) {
                     const debugEl = document.getElementById('debug');
                     if (debugEl) {
                         debugEl.innerHTML = message;
-                        console.log('[WebView] ' + message);
                     }
                 }
                 
                 function initMap() {
-                    console.log('[WebView] initMap 함수 실행');
                     updateDebug('지도 초기화 시작');
                     
                     if (typeof kakao === 'undefined') {
-                        console.error('[WebView] 카카오맵 API 로드 실패');
                         updateDebug('카카오맵 API 로드 실패');
                         return;
                     }
                     
-                    console.log('[WebView] Kakao 객체 확인됨');
                     updateDebug('Kakao API 로드 성공');
                     
                     try {
                         const container = document.getElementById('map');
                         if (!container) {
-                            console.error('[WebView] 지도 컨테이너를 찾을 수 없음');
                             updateDebug('지도 컨테이너 없음');
                             return;
                         }
                         
                         const lat = ${mapData.latitude};
                         const lng = ${mapData.longitude};
-                        console.log('[WebView] 좌표:', lat, lng);
                         updateDebug('좌표: ' + lat + ', ' + lng);
                         
                         const options = {
@@ -198,9 +174,7 @@ const GatheringPlace = ({ location }) => {
                             level: 3
                         };
                         
-                        console.log('[WebView] 지도 생성 시작');
                         const map = new kakao.maps.Map(container, options);
-                        console.log('[WebView] 지도 생성 완료');
                         updateDebug('지도 생성 완료');
                         
                         // 마커 생성
@@ -209,7 +183,6 @@ const GatheringPlace = ({ location }) => {
                             position: markerPosition
                         });
                         marker.setMap(map);
-                        console.log('[WebView] 마커 생성 완료');
                         updateDebug('마커 생성 완료');
                         
                         // 인포윈도우 생성
@@ -220,7 +193,6 @@ const GatheringPlace = ({ location }) => {
                         
                         // 인포윈도우 표시
                         infowindow.open(map, marker);
-                        console.log('[WebView] 인포윈도우 생성 완료');
                         updateDebug('지도 로딩 완료!');
                         
                         // 3초 후 디버그 메시지 숨기기
@@ -243,7 +215,6 @@ const GatheringPlace = ({ location }) => {
                         });
                         
                     } catch (error) {
-                        console.error('[WebView] 지도 생성 에러:', error);
                         updateDebug('지도 생성 에러: ' + error.message);
                     }
                 }
@@ -257,7 +228,6 @@ const GatheringPlace = ({ location }) => {
                 
                 // 추가적으로 window.onload에서도 시도
                 window.addEventListener('load', function() {
-                    console.log('[WebView] window.onload 이벤트');
                     setTimeout(initMap, 100); // 100ms 후 다시 시도
                 });
             </script>
@@ -265,13 +235,11 @@ const GatheringPlace = ({ location }) => {
         </html>
         `;
         
-        console.log('[GatheringPlace] HTML 생성 완료, 길이:', htmlContent.length);
         return htmlContent;
     };
 
     // WebView 메시지 처리
     const handleWebViewMessage = (event) => {
-        console.log('[GatheringPlace] WebView 메시지 받음:', event.nativeEvent.data);
         try {
             const message = JSON.parse(event.nativeEvent.data);
             if (message.type === 'markerClick') {
@@ -285,24 +253,20 @@ const GatheringPlace = ({ location }) => {
                 );
             }
         } catch (error) {
-            console.log('[GatheringPlace] WebView 메시지 파싱 에러:', error);
         }
     };
 
     // WebView 로드 완료 이벤트
     const handleWebViewLoad = () => {
-        console.log('[GatheringPlace] WebView 로드 완료');
     };
 
     // WebView 에러 이벤트
     const handleWebViewError = (syntheticEvent) => {
         const { nativeEvent } = syntheticEvent;
-        console.error('[GatheringPlace] WebView 에러:', nativeEvent);
     };
 
     // 간단한 지도 정보 표시 (API 키 없을 때)
     const SimpleMapView = () => {
-        console.log('[GatheringPlace] SimpleMapView 렌더링');
         return (
             <View style={styles.simpleMapContainer}>
                 <MaterialCommunityIcons name="map" size={40} color="#4285f4" />
@@ -319,7 +283,6 @@ const GatheringPlace = ({ location }) => {
         );
     };
 
-    console.log('[GatheringPlace] 렌더링 - isLoading:', isLoading, 'error:', error, 'mapData:', mapData);
 
     return (
         <View>

@@ -13,13 +13,11 @@ export default function KakaoOAuthRedirect() {
     const handleKakaoCode = async () => {
       if (code) {
         try {
-          console.log("Received authorization code:", code);
           // Send the authorization code to your backend
           const response = await axios.get(`${BACKEND_URL}/login/oauth2/code/kakao?code=${code}`);
           const jwtToken = response.headers.authorization; // Assuming JWT is in Authorization header
 
           if (jwtToken) {
-            console.log("Received JWT Token:", jwtToken);
             // TODO: Store JWT token securely (e.g., AsyncStorage)
             // For now, just navigate to the main app
             router.replace('/(tabs)');
@@ -28,7 +26,6 @@ export default function KakaoOAuthRedirect() {
             router.replace('/auth/login'); // Go back to login
           }
         } catch (error) {
-          console.error("Backend communication failed:", error);
           Alert.alert("로그인 실패", `백엔드 통신 중 오류 발생: ${error.message}`);
           router.replace('/auth/login'); // Go back to login
         }

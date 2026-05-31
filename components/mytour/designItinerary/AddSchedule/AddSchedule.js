@@ -71,7 +71,7 @@ const AddSchedule = ({
     const popupTitle = isEditMode ? '일정 수정' : '일정 추가';
     const isSaveEnabled = title.trim() && location.trim() && currentSelectedDate;
 
-    const kakaoRestApiKey = 'REDACTED_KAKAO_REST_API_KEY';
+    const kakaoRestApiKey = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY || '';
     const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
 
     // ... (키보드 및 날짜 관련 useEffect 로직은 변경 없음) ...
@@ -181,7 +181,6 @@ const AddSchedule = ({
 
     // --- 💡 3. 위치 검색 핸들러 함수 수정 ---
     const handleMeetLocationSearch = async (query) => {
-        console.log('Searching for:', query);
         setLocation(query); // ❌ 오류 수정: setMeetLocationInput -> setLocation
 
         if (query.trim().length < 2) {
@@ -207,10 +206,8 @@ const AddSchedule = ({
             }
 
             const data = await response.json();
-            console.log('Search results:', data.documents);
             setSearchResults(data.documents || []);
         } catch (error) {
-            console.error('카카오맵 API 호출 에러:', error);
             setSearchResults([]);
         } finally {
             setIsSearching(false);
@@ -256,7 +253,6 @@ const AddSchedule = ({
             );
 
         } else {
-            console.error('오류: 삭제할 일정이 없거나 삭제 함수가 전달되지 않았습니다.');
         }
     };
 

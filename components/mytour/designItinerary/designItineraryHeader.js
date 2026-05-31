@@ -36,7 +36,6 @@ const DesignItineraryHeader = ({
     // 지도 아이콘 클릭 핸들러
     const handleMapPress = () => {
     if (!tourId) {
-        console.warn('tourId가 없습니다!');
         return;
     }
 

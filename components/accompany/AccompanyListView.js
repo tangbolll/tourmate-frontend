@@ -44,13 +44,11 @@ const AccompanyListView = ({
     // 🔥 최적화: 개발 단계에서 사용하던 불필요한 디버그용 useEffect 제거
 
     const handlePressDM = useCallback(() => {
-        console.log('DM 버튼 클릭');
         router.push('/accompany/GroupChats');
     }, [router]);
 
     // 🔥 최적화: useCallback을 사용하여 함수를 메모이제이션
     const handleSelectTab = useCallback((tab) => {
-        console.log(`🔄 탭 변경: ${selectedTab} → ${tab}`);
         setSelectedTab(tab);
     }, [setSelectedTab, selectedTab]);
 
@@ -122,7 +120,6 @@ const AccompanyListView = ({
         <SafeAreaView style={styles.container}>
             {/* 고정된 상단 헤더, 필터 영역 */}
             <AccompanyListHeader
-                onPressAlarm={() => console.log('알림')}
                 onPressDM={handlePressDM}
                 onPressFilter={handleFilterPopup}
                 searchText={searchText}
@@ -206,7 +203,6 @@ const AccompanyListView = ({
             <TouchableOpacity style={styles.floatingButton}>
                 <CreateAccompanyButton
                     onPress={() => {
-                        console.log('➕ 동행 생성 버튼 클릭');
                         router.push('/accompany/AccompanyCreation');
                     }}
                 />

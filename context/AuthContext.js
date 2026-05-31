@@ -26,7 +26,6 @@ export function AuthProvider({ children }) {
                     setCurrentUserId(null);
                 }
             } catch (e) {
-                console.error("Failed to check auth status:", e);
                 setUser(null);
                 setCurrentUserId(null);
             } finally {
@@ -43,7 +42,6 @@ export function AuthProvider({ children }) {
             setUser({ authenticated: true });
             setCurrentUserId(String(userId));
         } catch (e) {
-            console.error("Failed to sign in:", e);
         }
     };
 
@@ -54,7 +52,6 @@ export function AuthProvider({ children }) {
             setUser(null);
             setCurrentUserId(null);
         } catch (e) {
-            console.error("Failed to sign out:", e);
         }
     };
 

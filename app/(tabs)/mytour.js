@@ -44,7 +44,6 @@ export default function MyTourHome() {
     }, []); // 처음 한 번만 호출되도록 수정
 
     const handleToursDeleted = () => {
-        console.log('MyTourHome: 삭제 완료, 데이터 새로고침');
         loadMyTours();
     };
 
@@ -67,18 +66,15 @@ export default function MyTourHome() {
         try {
             await toggleTourFavorite(tourId, currentUserId);
             // API 호출 성공! UI는 이미 바뀌었으므로 아무것도 할 필요가 없습니다.
-            console.log(`[성공] 즐겨찾기 상태 변경 완료 (tourId: ${tourId})`);
 
         } catch (error) {
             // 4. API 호출 실패! 화면을 원래 상태로 되돌리고 에러 메시지를 보여줍니다.
-            console.error('[실패] 즐겨찾기 토글 에러, UI를 원래대로 되돌립니다:', error);
             setTours(originalTours); // UI 원상 복구
             Alert.alert("오류", "즐겨찾기 상태 변경에 실패했습니다. 다시 시도해주세요.");
         }
     };
 
     const handleTourPress = (tourId) => {
-        console.log('투어 상세 페이지로 이동:', tourId);
         router.push({
             pathname: '/mytour/designItinerary',
             params: { tourId: tourId }
@@ -99,7 +95,6 @@ export default function MyTourHome() {
         };
 
     const handleTourDesignPress = () => {
-        console.log('여행 디자인 페이지로 이동');
         router.push('/mytour/tourDesign');
     };
 

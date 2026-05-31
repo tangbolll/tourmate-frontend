@@ -45,7 +45,6 @@ export const handleLoginApi = async (email, password, signIn) => {
       Alert.alert('로그인 실패', '서버에서 오류가 발생했습니다.');
     }
   } catch (error) {
-    console.error("Login Failed:", error.response?.data || error.message);
     Alert.alert('로그인 실패', `이메일 또는 비밀번호가 일치하지 않습니다.`);
   }
 };
@@ -73,7 +72,6 @@ export const fetchUserProfileApi = async (userId) => {
         const response = await axios.get(`${API_URL}/api/user/${userId}`, { headers });
         return response.data;
     } catch (error) {
-        console.error('Error fetching user profile:', error);
         throw error;
     }
 };
@@ -87,7 +85,6 @@ export const updateUserProfileApi = async (userId, userData) => {
         const response = await axios.put(`${API_URL}/api/user/${userId}`, userData, { headers });
         return response.data;
     } catch (error) {
-        console.error('Error updating user profile:', error);
         throw error;
     }
 };
@@ -104,7 +101,6 @@ export const checkNicknameApi = async (nickname) => {
         });
         return response.data; // true (중복) 또는 false (사용 가능)
     } catch (error) {
-        console.error('Error checking nickname:', error);
         throw error;
     }
 };
@@ -114,7 +110,6 @@ export const checkEmailApi = async (email) => {
     const response = await axios.get(`${API_URL}/api/auth/check-email?email=${email}`);
     return response.data; // 서버 응답 (true/false)을 직접 반환
   } catch (error) {
-    console.error("Email check failed:", error.response?.data || error.message);
     // 에러를 UI 컴포넌트에서 처리할 수 있도록 throw
     throw new Error('이메일 확인 중 오류가 발생했습니다.');
   }

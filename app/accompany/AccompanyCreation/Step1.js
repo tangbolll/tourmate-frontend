@@ -18,7 +18,7 @@ import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view
 import DayPicker from '../../../components/accompany/DayPicker';
 import ImageSelector from '../../../components/accompany/ImageSelector';
 
-const kakaoRestApiKey = 'REDACTED_KAKAO_REST_API_KEY';
+const kakaoRestApiKey = process.env.EXPO_PUBLIC_KAKAO_REST_API_KEY || '';
 
 // 카카오맵 API URL 수정
 const KAKAO_API_URL = 'https://dapi.kakao.com/v2/local/search/keyword.json';
@@ -166,7 +166,6 @@ const Step1 = ({
             const data = await response.json();
             setSearchResults(data.documents || []);
         } catch (error) {
-            console.error('카카오맵 API 호출 에러:', error);
             setSearchResults([]);
         } finally {
             setIsSearching(false);

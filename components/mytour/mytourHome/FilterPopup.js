@@ -18,7 +18,6 @@ const FilterPopup = ({ visible, onClose = () => {}, onApply, onReset, filters, s
     };
 
     const openCalendar = () => {
-        console.log('Opening calendar...'); // 디버깅용
         if (onOpenCalendar) {
             onOpenCalendar();
         }

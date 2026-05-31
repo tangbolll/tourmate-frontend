@@ -49,7 +49,6 @@ export default function CreateItinerary() {
 
     // 작성 완료 버튼 핸들러
     const handleCompletePress = async () => {
-        console.log("현재 선택된 regions state:", regions);
 
         try {
             // 1️⃣ 지역별로 묶어서 Map 생성 (areaCode 기준)
@@ -95,12 +94,10 @@ export default function CreateItinerary() {
                 ownerId: currentUserId,
             };
 
-            console.log('서버 전송 payload:', payload);
 
             // MyTourApi.js의 createTour 함수를 호출하여 API 요청 처리
             const newTour = await createTour(payload);
 
-            console.log('✅ 저장 완료:', newTour);
 
             // 저장 성공 시 알림
             Alert.alert('저장 완료', '여행 일정이 성공적으로 저장되었습니다.');
@@ -117,7 +114,6 @@ export default function CreateItinerary() {
             });
 
         } catch (error) {
-            console.error('❌ 저장 오류:', error);
             // 저장 실패 시 알림
             Alert.alert('저장 실패', '여행 일정 저장 중 오류가 발생했습니다.');
         }

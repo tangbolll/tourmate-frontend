@@ -68,7 +68,6 @@ const AccompanyList = () => {
 
     const fetchLikesForPosts = useCallback(async (posts) => {
         if (!posts || posts.length === 0) {
-            console.log('📝 좋아요 로드할 포스트가 없습니다.');
             return;
         }
 
@@ -80,11 +79,8 @@ const AccompanyList = () => {
                 const likesStatus = await getMultipleAccompanyLikesApi(postIds, currentUserId);
                 setLikedPosts(prev => ({ ...prev, ...likesStatus }));
             } else {
-                if (postIds.length === 0) console.warn('⚠️ 유효한 post ID가 없어서 좋아요 상태 로드 건너뛰기');
-                if (!currentUserId) console.warn('⚠️ 현재 사용자 ID가 없어서 좋아요 상태 로드 건너뛰기');
             }
         } catch (error) {
-            console.error('❌ 좋아요 상태 로딩 실패:', error);
             handleApiError(error, '좋아요 상태 로드');
         } finally {
             updateLoadingState('likes', false);
@@ -93,13 +89,11 @@ const AccompanyList = () => {
 
     const fetchData = useCallback(async (tab, force = false) => {
         if (!force && dataLoaded[tab]) {
-            console.log(`🔄 ${tab} 탭 데이터 이미 로드됨, 건너뛰기`);
             return;
         }
 
         try {
             updateLoadingState(tab, true);
-            console.log(`🌐 ${tab} 탭 데이터 로딩 시작...`);
             let data;
             
             switch (tab) {
@@ -116,7 +110,6 @@ const AccompanyList = () => {
                     setMyAppliedAccompanyList(data);
                     break;
                 default:
-                    console.warn('⚠️ 알 수 없는 탭:', tab);
                     return;
             }
             
@@ -124,10 +117,8 @@ const AccompanyList = () => {
             if (data.length > 0) {
                 await fetchLikesForPosts(data);
             }
-            console.log(`✅ ${tab} 데이터 로딩 완료. (${data.length}개)`);
 
         } catch (error) {
-            console.error(`❌ ${tab} 데이터 로딩 실패:`, error);
             handleApiError(error, tab);
         } finally {
             updateLoadingState(tab, false);
@@ -137,7 +128,6 @@ const AccompanyList = () => {
     // ✅ useFocusEffect 하나로 데이터 로딩을 통합
     useFocusEffect(
         useCallback(() => {
-            console.log(`💡 화면 포커스됨. 현재 탭: ${selectedTab}`);
             // 현재 탭과 신청한 동행(applied) 데이터를 필요 시 로드
             const loadDataForCurrentTab = async () => {
                 await fetchData(selectedTab);
@@ -147,7 +137,6 @@ const AccompanyList = () => {
             loadDataForCurrentTab();
             
             return () => {
-                console.log('💡 화면 블러됨');
             };
         }, [selectedTab, fetchData])
     );
@@ -156,16 +145,13 @@ const AccompanyList = () => {
     // ✅ 탭 변경 시에만 실행되던 useEffect 삭제 (useFocusEffect로 통합)
 
     const onRefresh = useCallback(async () => {
-        console.log('🔄 새로고침 시작');
         setRefreshing(true);
         try {
             // 모든 탭의 dataLoaded 상태를 false로 초기화하여 강제로 재로드
             setDataLoaded({ feed: false, mine: false, applied: false });
             await fetchData(selectedTab, true);
             await fetchData('applied', true);
-            console.log('✅ 새로고침 완료');
         } catch (error) {
-            console.error('❌ 새로고침 중 오류:', error);
             Alert.alert('새로고침 오류', '데이터를 새로고침하는 중 오류가 발생했습니다.');
         } finally {
             setRefreshing(false);
@@ -179,7 +165,6 @@ const AccompanyList = () => {
             return;
         }
         if (loadingStates.likes) {
-            console.log('⚠️ 이미 좋아요 요청 처리 중...');
             return;
         }
 
@@ -199,7 +184,6 @@ const AccompanyList = () => {
             setFilteredPosts(prev => prev.map(post => post.id.toString() === postId.toString() ? { ...post, likeCount } : post));
 
         } catch (error) {
-            console.error('❌ 좋아요 토글 실패:', error);
             setLikedPosts(prev => ({ ...prev, [postId]: currentLikeStatus }));
             Alert.alert('오류', '좋아요 처리 중 오류가 발생했습니다.');
         } finally {

@@ -38,12 +38,10 @@ const PostcardGridView = ({
     };
 
     const handleLike = (postcardId) => {
-        console.log('좋아요:', postcardId);
         // TODO: 좋아요 API 호출
     };
 
     const handleScrap = (postcardId) => {
-        console.log('스크랩:', postcardId);
         // TODO: 스크랩 API 호출
     };
 

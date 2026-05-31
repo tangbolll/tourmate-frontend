@@ -35,7 +35,6 @@ const WritePost = () => {
 
     // 전달받은 디렉토리 정보 설정
     useEffect(() => {
-        console.log('useEffect running - params changed:', params);
         
         if (params && (params.directoryId || params.directoryName || params.startDate || params.endDate)) {
             const startDate = params.startDate ? new Date(params.startDate) : null;
@@ -103,7 +102,6 @@ const WritePost = () => {
                 });
             }
         } catch (error) {
-            console.error('이미지 선택 오류:', error);
             Alert.alert('오류', '이미지 선택 중 오류가 발생했습니다.');
         }
     }, [currentIndex, isEditMode, isSaved]);
@@ -160,7 +158,6 @@ const WritePost = () => {
 
     // 모달에서 엽서 선택 완료
     const handlePostcardDesignSelect = useCallback((selectedDesignData) => {
-        console.log('선택된 엽서:', selectedDesignData);
         
         setSelectedPostcard(selectedDesignData);
         
@@ -188,20 +185,17 @@ const WritePost = () => {
 
     // 글쓰기 기능
     const handleWritePress = useCallback(() => {
-        console.log('글쓰기 기능');
         // 글쓰기 기능 구현
     }, []);
 
     // 그리기 기능
     const handleDrawPress = useCallback(() => {
-        console.log('그리기 기능');
         // 그리기 기능 구현
     }, []);
 
     // 저장 기능
     const handleSave = useCallback(() => {
         if (selectedImage && selectedPostcard) {
-            console.log('현재 엽서 저장:', {
                 index: currentIndex,
                 image: selectedImage,
                 postcard: selectedPostcard
@@ -233,7 +227,6 @@ const WritePost = () => {
                     text: '삭제', 
                     style: 'destructive',
                     onPress: () => {
-                        console.log('현재 엽서 삭제:', currentIndex);
                         setIsSaved(false);
                         setIsEditMode(true);
                         setSelectedImage(null);
@@ -255,17 +248,14 @@ const WritePost = () => {
     }, [currentIndex]);
 
     const handleDownload = useCallback(() => {
-        console.log('다운로드');
         Alert.alert('다운로드', '모든 엽서가 갤러리에 저장되었습니다.');
     }, []);
 
     const handleLock = useCallback(() => {
-        console.log('잠금 토글');
         Alert.alert('잠금', '이게 잠금기능이 맞나 ? 뭐지');
     }, []);
 
     const handleEdit = useCallback(() => {
-        console.log('편집 모드 활성화');
         setIsEditMode(true);
         setIsSaved(false);
         Alert.alert('편집 모드', '편집 모드가 활성화되었습니다.');
